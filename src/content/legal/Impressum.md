@@ -1,0 +1,3 @@
+- name: Impressum
+  url: /impressum
+

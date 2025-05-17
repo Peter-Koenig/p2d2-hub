@@ -1,0 +1,2 @@
+- name: Lizenzen
+  url: /lizenzen

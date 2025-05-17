@@ -1,0 +1,2 @@
+- name: Datenschutz
+  url: /datenschutz

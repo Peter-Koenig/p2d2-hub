@@ -1,8 +1,26 @@
 ---
-import TailwindTest from '../components/TailwindTest.astro';
+import BaseLayout from "../layouts/BaseLayout.astro";
+import HeroSection from "../components/HeroSection.astro";
+import Footer from "../components/Footer.astro";
+// Weitere Komponenten kannst du hier importieren, wenn sie bereit sind
+// import MissionStatement from '../components/MissionStatement.astro';
+// import CommunitySection from '../components/CommunitySection.astro';
+// import ThemenbereicheOverview from '../components/ThemenbereicheOverview.astro';
+// import OpenLayersMap from '../components/OpenLayersMap.astro';
 ---
 
-<main>
-  <TailwindTest />
-</main>
+<BaseLayout>
+    <HeroSection />
 
+    <!-- Beispiel: Hier kannst du weitere Inhalts-Komponenten einfügen, sobald sie bereit sind -->
+    {
+        /*
+  <MissionStatement />
+  <CommunitySection />
+  <ThemenbereicheOverview />
+  <OpenLayersMap />
+  */
+    }
+
+    <Footer />
+</BaseLayout>

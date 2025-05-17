@@ -1,2 +1,2 @@
-# Lehrer
+# OSM Mapper
 Zitat und Beschreibung...
