@@ -1,0 +1,54 @@
+---
+// Passe die Navigationseinträge und die aktuelle Seite hier an:
+const nav = [
+    { name: "Start", href: "/", key: "home" },
+    { name: "Themenbereiche", href: "/themenbereiche", key: "themen" },
+    { name: "Community", href: "/community", key: "community" },
+    { name: "Mitmachen", href: "/mitmachen", key: "mitmachen" },
+    { name: "Kontakt", href: "/kontakt", key: "kontakt" },
+];
+
+// Hole die aktuelle Seite über Astro.globale Variable (Astro.url.pathname verfügbar ab Astro v4)
+const currentPath = Astro.url.pathname;
+---
+
+<header class="w-full bg-white shadow-sm sticky top-0 z-50">
+    <nav class="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
+        <a
+            href="/"
+            class="text-2xl font-bold text-green-700 tracking-tight select-none"
+        >
+            Public-Public Data-DNA
+        </a>
+        <ul class="flex gap-6 text-lg font-medium">
+            {
+                nav.map((item) => {
+                    // Aktive Seite erkennen (genaue Übereinstimmung oder / bei root)
+                    const isActive =
+                        item.href === "/"
+                            ? currentPath === "/"
+                            : currentPath.startsWith(item.href);
+                    return (
+                        <li>
+                            <a
+                                href={item.href}
+                                class={`relative transition-colors duration-200
+                ${
+                    isActive
+                        ? "text-green-700 after:content-[''] after:absolute after:left-0 after:-bottom-1 after:w-full after:h-1 after:bg-green-500"
+                        : "text-gray-700 hover:text-gray-900 after:content-[''] after:absolute after:left-0 after:-bottom-1 after:w-full after:h-1 after:bg-gray-400 after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-200"
+                }
+                px-1 pb-1
+              `}
+                                aria-current={isActive ? "page" : undefined}
+                                style="display: inline-block; position: relative;"
+                            >
+                                {item.name}
+                            </a>
+                        </li>
+                    );
+                })
+            }
+        </ul>
+    </nav>
+</header>

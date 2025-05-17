@@ -1,0 +1,90 @@
+---
+import { Astro } from 'astro';
+import socialMedia from '../content/footer/socialmedia.md';
+import internLinks from '../content/footer/intern.md';
+import resources from '../content/footer/resources.md';
+import repositories from '../content/footer/repositories.md';
+import copyright from '../content/footer/copyright.md';
+import legalLinks from '../content/footer/legal.md';
+
+// Hilfsfunktion zum Parsen von Markdown-Listen
+function parseList(md) {
+  return md.trim().split('\n').map(line => {
+    const match = line.match(/- name: (.+)\n?  url: (.+)/);
+    if (match) return { name: match[1], url: match[2] };
+    return null;
+  }).filter(Boolean);
+}
+const socialList = parseList(socialMedia);
+const internList = parseList(internLinks);
+const resourceList = parseList(resources);
+const repoList = parseList(repositories);
+const legalList = parseList(legalLinks);
+---
+
+<footer class="bg-gray-900 text-gray-100">
+  <!-- Oberer Bereich -->
+  <div class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-8 border-b border-gray-800">
+    <!-- Links: Logo, Abstract, Social Media -->
+    <div>
+      <div class="flex items-center gap-3 mb-3">
+        <img src="/images/logo.svg" alt="Public-Public Data-DNA Logo" class="h-10 w-10" />
+        <span class="text-xl font-bold">Public-Public Data-DNA</span>
+      </div>
+      <p class="mb-4 text-gray-300">
+        Die Plattform für offene Verwaltungsdaten im öffentlichen Raum. Vernetzt, föderiert, transparent.
+      </p>
+      <div class="flex gap-3">
+        {socialList.map(entry => (
+          <a href={entry.url} class="hover:text-green-400 transition" target="_blank" rel="noopener">
+            <span class="sr-only">{entry.name}</span>
+            <!-- Icons: Du kannst eigene SVGs oder ein Icon-Set verwenden -->
+            <img src={`/images/icons/${entry.icon}.svg`} alt={entry.name} class="h-6 w-6" />
+          </a>
+        ))}
+      </div>
+    </div>
+    <!-- Mitte: Interne Links -->
+    <div>
+      <h3 class="text-lg font-semibold mb-3">Über uns</h3>
+      <ul class="space-y-2">
+        {internList.map(entry => (
+          <li>
+            <a href={entry.url} class="hover:text-green-400 transition">{entry.name}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+    <!-- Rechts: Ressourcen & Repositories -->
+    <div>
+      <h3 class="text-lg font-semibold mb-3">Ressourcen</h3>
+      <ul class="space-y-2 mb-4">
+        <li>
+          <span class="font-semibold">Repositories:</span>
+          {repoList.map(entry => (
+            <span class="ml-2">
+              <a href={entry.url} class="hover:text-green-400 transition" target="_blank" rel="noopener">{entry.name}</a>
+              {entry !== repoList[repoList.length - 1] && <span class="mx-1">|</span>}
+            </span>
+          ))}
+        </li>
+        {resourceList.map(entry => (
+          <li>
+            <a href={entry.url} class="hover:text-green-400 transition">{entry.name}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+  <!-- Unterer Bereich -->
+  <div class="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center text-sm bg-gray-950">
+    <div class="mb-2 md:mb-0 text-gray-400">
+      <span set:html={copyright} />
+    </div>
+    <div class="flex gap-4">
+      {legalList.map(entry => (
+        <a href={entry.url} class="hover:text-green-400 transition">{entry.name}</a>
+      ))}
+    </div>
+  </div>
+</footer>
