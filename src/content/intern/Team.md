@@ -1,2 +1,0 @@
-- name: Team
-  url: /team

@@ -1,4 +1,18 @@
-# Verzeichnisse anlegen
+#!/bin/bash
+
+# Nicht mehr benötigte Dateien und Ordner löschen
+for path in footer-links.md footer-meta.md social-media.md call-to-action.md community-benefits.md mission.md socialmedia intern legal repositories resources copyright testimonials themenbereiche
+do
+  if [ -d "src/content/$path" ]; then
+    rm -rf "src/content/$path"
+    echo "Ordner gelöscht: src/content/$path"
+  elif [ -f "src/content/$path" ]; then
+    rm "src/content/$path"
+    echo "Datei gelöscht: src/content/$path"
+  fi
+done
+
+# Verzeichnisse neu anlegen
 mkdir -p src/content/socialmedia \
          src/content/intern \
          src/content/resources \
@@ -9,33 +23,160 @@ mkdir -p src/content/socialmedia \
          src/content/testimonials
 
 # Social Media
-echo '---\nname: Mastodon\nurl: https://mastodon.social/@publicdata\nicon: mastodon\n---' > src/content/socialmedia/mastodon.md
-echo '---\nname: Friendica\nurl: https://friendica.example.org/profile/publicdata\nicon: friendica\n---' > src/content/socialmedia/friendica.md
-echo '---\nname: PeerTube\nurl: https://peertube.example.org/accounts/publicdata\nicon: peertube\n---' > src/content/socialmedia/peertube.md
-echo '---\nname: Pixelfed\nurl: https://pixelfed.example.org/publicdata\nicon: pixelfed\n---' > src/content/socialmedia/pixelfed.md
+cat <<EOT > src/content/socialmedia/mastodon.md
+---
+name: Mastodon
+url: https://mastodon.social/@publicdata
+icon: mastodon
+---
+EOT
+
+cat <<EOT > src/content/socialmedia/friendica.md
+---
+name: Friendica
+url: https://friendica.example.org/profile/publicdata
+icon: friendica
+---
+EOT
+
+cat <<EOT > src/content/socialmedia/peertube.md
+---
+name: PeerTube
+url: https://peertube.example.org/accounts/publicdata
+icon: peertube
+---
+EOT
+
+cat <<EOT > src/content/socialmedia/pixelfed.md
+---
+name: Pixelfed
+url: https://pixelfed.example.org/publicdata
+icon: pixelfed
+---
+EOT
 
 # Interne Seiten
-echo '- name: Über uns\n  url: /ueber-uns\n- name: Mission\n  url: /mission\n- name: Team\n  url: /team\n- name: Partner\n  url: /partner' > src/content/intern/intern.md
+cat <<EOT > src/content/intern/ueberuns.md
+---
+name: Über uns
+url: /ueber-uns
+---
+EOT
+
+cat <<EOT > src/content/intern/mission.md
+---
+name: Mission
+url: /mission
+---
+EOT
+
+cat <<EOT > src/content/intern/team.md
+---
+name: Team
+url: /team
+---
+EOT
+
+cat <<EOT > src/content/intern/partner.md
+---
+name: Partner
+url: /partner
+---
+EOT
 
 # Ressourcen
-echo '- name: API-Dokumentation\n  url: /api\n- name: Datenportal\n  url: /datenportal' > src/content/resources/resources.md
+cat <<EOT > src/content/resources/api.md
+---
+name: API-Dokumentation
+url: /api
+---
+EOT
+
+cat <<EOT > src/content/resources/datenportal.md
+---
+name: Datenportal
+url: /datenportal
+---
+EOT
 
 # Repositories
-echo '- name: openCode.de\n  url: https://opencode.de/publicdata\n- name: GitLab\n  url: https://gitlab.com/publicdata' > src/content/repositories/repositories.md
+cat <<EOT > src/content/repositories/opencode.md
+---
+name: openCode.de
+url: https://opencode.de/publicdata
+---
+EOT
+
+cat <<EOT > src/content/repositories/gitlab.md
+---
+name: GitLab
+url: https://gitlab.com/publicdata
+---
+EOT
 
 # Rechtliches
-echo '- name: Datenschutz\n  url: /datenschutz\n- name: Impressum\n  url: /impressum\n- name: Lizenzen\n  url: /lizenzen' > src/content/legal/legal.md
+cat <<EOT > src/content/legal/datenschutz.md
+---
+name: Datenschutz
+url: /datenschutz
+---
+EOT
+
+cat <<EOT > src/content/legal/impressum.md
+---
+name: Impressum
+url: /impressum
+---
+EOT
+
+cat <<EOT > src/content/legal/lizenzen.md
+---
+name: Lizenzen
+url: /lizenzen
+---
+EOT
 
 # Copyright
-echo '---\ntext: "Public-Public Data-DNA © 2025"\n---' > src/content/copyright/copyright.md
+cat <<EOT > src/content/copyright/copyright.md
+---
+text: "Public-Public Data-DNA © 2025"
+---
+EOT
 
 # Beispiel-Themenbereiche
-echo '# Friedhöfe\nBeschreibung der Friedhöfe...' > src/content/themenbereiche/friedhoefe.md
-echo '# Stadtbäume\nBeschreibung der Stadtbäume...' > src/content/themenbereiche/stadtbaeume.md
-echo '# Gemeinschaftsgärten\nBeschreibung der Gemeinschaftsgärten...' > src/content/themenbereiche/gemeinschaftsgaerten.md
+cat <<EOT > src/content/themenbereiche/friedhoefe.md
+# Friedhöfe
+Beschreibung der Friedhöfe...
+EOT
+
+cat <<EOT > src/content/themenbereiche/stadtbaeume.md
+# Stadtbäume
+Beschreibung der Stadtbäume...
+EOT
+
+cat <<EOT > src/content/themenbereiche/gemeinschaftsgaerten.md
+# Gemeinschaftsgärten
+Beschreibung der Gemeinschaftsgärten...
+EOT
 
 # Beispiel-Testimonials
-echo '# OSM Mapper\nZitat und Beschreibung...' > src/content/testimonials/osm-mapper.md
-echo '# Gemeinde\nZitat und Beschreibung...' > src/content/testimonials/gemeinde.md
-echo '# Lehrer\nZitat und Beschreibung...' > src/content/testimonials/lehrer.md
+cat <<EOT > src/content/testimonials/osm-mapper.md
+# OSM Mapper
+Zitat und Beschreibung...
+EOT
+
+cat <<EOT > src/content/testimonials/gemeinde.md
+# Gemeinde
+Zitat und Beschreibung...
+EOT
+
+cat <<EOT > src/content/testimonials/lehrer.md
+# Lehrer
+Zitat und Beschreibung...
+EOT
+
+cat <<EOT > src/content/testimonials/mapper.md
+# Mapper
+Zitat und Beschreibung...
+EOT
 

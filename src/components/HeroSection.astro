@@ -1,21 +1,33 @@
 ---
-import { Markdown } from 'astro/components';
-import heroContent from '../content/hero.md';
+import { Content as HeroContent } from "../content/hero.md";
 ---
 
-<section class="relative w-full h-[70vh] flex items-center justify-center overflow-hidden">
-  <video
-    class="absolute inset-0 w-full h-full object-cover z-0"
-    src="/videos/hero-bg.mp4"
-    autoplay
-    loop
-    muted
-    playsinline
-    poster="/images/hero-fallback.jpg"
-  ></video>
-  <div class="relative z-10 flex flex-col items-center justify-center text-center text-white bg-black/40 p-8 rounded-lg max-w-3xl mx-auto">
-    <Markdown content={heroContent} />
-    <!-- Optional: Button, falls im Markdown ein Button-Text angegeben ist -->
-  </div>
+<style>
+    :global(.hero-section h1) {
+        font-family: "Poppins", sans-serif;
+        font-weight: 800;
+        font-size: 3.75rem;
+    }
+</style>
+
+<section
+    class="relative w-full h-[70vh] flex items-center justify-center overflow-hidden"
+>
+    <video
+        class="absolute inset-0 w-full h-full object-cover z-0"
+        autoplay
+        loop
+        muted
+        playsinline
+        poster="/images/hero-fallback.jpg"
+    >
+        <source src="/videos/hero-bg.webm" type="video/webm" />
+        <source src="/videos/hero-bg.mp4" type="video/mp4" />
+        Ihr Browser unterstützt das Video-Tag nicht.
+    </video>
+    <div
+        class="leading-none hero-section relative z-10 flex flex-col items-center justify-center text-center text-white bg-black/40 p-8 rounded-lg max-w-3xl mx-auto"
+    >
+        <HeroContent />
+    </div>
 </section>
-:white

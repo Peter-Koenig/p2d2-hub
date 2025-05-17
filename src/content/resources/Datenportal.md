@@ -1,2 +1,0 @@
-- name: Datenportal
-  url: /datenportal

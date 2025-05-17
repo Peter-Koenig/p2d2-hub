@@ -1,3 +1,1 @@
-# Wir verbinden die Daten der Verwaltung mit dem Wissen der Gemeinschaft
-
-Ähnlich wie Wikipedia und OpenStreetMap, aber mit Fokus auf den öffentlichen Raum.
+# Erfassen wir den öffentlichen Datenraum</br> <span style="color:#41C7B4;"> der für uns Freiheit und Souveränität bedeutet</span>

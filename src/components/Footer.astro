@@ -10,25 +10,87 @@ const copyrightEntry = await getCollection("copyright");
 const copyright = copyrightEntry[0]?.data.text ?? "";
 ---
 
-<footer class="bg-gray-900 text-gray-100">
+<footer class="bg-green-950 text-gray-100">
     <div
-        class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-8 border-b border-gray-800"
+        class="max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-8 border-b border-gray-800 items-start"
     >
-        <!-- Links: Logo, Abstract, Social Media -->
+        <!-- Links: Logo, Abstract -->
         <div>
             <div class="flex items-center gap-3 mb-3">
                 <img
                     src="/images/logo.svg"
                     alt="Public-Public Data-DNA Logo"
-                    class="h-10 w-10"
+                    class="h-15 w-15"
                 />
-                <span class="text-xl font-bold">Public-Public Data-DNA</span>
+                <span class="font-poppins text-xl font-bold"
+                    >Public-Public Data-DNA</span
+                >
             </div>
             <p class="mb-4 text-gray-300">
-                Die Plattform für offene Verwaltungsdaten im öffentlichen Raum.
-                Vernetzt, föderiert, transparent.
+                Das Geheimnis der DNA: Stabilität und Dynamik durch Transparenz
+                und das richtige Maß an gegenseitiger Kontrolle von
+                Öffentlichkeit und öffentlicher Verwaltung: P2D2 schafft die
+                Infrastruktur.
             </p>
-            <div class="flex gap-3">
+        </div>
+        <!-- Mitte: Interne Links -->
+        <div class="mt-4 md:mt-4 md:ml-24">
+            <h3 class="font-poppins text-xl font-bold mb-4">Über uns</h3>
+            <ul class="space-y-2">
+                {
+                    intern.map((entry) => (
+                        <li>
+                            <a
+                                href={entry.data.url}
+                                class="hover:text-green-400 transition"
+                            >
+                                {entry.data.name}
+                            </a>
+                        </li>
+                    ))
+                }
+            </ul>
+        </div>
+        <!-- Rechts: Ressourcen & Social Media -->
+        <div class="mt-4 md:mt-4 flex flex-col h-full">
+            <div>
+                <h3 class="font-poppins text-xl font-bold mb-4">Ressourcen</h3>
+                <ul class="space-y-2 mb-4">
+                    <li>
+                        <span class="font-semibold">Repositories:</span>
+                        {
+                            repositories.map((entry, i) => (
+                                <span class="ml-2">
+                                    <a
+                                        href={entry.data.url}
+                                        class="hover:text-green-400 transition"
+                                        target="_blank"
+                                        rel="noopener"
+                                    >
+                                        {entry.data.name}
+                                    </a>
+                                    {i < repositories.length - 1 && (
+                                        <span class="mx-1">|</span>
+                                    )}
+                                </span>
+                            ))
+                        }
+                    </li>
+                    {
+                        resources.map((entry) => (
+                            <li>
+                                <a
+                                    href={entry.data.url}
+                                    class="hover:text-green-400 transition"
+                                >
+                                    {entry.data.name}
+                                </a>
+                            </li>
+                        ))
+                    }
+                </ul>
+            </div>
+            <div class="flex gap-3 mt-4">
                 {
                     socialmedia.map((entry) => (
                         <a
@@ -48,69 +110,11 @@ const copyright = copyrightEntry[0]?.data.text ?? "";
                 }
             </div>
         </div>
-        <!-- Mitte: Interne Links -->
-        <div>
-            <h3 class="text-lg font-semibold mb-3">Über uns</h3>
-            <ul class="space-y-2">
-                {
-                    intern.map((entry) => (
-                        <li>
-                            <a
-                                href={entry.data.url}
-                                class="hover:text-green-400 transition"
-                            >
-                                {entry.data.name}
-                            </a>
-                        </li>
-                    ))
-                }
-            </ul>
-        </div>
-        <!-- Rechts: Ressourcen & Repositories -->
-        <div>
-            <h3 class="text-lg font-semibold mb-3">Ressourcen</h3>
-            <ul class="space-y-2 mb-4">
-                <li>
-                    <span class="font-semibold">Repositories:</span>
-                    {
-                        repositories.map((entry, i) => (
-                            <span class="ml-2">
-                                <a
-                                    href={entry.data.url}
-                                    class="hover:text-green-400 transition"
-                                    target="_blank"
-                                    rel="noopener"
-                                >
-                                    {entry.data.name}
-                                </a>
-                                {i < repositories.length - 1 && (
-                                    <span class="mx-1">|</span>
-                                )}
-                            </span>
-                        ))
-                    }
-                </li>
-                {
-                    resources.map((entry) => (
-                        <li>
-                            <a
-                                href={entry.data.url}
-                                class="hover:text-green-400 transition"
-                            >
-                                {entry.data.name}
-                            </a>
-                        </li>
-                    ))
-                }
-            </ul>
-        </div>
     </div>
     <div
         class="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center text-sm bg-gray-950"
     >
-        <div class="mb-2 md:mb-0 text-gray-400">
-            {copyright}
-        </div>
+        <div class="mb-2 md:mb-0 text-gray-400">{copyright}</div>
         <div class="flex gap-4">
             {
                 legal.map((entry) => (

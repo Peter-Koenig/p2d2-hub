@@ -1,2 +1,0 @@
-- name: Partner
-  url: /partner
