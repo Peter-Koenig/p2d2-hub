@@ -1,3 +1,4 @@
+@import "ol/ol.css";
 @import "tailwindcss";
 @tailwind base;
 @tailwind components;
@@ -18,22 +19,15 @@
 }
 @font-face {
     font-family: "Inter";
-    src: url("/fonts/Inter-Regular.ttf") format("truetype");
-    font-weight: 400;
-    font-style: normal;
+    src: url("/fonts/Inter-VariableFont_opsz,wght.ttf") format("truetype");
+    font-weight: 100 900; /* Variable Font: alle Stärken */
     font-display: swap;
 }
 @font-face {
     font-family: "Inter";
-    src: url("/fonts/Inter-Medium.ttf") format("truetype");
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: "Inter";
-    src: url("/fonts/Inter-Bold.ttf") format("truetype");
-    font-weight: 700;
-    font-style: normal;
+    src: url("/fonts/Inter-Italic-VariableFont_opsz,wght.ttf")
+        format("truetype");
+    font-style: italic;
+    font-weight: 100 900;
     font-display: swap;
 }

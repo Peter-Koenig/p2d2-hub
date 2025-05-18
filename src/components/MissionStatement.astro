@@ -1,0 +1,10 @@
+---
+import { getEntryBySlug } from "astro:content";
+
+const mission = await getEntryBySlug("intern", "mission");
+---
+
+<section class="mission-statement">
+    <h2>Unsere Mission</h2>
+    <div innerHTML={mission?.body}></div>
+</section>
