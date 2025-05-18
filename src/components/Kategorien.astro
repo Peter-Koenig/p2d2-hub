@@ -3,7 +3,7 @@ import BlumenbeetIcon from "./icons/BlumenbeetIcon.astro";
 import FriedhofIcon from "./icons/FriedhofIcon.astro";
 import LaternenIcon from "./icons/LaternenIcon.astro";
 import Modal from "./Modal.astro";
-const { title, icon, order, description } = Astro.props;
+const { title, icon, order, description, id } = Astro.props;
 ---
 
 <div
@@ -34,7 +34,7 @@ const { title, icon, order, description } = Astro.props;
         </div>
 
         {icon === "friedhof" && (
-            <Modal id="friedhof-modal" open="Friedhöfe anzeigen">
+            <Modal id={id} open="Friedhöfe anzeigen">
                 <ul id="friedhof-list" class="mt-4 space-y-2">
                     <li data-e="353452.34" data-n="5645155.74" class="cursor-pointer hover:underline">Melaten-Friedhof</li>
                     <li data-e="355800"    data-n="5651000"    class="cursor-pointer hover:underline">Nordfriedhof</li>

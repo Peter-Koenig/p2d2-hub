@@ -1,0 +1,254 @@
+[
+  {
+    "name": "content.config.ts",
+    "content": "import { defineCollection, z } from \"astro:content\";\n\nconst socialmedia = defineCollection({\n  schema: z.object({\n    name: z.string(),\n    url: z.string().url(),\n    icon: z.string(),\n  }),\n});\nconst intern = defineCollection({\n  schema: z.object({\n    name: z.string(),\n    url: z.string(),\n  }),\n});\nconst resources = defineCollection({\n  schema: z.object({\n    name: z.string(),\n    url: z.string(),\n  }),\n});\nconst repositories = defineCollection({\n  schema: z.object({\n    name: z.string(),\n    url: z.string().url(),\n  }),\n});\nconst legal = defineCollection({\n  schema: z.object({\n    name: z.string(),\n    url: z.string(),\n  }),\n});\nconst copyright = defineCollection({\n  schema: z.object({\n    text: z.string(),\n  }),\n});\n\nconst werte = defineCollection({\n  schema: z.object({\n    title: z.string(),\n    icon: z.string(),\n    order: z.number(),\n  }),\n});\n\nconst kategorien = defineCollection({\n  schema: z.object({\n    title: z.string(),\n    icon: z.string(),\n    order: z.number(),\n    description: z.string(),\n  }),\n});\n\nexport const collections = {\n  socialmedia,\n  intern,\n  resources,\n  repositories,\n  legal,\n  copyright,\n  kategorien,\n  werte,\n};\n"
+  },
+  {
+    "name": "components/Mitmachmöglichkeiten.astro",
+    "content": ""
+  },
+  {
+    "name": "components/ThemenbereicheOverview.astro",
+    "content": "---\n// src/components/ThemenbereicheOverview.astro\n---\n\n<section class=\"themenbereiche-overview py-8 px-4 bg-gray-50 text-center\">\n    <h2 class=\"text-xl font-semibold mb-4\">Entdecke unsere Themenbereiche</h2>\n    <p class=\"mb-4\">\n        Finde ein Projekt, das zu deinen Interessen passt und trage zur\n        Digitalisierung des öffentlichen Raumes bei.\n    </p>\n    <div class=\"grid grid-cols-1 md:grid-cols-3 gap-6\">\n        <div class=\"themenbereich-card p-4 bg-white rounded shadow\">\n            <h3 class=\"font-bold mb-2\">Friedhöfe digitalisieren</h3>\n            <p>\n                Hilf mit, Friedhöfe zu digitalisieren und schaffe einen\n                virtuellen Ort des Gedenkens. Erfasse Grabsteine, historische\n                Informationen und Geschichten.\n            </p>\n        </div>\n        <div class=\"themenbereich-card p-4 bg-white rounded shadow\">\n            <h3 class=\"font-bold mb-2\">Stadtbäume dokumentieren</h3>\n            <p>\n                Übernimm Verantwortung für Stadtbäume, dokumentiere ihren\n                Zustand und hilf bei der Pflege. Mache die grüne Infrastruktur\n                sichtbar.\n            </p>\n        </div>\n        <div class=\"themenbereich-card p-4 bg-white rounded shadow\">\n            <h3 class=\"font-bold mb-2\">Gemeinschaftsgärten kartieren</h3>\n            <p>\n                Kartiere Gemeinschaftsgärten und Beet-Patenschaften. Teile\n                Wissen über Pflanzen und schaffe ein Netzwerk urbaner Gärtner.\n            </p>\n        </div>\n    </div>\n</section>\n"
+  },
+  {
+    "name": "components/OpenLayersMap.astro",
+    "content": "---\nimport MapCanvas from \"./MapCanvas.astro\";\n---\n\n<div class=\"w-full\">\n    <h2 class=\"text-2xl md:text-3xl font-bold text-grey-900 mb-4 text-center\">\n        Entdecke die Daten auf der Karte\n    </h2>\n    <p class=\"text-lg text-grey-900 mb-8 text-center\">\n        Interaktive Karte mit Verwaltungsdaten und OpenStreetMap-Integration\n    </p>\n    <div\n        class=\"w-full h-[30rem] text-lg text-grey-900 mb-8 text-center relative\"\n    >\n        <main class=\"w-full h-full\">\n            <MapCanvas />\n        </main>\n    </div>\n</div>\n"
+  },
+  {
+    "name": "components/HeroSection.astro",
+    "content": "---\nimport { Content as HeroContent } from \"../content/hero.md\";\n---\n\n<style>\n    :global(.hero-section h1) {\n        font-family: \"Poppins\", sans-serif;\n        font-weight: 800;\n        font-size: 3.75rem;\n    }\n</style>\n\n<section\n    class=\"relative w-full h-[40vh] flex items-center justify-center overflow-hidden\"\n>\n    <video\n        class=\"absolute inset-0 w-full h-full object-cover z-0\"\n        autoplay\n        loop\n        muted\n        playsinline\n        poster=\"/images/hero-fallback.jpg\"\n    >\n        <source src=\"/videos/hero-bg.webm\" type=\"video/webm\" />\n        <source src=\"/videos/hero-bg.mp4\" type=\"video/mp4\" />\n        Ihr Browser unterstützt das Video-Tag nicht.\n    </video>\n    <div\n        class=\"leading-none hero-section relative z-10 flex flex-col items-center justify-center text-center text-white bg-black/40 p-8 rounded-lg max-w-3xl mx-auto\"\n    >\n        <HeroContent />\n    </div>\n</section>\n"
+  },
+  {
+    "name": "components/Werte.astro",
+    "content": "---\nimport TransparenzIcon from \"./icons/TransparenzIcon.astro\";\nimport GemeinschaftIcon from \"./icons/GemeinschaftIcon.astro\";\nimport OffeneDatenIcon from \"./icons/OffeneDatenIcon.astro\";\nconst { title, icon, description } = Astro.props;\n---\n\n<div\n    class=\"relative bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group\"\n    style=\"max-width: 100%;\"\n>\n    <!-- Permanent Glow-Overlay -->\n    <div class=\"absolute -inset-2 z-0 pointer-events-none\">\n        <div\n            class=\"w-full h-full mx-auto opacity-30 blur-lg filter bg-gradient-to-r from-primary-600 to-primary-400\"\n        >\n        </div>\n    </div>\n\n    <!-- Grüner Streifen oben -->\n    <div class=\"absolute top-0 left-0 w-full h-1.5 bg-[#0FF078] z-10\"></div>\n\n    <!-- Icon und Content -->\n    <div class=\"relative z-10 p-6 pt-6 flex flex-col gap-3\">\n        <div>\n            {icon === \"transparenz\" && <TransparenzIcon />}\n            {icon === \"gemeinschaft\" && <GemeinschaftIcon />}\n            {icon === \"offene-daten\" && <OffeneDatenIcon />}\n        </div>\n        <h3 class=\"font-poppins font-bold text-xl mt-2\">{title}</h3>\n        <div class=\"font-inter text-base text-gray-700 leading-tight\">\n            {description}\n        </div>\n    </div>\n\n    <!-- Optional: zusätzlicher Glow auf Hover -->\n    <div\n        class=\"absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 group-hover:shadow-[0_0_32px_4px_#D6FFEA] z-10\"\n    >\n    </div>\n</div>\n"
+  },
+  {
+    "name": "components/ThemenbereichCard.astro",
+    "content": ""
+  },
+  {
+    "name": "components/TailwindTest.astro",
+    "content": "---\nimport '../styles/global.css';\n---\n\n<div class=\"p-8 bg-gradient-to-r from-blue-500 to-green-400 rounded-lg shadow-lg text-white text-center\">\n  <h2 class=\"text-3xl font-bold mb-4\">Tailwind Test-Komponente</h2>\n  <p class=\"text-lg mb-2\">Wenn du diese Box farbig und abgerundet siehst, funktioniert Tailwind!</p>\n  <button class=\"mt-4 px-6 py-2 bg-white text-blue-600 font-semibold rounded hover:bg-blue-100 transition\">\n    Test-Button\n  </button>\n</div>\n"
+  },
+  {
+    "name": "components/Header.astro",
+    "content": "---\n// Passe die Navigationseinträge und die aktuelle Seite hier an:\nconst nav = [\n    { name: \"Start\", href: \"/\", key: \"home\" },\n    { name: \"Themenbereiche\", href: \"/themenbereiche\", key: \"themen\" },\n    { name: \"Community\", href: \"/community\", key: \"community\" },\n    { name: \"Mitmachen\", href: \"/mitmachen\", key: \"mitmachen\" },\n    { name: \"Kontakt\", href: \"/kontakt\", key: \"kontakt\" },\n];\n\n// Hole die aktuelle Seite über Astro.globale Variable (Astro.url.pathname verfügbar ab Astro v4)\nconst currentPath = Astro.url.pathname;\n---\n\n<header class=\"w-full bg-white shadow-sm sticky top-0 z-50\">\n    <nav class=\"max-w-7xl mx-auto flex items-center justify-between px-6 py-4\">\n        <div class=\"flex items-center\">\n            <img\n                src=\"/images/logo.svg\"\n                alt=\"Public-Public Data-DNA Logo\"\n                class=\"h-12 w-12\"\n            />\n            <a\n                href=\"/\"\n                class=\"font-poppins text-2xl font-bold text-green-700 tracking-tight select-none\"\n            >\n                P<sub>2</sub>D<sub>2</sub>\n            </a>\n            <ul class=\"flex ml-12 gap-6 text-lg font-medium font-poppins\">\n                {\n                    nav.map((item) => {\n                        // Aktive Seite erkennen (genaue Übereinstimmung oder / bei root)\n                        const isActive =\n                            item.href === \"/\"\n                                ? currentPath === \"/\"\n                                : currentPath.startsWith(item.href);\n                        return (\n                            <li>\n                                <a\n                                    href={item.href}\n                                    class={`relative transition-colors duration-200\n                ${\n                    isActive\n                        ? \"text-green-700 after:content-[''] after:absolute after:left-0 after:-bottom-1 after:w-full after:h-0.5 after:bg-green-500\"\n                        : \"text-gray-700 hover:text-gray-900 after:content-[''] after:absolute after:left-0 after:-bottom-1 after:w-full after:h-0.5 after:bg-gray-400 after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-200\"\n                }\n                px-1 pb-1\n              `}\n                                    aria-current={isActive ? \"page\" : undefined}\n                                    style=\"display: inline-block; position: relative;\"\n                                >\n                                    {item.name}\n                                </a>\n                            </li>\n                        );\n                    })\n                }\n            </ul>\n        </div>\n    </nav>\n</header>\n"
+  },
+  {
+    "name": "components/CommunityBenefits.astro",
+    "content": ""
+  },
+  {
+    "name": "components/Modal.astro",
+    "content": "---\nconst { id, open, children } = Astro.props;\n---\n\n<button\n    onclick={`document.getElementById('${id}').showModal()`}\n    class=\"w-full text-left px-4 py-2 rounded bg-primary-100 hover:bg-primary-200 mt-4 font-semibold\"\n>\n    <slot name=\"button\">{open}</slot>\n</button>\n<dialog\n    id={id}\n    class=\"p-0 border-none rounded-xl shadow-lg\"\n    style=\"\n        padding: 0;\n        border: none;\n        border-radius: 1rem;\n        box-shadow: 0 8px 32px rgba(0,0,0,0.2);\n        min-width: 320px;\n        max-width: 90vw;\n        width: 400px;\n        text-align: left;\n    \"\n>\n    <form\n        method=\"dialog\"\n        style=\"margin:0;padding:.5rem 1rem 0 0;text-align:right;\"\n    >\n        <button\n            class=\"text-2xl\"\n            aria-label=\"Schließen\"\n            style=\"background:none;border:none;cursor:pointer;\">×</button\n        >\n    </form>\n    <div style=\"padding: 1rem 1.5rem 1.5rem 1.5rem;\">\n        {children}\n    </div>\n</dialog>\n"
+  },
+  {
+    "name": "components/TestimonialCard.astro",
+    "content": ""
+  },
+  {
+    "name": "components/Kategorien.astro",
+    "content": "---\nimport BlumenbeetIcon from \"./icons/BlumenbeetIcon.astro\";\nimport FriedhofIcon from \"./icons/FriedhofIcon.astro\";\nimport LaternenIcon from \"./icons/LaternenIcon.astro\";\nimport Modal from \"./Modal.astro\";\nconst { title, icon, order, description, id } = Astro.props;\n---\n\n<div\n    class=\"relative bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group\"\n    style=\"max-width: 100%;\"\n>\n    <!-- Permanent Glow-Overlay -->\n    <div class=\"absolute -inset-2 z-0 pointer-events-none\">\n        <div\n            class=\"w-full h-full mx-auto opacity-30 blur-lg filter bg-gradient-to-r from-primary-600 to-primary-400\"\n        >\n        </div>\n    </div>\n\n    <!-- Grüner Streifen oben -->\n    <div class=\"absolute top-0 left-0 w-full h-1.5 bg-[#0FF078] z-10\"></div>\n\n    <!-- Icon und Content -->\n    <div class=\"relative z-10 p-6 pt-6 flex flex-col gap-3\">\n        <div>\n            {icon === \"blumenbeet\" && <BlumenbeetIcon />}\n            {icon === \"friedhof\" && <FriedhofIcon />}\n            {icon === \"strassenlaternen\" && <LaternenIcon />}\n        </div>\n        <h3 class=\"font-poppins font-bold text-xl mt-2\">{title}</h3>\n        <div class=\"font-inter text-base text-gray-700 leading-tight\">\n            {description}\n        </div>\n\n        {icon === \"friedhof\" && (\n            <Modal id={id} open=\"Friedhöfe anzeigen\">\n                <ul id=\"friedhof-list\" class=\"mt-4 space-y-2\">\n                    <li data-e=\"353452.34\" data-n=\"5645155.74\" class=\"cursor-pointer hover:underline\">Melaten-Friedhof</li>\n                    <li data-e=\"355800\"    data-n=\"5651000\"    class=\"cursor-pointer hover:underline\">Nordfriedhof</li>\n                    <li data-e=\"355000\"    data-n=\"5639000\"    class=\"cursor-pointer hover:underline\">Südfriedhof</li>\n                    <li data-e=\"351700\"    data-n=\"5648000\"    class=\"cursor-pointer hover:underline\">Westfriedhof</li>\n                    <li data-e=\"362800\"    data-n=\"5659000\"    class=\"cursor-pointer hover:underline\">Rheinkassel</li>\n                    <li data-e=\"357600\"    data-n=\"5643000\"    class=\"cursor-pointer hover:underline\">Deutzer Friedhof</li>\n                </ul>\n                <script type=\"module\" is:inline>\n                  // Die OpenLayers-Karte muss als window.map global verfügbar sein!\n                  document.querySelectorAll('#friedhof-list li').forEach(li => {\n                    li.addEventListener('click', () => {\n                      const e = parseFloat(li.dataset.e);\n                      const n = parseFloat(li.dataset.n);\n                      window.map.getView().animate({\n                        center: [e, n],\n                        zoom: 16,\n                        duration: 800\n                      });\n                      document.getElementById('friedhof-modal').close();\n                    });\n                  });\n                </script>\n            </Modal>\n        )}\n    </div>\n\n    <!-- Optional: zusätzlicher Glow auf Hover -->\n    <div\n        class=\"absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 group-hover:shadow-[0_0_32px_4px_#D6FFEA] z-10\"\n    >\n    </div>\n</div>\n"
+  },
+  {
+    "name": "components/KategorienGrid_v1.astro",
+    "content": "---\nimport { getCollection } from \"astro:content\";\nimport FriefhoIcon from \"./icons/FriedhofIcon.astro\";\nimport BlumenbeetIcon from \"./icons/BlumenbeetIcon.astro\";\nimport  from \"./icons/LaternenIcon.astro\";\n\n// Kategorien aus Markdown laden und sortieren\nconst kategorien = await getCollection(\"kategorien\");\nconst sorted = kategorien.sort(\n    (a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),\n);\n---\n\n<div class=\"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12\">\n    <div class=\"grid grid-cols-1 md:grid-cols-3 gap-8 text-center font-sans\">\n        {\n            await Promise.all(\n                sorted.map(async (entry) => {\n                    const { title, icon } = entry.data;\n                    const { Content } = await entry.render();\n                    return (\n                        <div\n                            class=\"relative rounded-xl border border-gray-200 overflow-hidden transition-all duration-300 hover:-translate-y-2 group cursor-pointer\"\n                            tabIndex=\"0\"\n                            role=\"button\"\n                            aria-label={title}\n                        >\n                            {/* Glow-Overlay */}\n                            <div class=\"absolute -inset-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-400 opacity-40 blur-lg pointer-events-none z-0\" />\n                            <div class=\"absolute top-0 left-0 w-full h-1.5 bg-[#0FF078] z-10\" />\n                            <div class=\"relative z-10 bg-white rounded-xl p-6 pt-6 flex flex-col gap-3 items-center\">\n                                <div class=\"mb-2\">\n                                    {icon === \"friedhof\" && <FriedhofIcon />}\n                                    {icon === \"blumenbeet\" && (\n                                        <BlumenbeetIcon />\n                                    )}\n                                    {icon === \"laternen\" && <LaternenIcon />}\n                                </div>\n                                <h3 class=\"font-poppins font-bold text-xl mt-2\">\n                                    {title}\n                                </h3>\n                                <div class=\"font-inter text-base text-gray-700 leading-tight\">\n                                    <Content />\n                                </div>\n                            </div>\n                        </div>\n                    );\n                }),\n            )\n        }\n    </div>\n</div>\n"
+  },
+  {
+    "name": "components/TestimonialsSection.astro",
+    "content": ""
+  },
+  {
+    "name": "components/MissionStatement.astro",
+    "content": "---\nimport { getEntryBySlug } from \"astro:content\";\n\nconst mission = await getEntryBySlug(\"intern\", \"mission\");\n---\n\n<section class=\"mission-statement\">\n    <h2>Unsere Mission</h2>\n    <div innerHTML={mission?.body}></div>\n</section>\n"
+  },
+  {
+    "name": "components/MapCanvas.astro",
+    "content": "---\nimport { GeoDB } from \"../services/db\";\n---\n\n<div id=\"map\" class=\"w-full h-120\" relative></div>\n\n<script>\n    import ZoomSlider from \"ol/control/ZoomSlider\";\n    import ScaleLine from \"ol/control/ScaleLine\";\n\n    import Map from \"ol/Map\";\n    import View from \"ol/View\";\n    import TileLayer from \"ol/layer/Tile\";\n    import OSM from \"ol/source/OSM\";\n    import VectorLayer from \"ol/layer/Vector\";\n    import VectorSource from \"ol/source/Vector\";\n    import GeoJSON from \"ol/format/GeoJSON\";\n    import { fromLonLat } from \"ol/proj\";\n    import proj4 from \"proj4\";\n    import { register } from \"ol/proj/proj4\";\n    import ImageLayer from \"ol/layer/Image\";\n    import ImageWMS from \"ol/source/ImageWMS\";\n    import Style from \"ol/style/Style\";\n    import Fill from \"ol/style/Fill\";\n    import Stroke from \"ol/style/Stroke\";\n    import FullScreen from \"ol/control/FullScreen\";\n    import { defaults as defaultControls } from \"ol/control/defaults\";\n\n    // Definiere EPSG:25832\n    proj4.defs(\n        \"EPSG:25832\",\n        \"+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs\",\n    );\n    register(proj4);\n\n    // Kölner Koordinaten in EPSG:25832\n    const koelnCoords = [353400, 5643700];\n\n    // Initialisiere die Karte\n\n    window.map = new Map({\n        target: \"map\",\n        layers: [\n            new TileLayer({\n                source: new OSM(),\n            }),\n        ],\n        view: new View({\n            projection: \"EPSG:25832\",\n            center: koelnCoords,\n            zoom: 11,\n        }),\n        controls: defaultControls().extend([new FullScreen()]),\n    });\n\n    // WMS-Layer \"cfried\" definieren\n    const wmsLayer = new ImageLayer({\n        source: new ImageWMS({\n            // url: \"http://192.168.122.112:8080/geoserver/ows?service=WMS&version=1.1.1&request=GetCapabilities\",\n            url: \"https://ows.data-dna.eu?service=WMS&version=1.1.1&request=GetCapabilities\",\n            params: {\n                LAYERS: \"cfried\",\n                TILED: false,\n                TRANSPARENT: true,\n            },\n            serverType: \"geoserver\",\n        }),\n        opacity: 0.7, // Optional: Transparenz\n    });\n\n    // Layer zur Karte hinzufügen\n    map.addLayer(wmsLayer);\n\n    // Lade Daten aus der Datenbank\n    async function loadFeatures() {\n        try {\n            const response = await fetch(\"/api/getFeatures\");\n            const features = await response.json();\n\n            const vectorSource = new VectorSource({\n                features: new GeoJSON().readFeatures(features, {\n                    dataProjection: \"EPSG:4326\", // Annahme: Daten sind in WGS84\n                    featureProjection: \"EPSG:25832\",\n                }),\n            });\n\n            const vectorLayer = new VectorLayer({\n                source: vectorSource,\n            });\n\n            map.addLayer(vectorLayer);\n\n            // Zoom auf die Extent der Features\n            map.getView().fit(vectorSource.getExtent(), {\n                padding: [50, 50, 50, 50],\n                maxZoom: 18,\n            });\n        } catch (error) {\n            console.error(\"Fehler beim Laden der Features:\", error);\n        }\n    }\n</script>\n"
+  },
+  {
+    "name": "components/Footer.astro",
+    "content": "---\nimport { getCollection, getEntryBySlug } from \"astro:content\";\n\nconst socialmedia = await getCollection(\"socialmedia\");\nconst intern = await getCollection(\"intern\");\nconst resources = await getCollection(\"resources\");\nconst repositories = await getCollection(\"repositories\");\nconst legal = await getCollection(\"legal\");\nconst copyrightEntry = await getCollection(\"copyright\");\nconst copyright = copyrightEntry[0]?.data.text ?? \"\";\n---\n\n<footer class=\"bg-green-950 text-gray-100\">\n    <div\n        class=\"max-w-7xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-8 border-b border-gray-800 items-start\"\n    >\n        <!-- Links: Logo, Abstract -->\n        <div>\n            <div class=\"flex items-center gap-3 mb-3\">\n                <img\n                    src=\"/images/logo.svg\"\n                    alt=\"Public-Public Data-DNA Logo\"\n                    class=\"h-15 w-15\"\n                />\n                <span class=\"font-poppins text-xl font-bold\"\n                    >Public-Public Data-DNA</span\n                >\n            </div>\n            <p class=\"mb-4 text-gray-300\">\n                Das Geheimnis der DNA: Stabilität und Dynamik durch Transparenz\n                und das richtige Maß an gegenseitiger Kontrolle von\n                Öffentlichkeit und öffentlicher Verwaltung: P2D2 schafft die\n                Infrastruktur.\n            </p>\n        </div>\n        <!-- Mitte: Interne Links -->\n        <div class=\"mt-4 md:mt-4 md:ml-24\">\n            <h3 class=\"font-poppins text-xl font-bold mb-4\">Über uns</h3>\n            <ul class=\"space-y-2\">\n                {\n                    intern.map((entry) => (\n                        <li>\n                            <a\n                                href={entry.data.url}\n                                class=\"hover:text-green-400 transition\"\n                            >\n                                {entry.data.name}\n                            </a>\n                        </li>\n                    ))\n                }\n            </ul>\n        </div>\n        <!-- Rechts: Ressourcen & Social Media -->\n        <div class=\"mt-4 md:mt-4 flex flex-col h-full\">\n            <div>\n                <h3 class=\"font-poppins text-xl font-bold mb-4\">Ressourcen</h3>\n                <ul class=\"space-y-2 mb-4\">\n                    <li>\n                        <span class=\"font-semibold\">Repositories:</span>\n                        {\n                            repositories.map((entry, i) => (\n                                <span class=\"ml-2\">\n                                    <a\n                                        href={entry.data.url}\n                                        class=\"hover:text-green-400 transition\"\n                                        target=\"_blank\"\n                                        rel=\"noopener\"\n                                    >\n                                        {entry.data.name}\n                                    </a>\n                                    {i < repositories.length - 1 && (\n                                        <span class=\"mx-1\">|</span>\n                                    )}\n                                </span>\n                            ))\n                        }\n                    </li>\n                    {\n                        resources.map((entry) => (\n                            <li>\n                                <a\n                                    href={entry.data.url}\n                                    class=\"hover:text-green-400 transition\"\n                                >\n                                    {entry.data.name}\n                                </a>\n                            </li>\n                        ))\n                    }\n                </ul>\n            </div>\n            <div class=\"flex gap-3 mt-4\">\n                {\n                    socialmedia.map((entry) => (\n                        <a\n                            href={entry.data.url}\n                            class=\"hover:text-green-400 transition\"\n                            target=\"_blank\"\n                            rel=\"noopener\"\n                        >\n                            <span class=\"sr-only\">{entry.data.name}</span>\n                            <img\n                                src={`/images/icons/${entry.data.icon}.svg`}\n                                alt={entry.data.name}\n                                class=\"h-6 w-6\"\n                            />\n                        </a>\n                    ))\n                }\n            </div>\n        </div>\n    </div>\n    <div\n        class=\"max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center text-sm bg-gray-950\"\n    >\n        <div class=\"mb-2 md:mb-0 text-gray-400\">{copyright}</div>\n        <div class=\"flex gap-4\">\n            {\n                legal.map((entry) => (\n                    <a\n                        href={entry.data.url}\n                        class=\"hover:text-green-400 transition\"\n                    >\n                        {entry.data.name}\n                    </a>\n                ))\n            }\n        </div>\n    </div>\n</footer>\n"
+  },
+  {
+    "name": "components/CallToAction.astro",
+    "content": ""
+  },
+  {
+    "name": "components/KategorienGrid.astro",
+    "content": "---\nimport { getCollection } from \"astro:content\";\nimport Kategorien from \"./Kategorien.astro\";\n\nconst kategorien = await getCollection(\"kategorien\");\nconsole.log(\"Kategorien aus Collection:\", kategorien);\nconst sorted = kategorien.sort(\n    (a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),\n);\n---\n\n<div\n    class=\"grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-5xl mx-auto py-12\"\n>\n    {\n        sorted\n            .slice(0, 12)\n            .map((entry) => (\n                <Kategorien\n                    title={entry.data.title}\n                    icon={entry.data.icon}\n                    description={entry.data.description}\n                    id={`modal-${entry.slug}`}\n                />\n            ))\n    }\n</div>\n"
+  },
+  {
+    "name": "components/WerteGrid.astro",
+    "content": "---\nimport { getCollection } from \"astro:content\";\nimport Werte from \"./Werte.astro\";\n\nconst werte = await getCollection(\"werte\");\nconst sorted = werte.sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0));\n---\n\n<div\n    class=\"grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-5xl mx-auto py-12\"\n>\n    {\n        sorted\n            .slice(0, 12)\n            .map((entry) => (\n                <Werte\n                    title={entry.data.title}\n                    icon={entry.data.icon}\n                    description={entry.body}\n                />\n            ))\n    }\n</div>\n"
+  },
+  {
+    "name": "components/CommunitySection.astro",
+    "content": "---\n// src/components/CommunitySection.astro\n---\n\n<section class=\"community-section py-8 px-4 bg-white text-center\">\n    <h2 class=\"text-xl font-semibold mb-4\">Gemeinsam sind wir stark</h2>\n    <p class=\"mb-2\">\n        Unsere vielfältige Community aus Mappern, Schülern und\n        Glaubensgemeinschaften arbeitet gemeinsam an einem Ziel.\n    </p>\n    <p class=\"mb-2\">\n        Unsere vielfältige Gemeinschaft vereint Menschen mit unterschiedlichen\n        Hintergründen und Fähigkeiten.\n    </p>\n    <p>\n        Alle gesammelten Daten sind frei verfügbar und können von jedem genutzt,\n        geteilt und verbessert werden.\n    </p>\n</section>\n"
+  },
+  {
+    "name": "components/icons/FriedhofIcon.astro",
+    "content": "<svg\n    xmlns=\"http://www.w3.org/2000/svg\"\n    fill=\"none\"\n    viewBox=\"0 0 24 24\"\n    stroke=\"#B4F7D3\"\n    class=\"w-8 h-8 bg-[#D6FFEA] rounded p-1\"\n>\n    <path\n        stroke-linecap=\"round\"\n        stroke-linejoin=\"round\"\n        stroke-width=\"2\"\n        d=\"M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z\"></path>\n</svg>\n"
+  },
+  {
+    "name": "components/icons/OffeneDatenIcon.astro",
+    "content": "<svg\n    xmlns=\"http://www.w3.org/2000/svg\"\n    fill=\"none\"\n    viewBox=\"0 0 24 24\"\n    stroke=\"#B4F7D3\"\n    class=\"w-8 h-8 bg-[#D6FFEA] rounded p-1\"\n>\n    <path\n        stroke-linecap=\"round\"\n        stroke-linejoin=\"round\"\n        stroke-width=\"2\"\n        d=\"M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"\n    ></path>\n</svg>\n"
+  },
+  {
+    "name": "components/icons/TransparenzIcon.astro",
+    "content": "<svg\n    xmlns=\"http://www.w3.org/2000/svg\"\n    fill=\"none\"\n    viewBox=\"0 0 24 24\"\n    stroke=\"#B4F7D3\"\n    class=\"w-8 h-8 bg-[#D6FFEA] rounded p-1\"\n>\n    <path\n        stroke-linecap=\"round\"\n        stroke-linejoin=\"round\"\n        stroke-width=\"2\"\n        d=\"M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z\"></path>\n</svg>\n"
+  },
+  {
+    "name": "components/icons/GemeinschaftIcon.astro",
+    "content": "<svg\n    xmlns=\"http://www.w3.org/2000/svg\"\n    fill=\"none\"\n    viewBox=\"0 0 24 24\"\n    stroke=\"#B4F7D3\"\n    class=\"w-8 h-8 bg-[#D6FFEA] rounded p-1\"\n>\n    <path\n        stroke-linecap=\"round\"\n        stroke-linejoin=\"round\"\n        stroke-width=\"2\"\n        d=\"M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z\"\n    ></path>\n</svg>\n"
+  },
+  {
+    "name": "components/icons/LaternenIcon.astro",
+    "content": "<svg\n    xmlns=\"http://www.w3.org/2000/svg\"\n    fill=\"none\"\n    viewBox=\"0 0 24 24\"\n    stroke=\"#B4F7D3\"\n    class=\"w-8 h-8 bg-[#D6FFEA] rounded p-1\"\n>\n    <path\n        stroke-linecap=\"round\"\n        stroke-linejoin=\"round\"\n        stroke-width=\"2\"\n        d=\"M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z\"\n    ></path>\n</svg>\n"
+  },
+  {
+    "name": "components/icons/BlumenbeetIcon.astro",
+    "content": "<svg\n    xmlns=\"http://www.w3.org/2000/svg\"\n    fill=\"none\"\n    viewBox=\"0 0 24 24\"\n    stroke=\"#B4F7D3\"\n    class=\"w-8 h-8 bg-[#D6FFEA] rounded p-1\"\n>\n    <path\n        stroke-linecap=\"round\"\n        stroke-linejoin=\"round\"\n        stroke-width=\"2\"\n        d=\"M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"\n    ></path>\n</svg>\n"
+  },
+  {
+    "name": "content/hero.md",
+    "content": "# Erfassen wir den öffentlichen Datenraum</br> <span style=\"color:#41C7B4;\"> der für uns Freiheit und Souveränität bedeutet</span>\n"
+  },
+  {
+    "name": "content/mission.md",
+    "content": "# Transparenz\n\nWir machen Verwaltungsdaten transparent und für alle zugänglich, um eine offene Gesellschaft zu fördern und Vertrauen zu schaffen.\n"
+  },
+  {
+    "name": "content/mitmachmoeglichkeiten.md",
+    "content": ""
+  },
+  {
+    "name": "content/intern/partner.md",
+    "content": "---\nname: Partner\nurl: /partner\n---\n"
+  },
+  {
+    "name": "content/intern/ueberuns.md",
+    "content": "---\nname: Über uns\nurl: /ueber-uns\n---\n"
+  },
+  {
+    "name": "content/intern/mission.md",
+    "content": "---\nname: Mission\nurl: /mission\n---\n"
+  },
+  {
+    "name": "content/intern/team.md",
+    "content": "---\nname: Team\nurl: /team\n---\n"
+  },
+  {
+    "name": "content/copyright/copyright.md",
+    "content": "---\ntext: \"Public-Public Data-DNA © 2025\"\n---\n"
+  },
+  {
+    "name": "content/socialmedia/peertube.md",
+    "content": "---\nname: PeerTube\nurl: https://peertube.example.org/accounts/publicdata\nicon: peertube\n---\n"
+  },
+  {
+    "name": "content/socialmedia/mastodon.md",
+    "content": "---\nname: Mastodon\nurl: https://mastodon.social/@publicdata\nicon: mastodon\n---\n"
+  },
+  {
+    "name": "content/socialmedia/friendica.md",
+    "content": "---\nname: Friendica\nurl: https://friendica.example.org/profile/publicdata\nicon: friendica\n---\n"
+  },
+  {
+    "name": "content/socialmedia/pixelfed.md",
+    "content": "---\nname: Pixelfed\nurl: https://pixelfed.example.org/publicdata\nicon: pixelfed\n---\n"
+  },
+  {
+    "name": "content/werte/offene-daten.md",
+    "content": "---\ntitle: Offene Daten\nicon: offene-daten\norder: 1\n---\nAlle gesammelten Daten sind frei verfügbar und können von jeder Person genutzt, geteilt und verbessert werden.\n"
+  },
+  {
+    "name": "content/werte/transparenz.md",
+    "content": "---\ntitle: Transparenz\nicon: transparenz\norder: 3\n---\nWir fördern Offenheit und Nachvollziehbarkeit in der Verwaltung, damit alle Bürger:innen Zugang zu wichtigen Informationen haben.\n"
+  },
+  {
+    "name": "content/werte/gemeinschaft.md",
+    "content": "---\ntitle: Gemeinschaft\nicon: gemeinschaft\norder: 2\n---\nGemeinsam schaffen wir mehr: Unsere Plattform lebt vom Engagement und Wissen vieler verschiedener Menschen.\n"
+  },
+  {
+    "name": "content/kategorien/baume.md",
+    "content": "---\ntitle: Bäume\nicon: blumenbeet\norder: 2\ndescription: Genau zu wissen, von welchem Baum man spricht, wenn man der Stadt etwas mitteilen möchte ..\n---\n"
+  },
+  {
+    "name": "content/kategorien/friedhoefe.md",
+    "content": "---\ntitle: Friedhöfe\nicon: friedhof\norder: 1\ndescription: Digitalisierung der Friedhöfe und Gräber\n---\n"
+  },
+  {
+    "name": "content/kategorien/blumenbeete.md",
+    "content": "---\ntitle: Blumenbeete\nicon: blumenbeet\norder: 2\ndescription: Abgleich der Daten zu Blumenbeeten\n---\n"
+  },
+  {
+    "name": "content/kategorien/strassenlaternen.md",
+    "content": "---\ntitle: Straßenlaternen\nicon: blumenbeet\norder: 3\ndescription: Wo steht welche Straßenlaterne?\n---\n"
+  },
+  {
+    "name": "content/repositories/gitlab.md",
+    "content": "---\nname: GitLab\nurl: https://gitlab.com/publicdata\n---\n"
+  },
+  {
+    "name": "content/repositories/opencode.md",
+    "content": "---\nname: openCode.de\nurl: https://opencode.de/publicdata\n---\n"
+  },
+  {
+    "name": "content/testimonials/mapper.md",
+    "content": "# Mapper\nZitat und Beschreibung...\n"
+  },
+  {
+    "name": "content/testimonials/osm-mapper.md",
+    "content": "# OSM Mapper\nZitat und Beschreibung...\n"
+  },
+  {
+    "name": "content/testimonials/lehrer.md",
+    "content": "# Lehrer\nZitat und Beschreibung...\n"
+  },
+  {
+    "name": "content/testimonials/gemeinde.md",
+    "content": "# Gemeinde\nZitat und Beschreibung...\n"
+  },
+  {
+    "name": "content/legal/impressum.md",
+    "content": "---\nname: Impressum\nurl: /impressum\n---\n"
+  },
+  {
+    "name": "content/legal/datenschutz.md",
+    "content": "---\nname: Datenschutz\nurl: /datenschutz\n---\n"
+  },
+  {
+    "name": "content/legal/lizenzen.md",
+    "content": "---\nname: Lizenzen\nurl: /lizenzen\n---\n"
+  },
+  {
+    "name": "content/themenbereiche/stadtbaeume.md",
+    "content": "# Stadtbäume\nBeschreibung der Stadtbäume...\n"
+  },
+  {
+    "name": "content/themenbereiche/friedhoefe.md",
+    "content": "# Friedhöfe\nBeschreibung der Friedhöfe...\n"
+  },
+  {
+    "name": "content/themenbereiche/gemeinschaftsgaerten.md",
+    "content": "# Gemeinschaftsgärten\nBeschreibung der Gemeinschaftsgärten...\n"
+  },
+  {
+    "name": "content/resources/api.md",
+    "content": "---\nname: API-Dokumentation\nurl: /api\n---\n"
+  },
+  {
+    "name": "layouts/BaseLayout.astro",
+    "content": "---\nimport Header from \"../components/Header.astro\";\nimport Footer from \"../components/Footer.astro\";\nimport \"../styles/global.css\";\n---\n\n<html lang=\"de\">\n    <head>\n        <meta charset=\"UTF-8\" />\n        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n        <title>P2D2 - Public-Public Data-DNA</title>\n    </head>\n    <body class=\"bg-white text-gray-900\">\n        <Header />\n        <main>\n            <slot />\n        </main>\n        <Footer />\n    </body>\n</html>\n"
+  },
+  {
+    "name": "styles/global.css",
+    "content": "@import \"ol/ol.css\";\n@import \"tailwindcss\";\n@tailwind base;\n@tailwind components;\n@tailwind utilities;\n@font-face {\n    font-family: \"Poppins\";\n    src: url(\"/fonts/Poppins-Regular.ttf\") format(\"truetype\");\n    font-weight: 400;\n    font-style: normal;\n    font-display: swap;\n}\n@font-face {\n    font-family: \"Poppins\";\n    src: url(\"/fonts/Poppins-Bold.ttf\") format(\"truetype\");\n    font-weight: 700;\n    font-style: normal;\n    font-display: swap;\n}\n@font-face {\n    font-family: \"Inter\";\n    src: url(\"/fonts/Inter-VariableFont_opsz,wght.ttf\") format(\"truetype\");\n    font-weight: 100 900; /* Variable Font: alle Stärken */\n    font-display: swap;\n}\n@font-face {\n    font-family: \"Inter\";\n    src: url(\"/fonts/Inter-Italic-VariableFont_opsz,wght.ttf\")\n        format(\"truetype\");\n    font-style: italic;\n    font-weight: 100 900;\n    font-display: swap;\n}\ndialog[open] {\n    position: fixed;\n    top: 50% !important;\n    left: 50% !important;\n    transform: translate(-50%, -50%) !important;\n    margin: 0 !important;\n    padding: 0 !important;\n    z-index: 50;\n}\n"
+  },
+  {
+    "name": "pages/index.astro",
+    "content": "---\nimport BaseLayout from \"../layouts/BaseLayout.astro\";\nimport HeroSection from \"../components/HeroSection.astro\";\nimport Footer from \"../components/Footer.astro\";\n// Weitere Komponenten kannst du hier importieren, wenn sie bereit sind\n// import MissionStatement from '../components/MissionStatement.astro';\n// import CommunitySection from '../components/CommunitySection.astro';\n// import ThemenbereicheOverview from '../components/ThemenbereicheOverview.astro';\nimport OpenLayersMap from \"../components/OpenLayersMap.astro\";\nimport KategorienGrid from \"../components/KategorienGrid.astro\";\nimport WerteGrid from \"../components/WerteGrid.astro\";\n---\n\n<BaseLayout>\n    <HeroSection />\n    <OpenLayersMap />\n    <KategorienGrid />\n    <WerteGrid />\n\n    <!-- Beispiel: Hier kannst du weitere Inhalts-Komponenten einfügen, sobald sie bereit sind -->\n    {\n        /*\n  <MissionStatement />\n  <CommunitySection />\n  <ThemenbereicheOverview />\n  <OpenLayersMap />\n  */\n    }\n</BaseLayout>\n"
+  }
+]

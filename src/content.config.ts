@@ -41,7 +41,7 @@ const werte = defineCollection({
   schema: z.object({
     title: z.string(),
     icon: z.string(),
-    description: z.string(),
+    order: z.number(),
   }),
 });
 
@@ -61,4 +61,6 @@ export const collections = {
   repositories,
   legal,
   copyright,
+  kategorien,
+  werte,
 };
