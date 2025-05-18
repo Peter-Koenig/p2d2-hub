@@ -1,0 +1,70 @@
+---
+import BlumenbeetIcon from "./icons/BlumenbeetIcon.astro";
+import FriedhofIcon from "./icons/FriedhofIcon.astro";
+import LaternenIcon from "./icons/LaternenIcon.astro";
+import Modal from "./Modal.astro";
+const { title, icon, order, description } = Astro.props;
+---
+
+<div
+    class="relative bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group"
+    style="max-width: 100%;"
+>
+    <!-- Permanent Glow-Overlay -->
+    <div class="absolute -inset-2 z-0 pointer-events-none">
+        <div
+            class="w-full h-full mx-auto opacity-30 blur-lg filter bg-gradient-to-r from-primary-600 to-primary-400"
+        >
+        </div>
+    </div>
+
+    <!-- Grüner Streifen oben -->
+    <div class="absolute top-0 left-0 w-full h-1.5 bg-[#0FF078] z-10"></div>
+
+    <!-- Icon und Content -->
+    <div class="relative z-10 p-6 pt-6 flex flex-col gap-3">
+        <div>
+            {icon === "blumenbeet" && <BlumenbeetIcon />}
+            {icon === "friedhof" && <FriedhofIcon />}
+            {icon === "strassenlaternen" && <LaternenIcon />}
+        </div>
+        <h3 class="font-poppins font-bold text-xl mt-2">{title}</h3>
+        <div class="font-inter text-base text-gray-700 leading-tight">
+            {description}
+        </div>
+
+        {icon === "friedhof" && (
+            <Modal id="friedhof-modal" open="Friedhöfe anzeigen">
+                <ul id="friedhof-list" class="mt-4 space-y-2">
+                    <li data-e="353452.34" data-n="5645155.74" class="cursor-pointer hover:underline">Melaten-Friedhof</li>
+                    <li data-e="355800"    data-n="5651000"    class="cursor-pointer hover:underline">Nordfriedhof</li>
+                    <li data-e="355000"    data-n="5639000"    class="cursor-pointer hover:underline">Südfriedhof</li>
+                    <li data-e="351700"    data-n="5648000"    class="cursor-pointer hover:underline">Westfriedhof</li>
+                    <li data-e="362800"    data-n="5659000"    class="cursor-pointer hover:underline">Rheinkassel</li>
+                    <li data-e="357600"    data-n="5643000"    class="cursor-pointer hover:underline">Deutzer Friedhof</li>
+                </ul>
+                <script type="module" is:inline>
+                  // Die OpenLayers-Karte muss als window.map global verfügbar sein!
+                  document.querySelectorAll('#friedhof-list li').forEach(li => {
+                    li.addEventListener('click', () => {
+                      const e = parseFloat(li.dataset.e);
+                      const n = parseFloat(li.dataset.n);
+                      window.map.getView().animate({
+                        center: [e, n],
+                        zoom: 16,
+                        duration: 800
+                      });
+                      document.getElementById('friedhof-modal').close();
+                    });
+                  });
+                </script>
+            </Modal>
+        )}
+    </div>
+
+    <!-- Optional: zusätzlicher Glow auf Hover -->
+    <div
+        class="absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 group-hover:shadow-[0_0_32px_4px_#D6FFEA] z-10"
+    >
+    </div>
+</div>

@@ -1,0 +1,25 @@
+---
+import { getCollection } from "astro:content";
+import Kategorien from "./Kategorien.astro";
+
+const kategorien = await getCollection("kategorien");
+const sorted = kategorien.sort(
+    (a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),
+);
+---
+
+<div
+    class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-5xl mx-auto py-12"
+>
+    {
+        sorted
+            .slice(0, 12)
+            .map((entry) => (
+                <Kategorien
+                    title={entry.data.title}
+                    icon={entry.data.icon}
+                    description={entry.data.description}
+                />
+            ))
+    }
+</div>

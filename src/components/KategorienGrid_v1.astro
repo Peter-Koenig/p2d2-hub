@@ -1,0 +1,52 @@
+---
+import { getCollection } from "astro:content";
+import FriefhoIcon from "./icons/FriedhofIcon.astro";
+import BlumenbeetIcon from "./icons/BlumenbeetIcon.astro";
+import  from "./icons/LaternenIcon.astro";
+
+// Kategorien aus Markdown laden und sortieren
+const kategorien = await getCollection("kategorien");
+const sorted = kategorien.sort(
+    (a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),
+);
+---
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center font-sans">
+        {
+            await Promise.all(
+                sorted.map(async (entry) => {
+                    const { title, icon } = entry.data;
+                    const { Content } = await entry.render();
+                    return (
+                        <div
+                            class="relative rounded-xl border border-gray-200 overflow-hidden transition-all duration-300 hover:-translate-y-2 group cursor-pointer"
+                            tabIndex="0"
+                            role="button"
+                            aria-label={title}
+                        >
+                            {/* Glow-Overlay */}
+                            <div class="absolute -inset-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-400 opacity-40 blur-lg pointer-events-none z-0" />
+                            <div class="absolute top-0 left-0 w-full h-1.5 bg-[#0FF078] z-10" />
+                            <div class="relative z-10 bg-white rounded-xl p-6 pt-6 flex flex-col gap-3 items-center">
+                                <div class="mb-2">
+                                    {icon === "friedhof" && <FriedhofIcon />}
+                                    {icon === "blumenbeet" && (
+                                        <BlumenbeetIcon />
+                                    )}
+                                    {icon === "laternen" && <LaternenIcon />}
+                                </div>
+                                <h3 class="font-poppins font-bold text-xl mt-2">
+                                    {title}
+                                </h3>
+                                <div class="font-inter text-base text-gray-700 leading-tight">
+                                    <Content />
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }),
+            )
+        }
+    </div>
+</div>

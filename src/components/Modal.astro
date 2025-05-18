@@ -1,0 +1,38 @@
+---
+const { id, open, children } = Astro.props;
+---
+
+<button
+    onclick={`document.getElementById('${id}').showModal()`}
+    class="w-full text-left px-4 py-2 rounded bg-primary-100 hover:bg-primary-200 mt-4 font-semibold"
+>
+    <slot name="button">{open}</slot>
+</button>
+<dialog
+    id={id}
+    class="p-0 border-none rounded-xl shadow-lg"
+    style="
+        padding: 0;
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        min-width: 320px;
+        max-width: 90vw;
+        width: 400px;
+        text-align: left;
+    "
+>
+    <form
+        method="dialog"
+        style="margin:0;padding:.5rem 1rem 0 0;text-align:right;"
+    >
+        <button
+            class="text-2xl"
+            aria-label="Schließen"
+            style="background:none;border:none;cursor:pointer;">×</button
+        >
+    </form>
+    <div style="padding: 1rem 1.5rem 1.5rem 1.5rem;">
+        {children}
+    </div>
+</dialog>
