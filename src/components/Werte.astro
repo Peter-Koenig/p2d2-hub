@@ -1,0 +1,32 @@
+---
+import TransparenzIcon from "./icons/TransparenzIcon.astro";
+import GemeinschaftIcon from "./icons/GemeinschaftIcon.astro";
+import OffeneDatenIcon from "./icons/OffeneDatenIcon.astro";
+
+const { title, icon, description } = Astro.props;
+---
+
+<div
+    class="relative bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group"
+    style="max-width: 100%;"
+>
+    <!-- Grüner Streifen oben -->
+    <div class="absolute top-0 left-0 w-full h-1.5 bg-[#0FF078]"></div>
+    <!-- Icon und Content -->
+    <div class="p-6 pt-6 flex flex-col gap-3">
+        <div>
+            {icon === "transparenz" && <TransparenzIcon />}
+            {icon === "gemeinschaft" && <GemeinschaftIcon />}
+            {icon === "offene-daten" && <OffeneDatenIcon />}
+        </div>
+        <h3 class="font-poppins font-bold text-xl mt-2">{title}</h3>
+        <div class="font-inter text-base text-gray-700 leading-tight">
+            {description}
+        </div>
+    </div>
+    <!-- Glow-Effekt -->
+    <div
+        class="absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 group-hover:shadow-[0_0_32px_4px_#0FF07866]"
+    >
+    </div>
+</div>

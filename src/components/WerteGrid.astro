@@ -1,0 +1,23 @@
+---
+import { getCollection } from "astro:content";
+import Werte from "./Werte.astro";
+
+const werte = await getCollection("werte");
+const sorted = werte.sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0));
+---
+
+<div
+    class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-5xl mx-auto py-12"
+>
+    {
+        sorted
+            .slice(0, 12)
+            .map((entry) => (
+                <Werte
+                    title={entry.data.title}
+                    icon={entry.data.icon}
+                    description={entry.body}
+                />
+            ))
+    }
+</div>

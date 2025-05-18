@@ -1,0 +1,102 @@
+---
+import { GeoDB } from "../services/db";
+---
+
+<div id="map" class="w-full h-120" relative></div>
+
+<script>
+    import ZoomSlider from "ol/control/ZoomSlider";
+    import ScaleLine from "ol/control/ScaleLine";
+
+    import Map from "ol/Map";
+    import View from "ol/View";
+    import TileLayer from "ol/layer/Tile";
+    import OSM from "ol/source/OSM";
+    import VectorLayer from "ol/layer/Vector";
+    import VectorSource from "ol/source/Vector";
+    import GeoJSON from "ol/format/GeoJSON";
+    import { fromLonLat } from "ol/proj";
+    import proj4 from "proj4";
+    import { register } from "ol/proj/proj4";
+    import ImageLayer from "ol/layer/Image";
+    import ImageWMS from "ol/source/ImageWMS";
+    import Style from "ol/style/Style";
+    import Fill from "ol/style/Fill";
+    import Stroke from "ol/style/Stroke";
+    import FullScreen from "ol/control/FullScreen";
+    import { defaults as defaultControls } from "ol/control/defaults";
+
+    // Definiere EPSG:25832
+    proj4.defs(
+        "EPSG:25832",
+        "+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    );
+    register(proj4);
+
+    // Kölner Koordinaten in EPSG:25832
+    const koelnCoords = [353400, 5643700];
+
+    // Initialisiere die Karte
+
+    const map = new Map({
+        target: "map",
+        layers: [
+            new TileLayer({
+                source: new OSM(),
+            }),
+        ],
+        view: new View({
+            projection: "EPSG:25832",
+            center: koelnCoords,
+            zoom: 11,
+        }),
+        controls: defaultControls().extend([new FullScreen()]),
+    });
+
+    // WMS-Layer "cfried" definieren
+    const wmsLayer = new ImageLayer({
+        source: new ImageWMS({
+            // url: "http://192.168.122.112:8080/geoserver/ows?service=WMS&version=1.1.1&request=GetCapabilities",
+            url: "https://ows.data-dna.eu?service=WMS&version=1.1.1&request=GetCapabilities",
+            params: {
+                LAYERS: "cfried",
+                TILED: false,
+                TRANSPARENT: true,
+            },
+            serverType: "geoserver",
+        }),
+        opacity: 0.7, // Optional: Transparenz
+    });
+
+    // Layer zur Karte hinzufügen
+    map.addLayer(wmsLayer);
+
+    // Lade Daten aus der Datenbank
+    async function loadFeatures() {
+        try {
+            const response = await fetch("/api/getFeatures");
+            const features = await response.json();
+
+            const vectorSource = new VectorSource({
+                features: new GeoJSON().readFeatures(features, {
+                    dataProjection: "EPSG:4326", // Annahme: Daten sind in WGS84
+                    featureProjection: "EPSG:25832",
+                }),
+            });
+
+            const vectorLayer = new VectorLayer({
+                source: vectorSource,
+            });
+
+            map.addLayer(vectorLayer);
+
+            // Zoom auf die Extent der Features
+            map.getView().fit(vectorSource.getExtent(), {
+                padding: [50, 50, 50, 50],
+                maxZoom: 18,
+            });
+        } catch (error) {
+            console.error("Fehler beim Laden der Features:", error);
+        }
+    }
+</script>
