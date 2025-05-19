@@ -1,4 +1,4 @@
-i; // tailwind.config.mjs
+// tailwind.config.mjs
 import { fontFamily } from "tailwindcss/defaultTheme";
 import typography from "@tailwindcss/typography";
 

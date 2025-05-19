@@ -1,4 +1,4 @@
 ---
 name: GitLab
-url: https://gitlab.com/publicdata
+url: https://gitlab.com/
 ---

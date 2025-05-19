@@ -7,12 +7,12 @@ url: /legal/impressum
 **Angaben gemäß § 5 TMG**
 
 **Betreiber der Website:**
-Projekt p2d2 – Öffentlicher Datenraum
+Projekt p2d2 – Public-Public Data-DNA
 https://opn.data-dna.eu
 
 **Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV:**
-Peter König
-E-Mail: kontakt@data-dna.eu
+Dr. Peter König
+E-Mail: p2d2-info@nospam.scanea.de
 
 **Haftungsausschluss:**
 Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.
@@ -22,4 +22,4 @@ Alle auf dieser Website veröffentlichten Inhalte stehen – sofern nicht anders
 
 **Kontakt:**
 Für Fragen, Hinweise oder rechtliche Anliegen:
-kontakt@data-dna.eu
+p2d2-info@nospam.scanea.de
