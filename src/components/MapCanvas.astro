@@ -1,8 +1,9 @@
 ---
 import { GeoDB } from "../services/db";
+const { e, n, zoom = 16 } = Astro.props;
 ---
 
-<div id="map" class="w-full h-120" relative></div>
+<div id="map" class="w-full h-full relative"></div>
 
 <script>
     import ZoomSlider from "ol/control/ZoomSlider";

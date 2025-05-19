@@ -3,6 +3,31 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* src/styles/global.css */
+:root {
+    --mb-section: 2rem;
+}
+@media (min-width: 640px) {
+    :root {
+        --mb-section: 3rem;
+    }
+}
+@media (min-width: 768px) {
+    :root {
+        --mb-section: 4rem;
+    }
+}
+@media (min-width: 1024px) {
+    :root {
+        --mb-section: 5.5rem;
+    }
+}
+
+.mb-section {
+    margin-bottom: var(--mb-section, 1rem);
+}
+
 @font-face {
     font-family: "Poppins";
     src: url("/fonts/Poppins-Regular.ttf") format("truetype");
