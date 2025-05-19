@@ -1,0 +1,22 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+
+const { slug } = Astro.params;
+const legalEntries = await getCollection("legal");
+
+// Slug-Mapping: z.B. /legal/datenschutz → datenschutz.md
+const entry = legalEntries.find((item) => item.slug === slug);
+
+if (!entry) {
+    throw new Error("Legal-Eintrag nicht gefunden");
+}
+
+const { Content } = await entry.render();
+---
+
+<BaseLayout>
+    <article class="prose mx-auto my-8">
+        <Content />
+    </article>
+</BaseLayout>

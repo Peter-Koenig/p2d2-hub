@@ -1,6 +1,6 @@
 ---
 name: Lizenzen
-url: /lizenzen
+url: /legal/lizenzen
 ---
 # Lizenz
 

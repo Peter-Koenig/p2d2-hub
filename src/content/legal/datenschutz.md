@@ -1,6 +1,6 @@
 ---
 name: Datenschutz
-url: /datenschutz
+url: /legal/datenschutz
 ---
 # Datenschutzerklärung
 
