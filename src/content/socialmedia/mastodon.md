@@ -1,5 +1,5 @@
 ---
 name: Mastodon
-url: https://mastodon.social/@publicdata
+url: https://nrw.social/@P2D2
 icon: mastodon
 ---

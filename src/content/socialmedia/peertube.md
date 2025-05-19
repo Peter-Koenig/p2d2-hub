@@ -1,5 +1,5 @@
 ---
 name: PeerTube
-url: https://peertube.example.org/accounts/publicdata
+url: https://peertube.tv/
 icon: peertube
 ---

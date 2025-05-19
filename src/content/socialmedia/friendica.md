@@ -1,5 +1,5 @@
 ---
 name: Friendica
-url: https://friendica.example.org/profile/publicdata
+url: https://friendi.ca/
 icon: friendica
 ---

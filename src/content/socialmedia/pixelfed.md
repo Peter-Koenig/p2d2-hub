@@ -1,5 +1,5 @@
 ---
 name: Pixelfed
-url: https://pixelfed.example.org/publicdata
+url: https://pixelfed.org/
 icon: pixelfed
 ---
