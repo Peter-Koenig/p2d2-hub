@@ -1,6 +1,6 @@
 ---
 name: Impressum
-url: /impressum
+url: /legal/impressum
 ---
 # Impressum
 
