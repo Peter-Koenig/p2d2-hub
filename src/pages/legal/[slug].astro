@@ -11,6 +11,25 @@ const legalEntries = await getCollection("legal");
 // Slug-Mapping: z.B. /legal/datenschutz → datenschutz.md
 const entry = legalEntries.find((item) => item.slug === slug);
 
+const friedhofe = [
+    {
+        slug: "melaten",
+        name: "Melaten-Friedhof",
+        e: 353780,
+        n: 5644987,
+        zoom: 16,
+        extent: [353200, 5644700, 354400, 5645400], // Bounding Box für Melaten
+    },
+    {
+        slug: "rheinkassel",
+        name: "Friedhof Rheinkassel",
+        e: 354120,
+        n: 5646780,
+        zoom: 17,
+        extent: [354070, 5646740, 354170, 5646820], // Bounding Box für Rheinkassel
+    },
+];
+
 if (!entry) {
     throw new Error("Legal-Eintrag nicht gefunden");
 }

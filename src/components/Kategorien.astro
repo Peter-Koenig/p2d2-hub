@@ -34,40 +34,42 @@ const { title, icon, order, description, id } = Astro.props;
         </div>
 
         {icon === "friedhof" && (
-            <Modal id={id} open="Friedhöfe anzeigen">
-                <ul id="friedhof-list" class="mt-4 space-y-2">
-                    <li data-e="353452.34" data-n="5645155.74" class="cursor-pointer hover:underline">Melaten-Friedhof</li>
-                    <li data-e="355800"    data-n="5651000"    class="cursor-pointer hover:underline">Nordfriedhof</li>
-                    <li data-e="355000"    data-n="5639000"    class="cursor-pointer hover:underline">Südfriedhof</li>
-                    <li data-e="351700"    data-n="5648000"    class="cursor-pointer hover:underline">Westfriedhof</li>
-                    <li data-e="362800"    data-n="5659000"    class="cursor-pointer hover:underline">Rheinkassel</li>
-                    <li data-e="357600"    data-n="5643000"    class="cursor-pointer hover:underline">Deutzer Friedhof</li>
-                </ul>
-                <script type="module" is:inline>
-                  // Die OpenLayers-Karte muss als window.map global verfügbar sein!
-                  document.querySelectorAll('#friedhof-list li').forEach(li => {
-                    li.addEventListener('click', () => {
-                      const e = parseFloat(li.dataset.e);
-                      const n = parseFloat(li.dataset.n);
-                      window.map.getView().animate({
-                        center: [e, n],
-                        zoom: 16,
-                        duration: 800
+            <>
+                <Modal id={id} open="Friedhöfe anzeigen">
+                    <ul id="friedhof-list" class="mt-4 space-y-2">
+                        <li data-e="353452.34" data-n="5645155.74" class="cursor-pointer hover:underline">Melaten-Friedhof</li>
+                        <li data-e="355800"    data-n="5651000"    class="cursor-pointer hover:underline">Nordfriedhof</li>
+                        <li data-e="355000"    data-n="5639000"    class="cursor-pointer hover:underline">Südfriedhof</li>
+                        <li data-e="351700"    data-n="5648000"    class="cursor-pointer hover:underline">Westfriedhof</li>
+                        <li data-e="362800"    data-n="5659000"    class="cursor-pointer hover:underline">Rheinkassel</li>
+                        <li data-e="357600"    data-n="5643000"    class="cursor-pointer hover:underline">Deutzer Friedhof</li>
+                    </ul>
+                    <script type="module" is:inline>
+                      // Die OpenLayers-Karte muss als window.map global verfügbar sein!
+                      document.querySelectorAll('#friedhof-list li').forEach(li => {
+                        li.addEventListener('click', () => {
+                          const e = parseFloat(li.dataset.e);
+                          const n = parseFloat(li.dataset.n);
+                          window.map.getView().animate({
+                            center: [e, n],
+                            zoom: 16,
+                            duration: 800
+                          });
+                          document.getElementById('friedhof-modal').close();
+                        });
                       });
-                      document.getElementById('friedhof-modal').close();
-                    });
-                  });
-                </script>
-            </Modal>
+                    </script>
+                </Modal>
+                <ul id="friedhof-list" class="space-y-2">
+                  <li data-e="353452.34" data-n="5645155.74" class="cursor-pointer p-2 hover:bg-gray-100 rounded">
+                    <a href="/friedhoefe/melaten" is:raw>Melaten-Friedhof</a>
+                  </li>
+                  <li data-e="354123.45" data-n="5646789.01" class="cursor-pointer p-2 hover:bg-gray-100 rounded">
+                    <a href="/friedhoefe/rheinkassel" is:raw>Friedhof Rheinkassel</a>
+                  </li>
+                </ul>
+            </>
         )}
-        <ul id="friedhof-list" class="space-y-2">
-          <li data-e="353452.34" data-n="5645155.74" class="cursor-pointer p-2 hover:bg-gray-100 rounded">
-            <a href="/friedhoefe/melaten" is:raw>Melaten-Friedhof</a>
-          </li>
-          <li data-e="354123.45" data-n="5646789.01" class="cursor-pointer p-2 hover:bg-gray-100 rounded">
-            <a href="/friedhoefe/rheinkassel" is:raw>Friedhof Rheinkassel</a>
-          </li>
-        </ul>
     </div>
 
     <!-- Optional: zusätzlicher Glow auf Hover -->
