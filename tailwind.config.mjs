@@ -3,7 +3,10 @@ import { fontFamily } from "tailwindcss/defaultTheme";
 import typography from "@tailwindcss/typography";
 
 export default {
-  content: ["./src/**/*.{astro,js,ts,jsx,tsx,md,mdx}"],
+  content: [
+    "./src/**/*.{astro,js,ts,jsx,tsx,md,mdx}",
+    "./src/content/**/*.{md,mdx}",
+  ],
   theme: {
     extend: {
       colors: {
