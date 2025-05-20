@@ -21,5 +21,5 @@ Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für di
 Alle auf dieser Website veröffentlichten Inhalte stehen – sofern nicht anders angegeben – unter der GNU General Public License Version 3 (GPLv3).
 
 **Kontakt:**
-Für Fragen, Hinweise oder rechtliche Anliegen:
+Für Fragen, Hinweise oder rechtliche Anliegen gerne an:
 p2d2-info@nospam.scanea.de
