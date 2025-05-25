@@ -54,23 +54,6 @@ const { e, n, zoom = 16 } = Astro.props;
         controls: defaultControls().extend([new FullScreen()]),
     });
 
-    // WMS-Layer "p2d2_osm" definieren
-    const wmsLayer = new ImageLayer({
-        source: new ImageWMS({
-            // url: "http://192.168.122.112:8080/geoserver/ows?service=WMS&version=1.1.1&request=GetCapabilities",
-            url: "https://ows.data-dna.eu/",
-            params: {
-                LAYERS: "p2d2_osm",
-                VERSION: "1.1.1",
-                FORMAT: "image/png",
-                TILED: false,
-                TRANSPARENT: true,
-            },
-            serverType: "geoserver",
-        }),
-        opacity: 0.7, // Optional: Transparenz
-    });
-    
     // WMS-Layer "p2d2_cemeteries_cologne" definieren
     const wmsLayer = new ImageLayer({
         source: new ImageWMS({
