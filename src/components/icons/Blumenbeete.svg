@@ -1,0 +1,48 @@
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="#B4F7D3"
+    class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+>
+    <rect
+        x="4"
+        y="12"
+        width="16"
+        height="8"
+        rx="1"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+    />
+    <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M8 12v-4m4-2v2m4-2v2"
+    />
+    <circle
+        cx="8"
+        cy="8"
+        r="1"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+    />
+    <circle
+        cx="12"
+        cy="8"
+        r="1"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+    />
+    <circle
+        cx="16"
+        cy="8"
+        r="1"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+    />
+</svg>

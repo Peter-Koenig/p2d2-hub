@@ -1,10 +1,17 @@
 ---
-// src/pages/friedhoefe/[slug].astro
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import MapCanvas from "../../components/MapCanvas.astro";
+// Vue-Komponente importieren (nach Installation von @astrojs/vue und Erstellen der Komponente)
+import OpenLayersMap from "../../components/OpenLayersMap.vue";
 
-// Koordinaten für Rheinkassel (Beispielwerte, EPSG:25832)
+// Beispielhafte Friedhofsdaten (kannst du beliebig erweitern)
 const friedhofe = [
+    {
+        slug: "melaten",
+        name: "Melaten-Friedhof",
+        e: 353780,
+        n: 5644987,
+        zoom: 16,
+    },
     {
         slug: "rheinkassel",
         name: "Friedhof Rheinkassel",
@@ -12,31 +19,27 @@ const friedhofe = [
         n: 5646789.01,
         zoom: 16,
     },
-    // Weitere Friedhöfe hier ergänzen
+    // Weitere Friedhöfe ...
 ];
 
 const { slug } = Astro.params;
 const friedhof = friedhofe.find((f) => f.slug === slug);
+if (!friedhof) {
+    throw new Error("Friedhof nicht gefunden");
+}
 ---
 
-<BaseLayout title={friedhof?.name || "Friedhof"}>
-    <main class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-6">{friedhof?.name}</h1>
-        <div class="h-[600px] w-full rounded-xl overflow-hidden shadow-lg">
-            <MapCanvas e={friedhof?.e} n={friedhof?.n} zoom={friedhof?.zoom} />
+<BaseLayout title={friedhof.name}>
+    <main class="flex-1 flex flex-col">
+        <h1 class="text-3xl font-bold mb-6">{friedhof.name}</h1>
+        <div class="flex-1 min-h-0 w-full rounded-xl overflow-hidden shadow-lg">
+            <OpenLayersMap
+                :e="friedhof.e"
+                :n="friedhof.n"
+                :zoom="friedhof.zoom"
+                client:load
+                style="width:100%;height:100%;"
+            />
         </div>
     </main>
 </BaseLayout>
-
-<!-- Script für Kartenzentrierung (falls nicht in MapCanvas.astro integriert) -->
-<script is:inline>
-    document.addEventListener("DOMContentLoaded", () => {
-        if (window.map && typeof friedhof !== "undefined") {
-            window.map.getView().animate({
-                center: [friedhof.e, friedhof.n],
-                zoom: friedhof.zoom,
-                duration: 800,
-            });
-        }
-    });
-</script>
