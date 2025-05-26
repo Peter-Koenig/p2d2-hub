@@ -8,6 +8,43 @@ import { Content as HeroContent } from "../content/hero.md";
         font-weight: 800;
         font-size: 3.75rem;
     }
+    .entwurf-overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 5; /* Unterhalb des Hero-Contents, aber über dem Video */
+    }
+    .entwurf-ecke {
+        position: absolute;
+        color: #39ff14;
+        font-size: 2rem;
+        font-weight: bold;
+        text-shadow:
+            0 0 8px #39ff14,
+            2px 2px 6px #000;
+        opacity: 0.7;
+        user-select: none;
+    }
+    .entwurf-ecke.tl {
+        top: 10px;
+        left: 16px;
+        transform: rotate(315deg);
+    }
+    .entwurf-ecke.tr {
+        top: 10px;
+        right: 16px;
+        transform: rotate(45deg);
+    }
+    .entwurf-ecke.bl {
+        bottom: 10px;
+        left: 16px;
+        transform: rotate(225deg);
+    }
+    .entwurf-ecke.br {
+        bottom: 10px;
+        right: 16px;
+        transform: rotate(135deg);
+    }
 </style>
 
 <section
@@ -25,9 +62,17 @@ import { Content as HeroContent } from "../content/hero.md";
         <source src="/videos/hero-bg.mp4" type="video/mp4" />
         Ihr Browser unterstützt das Video-Tag nicht.
     </video>
+
     <div
         class="leading-none hero-section relative z-10 flex flex-col items-center justify-center text-center text-white bg-black/40 p-8 rounded-lg max-w-3xl mx-auto"
     >
         <HeroContent />
+        {/* Overlay mit "Entwurf" in den vier Ecken */}
+        <div class="entwurf-overlay">
+            <span class="entwurf-ecke tl">Dummy</span>
+            <span class="entwurf-ecke tr">Mock-up</span>
+            <span class="entwurf-ecke bl">Konzept</span>
+            <span class="entwurf-ecke br">Entwurf</span>
+        </div>
     </div>
 </section>
