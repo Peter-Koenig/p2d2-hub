@@ -2,17 +2,17 @@
 name: Ziel
 url: /ueber/ziel
 ---
-# Hauptziel
+## Hauptziel
 
-Aufbau einer prototypischen Plattform, um am Beispiel der Digitalisierung beispielhaft gewählter Fridedhöfe der Stadt Köln die Synchronisation der Daten der Verwaltung mit den Daten der Öffentlichkeit (OpenStreetMap) zu zeigen
+Aufbau einer prototypischen Plattform, um am Beispiel der Digitalisierung beispielhaft gewählter Fridedhöfe der Stadt Köln die Synchronisation der Daten der Verwaltung mit den Daten der Öffentlichkeit (OpenStreetMap) zu zeigen.
 
-## Unterziel 1
+### Unterziel 1
 .
 
-## Unterziel 2
+### Unterziel 2
 .
 
-## Unterziel 3
+### Unterziel 3
 .
 
-## Nichtziele
+### Nichtziele
