@@ -77,7 +77,7 @@ export default {
             strong: { color: theme("colors.gray.900") },
             a: {
               color: theme("colors.primary.700"),
-              textDecoration: "underline",
+              textDecoration: "none",
               fontWeight: "500",
               transition: "color 0.2s",
               "&:hover": {

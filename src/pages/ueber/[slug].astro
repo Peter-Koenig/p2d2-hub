@@ -5,14 +5,13 @@ import styled from "styled-components";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
 
+import { getEntry } from "astro:content";
 const { slug } = Astro.params;
-const legalEntries = await getCollection("legal");
-
-// Slug-Mapping: z.B. /legal/datenschutz → datenschutz.md
-const entry = legalEntries.find((item) => item.slug === slug);
-
+const entry = await getEntry({ collection: "intern", slug });
 if (!entry) {
-    throw new Error("Legal-Eintrag nicht gefunden");
+    throw new Error(
+        `Kein Eintrag mit Slug "${slug}" in Collection "intern" gefunden.`,
+    );
 }
 const { Content } = await entry.render();
 ---

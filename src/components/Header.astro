@@ -1,18 +1,35 @@
 ---
-// Passe die Navigationseinträge und die aktuelle Seite hier an:
 const nav = [
-    { name: "Start", href: "/", key: "home" },
+    {
+        name: "Über p2d2",
+        key: "about",
+        children: [
+            { name: "Hintergrund", href: "/ueber/hintergrund" },
+            { name: "Ziel", href: "/ueber/ziel" },
+            { name: "Umsetzung", href: "/ueber/umsetzung" },
+            { name: "Status", href: "/ueber/status" },
+        ],
+    },
     { name: "Themenbereiche", href: "/themenbereiche", key: "themen" },
     { name: "Community", href: "/community", key: "community" },
     { name: "Mitmachen", href: "/mitmachen", key: "mitmachen" },
     { name: "Kontakt", href: "/kontakt", key: "kontakt" },
 ];
 
-// Hole die aktuelle Seite über Astro.globale Variable (Astro.url.pathname verfügbar ab Astro v4)
 const currentPath = Astro.url.pathname;
+
+// Hilfsfunktion für aktive Links
+function isActive(item) {
+    if (!item.href) return false;
+    return item.href === "/"
+        ? currentPath === "/"
+        : currentPath.startsWith(item.href);
+}
 ---
 
-<header class="w-full bg-white shadow-sm sticky top-0 z-50">
+<header
+    class="w-full bg-green-50/90 backdrop-blur-sm shadow-sm sticky top-0 z-50"
+>
     <nav class="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
         <div class="flex items-center">
             <img
@@ -29,33 +46,87 @@ const currentPath = Astro.url.pathname;
             <ul class="flex ml-12 gap-6 text-lg font-medium font-poppins">
                 {
                     nav.map((item) => {
-                        // Aktive Seite erkennen (genaue Übereinstimmung oder / bei root)
-                        const isActive =
-                            item.href === "/"
-                                ? currentPath === "/"
-                                : currentPath.startsWith(item.href);
-                        return (
-                            <li>
-                                <a
-                                    href={item.href}
-                                    class={`relative transition-colors duration-200
-                ${
-                    isActive
-                        ? "text-green-700 after:content-[''] after:absolute after:left-0 after:-bottom-1 after:w-full after:h-0.5 after:bg-green-500"
-                        : "text-gray-700 hover:text-gray-900 after:content-[''] after:absolute after:left-0 after:-bottom-1 after:w-full after:h-0.5 after:bg-gray-400 after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-200"
-                }
-                px-1 pb-1
-              `}
-                                    aria-current={isActive ? "page" : undefined}
-                                    style="display: inline-block; position: relative;"
+                        if (item.children) {
+                            // Dropdown-Menü für "Über …" – mit mouseenter/mouseleave für zuverlässiges Öffnen
+                            return (
+                                <li
+                                    class="relative"
+                                    on:mouseenter={() => {
+                                        const el =
+                                            document.getElementById(
+                                                "dropdown-ueber",
+                                            );
+                                        if (el) el.classList.remove("hidden");
+                                    }}
+                                    on:mouseleave={() => {
+                                        const el =
+                                            document.getElementById(
+                                                "dropdown-ueber",
+                                            );
+                                        if (el) el.classList.add("hidden");
+                                    }}
                                 >
-                                    {item.name}
-                                </a>
-                            </li>
-                        );
+                                    <button class="px-1 pb-1">
+                                        {item.name}
+                                    </button>
+                                    <ul
+                                        id="dropdown-ueber"
+                                        class="hidden absolute left-0 mt-2 bg-green-100/30 backdrop-blur-sm rounded shadow-none z-50 min-w-[160px] transition-all"
+                                        style="border:none;"
+                                    >
+                                        {item.children.map((child) => (
+                                            <li>
+                                                <a
+                                                    href={child.href}
+                                                    class={`block px-4 py-2 hover:bg-white/40 ${
+                                                        isActive(child)
+                                                            ? "text-green-700 font-semibold"
+                                                            : "text-gray-900"
+                                                    }`}
+                                                >
+                                                    {child.name}
+                                                </a>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </li>
+                            );
+                        } else {
+                            return (
+                                <li>
+                                    <a
+                                        href={item.href}
+                                        class={`relative transition-colors duration-200
+                        ${
+                            isActive(item)
+                                ? "text-green-700 after:content-[''] after:absolute after:left-0 after:-bottom-1 after:w-full after:h-0.5 after:bg-green-500"
+                                : "text-gray-700 hover:text-gray-900 after:content-[''] after:absolute after:left-0 after:-bottom-1 after:w-full after:h-0.5 after:bg-gray-400 after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-200"
+                        }
+                        px-1 pb-1
+                      `}
+                                        aria-current={
+                                            isActive(item) ? "page" : undefined
+                                        }
+                                        style="display: inline-block; position: relative;"
+                                    >
+                                        {item.name}
+                                    </a>
+                                </li>
+                            );
+                        }
                     })
                 }
             </ul>
         </div>
     </nav>
+    <script is:inline>
+        // Fallback für Touch/Tab: Dropdown per Klick öffnen/schließen
+        document.querySelectorAll("li.relative > button").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const dropdown = btn.parentElement.querySelector("ul");
+                if (dropdown) dropdown.classList.toggle("hidden");
+            });
+        });
+    </script>
 </header>
