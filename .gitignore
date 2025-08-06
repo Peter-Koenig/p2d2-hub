@@ -26,3 +26,7 @@ pnpm-debug.log*
 # Source Code
 src.txt
 index_canva_3.html-template
+nohup.out
+.ragit/
+.ragit.yaml
+.zed
