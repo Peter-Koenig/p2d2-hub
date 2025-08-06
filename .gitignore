@@ -1,5 +1,6 @@
 # build output
 dist/
+
 # generated types
 .astro/
 
@@ -30,3 +31,6 @@ nohup.out
 .ragit/
 .ragit.yaml
 .zed
+
+# Big files
+public/videos/hero-bg-hires.mp4
