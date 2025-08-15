@@ -90,7 +90,7 @@ const copyright = copyrightEntry[0]?.data.text ?? "";
                     }
                 </ul>
             </div>
-            <div class="flex gap-3 mt-4">
+            <div class="flex gap-3 space-y-2 mt-4">
                 {
                     socialmedia.map((entry) => (
                         <a
@@ -108,6 +108,22 @@ const copyright = copyrightEntry[0]?.data.text ?? "";
                         </a>
                     ))
                 }
+            </div>
+            <div class="space-y-2">
+                <h3 class="font-semibold">
+                    <a
+                        href="/ueber/partner"
+                        class="hover:text-green-400 transition"
+                        >Unterstützt durch</a
+                    >
+                </h3>
+                <a href="/ueber/partner">
+                    <img
+                        src={`/images/FoerderPartner.png`}
+                        alt="Förderpartner"
+                        class="h-3/4 w-3/4"
+                    />
+                </a>
             </div>
         </div>
     </div>
