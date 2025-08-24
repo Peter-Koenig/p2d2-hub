@@ -31,7 +31,11 @@ nohup.out
 .ragit/
 .ragit.yaml
 .zed
+<<<<<<< HEAD
 nohup.out
+=======
+debug_konsole.txt
+>>>>>>> feature/NeueTabstruktur-v2
 
 # Big files
 public/videos/hero-bg-hires.mp4
