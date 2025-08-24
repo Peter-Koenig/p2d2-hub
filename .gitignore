@@ -31,6 +31,7 @@ nohup.out
 .ragit/
 .ragit.yaml
 .zed
+nohup.out
 
 # Big files
 public/videos/hero-bg-hires.mp4
