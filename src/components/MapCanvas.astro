@@ -1,45 +1,35 @@
 ---
-import { GeoDB } from "../services/db";
-const { e, n, zoom = 16 } = Astro.props;
+
 ---
 
 <div id="map" class="w-full h-full relative"></div>
 
 <script>
-    import ZoomSlider from "ol/control/ZoomSlider";
-    import ScaleLine from "ol/control/ScaleLine";
+    // Import all OpenLayers modules needed for client-side
 
     import Map from "ol/Map";
     import View from "ol/View";
     import TileLayer from "ol/layer/Tile";
     import OSM from "ol/source/OSM";
-    import VectorLayer from "ol/layer/Vector";
-    import VectorSource from "ol/source/Vector";
-    import GeoJSON from "ol/format/GeoJSON";
-    import { fromLonLat } from "ol/proj";
+
     import proj4 from "proj4";
     import { register } from "ol/proj/proj4";
     import ImageLayer from "ol/layer/Image";
     import ImageWMS from "ol/source/ImageWMS";
-    import Style from "ol/style/Style";
-    import Fill from "ol/style/Fill";
-    import Stroke from "ol/style/Stroke";
-    import FullScreen from "ol/control/FullScreen";
-    import { defaults as defaultControls } from "ol/control/defaults";
 
-    // Definiere EPSG:25832
+    import FullScreen from "ol/control/FullScreen";
+    import { defaults } from "ol/control/defaults";
+    import { fromLonLat, transformExtent } from "ol/proj";
+
+    // Define EPSG:25832 projection
     proj4.defs(
         "EPSG:25832",
         "+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
     );
     register(proj4);
 
-    // Kölner Koordinaten in EPSG:25832
-    const koelnCoords = [353400, 5643700];
-
-    // Initialisiere die Karte
-
-    window.map = new Map({
+    // Initialize the map
+    const map = new Map({
         target: "map",
         layers: [
             new TileLayer({
@@ -48,16 +38,15 @@ const { e, n, zoom = 16 } = Astro.props;
         ],
         view: new View({
             projection: "EPSG:25832",
-            center: koelnCoords,
+            center: [353400, 5643700], // Cologne coordinates in EPSG:25832
             zoom: 11,
         }),
-        controls: defaultControls().extend([new FullScreen()]),
+        controls: defaults().extend([new FullScreen()]),
     });
 
-    // WMS-Layer "p2d2_cemeteries_cologne" definieren
+    // WMS Layer "p2d2_cemeteries_cologne"
     const wmsLayer = new ImageLayer({
         source: new ImageWMS({
-            // url: "http://192.168.122.112:8080/geoserver/ows?service=WMS&version=1.1.1&request=GetCapabilities",
             url: "https://ows.data-dna.eu/",
             params: {
                 LAYERS: "p2d2_cemeteries_cologne",
@@ -68,38 +57,134 @@ const { e, n, zoom = 16 } = Astro.props;
             },
             serverType: "geoserver",
         }),
-        opacity: 0.7, // Optional: Transparenz
+        opacity: 0.7,
     });
 
-    // Layer zur Karte hinzufügen
+    // Add layer to map
     map.addLayer(wmsLayer);
 
-    // Lade Daten aus der Datenbank
-    async function loadFeatures() {
-        try {
-            const response = await fetch("/api/getFeatures");
-            const features = await response.json();
+    // Event listener for kommunen focus (browser only)
+    if (typeof window !== "undefined") {
+        window.addEventListener(
+            "kommunen:focus",
+            (e) => {
+                const d = (e as CustomEvent)?.detail || {};
 
-            const vectorSource = new VectorSource({
-                features: new GeoJSON().readFeatures(features, {
-                    dataProjection: "EPSG:4326", // Annahme: Daten sind in WGS84
-                    featureProjection: "EPSG:25832",
-                }),
-            });
+                // Check if map and view are properly initialized
+                const view = map?.getView?.();
+                if (!view || !view.getProjection) {
+                    console.error("[kommunen] map view is not initialized");
+                    return;
+                }
 
-            const vectorLayer = new VectorLayer({
-                source: vectorSource,
-            });
+                const viewProj = view?.getProjection?.();
+                if (!viewProj) {
+                    console.error("[map:focus] view projection not available");
+                    return;
+                }
 
-            map.addLayer(vectorLayer);
+                // Validate projection - only accept EPSG:4326
+                if (d?.projection && d.projection !== "EPSG:4326") {
+                    console.warn(
+                        "[kommunen] unexpected projection in detail; assuming EPSG:4326",
+                        d.projection,
+                    );
+                }
 
-            // Zoom auf die Extent der Features
-            map.getView().fit(vectorSource.getExtent(), {
-                padding: [50, 50, 50, 50],
-                maxZoom: 18,
-            });
-        } catch (error) {
-            console.error("Fehler beim Laden der Features:", error);
-        }
+                // Extract and validate data
+                const center =
+                    Array.isArray(d?.center) &&
+                    d.center.length === 2 &&
+                    d.center.every(Number.isFinite)
+                        ? d.center
+                        : undefined;
+                const extent =
+                    Array.isArray(d?.extent) &&
+                    d.extent.length === 4 &&
+                    d.extent.every(Number.isFinite)
+                        ? d.extent
+                        : undefined;
+                const zoom = Number.isFinite(d?.zoom) ? d.zoom : undefined;
+
+                try {
+                    if (extent && transformExtent) {
+                        // Validate extent bounds
+                        if (
+                            extent[0] < -180 ||
+                            extent[0] > 180 ||
+                            extent[1] < -90 ||
+                            extent[1] > 90 ||
+                            extent[2] < -180 ||
+                            extent[2] > 180 ||
+                            extent[3] < -90 ||
+                            extent[3] > 90
+                        ) {
+                            console.warn(
+                                "[kommunen] extent coordinates out of bounds",
+                                extent,
+                            );
+                        }
+
+                        const fitExtent = transformExtent?.(
+                            extent,
+                            "EPSG:4326",
+                            viewProj,
+                        );
+                        const fitOpts = {
+                            padding: [50, 50, 50, 50],
+                            duration: 300,
+                            ...(d.extra?.fitOptions || {}),
+                        };
+
+                        try {
+                            view.fit(fitExtent, fitOpts);
+                        } catch (error) {
+                            console.error(
+                                "[kommunen] fit operation failed",
+                                error,
+                            );
+                        }
+                    } else if (center && fromLonLat) {
+                        // Validate center bounds
+                        if (
+                            center[0] < -180 ||
+                            center[0] > 180 ||
+                            center[1] < -90 ||
+                            center[1] > 90
+                        ) {
+                            console.warn(
+                                "[kommunen] center coordinates out of bounds",
+                                center,
+                            );
+                        }
+
+                        const c = fromLonLat?.(center, viewProj);
+                        const targetZoom = zoom || view?.getZoom?.() || 11;
+
+                        try {
+                            view.animate({
+                                center: c,
+                                zoom: targetZoom,
+                                duration: 300,
+                                ...(d.extra || {}),
+                            });
+                        } catch (error) {
+                            console.error(
+                                "[kommunen] animate operation failed",
+                                error,
+                            );
+                        }
+                    } else {
+                        console.warn(
+                            "[kommunen] no valid center or extent data provided",
+                            d,
+                        );
+                    }
+                } catch (err) {
+                    console.error("[kommunen] focus error", err, d);
+                }
+            },
+            { passive: true },
+        );
     }
 </script>

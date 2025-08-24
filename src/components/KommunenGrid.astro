@@ -1,0 +1,175 @@
+---
+import { getCollection } from "astro:content";
+
+const kommunen = await getCollection("kommunen");
+const sorted = kommunen.sort(
+  (a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),
+);
+---
+
+<div
+  class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 items-stretch max-w-5xl mx-auto py-12 mb-section"
+>
+  {sorted.map((entry) => {
+    const m = entry.data.map || {};
+    const detail = {
+      center: m.center,
+      extent: m.extent,
+      zoom: m.zoom,
+      projection: m.projection,
+      extra: m.extra
+    };
+
+    // Normalize projection to EPSG:4326 for consistency
+    detail.projection = 'EPSG:4326';
+
+    // Validate data before dispatch
+    const hasValidCenter = detail.center && Array.isArray(detail.center) && detail.center.length === 2 && detail.center.every(Number.isFinite);
+    const hasValidExtent = detail.extent && Array.isArray(detail.extent) && detail.extent.length === 4 && detail.extent.every(Number.isFinite);
+    const hasValidZoom = detail.zoom && Number.isFinite(detail.zoom);
+
+    if (!hasValidCenter && !hasValidExtent) {
+      console.warn('[kommunen] invalid data for dispatch - missing both center and extent', { slug: entry.slug, detail });
+      detail.center = undefined;
+      detail.extent = undefined;
+    }
+    const colorStripe = entry.data.colorStripe ?? '#FF6900';
+
+    // Frontmatter validation
+    if (m.center && (!Array.isArray(m.center) || m.center.length !== 2 || !m.center.every(Number.isFinite))) {
+      console.warn('[kommunen] invalid frontmatter center', entry.slug, { center: m.center });
+    }
+    if (m.extent && (!Array.isArray(m.extent) || m.extent.length !== 4 || !m.extent.every(Number.isFinite))) {
+      console.warn('[kommunen] invalid frontmatter extent', entry.slug, { extent: m.extent });
+    }
+
+    return (
+      <button
+      type="button"
+      class="kommunen-card relative bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group text-left w-full h-full flex flex-col"
+      style={`--color-stripe: ${colorStripe}`}
+      aria-label={`Kommune ${entry.data.title} auswählen`}
+      data-slug={entry.slug}
+      data-detail={JSON.stringify(detail)}
+      onclick={() => {
+
+        // Final validation before dispatch
+        const isValidCenter = detail.center &&
+                            Array.isArray(detail.center) &&
+                            detail.center.length === 2 &&
+                            detail.center.every(Number.isFinite) &&
+                            detail.center[0] >= -180 && detail.center[0] <= 180 &&
+                            detail.center[1] >= -90 && detail.center[1] <= 90;
+
+        const isValidExtent = detail.extent &&
+                             Array.isArray(detail.extent) &&
+                             detail.extent.length === 4 &&
+                             detail.extent.every(Number.isFinite) &&
+                             detail.extent[0] >= -180 && detail.extent[2] <= 180 &&
+                             detail.extent[1] >= -90 && detail.extent[3] <= 90;
+
+        if (!isValidCenter && !isValidExtent) {
+          console.warn('[kommunen] skipping dispatch - no valid center or extent data', { slug: entry.slug, detail });
+          return;
+        }
+
+        if (typeof window !== 'undefined') {
+          try {
+            window.dispatchEvent(new CustomEvent('kommunen:focus', { detail }));
+          } catch (error) {
+            console.error('[kommunen] event dispatch failed', error);
+          }
+        }
+      }}
+    >
+        <!-- Permanent Glow-Overlay -->
+        <div class="absolute -inset-2 z-0 pointer-events-none">
+          <div
+            class="w-full h-full mx-auto opacity-30 blur-lg filter bg-gradient-to-r from-primary-600 to-primary-400 pointer-events-none"
+          >
+          </div>
+        </div>
+
+        <!-- Farbiger Streifen oben -->
+        <div class="absolute top-0 left-0 w-full h-1.5 z-10" style={`background-color: ${colorStripe}`}></div>
+
+        <!-- Content -->
+        <div class="relative z-10 p-6 pt-6 flex flex-col items-start gap-3 flex-1">
+          <h3 class="font-poppins font-bold text-xl mt-2">{entry.data.title}</h3>
+          <div class="font-inter text-base text-gray-700 leading-tight">
+            {entry.body ? entry.body : `Entdecke Projekte in ${entry.data.title}`}
+          </div>
+        </div>
+
+        <!-- Hover Glow -->
+        <div
+          class="absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 group-hover:shadow-[0_0_32px_4px_rgba(255,105,0,0.3)] z-10"
+        >
+        </div>
+      </button>
+    );
+  })}
+</div>
+
+<style>
+  [style*="--color-stripe"] .group:hover .absolute.inset-0 {
+    box-shadow: 0 0 32px 4px color-mix(in srgb, var(--color-stripe) 30%, transparent);
+  }
+
+  /* Ensure button is always clickable */
+  .kommunen-card {
+    position: relative;
+    z-index: 20;
+  }
+
+  .kommunen-card > *:not(button) {
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  // Event delegation as fallback for click handling
+  if (typeof window !== 'undefined') {
+    document.addEventListener('click', (e) => {
+      const button = e.target?.closest?.('button.kommunen-card');
+      if (!button) return;
+
+      // Extract data from the button with null safety
+      const slug = button.getAttribute?.('data-slug') || '';
+
+      // Try to find the original detail data from the button's dataset
+      try {
+        const detail = button.dataset?.detail ? JSON.parse(button.dataset.detail) : {};
+
+        // Validate data before dispatch in delegated handler too
+        // Validate data before dispatch
+        const isValidCenter = detail?.center &&
+                            Array.isArray(detail.center) &&
+                            detail.center.length === 2 &&
+                            detail.center.every(Number.isFinite) &&
+                            detail.center[0] >= -180 && detail.center[0] <= 180 &&
+                            detail.center[1] >= -90 && detail.center[1] <= 90;
+
+        const isValidExtent = detail?.extent &&
+                             Array.isArray(detail.extent) &&
+                             detail.extent.length === 4 &&
+                             detail.extent.every(Number.isFinite) &&
+                             detail.extent[0] >= -180 && detail.extent[2] <= 180 &&
+                             detail.extent[1] >= -90 && detail.extent[3] <= 90;
+
+        if (!isValidCenter && !isValidExtent) {
+          console.warn('[kommunen] delegated dispatch skipped - invalid data', { slug, detail });
+          return;
+        }
+
+        try {
+          window.dispatchEvent(new CustomEvent('kommunen:focus', { detail }));
+        } catch (dispatchError) {
+          console.error('[kommunen] delegated event dispatch failed', dispatchError);
+        }
+      } catch (error) {
+        console.error('[kommunen] delegated event dispatch failed', error);
+      }
+    }, { passive: true });
+  }
+</script>
