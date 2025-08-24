@@ -15,14 +15,21 @@ export default defineConfig({
   // integrations: [mdx()], // Nur falls du MDX brauchst
   vite: {
     plugins: [tailwindcss()],
+    server: {
+      hmr: {
+        host: "localhost",
+        port: 4321,
+        protocol: "ws",
+      },
+    },
   },
 
   // experimental: {
   //   session: true, // Nur falls du experimentelle Sessions brauchst
   // },
   server: {
-    host: "0.0.0.0",
-    port: 4321, // Falls du explizit den Port setzen willst
+    host: "localhost",
+    port: 4321,
   },
 
   integrations: [vue()],

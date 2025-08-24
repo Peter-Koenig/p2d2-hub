@@ -54,6 +54,24 @@ const kategorien = defineCollection({
   }),
 });
 
+const kommunen = defineCollection({
+  schema: z.object({
+    title: z.string(),
+    colorStripe: z.string().default("#FF6900"),
+    icon: z.string().optional(),
+    order: z.number().optional(),
+    map: z.object({
+      center: z.tuple([z.number(), z.number()]).optional(), // [lon, lat] WGS84
+      zoom: z.number().optional(),
+      extent: z
+        .tuple([z.number(), z.number(), z.number(), z.number()])
+        .optional(),
+      projection: z.string().optional(),
+      extra: z.record(z.any()).optional(),
+    }),
+  }),
+});
+
 export const collections = {
   socialmedia,
   intern,
@@ -63,4 +81,5 @@ export const collections = {
   copyright,
   kategorien,
   werte,
+  kommunen,
 };
