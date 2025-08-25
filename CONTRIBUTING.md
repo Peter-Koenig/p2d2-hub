@@ -1,57 +1,88 @@
-# Contributing to p2d2
+# Beitrag leisten zu **p2d2**
 
-Thank you for your interest in contributing to p2d2! This document provides guidelines and instructions for contributing to our project.
+Vielen Dank für dein Interesse, zu **p2d2 – Public-Public Data-DNA** beizutragen 🚀
+Dieses Dokument fasst die relevanten Richtlinien aus dem Ordner [`.github`](.github) zusammen.
 
-## Code of Conduct
+---
 
-Please be respectful and considerate of others when contributing to this project.
+## 🙌 Grundprinzip: Public-Public Data-DNA
 
-## Getting Started
+Wir arbeiten nach dem Leitgedanken, dass **öffentliche Verwaltungen und Zivilgesellschaft**
+auf **Augenhöhe** zusammenarbeiten, indem Daten **offen, verknüpft, und transparent**
+zwischen beiden Bereichen ausgetauscht werden.
+**Dein Beitrag bringt dies in die Praxis!**
 
-1. Fork the repository
-2. Clone your fork locally
-3. Create a feature branch: `git checkout -b feature/your-feature-name`
-4. Make your changes and commit them
-5. Push to your fork and submit a pull request
+---
 
-## Branching Strategy
+## 🚀 Branching und Entwicklungsflow
 
-We follow a structured branching model:
-- `main`: Production-ready code
-- `develop`: Integration branch for features
-- `feature/*`: New features and enhancements
-- `bugfix/*`: Bug fixes
-- `release/*`: Release preparation branches
+- **Feature Branches:**
+  Erstelle bitte deine Branches nach dem Schema
+  `feature/team-<teamname>/<feature-name>`
+- **Bugfixes:** `bugfix/<beschreibung>`
+- **Hauptfluss:**
+```
 
-## Development Workflow
+feature → develop → release → main
 
-1. Always branch from `develop` for new features
-2. Follow our coding standards and conventions
-3. Write tests for new functionality
-4. Ensure all tests pass before submitting
-5. Update documentation as needed
+```
+- **Deployments:**
+- `develop` → dev.data-dna.eu (geplant)
+- `main` → www.data-dna.eu (Produktion)
 
-## Pull Request Process
+👉 Siehe auch [MERGE_POLICY.md](.github/MERGE_POLICY.md)
 
-1. Ensure your branch is up to date with `develop`
-2. Submit PR to the `develop` branch
-3. Include a clear description of changes
-4. Reference any related issues
-5. Wait for review and address feedback
+---
 
-## Code Style
+## 🔍 Code Reviews
 
-- Follow existing code patterns
-- Use meaningful commit messages
-- Keep changes focused and atomic
-- Comment complex logic
+- Alle Änderungen erfordern eine **Pull Request Review**
+- Fokus auf **Klarheit, Robustheit, Tests und Sicherheit**
+- Mindestens 1 Reviewer notwendig, evtl. Code Owner Review
+- Nutze **konstruktive Kommunikation** (siehe [CODE_REVIEW_GUIDE.md](.github/CODE_REVIEW_GUIDE.md))
 
-## Testing
+---
 
-- Write unit tests for new features
-- Ensure existing tests continue to pass
-- Test edge cases and error conditions
+## 🛠️ Style & Qualität
 
-## Questions?
+- Halte dich an die Projektkonventionen (Astro, Vue, Tailwind, OpenLayers Code Patterns)
+- Bedeutungsvolle Commits (`feat:`, `fix:`, `docs:`, …)
+- Tests schreiben & bestehende Tests durchlaufen lassen
+- Dokumentation anpassen, wo Änderungen sichtbar sind
 
-If you have questions, please open an issue or contact the maintainers.
+Checklisten findest du in:
+- [DEPLOYMENT_RULES.md](.github/DEPLOYMENT_RULES.md)
+- [CODE_REVIEW_GUIDE.md](.github/CODE_REVIEW_GUIDE.md)
+
+---
+
+## 🐛 Issues & Feature Requests
+
+- Frage zuerst im bestehenden [Issue Tracker](https://gitlab.opencode.de/OC000028072444/p2d2/-/issues)
+- Melde **klare Schritte zur Reproduktion** bei Bugs
+- Diskutiere Feature-Ideen frühzeitig mit dem Team
+
+---
+
+## 💡 So kannst du beitragen
+
+- Code beitragen (Features, Bugfixes)
+- Offene Daten sammeln, prüfen oder visualisieren
+- Ideen für Synchronisation zwischen OSM & Verwaltung einbringen
+- Tests & QA unterstützen
+- Dokumentation übersetzen oder verbessern
+
+---
+
+## 📖 Lizenz & Rechte
+
+Beiträge stehen – wie das gesamte Projekt – unter der
+**GNU GPLv3**.
+Mit deiner Mitarbeit erklärst du dich einverstanden, dass deine Änderungen unter derselben Lizenz veröffentlicht werden.
+
+---
+
+## 🤝 Danke!
+
+Jede Form von Beitrag – klein oder groß – stärkt das Projekt.
+Bring dein Wissen ein und hilf mit, ein **öffentliches digitales Gemeingut** zu entwickeln. 💚
