@@ -25,7 +25,7 @@ export default defineConfig({
   },
 
   // experimental: {
-  //   session: true, // Nur falls du experimentelle Sessions brauchst
+  //   session: true, // Nur falls Du experimentelle Sessions brauchst
   // },
   server: {
     host: "0.0.0.0",
