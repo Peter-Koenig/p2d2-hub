@@ -28,7 +28,7 @@ export default defineConfig({
   //   session: true, // Nur falls du experimentelle Sessions brauchst
   // },
   server: {
-    host: "localhost",
+    host: "0.0.0.0",
     port: 4321,
   },
 
