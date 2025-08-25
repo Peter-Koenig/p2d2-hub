@@ -3,7 +3,7 @@
 
 ## Visuell
 
-```
+```mermaid
 flowchart LR
   subgraph Feature Entwicklung
     A[feature/something]
