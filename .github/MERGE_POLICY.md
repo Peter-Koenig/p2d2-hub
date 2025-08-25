@@ -2,6 +2,7 @@
 : Hinweis: Nach Vorgabe KI-generiert, detaillierter Review und Implementierung aussetehend (25.8.2025)
 
 ## Visuell
+```
 flowchart LR
   subgraph Feature Entwicklung
     A[feature/something]
@@ -18,7 +19,7 @@ flowchart LR
   style PROD fill:#ffe9a2,stroke:#222
   style DEV fill:#a2e0ff,stroke:#222
   style STAGING fill:#ffa2bd,stroke:#222
-
+```
 
 ## Deutsch
 
