@@ -65,3 +65,45 @@ This document defines the merge policy for the p2d2 repository.
 ## Emergency Procedures
 
 For critical fixes, administrators may bypass normal procedures with proper documentation and follow-up review.
+
+## Deployment-Strategie (DE)
+
+### Branch-Modell und Environment-Mapping
+- **main** → Produktionsumgebung (www.data-dna.eu)
+- **develop** → Entwicklungsumgebung (dev.data-dna.eu)
+- **feature/\*** → Feature-Preview-Umgebungen (feature-x.dev.data-dna.eu)
+- **release/\*** → Release-Testumgebungen (release-x.dev.data-dna.eu)
+- **hotfix/\*** → Hotfix-Testumgebungen (hotfix-x.dev.data-dna.eu)
+
+### CI/CD Best Practices und Release-Ablauf
+- Automatische Deployments nur nach erfolgreichen Merge-Prozessen
+- Deployment-Trigger durch erfolgreiche Pipeline-Läufe nach Merges
+- Manuelle Bestätigung für Produktionsdeployments erforderlich
+- Environment-spezifische Konfiguration über Git-Branches
+
+### Sicherheitsrichtlinien für Deployments
+- Deployments ausschließlich von geprüften und gemergten Branches
+- Code-Review-Pflicht vor jedem Merge und Deployment
+- Semantisches Tagging für Versionierung und Nachverfolgbarkeit
+- Audit-Logs für alle Merge- und Deployment-Aktivitäten
+
+## Deployment Strategy (EN)
+
+### Branch Model and Environment Mapping
+- **main** → Production environment (www.data-dna.eu)
+- **develop** → Development environment (dev.data-dna.eu)
+- **feature/\*** → Feature preview environments (feature-x.dev.data-dna.eu)
+- **release/\*** → Release testing environments (release-x.dev.data-dna.eu)
+- **hotfix/\*** → Hotfix testing environments (hotfix-x.dev.data-dna.eu)
+
+### CI/CD Best Practices and Release Workflow
+- Automatic deployments only after successful merge processes
+- Deployment triggers based on successful pipeline runs after merges
+- Manual approval required for production deployments
+- Environment-specific configuration via Git branches
+
+### Security Policies for Deployments
+- Deployments exclusively from reviewed and merged branches
+- Mandatory code review before any merge and deployment
+- Semantic tagging for versioning and traceability
+- Audit logs for all merge and deployment activities
