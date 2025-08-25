@@ -2,6 +2,7 @@
 : Hinweis: Nach Vorgabe KI-generiert, detaillierter Review und Implementierung aussetehend (25.8.2025)
 
 ## Visuell
+
 ```
 flowchart LR
   subgraph Feature Entwicklung
