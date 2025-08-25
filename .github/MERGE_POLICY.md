@@ -12,7 +12,7 @@
 
 ### Anforderungen an Pull Requests
 
-==== Vor dem Einreichen ===
+#### Vor dem Einreichen
 
 - [ ] Branch ist auf dem aktuellen Stand zum Ziel-Branch.
 - [ ] Code hält sich an Projektkonventionen.
@@ -20,7 +20,7 @@
 - [ ] Dokumentation ist bei Bedarf aktualisiert.
 - [ ] Änderungen sind fokussiert und atomar.
 
-==== Review-Prozess ===
+#### Review-Prozess
 
 - Mindestens eine genehmigte Review erforderlich.
 - Alle CI-Prüfungen müssen bestanden sein.
@@ -55,7 +55,7 @@
 
 ### Branch Protection Regeln
 
-==== Geschützte Branches ===
+#### Geschützte Branches
 
 Branch **main**:
 
@@ -69,13 +69,13 @@ Branch **develop**:
 
 - Wie main
 
-==== Review-Anforderungen ===
+#### Review-Anforderungen
 
 - Mindestens 1 Reviewer
 - Code Owner Review ggf. verpflichtend
 - Widerruf bei veralteter Freigabe nach neuem Commit
 
-==== Ausnahme-Handling ===
+#### Ausnahme-Handling
 
 - Im Notfall können Admins temporär Regeln außer Kraft setzen (mit Dokumentation).
 
