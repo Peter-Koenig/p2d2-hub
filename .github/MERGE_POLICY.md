@@ -1,7 +1,7 @@
 # Merge- und Branch-Policy für p2d2
 : Hinweis: Nach Vorgabe KI-generiert, detaillierter Review und Implementierung aussetehend (25.8.2025)
 
-## Visuell
+## Visuelle Darstellung
 
 ```mermaid
 flowchart LR

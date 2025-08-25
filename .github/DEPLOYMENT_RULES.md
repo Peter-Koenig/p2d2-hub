@@ -1,4 +1,4 @@
-## Deployment-Strategie (DE)
+## Deployment-Regeln (DE)
 
 ### Deployment-relevante Review-Aspekte
 - [ ] Prüfe Environment-Konfigurationen für verschiedene Umgebungen
@@ -18,7 +18,7 @@
 - [ ] Deployment-Berechtigungen restriktiv gesetzt
 - [ ] Rollback-Strategien definiert und getestet
 
-## Deployment Strategy (EN)
+## Deployment Rules (EN)
 
 ### Deployment-related Review Aspects
 - [ ] Check environment configurations for different deployment targets
