@@ -109,29 +109,18 @@ export function toNewViewPreservingScale(
     let targetResolution: number | undefined;
 
     try {
-      console.log(
-        "[crs] calculating scale preservation from",
-        currentProj.getCode(),
-        "to",
-        targetEpsg,
-      );
       const pointResolution = getPointResolution(currentProj, 1, currentCenter);
-      console.log("[crs] pointResolution:", pointResolution);
 
       if (pointResolution && pointResolution > 0) {
         // Get meters per unit for both projections
         const currentMetersPerUnit = currentProj.getMetersPerUnit() || 1;
-        console.log("[crs] currentMetersPerUnit:", currentMetersPerUnit);
-
         const targetProj = proj4.defs(targetEpsg);
         if (targetProj) {
           const targetMetersPerUnit = 1; // UTM and metric projections use meters
-          console.log("[crs] targetMetersPerUnit:", targetMetersPerUnit);
 
           // Calculate target resolution preserving scale
           targetResolution =
             (pointResolution * currentMetersPerUnit) / targetMetersPerUnit;
-          console.log("[crs] calculated targetResolution:", targetResolution);
 
           // Safety check to avoid invalid resolutions
           if (targetResolution <= 0 || !Number.isFinite(targetResolution)) {
@@ -157,19 +146,7 @@ export function toNewViewPreservingScale(
     // Transform center to target projection
     let transformedCenter: number[] | undefined;
     try {
-      console.log(
-        "[crs] transforming center from",
-        currentProj.getCode(),
-        "to",
-        targetEpsg,
-      );
       transformedCenter = transform(currentCenter, currentProj, targetEpsg);
-      console.log(
-        "[crs] center transformed:",
-        currentCenter,
-        "->",
-        transformedCenter,
-      );
     } catch (error) {
       console.error("[crs] failed to transform center", error);
       return false;
@@ -188,12 +165,6 @@ export function toNewViewPreservingScale(
       const targetZoom = targetResolution
         ? newView.getZoomForResolution(targetResolution)
         : currentZoom;
-      console.log(
-        "[crs] animating to projection:",
-        targetEpsg,
-        "zoom:",
-        targetZoom,
-      );
       view.animate({
         center: transformedCenter,
         zoom: targetZoom,
@@ -201,7 +172,6 @@ export function toNewViewPreservingScale(
         duration: 300,
       });
     } else {
-      console.log("[crs] setting projection:", targetEpsg, "without animation");
       view.setCenter(transformedCenter);
       if (targetResolution) {
         view.setResolution(targetResolution);
@@ -226,9 +196,7 @@ export function transformExtentFromWgs84(
   targetEpsg: string,
 ): number[] | null {
   try {
-    console.log("[crs] transforming extent from WGS84 to", targetEpsg);
     const result = transformExtent(extent, wgs84, targetEpsg);
-    console.log("[crs] extent transformed:", extent, "->", result);
     return result;
   } catch (error) {
     console.error("[crs] failed to transform extent", error);
@@ -244,9 +212,7 @@ export function transformCenterFromWgs84(
   targetEpsg: string,
 ): number[] | null {
   try {
-    console.log("[crs] transforming center from WGS84 to", targetEpsg);
     const result = transform(center, wgs84, targetEpsg);
-    console.log("[crs] center transformed:", center, "->", result);
     return result;
   } catch (error) {
     console.error("[crs] failed to transform center", error);

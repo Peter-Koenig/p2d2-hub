@@ -131,7 +131,6 @@
     addEventListener(
         "kommunen:focus",
         (e: CustomEvent) => {
-            console.log("[MapCanvas] kommunen:focus event received", e.detail);
             const detail = e.detail || {};
             const view = map?.getView?.();
 
@@ -142,7 +141,7 @@
 
             // Extract and validate projection
             const targetProjection = detail.projection || defaultCRS;
-            console.log("[MapCanvas] target projection:", targetProjection);
+
             const shouldUseUtm =
                 isUtm(targetProjection) && targetProjection !== defaultCRS;
 
@@ -157,12 +156,6 @@
             // Set active CRS - prefer local UTM if available, otherwise default
             localCRS = shouldUseUtm ? targetProjection : null;
             activeCRS = localCRS || defaultCRS;
-            console.log(
-                "[MapCanvas] active CRS:",
-                activeCRS,
-                "local CRS:",
-                localCRS,
-            );
 
             setSelectedCRS(activeCRS);
             if (detail.slug) {
@@ -202,16 +195,11 @@
                 );
 
                 if (activeCRS !== currentProjCode) {
-                    console.log("[MapCanvas] attempting projection switch...");
                     if (!toNewViewPreservingScale(map, activeCRS)) {
                         console.warn(
                             "[kommunen] projection switch failed, using default behavior",
                         );
-                    } else {
-                        console.log("[MapCanvas] projection switch successful");
                     }
-                } else {
-                    console.log("[MapCanvas] already in target projection");
                 }
 
                 // Handle navigation after projection switch

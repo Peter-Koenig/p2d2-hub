@@ -49,7 +49,6 @@ export function dispatchThrottledEvent(
     throttleMap.set(eventName, throttledFunc);
   }
 
-  console.log("[events] queueing throttled event:", eventName, detail);
   throttledFunc();
 }
 
@@ -94,7 +93,6 @@ export function dispatchKommunenFocus(detail: {
     return;
   }
 
-  console.log("[events] dispatching kommunen:focus", detail);
   window.dispatchEvent(new CustomEvent("kommunen:focus", { detail }));
 }
 
