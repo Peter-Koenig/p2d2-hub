@@ -5,7 +5,7 @@ colorStripe: "#FF6900"
 map:
   center: [120.1551, 30.2741]
   zoom: 11
-  projection: "EPSG:3857"
+  projection: "EPSG:32650"
 order: 40
 ---
 

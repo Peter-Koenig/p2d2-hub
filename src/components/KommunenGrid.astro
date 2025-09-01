@@ -1,5 +1,6 @@
 ---
 import { getCollection } from "astro:content";
+import { dispatchKommunenFocus } from "../utils/events";
 
 const kommunen = await getCollection("kommunen");
 const sorted = kommunen.sort(
@@ -17,11 +18,9 @@ const sorted = kommunen.sort(
       extent: m.extent,
       zoom: m.zoom,
       projection: m.projection,
-      extra: m.extra
+      extra: m.extra,
+      slug: entry.slug
     };
-
-    // Normalize projection to EPSG:4326 for consistency
-    detail.projection = 'EPSG:4326';
 
     // Validate data before dispatch
     const hasValidCenter = detail.center && Array.isArray(detail.center) && detail.center.length === 2 && detail.center.every(Number.isFinite);
@@ -73,13 +72,8 @@ const sorted = kommunen.sort(
           return;
         }
 
-        if (typeof window !== 'undefined') {
-          try {
-            window.dispatchEvent(new CustomEvent('kommunen:focus', { detail }));
-          } catch (error) {
-            console.error('[kommunen] event dispatch failed', error);
-          }
-        }
+        // Use the new event utility for dispatch
+        dispatchKommunenFocus(detail);
       }}
     >
         <!-- Permanent Glow-Overlay -->
@@ -142,7 +136,6 @@ const sorted = kommunen.sort(
         const detail = button.dataset?.detail ? JSON.parse(button.dataset.detail) : {};
 
         // Validate data before dispatch in delegated handler too
-        // Validate data before dispatch
         const isValidCenter = detail?.center &&
                             Array.isArray(detail.center) &&
                             detail.center.length === 2 &&
@@ -162,11 +155,8 @@ const sorted = kommunen.sort(
           return;
         }
 
-        try {
-          window.dispatchEvent(new CustomEvent('kommunen:focus', { detail }));
-        } catch (dispatchError) {
-          console.error('[kommunen] delegated event dispatch failed', dispatchError);
-        }
+        // Use the new event utility for delegated dispatch too
+        dispatchKommunenFocus(detail);
       } catch (error) {
         console.error('[kommunen] delegated event dispatch failed', error);
       }

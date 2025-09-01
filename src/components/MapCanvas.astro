@@ -2,33 +2,53 @@
 
 ---
 
-<div id="map" class="w-full h-full relative"></div>
+<div id="map" class="w-full h-full relative">
+    <!-- CRS Toggle Button -->
+    <div id="crs-toggle-container" class="absolute top-4 right-4 z-50">
+        <button
+            id="crs-toggle"
+            class="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            title="Switch between local projection and Web Mercator"
+            disabled
+        >
+            UTM ↔ Generisch
+        </button>
+    </div>
+</div>
 
 <script>
     // Import all OpenLayers modules needed for client-side
-
     import Map from "ol/Map";
     import View from "ol/View";
     import TileLayer from "ol/layer/Tile";
     import OSM from "ol/source/OSM";
-
     import proj4 from "proj4";
     import { register } from "ol/proj/proj4";
     import ImageLayer from "ol/layer/Image";
     import ImageWMS from "ol/source/ImageWMS";
-
     import FullScreen from "ol/control/FullScreen";
     import { defaults } from "ol/control/defaults";
-    import { fromLonLat, transformExtent } from "ol/proj";
+    import { fromLonLat } from "ol/proj";
 
-    // Define EPSG:25832 projection
-    proj4.defs(
-        "EPSG:25832",
-        "+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
-    );
-    register(proj4);
+    // Import utilities
+    import {
+        defaultCRS,
+        wgs84,
+        isUtm,
+        registerUtm,
+        toNewViewPreservingScale,
+        transformExtentFromWgs84,
+        transformCenterFromWgs84,
+    } from "../utils/crs";
+    import {
+        addEventListener,
+        getSelectedCRS,
+        setSelectedCRS,
+        setSelectedKommune,
+        getSelectedKommune,
+    } from "../utils/events";
 
-    // Initialize the map
+    // Initialize the map with default projection
     const map = new Map({
         target: "map",
         layers: [
@@ -37,14 +57,14 @@
             }),
         ],
         view: new View({
-            projection: "EPSG:25832",
-            center: [353400, 5643700], // Cologne coordinates in EPSG:25832
-            zoom: 11,
+            projection: defaultCRS,
+            center: fromLonLat([0, 0], defaultCRS),
+            zoom: 2,
         }),
         controls: defaults().extend([new FullScreen()]),
     });
 
-    // WMS Layer "p2d2_cemeteries_cologne"
+    // WMS Layer
     const wmsLayer = new ImageLayer({
         source: new ImageWMS({
             url: "https://ows.data-dna.eu/",
@@ -63,128 +83,248 @@
     // Add layer to map
     map.addLayer(wmsLayer);
 
-    // Event listener for kommunen focus (browser only)
-    if (typeof window !== "undefined") {
-        window.addEventListener(
-            "kommunen:focus",
-            (e) => {
-                const d = (e as CustomEvent)?.detail || {};
+    // State management
+    let activeCRS = defaultCRS;
+    let localCRS: string | null = null;
+    let currentKommune: string | null = null;
 
-                // Check if map and view are properly initialized
-                const view = map?.getView?.();
-                if (!view || !view.getProjection) {
-                    console.error("[kommunen] map view is not initialized");
-                    return;
+    // CRS Toggle button
+    const crsToggle = document.getElementById("crs-toggle");
+    const updateToggleButton = () => {
+        if (!crsToggle) return;
+
+        const hasLocalCRS = localCRS && localCRS !== defaultCRS;
+        (crsToggle as HTMLButtonElement).disabled = !hasLocalCRS;
+
+        if (hasLocalCRS) {
+            const isInLocalCRS = activeCRS === localCRS;
+            crsToggle.textContent = isInLocalCRS ? "← Generisch" : "UTM →";
+            crsToggle.title = isInLocalCRS
+                ? "Back to Web Mercator (EPSG:3857)"
+                : `Switch to local projection (${localCRS})`;
+        }
+    };
+
+    // Handle CRS toggle
+    const handleCrsToggle = () => {
+        if (!localCRS || localCRS === defaultCRS) return;
+
+        const targetCRS = activeCRS === localCRS ? defaultCRS : localCRS;
+
+        if (toNewViewPreservingScale(map, targetCRS)) {
+            activeCRS = targetCRS;
+            setSelectedCRS(activeCRS);
+            updateToggleButton();
+
+            // Refresh WMS after moveend
+            map.once("moveend", () => {
+                wmsLayer.getSource()?.refresh();
+            });
+        }
+    };
+
+    if (crsToggle) {
+        crsToggle.addEventListener("click", handleCrsToggle);
+    }
+
+    // Event listener for kommunen focus
+    addEventListener(
+        "kommunen:focus",
+        (e: CustomEvent) => {
+            console.log("[MapCanvas] kommunen:focus event received", e.detail);
+            const detail = e.detail || {};
+            const view = map?.getView?.();
+
+            if (!view || !view.getProjection) {
+                console.error("[kommunen] map view is not initialized");
+                return;
+            }
+
+            // Extract and validate projection
+            const targetProjection = detail.projection || defaultCRS;
+            console.log("[MapCanvas] target projection:", targetProjection);
+            const shouldUseUtm =
+                isUtm(targetProjection) && targetProjection !== defaultCRS;
+
+            // Register UTM projection if needed
+            if (shouldUseUtm && !registerUtm(targetProjection)) {
+                console.warn(
+                    "[kommunen] failed to register UTM, using default",
+                    targetProjection,
+                );
+            }
+
+            // Set active CRS - prefer local UTM if available, otherwise default
+            localCRS = shouldUseUtm ? targetProjection : null;
+            activeCRS = localCRS || defaultCRS;
+            console.log(
+                "[MapCanvas] active CRS:",
+                activeCRS,
+                "local CRS:",
+                localCRS,
+            );
+
+            setSelectedCRS(activeCRS);
+            if (detail.slug) {
+                setSelectedKommune(detail.slug);
+                currentKommune = detail.slug;
+            }
+
+            updateToggleButton();
+
+            // Extract and validate data
+            const center =
+                Array.isArray(detail?.center) &&
+                detail.center.length === 2 &&
+                detail.center.every(Number.isFinite)
+                    ? detail.center
+                    : undefined;
+
+            const extent =
+                Array.isArray(detail?.extent) &&
+                detail.extent.length === 4 &&
+                detail.extent.every(Number.isFinite)
+                    ? detail.extent
+                    : undefined;
+
+            const zoom = Number.isFinite(detail?.zoom)
+                ? detail.zoom
+                : undefined;
+
+            try {
+                // Switch to target projection with scale preservation
+                const currentProjCode = view.getProjection()?.getCode();
+                console.log(
+                    "[MapCanvas] current projection:",
+                    currentProjCode,
+                    "target:",
+                    activeCRS,
+                );
+
+                if (activeCRS !== currentProjCode) {
+                    console.log("[MapCanvas] attempting projection switch...");
+                    if (!toNewViewPreservingScale(map, activeCRS)) {
+                        console.warn(
+                            "[kommunen] projection switch failed, using default behavior",
+                        );
+                    } else {
+                        console.log("[MapCanvas] projection switch successful");
+                    }
+                } else {
+                    console.log("[MapCanvas] already in target projection");
                 }
 
-                const viewProj = view?.getProjection?.();
-                if (!viewProj) {
-                    console.error("[map:focus] view projection not available");
-                    return;
-                }
+                // Handle navigation after projection switch
+                if (extent) {
+                    // Validate extent bounds
+                    if (
+                        extent[0] < -180 ||
+                        extent[0] > 180 ||
+                        extent[1] < -90 ||
+                        extent[1] > 90 ||
+                        extent[2] < -180 ||
+                        extent[2] > 180 ||
+                        extent[3] < -90 ||
+                        extent[3] > 90
+                    ) {
+                        console.warn(
+                            "[kommunen] extent coordinates out of bounds",
+                            extent,
+                        );
+                        return;
+                    }
 
-                // Validate projection - only accept EPSG:4326
-                if (d?.projection && d.projection !== "EPSG:4326") {
+                    const transformedExtent = transformExtentFromWgs84(
+                        extent,
+                        activeCRS,
+                    );
+                    if (transformedExtent) {
+                        view.fit(transformedExtent, {
+                            padding: [50, 50, 50, 50],
+                            duration: 300,
+                            ...(detail.extra?.fitOptions || {}),
+                        });
+                    }
+                } else if (center) {
+                    // Validate center bounds
+                    if (
+                        center[0] < -180 ||
+                        center[0] > 180 ||
+                        center[1] < -90 ||
+                        center[1] > 90
+                    ) {
+                        console.warn(
+                            "[kommunen] center coordinates out of bounds",
+                            center,
+                        );
+                        return;
+                    }
+
+                    const transformedCenter = transformCenterFromWgs84(
+                        center,
+                        activeCRS,
+                    );
+                    if (transformedCenter) {
+                        const targetZoom = zoom || view?.getZoom?.() || 11;
+                        view.animate({
+                            center: transformedCenter,
+                            zoom: targetZoom,
+                            duration: 300,
+                            ...(detail.extra || {}),
+                        });
+                    }
+                } else {
                     console.warn(
-                        "[kommunen] unexpected projection in detail; assuming EPSG:4326",
-                        d.projection,
+                        "[kommunen] no valid center or extent data provided",
+                        detail,
                     );
                 }
 
-                // Extract and validate data
-                const center =
-                    Array.isArray(d?.center) &&
-                    d.center.length === 2 &&
-                    d.center.every(Number.isFinite)
-                        ? d.center
-                        : undefined;
-                const extent =
-                    Array.isArray(d?.extent) &&
-                    d.extent.length === 4 &&
-                    d.extent.every(Number.isFinite)
-                        ? d.extent
-                        : undefined;
-                const zoom = Number.isFinite(d?.zoom) ? d.zoom : undefined;
+                // Refresh WMS after navigation
+                map.once("moveend", () => {
+                    wmsLayer.getSource()?.refresh();
+                });
+            } catch (err) {
+                console.error("[kommunen] focus error", err, detail);
+            }
 
-                try {
-                    if (extent && transformExtent) {
-                        // Validate extent bounds
-                        if (
-                            extent[0] < -180 ||
-                            extent[0] > 180 ||
-                            extent[1] < -90 ||
-                            extent[1] > 90 ||
-                            extent[2] < -180 ||
-                            extent[2] > 180 ||
-                            extent[3] < -90 ||
-                            extent[3] > 90
-                        ) {
-                            console.warn(
-                                "[kommunen] extent coordinates out of bounds",
-                                extent,
-                            );
-                        }
+            // Dispatch state update for debugging
+            if (typeof window !== "undefined") {
+                const currentView = map?.getView?.();
+                window.dispatchEvent(
+                    new CustomEvent("map:state-update", {
+                        detail: {
+                            projection: activeCRS,
+                            center: currentView?.getCenter(),
+                            zoom: currentView?.getZoom(),
+                            rotation: currentView?.getRotation(),
+                        },
+                    }),
+                );
+            }
+        },
+        { passive: true },
+    );
 
-                        const fitExtent = transformExtent?.(
-                            extent,
-                            "EPSG:4326",
-                            viewProj,
-                        );
-                        const fitOpts = {
-                            padding: [50, 50, 50, 50],
-                            duration: 300,
-                            ...(d.extra?.fitOptions || {}),
-                        };
+    // Initialize toggle button state
+    updateToggleButton();
 
-                        try {
-                            view.fit(fitExtent, fitOpts);
-                        } catch (error) {
-                            console.error(
-                                "[kommunen] fit operation failed",
-                                error,
-                            );
-                        }
-                    } else if (center && fromLonLat) {
-                        // Validate center bounds
-                        if (
-                            center[0] < -180 ||
-                            center[0] > 180 ||
-                            center[1] < -90 ||
-                            center[1] > 90
-                        ) {
-                            console.warn(
-                                "[kommunen] center coordinates out of bounds",
-                                center,
-                            );
-                        }
+    // Restore previous state if available
+    const savedCRS = getSelectedCRS();
+    const savedKommune = getSelectedKommune();
 
-                        const c = fromLonLat?.(center, viewProj);
-                        const targetZoom = zoom || view?.getZoom?.() || 11;
-
-                        try {
-                            view.animate({
-                                center: c,
-                                zoom: targetZoom,
-                                duration: 300,
-                                ...(d.extra || {}),
-                            });
-                        } catch (error) {
-                            console.error(
-                                "[kommunen] animate operation failed",
-                                error,
-                            );
-                        }
-                    } else {
-                        console.warn(
-                            "[kommunen] no valid center or extent data provided",
-                            d,
-                        );
-                    }
-                } catch (err) {
-                    console.error("[kommunen] focus error", err, d);
-                }
-            },
-            { passive: true },
-        );
+    if (savedCRS && savedCRS !== defaultCRS) {
+        // Only restore if it's a valid UTM projection
+        if (isUtm(savedCRS) && registerUtm(savedCRS)) {
+            activeCRS = savedCRS;
+            localCRS = savedCRS;
+            toNewViewPreservingScale(map, savedCRS, false);
+        }
     }
+
+    if (savedKommune) {
+        currentKommune = savedKommune;
+    }
+
+    updateToggleButton();
 </script>
