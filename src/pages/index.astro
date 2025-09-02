@@ -10,6 +10,7 @@ import OpenLayersMap from "../components/OpenLayersMap.astro";
 import KategorienGrid from "../components/KategorienGrid.astro";
 import KommunenGrid from "../components/KommunenGrid.astro";
 import WerteGrid from "../components/WerteGrid.astro";
+import { dispatchSelectCategory } from "../utils/events.js";
 ---
 
 <BaseLayout>
@@ -105,9 +106,29 @@ import WerteGrid from "../components/WerteGrid.astro";
         let touchStartX = 0;
         let touchEndX = 0;
 
-        // Ensure initial state is correct
+        // Ensure initial state is correct and restore persisted tab
         document.addEventListener("DOMContentLoaded", () => {
-            switchTab("kommunen");
+            try {
+                const savedTab = localStorage.getItem("selectedTab");
+                const savedCategory = localStorage.getItem("selectedCategory");
+
+                // Restore tab selection
+                if (savedTab === "kategorien") {
+                    switchTab("kategorien");
+                } else {
+                    switchTab("kommunen");
+                }
+
+                // Dispatch category selection event if saved
+                if (savedCategory) {
+                    setTimeout(() => {
+                        dispatchSelectCategory(savedCategory);
+                    }, 100);
+                }
+            } catch (error) {
+                console.error("Error restoring persisted tab:", error);
+                switchTab("kommunen");
+            }
         });
 
         gridContainer?.addEventListener("touchstart", (e) => {
@@ -133,6 +154,17 @@ import WerteGrid from "../components/WerteGrid.astro";
                 }
             }
         }
+
+        // Persist tab selection when switching
+        const originalSwitchTab = switchTab;
+        switchTab = function (tabName) {
+            originalSwitchTab(tabName);
+            try {
+                localStorage.setItem("selectedTab", tabName);
+            } catch (error) {
+                console.warn("Could not persist tab selection:", error);
+            }
+        };
     </script>
 
     <style>
