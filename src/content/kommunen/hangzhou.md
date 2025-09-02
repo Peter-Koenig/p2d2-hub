@@ -3,7 +3,7 @@ title: "Hangzhou"
 slug: "hangzhou"
 colorStripe: "#FF6900"
 map:
-  center: [120.1551, 30.2741]
+  center: [120.1551, 30.2741] # center/extent in EPSG:4326 (lon,lat)
   zoom: 11
   projection: "EPSG:32650"
 order: 40

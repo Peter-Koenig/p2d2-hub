@@ -50,31 +50,6 @@ const sorted = kommunen.sort(
       aria-label={`Kommune ${entry.data.title} auswählen`}
       data-slug={entry.slug}
       data-detail={JSON.stringify(detail)}
-      onclick={() => {
-
-        // Final validation before dispatch
-        const isValidCenter = detail.center &&
-                            Array.isArray(detail.center) &&
-                            detail.center.length === 2 &&
-                            detail.center.every(Number.isFinite) &&
-                            detail.center[0] >= -180 && detail.center[0] <= 180 &&
-                            detail.center[1] >= -90 && detail.center[1] <= 90;
-
-        const isValidExtent = detail.extent &&
-                             Array.isArray(detail.extent) &&
-                             detail.extent.length === 4 &&
-                             detail.extent.every(Number.isFinite) &&
-                             detail.extent[0] >= -180 && detail.extent[2] <= 180 &&
-                             detail.extent[1] >= -90 && detail.extent[3] <= 90;
-
-        if (!isValidCenter && !isValidExtent) {
-          console.warn('[kommunen] skipping dispatch - no valid center or extent data', { slug: entry.slug, detail });
-          return;
-        }
-
-        // Use the new event utility for dispatch
-        dispatchKommunenFocus(detail);
-      }}
     >
         <!-- Permanent Glow-Overlay -->
         <div class="absolute -inset-2 z-0 pointer-events-none">
@@ -88,7 +63,7 @@ const sorted = kommunen.sort(
         <div class="absolute top-0 left-0 w-full h-1.5 z-10" style={`background-color: ${colorStripe}`}></div>
 
         <!-- Content -->
-        <div class="relative z-10 p-6 pt-6 flex flex-col items-start gap-3 flex-1">
+        <div class="relative z-10 p-6 pt-6 flex flex-col items-start gap-3">
           <h3 class="font-poppins font-bold text-xl mt-2">{entry.data.title}</h3>
           <div class="font-inter text-base text-gray-700 leading-tight">
             {entry.body ? entry.body : `Entdecke Projekte in ${entry.data.title}`}
@@ -122,44 +97,37 @@ const sorted = kommunen.sort(
 </style>
 
 <script>
-  // Event delegation as fallback for click handling
+  // Event delegation for click handling
   if (typeof window !== 'undefined') {
-    document.addEventListener('click', (e) => {
-      const button = e.target?.closest?.('button.kommunen-card');
-      if (!button) return;
+    // HMR guard to prevent duplicate listeners
+    if (!(window as any).__p2d2KommunenBound) {
+      (window as any).__p2d2KommunenBound = true;
 
-      // Extract data from the button with null safety
-      const slug = button.getAttribute?.('data-slug') || '';
+      document.addEventListener('click', (e) => {
+        const button = (e.target as HTMLElement)?.closest?.('button.kommunen-card');
+        if (!button) return;
 
-      // Try to find the original detail data from the button's dataset
-      try {
-        const detail = button.dataset?.detail ? JSON.parse(button.dataset.detail) : {};
+        // Extract data from the button with null safety
+        const slug = button.getAttribute?.('data-slug') || '';
 
-        // Validate data before dispatch in delegated handler too
-        const isValidCenter = detail?.center &&
-                            Array.isArray(detail.center) &&
-                            detail.center.length === 2 &&
-                            detail.center.every(Number.isFinite) &&
-                            detail.center[0] >= -180 && detail.center[0] <= 180 &&
-                            detail.center[1] >= -90 && detail.center[1] <= 90;
+        // Try to find the original detail data from the button's dataset
+        try {
+          const detailStr = (button as HTMLElement).dataset?.detail;
+          const detail = detailStr ? JSON.parse(detailStr) : {};
 
-        const isValidExtent = detail?.extent &&
-                             Array.isArray(detail.extent) &&
-                             detail.extent.length === 4 &&
-                             detail.extent.every(Number.isFinite) &&
-                             detail.extent[0] >= -180 && detail.extent[2] <= 180 &&
-                             detail.extent[1] >= -90 && detail.extent[3] <= 90;
-
-        if (!isValidCenter && !isValidExtent) {
-          console.warn('[kommunen] delegated dispatch skipped - invalid data', { slug, detail });
-          return;
+          // Use centralized event dispatch with validation and persistence
+          if (typeof (window as any).dispatchKommunenFocus === 'function') {
+            (window as any).dispatchKommunenFocus(detail, slug);
+          } else {
+            // Fallback: dispatch event manually if function is not available
+            window.dispatchEvent(
+              new CustomEvent('kommunen:focus', { detail })
+            );
+          }
+        } catch (error) {
+          console.error('[kommunen] delegated event dispatch failed', error);
         }
-
-        // Use the new event utility for delegated dispatch too
-        dispatchKommunenFocus(detail);
-      } catch (error) {
-        console.error('[kommunen] delegated event dispatch failed', error);
-      }
-    }, { passive: true });
+      }, { passive: true });
+    }
   }
 </script>

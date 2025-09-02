@@ -4,7 +4,7 @@ slug: "berlin"
 colorStripe: "#FF6900"
 order: 30
 map:
-  center: [13.404954, 52.520008]
+  center: [13.404954, 52.520008] # center/extent in EPSG:4326 (lon,lat)
   zoom: 10
   projection: "EPSG:25833"
 ---

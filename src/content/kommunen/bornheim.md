@@ -3,7 +3,7 @@ title: "Bornheim"
 slug: "bornheim"
 colorStripe: "#FF6900"
 map:
-  center: [7.0022, 50.7639]
+  center: [7.0022, 50.7639] # center/extent in EPSG:4326 (lon,lat)
   zoom: 13
   projection: "EPSG:25832"
 order: 60

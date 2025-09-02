@@ -96,6 +96,11 @@ export function dispatchKommunenFocus(detail: {
   window.dispatchEvent(new CustomEvent("kommunen:focus", { detail }));
 }
 
+// Make dispatchKommunenFocus globally available for event delegation
+if (typeof window !== "undefined") {
+  (window as any).dispatchKommunenFocus = dispatchKommunenFocus;
+}
+
 /**
  * Add event listener with HMR guard
  */

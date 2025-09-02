@@ -109,7 +109,12 @@ export function toNewViewPreservingScale(
     let targetResolution: number | undefined;
 
     try {
-      const pointResolution = getPointResolution(currentProj, 1, currentCenter);
+      const pointResolution = getPointResolution(
+        currentProj,
+        1,
+        currentCenter,
+        "m",
+      );
 
       if (pointResolution && pointResolution > 0) {
         // Get meters per unit for both projections
@@ -152,33 +157,31 @@ export function toNewViewPreservingScale(
       return false;
     }
 
-    // Create new view
+    if (!transformedCenter) {
+      console.error("[crs] transformed center is undefined");
+      return false;
+    }
+
+    // Create new view with target projection
     const newView = new View({
       projection: targetEpsg,
       center: transformedCenter,
-      zoom: targetResolution ? undefined : currentZoom,
       resolution: targetResolution,
+      zoom: targetResolution ? undefined : currentZoom,
       rotation: currentRotation,
     });
 
+    // WICHTIG: View wirklich wechseln
+    map.setView(newView);
+
+    // Optional: kurze Animation auf dem neuen View
     if (animate) {
-      const targetZoom = targetResolution
-        ? newView.getZoomForResolution(targetResolution)
-        : currentZoom;
-      view.animate({
-        center: transformedCenter,
-        zoom: targetZoom,
-        rotation: currentRotation,
-        duration: 300,
+      newView.animate({
+        center: newView.getCenter(),
+        resolution: newView.getResolution(),
+        rotation: newView.getRotation(),
+        duration: 250,
       });
-    } else {
-      view.setCenter(transformedCenter);
-      if (targetResolution) {
-        view.setResolution(targetResolution);
-      } else {
-        view.setZoom(currentZoom || 2);
-      }
-      view.setRotation(currentRotation);
     }
 
     return true;
