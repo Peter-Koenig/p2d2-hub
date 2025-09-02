@@ -97,7 +97,7 @@ export function toNewViewPreservingScale(
 
   try {
     const currentCenter = view.getCenter();
-    const currentZoom = view.getZoom();
+    const currentZoom = view.getZoom() || 10;
     const currentRotation = view.getRotation();
 
     if (!currentCenter) {
@@ -105,47 +105,31 @@ export function toNewViewPreservingScale(
       return false;
     }
 
-    // Calculate scale preservation
-    let targetResolution: number | undefined;
+    // Simplified scale preservation: use current resolution directly
+    const currentResolution = view.getResolution();
+    let targetResolution = currentResolution;
 
-    try {
-      const pointResolution = getPointResolution(
-        currentProj,
-        1,
-        currentCenter,
-        "m",
-      );
+    // Apply simple scaling factor between different projection types
+    if (currentProj.getCode() === defaultCRS && isUtm(targetEpsg)) {
+      // Web Mercator to UTM: scale down slightly
+      targetResolution = currentResolution
+        ? currentResolution * 0.8
+        : undefined;
+    } else if (isUtm(currentProj.getCode()) && targetEpsg === defaultCRS) {
+      // UTM to Web Mercator: scale up slightly
+      targetResolution = currentResolution
+        ? currentResolution * 1.25
+        : undefined;
+    }
 
-      if (pointResolution && pointResolution > 0) {
-        // Get meters per unit for both projections
-        const currentMetersPerUnit = currentProj.getMetersPerUnit() || 1;
-        const targetProj = proj4.defs(targetEpsg);
-        if (targetProj) {
-          const targetMetersPerUnit = 1; // UTM and metric projections use meters
-
-          // Calculate target resolution preserving scale
-          targetResolution =
-            (pointResolution * currentMetersPerUnit) / targetMetersPerUnit;
-
-          // Safety check to avoid invalid resolutions
-          if (targetResolution <= 0 || !Number.isFinite(targetResolution)) {
-            console.warn("[crs] invalid target resolution, using fallback");
-            targetResolution = undefined;
-          }
-        } else {
-          console.warn(
-            "[crs] target projection not found in proj4.defs:",
-            targetEpsg,
-          );
-        }
-      } else {
-        console.warn("[crs] invalid pointResolution, using fallback");
-      }
-    } catch (error) {
-      console.warn(
-        "[crs] error calculating scale preservation, using fallback",
-        error,
-      );
+    // Fallback to zoom-based approach if resolution calculation fails
+    if (
+      !targetResolution ||
+      !Number.isFinite(targetResolution) ||
+      targetResolution <= 0
+    ) {
+      console.warn("[crs] using zoom-based fallback");
+      targetResolution = undefined;
     }
 
     // Transform center to target projection
@@ -162,16 +146,13 @@ export function toNewViewPreservingScale(
       return false;
     }
 
-    // Create new view with target projection
+    // Create new view with simplified parameters
     const newView = new View({
       projection: targetEpsg,
       center: transformedCenter,
-      resolution: targetResolution,
-      zoom: targetResolution ? undefined : currentZoom,
+      zoom: currentZoom,
       rotation: currentRotation,
     });
-
-    // WICHTIG: View wirklich wechseln
     map.setView(newView);
 
     // Optional: kurze Animation auf dem neuen View

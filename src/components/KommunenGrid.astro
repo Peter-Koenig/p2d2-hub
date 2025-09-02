@@ -115,6 +115,12 @@ const sorted = kommunen.sort(
           const detailStr = (button as HTMLElement).dataset?.detail;
           const detail = detailStr ? JSON.parse(detailStr) : {};
 
+          // Ensure we have valid data before proceeding
+          if (!detail.center && !detail.extent) {
+            console.warn('[kommunen] No valid center or extent data found');
+            return;
+          }
+
           // Use centralized event dispatch with validation and persistence
           if (typeof (window as any).dispatchKommunenFocus === 'function') {
             (window as any).dispatchKommunenFocus(detail, slug);

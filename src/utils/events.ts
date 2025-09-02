@@ -93,7 +93,10 @@ export function dispatchKommunenFocus(detail: {
     return;
   }
 
-  window.dispatchEvent(new CustomEvent("kommunen:focus", { detail }));
+  // Add small delay to prevent race conditions
+  setTimeout(() => {
+    window.dispatchEvent(new CustomEvent("kommunen:focus", { detail }));
+  }, 50);
 }
 
 // Make dispatchKommunenFocus globally available for event delegation

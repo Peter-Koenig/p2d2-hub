@@ -58,8 +58,8 @@
         ],
         view: new View({
             projection: defaultCRS,
-            center: fromLonLat([0, 0], defaultCRS),
-            zoom: 2,
+            center: fromLonLat([6.9603, 50.9375], defaultCRS),
+            zoom: 10,
         }),
         controls: defaults().extend([new FullScreen()]),
     });
@@ -329,19 +329,4 @@
 
     // Initialize toggle button state
     updateToggleButton();
-
-    // Initial focus on Köln only if no state was restored
-    if (!hasRestoredState) {
-        setTimeout(() => {
-            const kolnCenter = [6.9603, 50.9375];
-            const transformedCenter = transformCenterFromWgs84(
-                kolnCenter,
-                defaultCRS,
-            );
-            if (transformedCenter) {
-                map.getView().setCenter(transformedCenter);
-                map.getView().setZoom(10);
-            }
-        }, 200);
-    }
 </script>
