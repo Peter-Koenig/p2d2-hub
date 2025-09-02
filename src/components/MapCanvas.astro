@@ -305,7 +305,11 @@
     // Initialize toggle button state
     updateToggleButton();
 
+    // TODO: Perplexity: Exchange "Restore previous state"
+    //
+
     // Restore previous state if available
+    let hasRestoredState = false;
     const savedCRS = getSelectedCRS();
     const savedKommune = getSelectedKommune();
 
@@ -315,6 +319,7 @@
             activeCRS = savedCRS;
             localCRS = savedCRS;
             toNewViewPreservingScale(map, savedCRS, false);
+            hasRestoredState = true;
         }
     }
 
@@ -322,5 +327,21 @@
         currentKommune = savedKommune;
     }
 
+    // Initialize toggle button state
     updateToggleButton();
+
+    // Initial focus on Köln only if no state was restored
+    if (!hasRestoredState) {
+        setTimeout(() => {
+            const kolnCenter = [6.9603, 50.9375];
+            const transformedCenter = transformCenterFromWgs84(
+                kolnCenter,
+                defaultCRS,
+            );
+            if (transformedCenter) {
+                map.getView().setCenter(transformedCenter);
+                map.getView().setZoom(10);
+            }
+        }, 200);
+    }
 </script>
