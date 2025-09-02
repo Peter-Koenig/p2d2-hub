@@ -320,6 +320,49 @@
                         new CustomEvent("kommunen:focus", { detail }),
                     );
                 }, 100);
+            } else {
+                // Kein gespeicherter Zustand - initial auf Köln zentrieren
+                const koelnCenter = [6.9603, 50.9375];
+                const koelnZoom = 11;
+                const koelnProjection = "EPSG:25832";
+
+                try {
+                    registerUtm(koelnProjection);
+                } catch (error) {
+                    console.warn(
+                        "[initial] Could not register UTM projection, using default",
+                    );
+                }
+
+                // View auf Köln setzen mit UTM-Projektion
+                toNewViewPreservingScale(map, koelnProjection, false);
+
+                // Center und Zoom explizit setzen
+                const transformedCenter = transform(
+                    koelnCenter,
+                    "EPSG:4326",
+                    koelnProjection,
+                );
+                map.getView().setCenter(transformedCenter);
+                map.getView().setZoom(koelnZoom);
+
+                // CRS-Status aktualisieren
+                mapState.setActiveCRS(koelnProjection);
+                mapState.setLocalCRS(koelnProjection);
+                updateCRSButton();
+
+                // WMS Layer nach View-Änderung aktualisieren
+                map.once("moveend", () => {
+                    try {
+                        wmsLayer.getSource()?.refresh();
+                    } catch (error) {
+                        throttledLogger.warn(
+                            "wms-refresh-initial",
+                            "[WMS] Could not refresh layer on initial load",
+                            error,
+                        );
+                    }
+                });
             }
 
             // Reselect feature after categories are loaded
