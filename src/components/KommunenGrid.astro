@@ -100,10 +100,13 @@ const sorted = kommunen.sort(
   import { KommunenClickHandler } from '../utils/kommunen-click-handler';
 
   let kommunenHandler: KommunenClickHandler | null = null;
+  let isHandlerBound = false;
 
   if (typeof window !== 'undefined') {
-    if (!(window as any).__p2d2KommunenHandlerBound) {
+    // Prevent duplicate handler binding
+    if (!(window as any).__p2d2KommunenHandlerBound && !isHandlerBound) {
       (window as any).__p2d2KommunenHandlerBound = true;
+      isHandlerBound = true;
 
       kommunenHandler = new KommunenClickHandler();
       kommunenHandler.bind();
@@ -113,8 +116,10 @@ const sorted = kommunen.sort(
         import.meta.hot.dispose(() => {
           if (kommunenHandler) {
             kommunenHandler.unbind();
+            kommunenHandler = null;
           }
           (window as any).__p2d2KommunenHandlerBound = false;
+          isHandlerBound = false;
         });
       }
     }

@@ -163,6 +163,7 @@ export class CategoryHandler {
   public destroy(): void {
     if (this.moveendDebounceTimer) {
       clearTimeout(this.moveendDebounceTimer);
+      this.moveendDebounceTimer = null;
     }
 
     this.map.removeLayer(this.categoryLayer);

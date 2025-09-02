@@ -158,9 +158,11 @@
     }
 
     // Event listener for CRS toggle button
-    document
-        .getElementById("crs-toggle-button")
-        ?.addEventListener("click", toggleCRS);
+    const crsToggleButton = document.getElementById("crs-toggle-button");
+    if (crsToggleButton && !crsToggleButton.dataset.listenerBound) {
+        crsToggleButton.addEventListener("click", toggleCRS);
+        crsToggleButton.dataset.listenerBound = "true";
+    }
 
     // Subscribe to map state changes
     mapState.subscribe((state) => {

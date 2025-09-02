@@ -87,6 +87,10 @@ function processEventQueue(): void {
     return;
   }
 
+  // Prevent recursive calls
+  if ((window as any).__p2d2ProcessingQueue) return;
+  (window as any).__p2d2ProcessingQueue = true;
+
   isProcessingQueue = true;
 
   while (eventQueue.length > 0) {
@@ -140,6 +144,7 @@ function processEventQueue(): void {
   }
 
   isProcessingQueue = false;
+  (window as any).__p2d2ProcessingQueue = false;
 
   // Continue processing if queue is not empty
   if (eventQueue.length > 0) {
@@ -274,21 +279,18 @@ export function addEventListener(
 ): void {
   if (typeof window === "undefined") return;
 
-  // HMR guard - check if this is a hot reload
-  const isHmr = typeof import.meta !== "undefined" && import.meta.hot;
+  // Create unique handler key for HMR deduplication
+  const handlerKey = `__${eventName}_handler_${Date.now()}__`;
 
-  if (isHmr) {
-    // For HMR, we need to be careful about duplicate listeners
-    const existingHandler = (window as any)[`__${eventName}_handler__`];
-    if (existingHandler) {
-      window.removeEventListener(eventName, existingHandler);
-    }
-
-    (window as any)[`__${eventName}_handler__`] = handler;
-    window.addEventListener(eventName, handler, options);
-  } else {
-    window.addEventListener(eventName, handler, options);
+  // Check if handler already exists and remove it
+  const existingHandler = (window as any)[handlerKey];
+  if (existingHandler) {
+    window.removeEventListener(eventName, existingHandler, options);
   }
+
+  // Store handler reference and add listener
+  (window as any)[handlerKey] = handler;
+  window.addEventListener(eventName, handler, options);
 }
 
 // Local storage keys

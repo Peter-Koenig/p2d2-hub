@@ -63,13 +63,30 @@ import { dispatchSelectCategory } from "../utils/events.js";
     }
 
     <script>
+        import {
+            getPersistedTab,
+            setPersistedTab,
+        } from "../utils/tab-persistence";
+
         // Tab-Umschaltung
         const tabButtons = document.querySelectorAll(".tab-button");
         const kommunenGrid = document.getElementById("kommunen-grid");
         const kategorienGrid = document.getElementById("kategorien-grid");
         const gridContainer = document.getElementById("grid-container");
 
+        // Current tab state
+        let currentTab = "kommunen";
+
+        // Prevent multiple tab initialization
+        let tabsInitialized = false;
+
         function switchTab(tabName) {
+            // Update internal state
+            currentTab = tabName;
+
+            // Persist tab selection using precise storage key
+            setPersistedTab(tabName);
+
             tabButtons.forEach((btn) => {
                 const isActive = btn.dataset.tab === tabName;
                 btn.classList.toggle("active", isActive);
@@ -97,27 +114,39 @@ import { dispatchSelectCategory } from "../utils/events.js";
         }
 
         tabButtons.forEach((btn) => {
-            btn.addEventListener("click", () => {
+            // Remove existing listeners to prevent duplicates
+            btn.removeEventListener("click", btn.dataset.clickHandler);
+
+            const clickHandler = () => {
                 switchTab((btn as HTMLElement).dataset.tab || "kommunen");
-            });
+            };
+
+            btn.dataset.clickHandler = clickHandler;
+            btn.addEventListener(
+                "click",
+                () => {
+                    switchTab((btn as HTMLElement).dataset.tab || "kommunen");
+                },
+                { passive: true },
+            );
         });
 
         // Swipe-Unterstützung für Mobile
         let touchStartX = 0;
         let touchEndX = 0;
 
-        // Ensure initial state is correct and restore persisted tab
+        // Restore persisted tab state on page load
         document.addEventListener("DOMContentLoaded", () => {
+            if (tabsInitialized) return;
+            tabsInitialized = true;
+
             try {
-                const savedTab = localStorage.getItem("selectedTab");
+                const persistedTab = getPersistedTab();
                 const savedCategory = localStorage.getItem("selectedCategory");
 
-                // Restore tab selection
-                if (savedTab === "kategorien") {
-                    switchTab("kategorien");
-                } else {
-                    switchTab("kommunen");
-                }
+                // Restore tab selection using precise storage key
+                const tabToShow = persistedTab || "kommunen";
+                switchTab(tabToShow);
 
                 // Dispatch category selection event if saved
                 if (savedCategory) {
@@ -126,7 +155,7 @@ import { dispatchSelectCategory } from "../utils/events.js";
                     }, 100);
                 }
             } catch (error) {
-                console.error("Error restoring persisted tab:", error);
+                console.warn("[index] Could not restore tab state:", error);
                 switchTab("kommunen");
             }
         });
@@ -154,17 +183,6 @@ import { dispatchSelectCategory } from "../utils/events.js";
                 }
             }
         }
-
-        // Persist tab selection when switching
-        const originalSwitchTab = switchTab;
-        switchTab = function (tabName) {
-            originalSwitchTab(tabName);
-            try {
-                localStorage.setItem("selectedTab", tabName);
-            } catch (error) {
-                console.warn("Could not persist tab selection:", error);
-            }
-        };
     </script>
 
     <style>
