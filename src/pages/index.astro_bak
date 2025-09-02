@@ -1,0 +1,144 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import HeroSection from "../components/HeroSection.astro";
+import Footer from "../components/Footer.astro";
+// Weitere Komponenten kannst du hier importieren, wenn sie bereit sind
+// import MissionStatement from '../components/MissionStatement.astro';
+// import CommunitySection from '../components/CommunitySection.astro';
+// import ThemenbereicheOverview from '../components/ThemenbereicheOverview.astro';
+import OpenLayersMap from "../components/OpenLayersMap.astro";
+import KategorienGrid from "../components/KategorienGrid.astro";
+import KommunenGrid from "../components/KommunenGrid.astro";
+import WerteGrid from "../components/WerteGrid.astro";
+---
+
+<BaseLayout>
+    <HeroSection />
+    <OpenLayersMap />
+
+    <!-- Tab-Umschaltung -->
+    <div class="max-w-5xl mx-auto mb-8">
+        <div class="flex border-b border-gray-200">
+            <button
+                id="tab-kommunen"
+                class="tab-button active px-6 py-3 font-medium text-gray-700 border-b-2 border-primary-600 transition-colors"
+                data-tab="kommunen"
+            >
+                Kommunen
+            </button>
+            <button
+                id="tab-kategorien"
+                class="tab-button px-6 py-3 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 transition-colors"
+                data-tab="kategorien"
+            >
+                Kategorien
+            </button>
+        </div>
+    </div>
+
+    <!-- Grid-Container mit Swipe-Unterstützung -->
+    <div id="grid-container" class="relative overflow-hidden">
+        <div id="kommunen-grid" class="transition-opacity duration-300">
+            <KommunenGrid />
+        </div>
+        <div
+            id="kategorien-grid"
+            class="transition-opacity duration-300 opacity-0 absolute inset-0"
+            style="pointer-events: none;"
+        >
+            <KategorienGrid />
+        </div>
+    </div>
+
+    <WerteGrid />
+
+    <!-- Beispiel: Hier kannst du weitere Inhalts-Komponenten einfügen, sobald sie bereit sind -->
+    {
+        /*
+  <MissionStatement />
+  <CommunitySection />
+  <ThemenbereicheOverview />
+  */
+    }
+
+    <script>
+        // Tab-Umschaltung
+        const tabButtons = document.querySelectorAll(".tab-button");
+        const kommunenGrid = document.getElementById("kommunen-grid");
+        const kategorienGrid = document.getElementById("kategorien-grid");
+        const gridContainer = document.getElementById("grid-container");
+
+        function switchTab(tabName) {
+            tabButtons.forEach((btn) => {
+                const isActive = btn.dataset.tab === tabName;
+                btn.classList.toggle("active", isActive);
+                btn.classList.toggle("border-primary-600", isActive);
+                btn.classList.toggle("border-transparent", !isActive);
+                btn.classList.toggle("text-gray-700", isActive);
+                btn.classList.toggle("text-gray-500", !isActive);
+            });
+
+            if (tabName === "kommunen") {
+                if (kommunenGrid && kategorienGrid) {
+                    kommunenGrid.classList.remove("opacity-0", "absolute");
+                    kommunenGrid.style.pointerEvents = "auto";
+                    kategorienGrid.classList.add("opacity-0", "absolute");
+                    kategorienGrid.style.pointerEvents = "none";
+                }
+            } else {
+                if (kommunenGrid && kategorienGrid) {
+                    kommunenGrid.classList.add("opacity-0", "absolute");
+                    kommunenGrid.style.pointerEvents = "none";
+                    kategorienGrid.classList.remove("opacity-0", "absolute");
+                    kategorienGrid.style.pointerEvents = "auto";
+                }
+            }
+        }
+
+        tabButtons.forEach((btn) => {
+            btn.addEventListener("click", () => {
+                switchTab((btn as HTMLElement).dataset.tab || "kommunen");
+            });
+        });
+
+        // Swipe-Unterstützung für Mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        // Ensure initial state is correct
+        document.addEventListener("DOMContentLoaded", () => {
+            switchTab("kommunen");
+        });
+
+        gridContainer?.addEventListener("touchstart", (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        gridContainer?.addEventListener("touchend", (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const swipeDistance = touchEndX - touchStartX;
+
+            if (Math.abs(swipeDistance) > swipeThreshold) {
+                if (swipeDistance > 0) {
+                    // Swipe nach rechts -> Kommunen
+                    switchTab("kommunen");
+                } else {
+                    // Swipe nach links -> Kategorien
+                    switchTab("kategorien");
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .tab-button.active {
+            color: rgb(17 24 39);
+            border-bottom-color: rgb(79 70 229);
+        }
+    </style>
+</BaseLayout>
