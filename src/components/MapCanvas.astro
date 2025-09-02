@@ -305,29 +305,6 @@
     // Initialize toggle button state
     updateToggleButton();
 
-    // Initial focus on Köln (coordinates for Cologne)
-    setTimeout(() => {
-        const kolnCenter = [6.9603, 50.9375]; // Cologne coordinates
-        const kolnExtent = [6.77, 50.8, 7.15, 51.1]; // Cologne extent
-
-        const transformedCenter = transformCenterFromWgs84(
-            kolnCenter,
-            defaultCRS,
-        );
-        const transformedExtent = transformExtentFromWgs84(
-            kolnExtent,
-            defaultCRS,
-        );
-
-        if (transformedCenter && transformedExtent) {
-            const view = map.getView();
-            view.fit(transformedExtent, {
-                padding: [50, 50, 50, 50],
-                duration: 300,
-            });
-        }
-    }, 100);
-
     // Restore previous state if available
     const savedCRS = getSelectedCRS();
     const savedKommune = getSelectedKommune();
