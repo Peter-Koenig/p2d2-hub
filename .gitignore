@@ -33,12 +33,12 @@ nohup.out
 .zed
 nohup.out
 debug_konsole.txt
-
-# Big files
-public/videos/hero-bg-hires.mp4
-src_main.txt
+src_kommunen.txt
 src_goodold.txt
 p2d2-feature-team-de1-setup
 p2d2-feature-team-de1-utm
 src_kommunen.txt
 src_utm_working.txt
+src_main.txt
+src_utm_working.txt
+public/videos/hero-bg-hires.mp4

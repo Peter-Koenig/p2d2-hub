@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 
+
 const kommunen = await getCollection("kommunen");
 const sorted = kommunen.sort(
   (a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),
@@ -17,11 +18,9 @@ const sorted = kommunen.sort(
       extent: m.extent,
       zoom: m.zoom,
       projection: m.projection,
-      extra: m.extra
+      extra: m.extra,
+      slug: entry.slug
     };
-
-    // Normalize projection to EPSG:4326 for consistency
-    detail.projection = 'EPSG:4326';
 
     // Validate data before dispatch
     const hasValidCenter = detail.center && Array.isArray(detail.center) && detail.center.length === 2 && detail.center.every(Number.isFinite);
@@ -51,36 +50,6 @@ const sorted = kommunen.sort(
       aria-label={`Kommune ${entry.data.title} auswählen`}
       data-slug={entry.slug}
       data-detail={JSON.stringify(detail)}
-      onclick={() => {
-
-        // Final validation before dispatch
-        const isValidCenter = detail.center &&
-                            Array.isArray(detail.center) &&
-                            detail.center.length === 2 &&
-                            detail.center.every(Number.isFinite) &&
-                            detail.center[0] >= -180 && detail.center[0] <= 180 &&
-                            detail.center[1] >= -90 && detail.center[1] <= 90;
-
-        const isValidExtent = detail.extent &&
-                             Array.isArray(detail.extent) &&
-                             detail.extent.length === 4 &&
-                             detail.extent.every(Number.isFinite) &&
-                             detail.extent[0] >= -180 && detail.extent[2] <= 180 &&
-                             detail.extent[1] >= -90 && detail.extent[3] <= 90;
-
-        if (!isValidCenter && !isValidExtent) {
-          console.warn('[kommunen] skipping dispatch - no valid center or extent data', { slug: entry.slug, detail });
-          return;
-        }
-
-        if (typeof window !== 'undefined') {
-          try {
-            window.dispatchEvent(new CustomEvent('kommunen:focus', { detail }));
-          } catch (error) {
-            console.error('[kommunen] event dispatch failed', error);
-          }
-        }
-      }}
     >
         <!-- Permanent Glow-Overlay -->
         <div class="absolute -inset-2 z-0 pointer-events-none">
@@ -94,7 +63,7 @@ const sorted = kommunen.sort(
         <div class="absolute top-0 left-0 w-full h-1.5 z-10" style={`background-color: ${colorStripe}`}></div>
 
         <!-- Content -->
-        <div class="relative z-10 p-6 pt-6 flex flex-col items-start gap-3 flex-1">
+        <div class="relative z-10 p-6 pt-6 flex flex-col items-start gap-3">
           <h3 class="font-poppins font-bold text-xl mt-2">{entry.data.title}</h3>
           <div class="font-inter text-base text-gray-700 leading-tight">
             {entry.body ? entry.body : `Entdecke Projekte in ${entry.data.title}`}
@@ -128,48 +97,47 @@ const sorted = kommunen.sort(
 </style>
 
 <script>
-  // Event delegation as fallback for click handling
+  import { KommunenClickHandler } from '../utils/kommunen-click-handler';
+
+  let kommunenHandler: KommunenClickHandler | null = null;
+  let isHandlerBound = false;
+
   if (typeof window !== 'undefined') {
-    document.addEventListener('click', (e) => {
-      const button = e.target?.closest?.('button.kommunen-card');
-      if (!button) return;
+    // Prevent duplicate handler binding
+    if (!(window as any).__p2d2KommunenHandlerBound && !isHandlerBound) {
+      (window as any).__p2d2KommunenHandlerBound = true;
+      isHandlerBound = true;
 
-      // Extract data from the button with null safety
-      const slug = button.getAttribute?.('data-slug') || '';
+      kommunenHandler = new KommunenClickHandler();
+      kommunenHandler.bind();
 
-      // Try to find the original detail data from the button's dataset
-      try {
-        const detail = button.dataset?.detail ? JSON.parse(button.dataset.detail) : {};
-
-        // Validate data before dispatch in delegated handler too
-        // Validate data before dispatch
-        const isValidCenter = detail?.center &&
-                            Array.isArray(detail.center) &&
-                            detail.center.length === 2 &&
-                            detail.center.every(Number.isFinite) &&
-                            detail.center[0] >= -180 && detail.center[0] <= 180 &&
-                            detail.center[1] >= -90 && detail.center[1] <= 90;
-
-        const isValidExtent = detail?.extent &&
-                             Array.isArray(detail.extent) &&
-                             detail.extent.length === 4 &&
-                             detail.extent.every(Number.isFinite) &&
-                             detail.extent[0] >= -180 && detail.extent[2] <= 180 &&
-                             detail.extent[1] >= -90 && detail.extent[3] <= 90;
-
-        if (!isValidCenter && !isValidExtent) {
-          console.warn('[kommunen] delegated dispatch skipped - invalid data', { slug, detail });
-          return;
-        }
-
-        try {
-          window.dispatchEvent(new CustomEvent('kommunen:focus', { detail }));
-        } catch (dispatchError) {
-          console.error('[kommunen] delegated event dispatch failed', dispatchError);
-        }
-      } catch (error) {
-        console.error('[kommunen] delegated event dispatch failed', error);
+      // Cleanup function for HMR
+      if (typeof import.meta !== 'undefined' && import.meta.hot) {
+        import.meta.hot.dispose(() => {
+          if (kommunenHandler) {
+            kommunenHandler.unbind();
+            kommunenHandler = null;
+          }
+          (window as any).__p2d2KommunenHandlerBound = false;
+          isHandlerBound = false;
+        });
       }
-    }, { passive: true });
+    }
+  }
+
+  // Enhanced state restoration on page load
+  if (typeof window !== 'undefined') {
+    const restoreLastSelection = () => {
+      if (kommunenHandler) {
+        kommunenHandler.restoreLastSelection();
+      }
+    };
+
+    // Restore selection when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', restoreLastSelection);
+    } else {
+      setTimeout(restoreLastSelection, 200);
+    }
   }
 </script>

@@ -10,6 +10,7 @@ import OpenLayersMap from "../components/OpenLayersMap.astro";
 import KategorienGrid from "../components/KategorienGrid.astro";
 import KommunenGrid from "../components/KommunenGrid.astro";
 import WerteGrid from "../components/WerteGrid.astro";
+import { dispatchSelectCategory } from "../utils/events.js";
 ---
 
 <BaseLayout>
@@ -62,13 +63,30 @@ import WerteGrid from "../components/WerteGrid.astro";
     }
 
     <script>
+        import {
+            getPersistedTab,
+            setPersistedTab,
+        } from "../utils/tab-persistence";
+
         // Tab-Umschaltung
         const tabButtons = document.querySelectorAll(".tab-button");
         const kommunenGrid = document.getElementById("kommunen-grid");
         const kategorienGrid = document.getElementById("kategorien-grid");
         const gridContainer = document.getElementById("grid-container");
 
+        // Current tab state
+        let currentTab = "kommunen";
+
+        // Prevent multiple tab initialization
+        let tabsInitialized = false;
+
         function switchTab(tabName) {
+            // Update internal state
+            currentTab = tabName;
+
+            // Persist tab selection using precise storage key
+            setPersistedTab(tabName);
+
             tabButtons.forEach((btn) => {
                 const isActive = btn.dataset.tab === tabName;
                 btn.classList.toggle("active", isActive);
@@ -96,18 +114,50 @@ import WerteGrid from "../components/WerteGrid.astro";
         }
 
         tabButtons.forEach((btn) => {
-            btn.addEventListener("click", () => {
+            // Remove existing listeners to prevent duplicates
+            btn.removeEventListener("click", btn.dataset.clickHandler);
+
+            const clickHandler = () => {
                 switchTab((btn as HTMLElement).dataset.tab || "kommunen");
-            });
+            };
+
+            btn.dataset.clickHandler = clickHandler;
+            btn.addEventListener(
+                "click",
+                () => {
+                    switchTab((btn as HTMLElement).dataset.tab || "kommunen");
+                },
+                { passive: true },
+            );
         });
 
         // Swipe-Unterstützung für Mobile
         let touchStartX = 0;
         let touchEndX = 0;
 
-        // Ensure initial state is correct
+        // Restore persisted tab state on page load
         document.addEventListener("DOMContentLoaded", () => {
-            switchTab("kommunen");
+            if (tabsInitialized) return;
+            tabsInitialized = true;
+
+            try {
+                const persistedTab = getPersistedTab();
+                const savedCategory = localStorage.getItem("selectedCategory");
+
+                // Restore tab selection using precise storage key
+                const tabToShow = persistedTab || "kommunen";
+                switchTab(tabToShow);
+
+                // Dispatch category selection event if saved
+                if (savedCategory) {
+                    setTimeout(() => {
+                        dispatchSelectCategory(savedCategory);
+                    }, 100);
+                }
+            } catch (error) {
+                console.warn("[index] Could not restore tab state:", error);
+                switchTab("kommunen");
+            }
         });
 
         gridContainer?.addEventListener("touchstart", (e) => {

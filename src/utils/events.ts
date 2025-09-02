@@ -1,0 +1,341 @@
+/**
+ * Robust Event Handling with Retry Mechanism
+ * Provides reliable event dispatching for p2d2 kommune focus events
+ */
+
+// Event queue for retry mechanism
+interface QueuedEvent {
+  eventName: string;
+  detail: any;
+  timestamp: number;
+  retryCount: number;
+  maxRetries: number;
+}
+
+// Global event queue and processing state
+const eventQueue: QueuedEvent[] = [];
+let isProcessingQueue = false;
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 250; // ms
+const QUEUE_PROCESS_INTERVAL = 100; // ms
+
+// Throttle tracking
+const lastDispatchTimes = new Map<string, number>();
+const THROTTLE_MS = 200; // Reduced for better responsiveness
+
+// Event type definitions
+export const EVENT_KOMMUNEN_FOCUS = "kommunen:focus";
+
+// Interface für Kommunen Focus Event Detail
+interface KommunenFocusDetail {
+  center?: [number, number];
+  extent?: [number, number, number, number];
+  zoom?: number;
+  projection?: string;
+  extra?: any;
+  slug?: string;
+}
+
+/**
+ * Enhanced throttle implementation with queue integration
+ */
+function throttle<T extends (...args: any[]) => void>(
+  func: T,
+  delay: number,
+): (...args: Parameters<T>) => void {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let lastExecTime = 0;
+
+  return (...args: Parameters<T>) => {
+    const currentTime = Date.now();
+
+    if (currentTime - lastExecTime < delay) {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      timeoutId = setTimeout(
+        () => {
+          lastExecTime = currentTime;
+          func(...args);
+        },
+        delay - (currentTime - lastExecTime),
+      );
+    } else {
+      lastExecTime = currentTime;
+      func(...args);
+    }
+  };
+}
+
+/**
+ * Check if event system is ready
+ */
+function isEventSystemReady(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.dispatchEvent !== undefined &&
+    document !== undefined &&
+    document.readyState !== "loading"
+  );
+}
+
+/**
+ * Process event queue with retry mechanism
+ */
+function processEventQueue(): void {
+  if (isProcessingQueue || eventQueue.length === 0) {
+    return;
+  }
+
+  // Prevent recursive calls
+  if ((window as any).__p2d2ProcessingQueue) return;
+  (window as any).__p2d2ProcessingQueue = true;
+
+  isProcessingQueue = true;
+
+  while (eventQueue.length > 0) {
+    const queuedEvent = eventQueue.shift();
+    if (!queuedEvent) break;
+
+    try {
+      if (isEventSystemReady()) {
+        // Dispatch the event
+        window.dispatchEvent(
+          new CustomEvent(queuedEvent.eventName, {
+            detail: queuedEvent.detail,
+          }),
+        );
+        console.log(
+          `[events] successfully dispatched ${queuedEvent.eventName} after ${queuedEvent.retryCount} retries`,
+        );
+      } else {
+        // Event system not ready, requeue with retry
+        if (queuedEvent.retryCount < queuedEvent.maxRetries) {
+          queuedEvent.retryCount++;
+          eventQueue.unshift(queuedEvent);
+          console.log(
+            `[events] requeuing ${queuedEvent.eventName}, retry ${queuedEvent.retryCount}/${queuedEvent.maxRetries}`,
+          );
+        } else {
+          console.warn(
+            `[events] max retries exceeded for ${queuedEvent.eventName}`,
+          );
+        }
+      }
+    } catch (error) {
+      console.error(
+        `[events] error dispatching ${queuedEvent.eventName}:`,
+        error,
+      );
+
+      // Requeue on error if retries remain
+      if (queuedEvent.retryCount < queuedEvent.maxRetries) {
+        queuedEvent.retryCount++;
+        eventQueue.unshift(queuedEvent);
+        console.log(
+          `[events] requeuing after error, retry ${queuedEvent.retryCount}/${queuedEvent.maxRetries}`,
+        );
+      } else {
+        console.warn(
+          `[events] max retries exceeded after error for ${queuedEvent.eventName}`,
+        );
+      }
+    }
+  }
+
+  isProcessingQueue = false;
+  (window as any).__p2d2ProcessingQueue = false;
+
+  // Continue processing if queue is not empty
+  if (eventQueue.length > 0) {
+    setTimeout(processEventQueue, QUEUE_PROCESS_INTERVAL);
+  }
+}
+
+/**
+ * Queue event for reliable dispatch with retry mechanism
+ */
+function queueEvent(
+  eventName: string,
+  detail: any = {},
+  maxRetries: number = MAX_RETRIES,
+): void {
+  const queuedEvent: QueuedEvent = {
+    eventName,
+    detail,
+    timestamp: Date.now(),
+    retryCount: 0,
+    maxRetries,
+  };
+
+  eventQueue.push(queuedEvent);
+
+  // Start processing if not already running
+  if (!isProcessingQueue) {
+    setTimeout(processEventQueue, QUEUE_PROCESS_INTERVAL);
+  }
+}
+
+/**
+ * Dispatch a throttled event with retry mechanism
+ */
+export function dispatchThrottledEvent(
+  eventName: string,
+  detail: any = {},
+  throttleMs: number = THROTTLE_MS,
+): void {
+  if (typeof window === "undefined") {
+    console.warn(`[events] cannot dispatch ${eventName} - window undefined`);
+    return;
+  }
+
+  const lastDispatch = lastDispatchTimes.get(eventName) || 0;
+  const currentTime = Date.now();
+
+  if (currentTime - lastDispatch < throttleMs) {
+    console.log(`[events] throttling ${eventName} - too frequent`);
+    return;
+  }
+
+  lastDispatchTimes.set(eventName, currentTime);
+  queueEvent(eventName, detail);
+}
+
+/**
+ * Dispatch kommunen focus event with robust retry mechanism
+ */
+export function dispatchKommunenFocus(detail: KommunenFocusDetail): void {
+  if (typeof window === "undefined") {
+    console.warn("[events] cannot dispatch kommunen focus - window undefined");
+    return;
+  }
+
+  // Validate data before dispatch
+  const hasValidCenter = isValidWgs84Coordinate(detail.center);
+  const hasValidExtent = isValidWgs84Extent(detail.extent);
+
+  if (!hasValidCenter && !hasValidExtent) {
+    console.warn(
+      "[events] skipping kommunen focus - no valid center or extent data",
+      detail,
+    );
+    return;
+  }
+
+  // Use robust queuing system instead of simple timeout
+  queueEvent("kommunen:focus", detail, MAX_RETRIES);
+  console.log("[events] queued kommunen focus for reliable dispatch");
+}
+
+function isValidWgs84Coordinate(coord: any): coord is [number, number] {
+  return (
+    Array.isArray(coord) &&
+    coord.length === 2 &&
+    coord.every(Number.isFinite) &&
+    coord[0] >= -180 &&
+    coord[0] <= 180 &&
+    coord[1] >= -90 &&
+    coord[1] <= 90
+  );
+}
+
+function isValidWgs84Extent(
+  extent: any,
+): extent is [number, number, number, number] {
+  return (
+    Array.isArray(extent) &&
+    extent.length === 4 &&
+    extent.every(Number.isFinite) &&
+    extent[0] >= -180 &&
+    extent[2] <= 180 &&
+    extent[1] >= -90 &&
+    extent[3] <= 90
+  );
+}
+
+// Make dispatchKommunenFocus globally available for event delegation
+if (typeof window !== "undefined") {
+  (window as any).dispatchKommunenFocus = dispatchKommunenFocus;
+
+  // Initialize event system on document ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("[events] DOM loaded, starting event queue processing");
+      processEventQueue();
+    });
+  } else {
+    console.log("[events] DOM already ready, starting event queue processing");
+    processEventQueue();
+  }
+}
+
+/**
+ * Add event listener with HMR guard
+ */
+export function addEventListener(
+  eventName: string,
+  handler: (event: any) => void,
+  options?: AddEventListenerOptions,
+): void {
+  if (typeof window === "undefined") return;
+
+  // Create unique handler key for HMR deduplication
+  const handlerKey = `__${eventName}_handler_${Date.now()}__`;
+
+  // Check if handler already exists and remove it
+  const existingHandler = (window as any)[handlerKey];
+  if (existingHandler) {
+    window.removeEventListener(eventName, existingHandler, options);
+  }
+
+  // Store handler reference and add listener
+  (window as any)[handlerKey] = handler;
+  window.addEventListener(eventName, handler, options);
+}
+
+// Local storage keys
+const STORAGE_KEYS = {
+  SELECTED_CRS: "p2d2_selected_crs",
+  SELECTED_KOMMUNE: "p2d2_selected_kommune",
+};
+
+/**
+ * Get selected CRS from local storage
+ */
+export function getSelectedCRS(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(STORAGE_KEYS.SELECTED_CRS);
+}
+
+/**
+ * Set selected CRS in local storage
+ */
+export function setSelectedCRS(crs: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(STORAGE_KEYS.SELECTED_CRS, crs);
+}
+
+/**
+ * Get selected Kommune from local storage
+ */
+export function getSelectedKommune(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(STORAGE_KEYS.SELECTED_KOMMUNE);
+}
+
+/**
+ * Set selected Kommune in local storage
+ */
+export function setSelectedKommune(slug: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(STORAGE_KEYS.SELECTED_KOMMUNE, slug);
+}
+
+/**
+ * Clear all stored selections
+ */
+export function clearSelections(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(STORAGE_KEYS.SELECTED_CRS);
+  localStorage.removeItem(STORAGE_KEYS.SELECTED_KOMMUNE);
+}
