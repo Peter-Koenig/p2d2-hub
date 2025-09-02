@@ -19,6 +19,42 @@ const predefinedUtmDefs: Record<string, string> = {
 const registeredProjections = new Set<string>();
 
 /**
+ * Validate WGS84 coordinate [longitude, latitude]
+ */
+export function isValidWgs84Coordinate(coord: any): boolean {
+  return (
+    Array.isArray(coord) &&
+    coord.length === 2 &&
+    coord.every(Number.isFinite) &&
+    coord[0] >= -180 &&
+    coord[0] <= 180 &&
+    coord[1] >= -90 &&
+    coord[1] <= 90
+  );
+}
+
+/**
+ * Validate WGS84 extent [minLon, minLat, maxLon, maxLat]
+ */
+export function isValidWgs84Extent(extent: any): boolean {
+  return (
+    Array.isArray(extent) &&
+    extent.length === 4 &&
+    extent.every(Number.isFinite) &&
+    extent[0] >= -180 &&
+    extent[0] <= 180 &&
+    extent[1] >= -90 &&
+    extent[1] <= 90 &&
+    extent[2] >= -180 &&
+    extent[2] <= 180 &&
+    extent[3] >= -90 &&
+    extent[3] <= 90 &&
+    extent[0] <= extent[2] &&
+    extent[1] <= extent[3]
+  );
+}
+
+/**
  * Check if a CRS is a UTM projection
  */
 export function isUtm(crs: string): boolean {
@@ -146,31 +182,75 @@ export function toNewViewPreservingScale(
       return false;
     }
 
-    // Create new view with simplified parameters
+    // Enhanced view creation with better scale preservation
     const newView = new View({
       projection: targetEpsg,
       center: transformedCenter,
-      zoom: currentZoom,
+      resolution: targetResolution || undefined,
+      zoom: targetResolution ? undefined : currentZoom,
       rotation: currentRotation,
+      // Add constraints for better UX
+      maxZoom: 21,
+      minZoom: 1,
     });
+
+    // Store old view reference for potential rollback
+    const oldView = map.getView();
+
     map.setView(newView);
 
-    // Optional: kurze Animation auf dem neuen View
-    if (animate) {
-      newView.animate({
-        center: newView.getCenter(),
-        resolution: newView.getResolution(),
-        rotation: newView.getRotation(),
-        duration: 250,
-      });
+    // Verify view change was successful
+    const actualNewView = map.getView();
+    if (
+      !actualNewView ||
+      actualNewView.getProjection()?.getCode() !== targetEpsg
+    ) {
+      console.error(
+        `[crs] View change verification failed. Expected: ${targetEpsg}, Got: ${actualNewView?.getProjection()?.getCode()}`,
+      );
+      // Rollback on failure
+      map.setView(oldView);
+      return false;
     }
 
+    // Optional animation with error handling
+    if (animate) {
+      try {
+        actualNewView.animate({
+          center: actualNewView.getCenter(),
+          resolution: actualNewView.getResolution(),
+          rotation: actualNewView.getRotation(),
+          duration: 250,
+        });
+      } catch (animationError) {
+        console.warn(
+          "[crs] Animation failed, but view change successful:",
+          animationError,
+        );
+        // Animation failure doesn't affect the core functionality
+      }
+    }
+
+    console.log(`[crs] Successfully switched to projection: ${targetEpsg}`);
     return true;
   } catch (error) {
     console.error("[crs] error in view preservation", error);
+
+    // Additional error context
+    console.error("[crs] Error context:", {
+      currentProj: currentProj?.getCode(),
+      targetEpsg,
+      currentCenter,
+      currentZoom,
+    });
     return false;
   }
 }
+
+/**
+ * Transform extent from WGS84 to target projection
+ * Enhanced with better error handling and validation
+ */
 
 /**
  * Transform extent from WGS84 to target projection
@@ -179,11 +259,35 @@ export function transformExtentFromWgs84(
   extent: number[],
   targetEpsg: string,
 ): number[] | null {
+  // Input validation
+  if (!extent || !Array.isArray(extent) || extent.length !== 4) {
+    console.error("[crs] Invalid extent for transformation:", extent);
+    return null;
+  }
+
+  if (!extent.every(Number.isFinite)) {
+    console.error("[crs] Extent contains non-finite values:", extent);
+    return null;
+  }
+
   try {
     const result = transformExtent(extent, wgs84, targetEpsg);
+
+    // Validate result
+    if (
+      !result ||
+      !Array.isArray(result) ||
+      result.length !== 4 ||
+      !result.every(Number.isFinite)
+    ) {
+      console.error("[crs] Invalid transformation result:", result);
+      return null;
+    }
+
     return result;
   } catch (error) {
     console.error("[crs] failed to transform extent", error);
+    console.error("[crs] Transform extent context:", { extent, targetEpsg });
     return null;
   }
 }
@@ -195,11 +299,35 @@ export function transformCenterFromWgs84(
   center: number[],
   targetEpsg: string,
 ): number[] | null {
+  // Input validation
+  if (!center || !Array.isArray(center) || center.length !== 2) {
+    console.error("[crs] Invalid center for transformation:", center);
+    return null;
+  }
+
+  if (!center.every(Number.isFinite)) {
+    console.error("[crs] Center contains non-finite values:", center);
+    return null;
+  }
+
   try {
     const result = transform(center, wgs84, targetEpsg);
+
+    // Validate result
+    if (
+      !result ||
+      !Array.isArray(result) ||
+      result.length !== 2 ||
+      !result.every(Number.isFinite)
+    ) {
+      console.error("[crs] Invalid transformation result:", result);
+      return null;
+    }
+
     return result;
   } catch (error) {
     console.error("[crs] failed to transform center", error);
+    console.error("[crs] Transform center context:", { center, targetEpsg });
     return null;
   }
 }

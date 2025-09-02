@@ -1,4 +1,31 @@
-// Simple throttle implementation
+/**
+ * Robust Event Handling with Retry Mechanism
+ * Provides reliable event dispatching for p2d2 kommune focus events
+ */
+
+// Event queue for retry mechanism
+interface QueuedEvent {
+  eventName: string;
+  detail: any;
+  timestamp: number;
+  retryCount: number;
+  maxRetries: number;
+}
+
+// Global event queue and processing state
+const eventQueue: QueuedEvent[] = [];
+let isProcessingQueue = false;
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 250; // ms
+const QUEUE_PROCESS_INTERVAL = 100; // ms
+
+// Throttle tracking
+const lastDispatchTimes = new Map<string, number>();
+const THROTTLE_MS = 200; // Reduced for better responsiveness
+
+/**
+ * Enhanced throttle implementation with queue integration
+ */
 function throttle<T extends (...args: any[]) => void>(
   func: T,
   delay: number,
@@ -27,33 +54,137 @@ function throttle<T extends (...args: any[]) => void>(
   };
 }
 
-// Throttle map for event handling
-const throttleMap = new Map<string, any>();
+/**
+ * Check if event system is ready
+ */
+function isEventSystemReady(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.dispatchEvent !== undefined &&
+    document !== undefined &&
+    document.readyState !== "loading"
+  );
+}
 
 /**
- * Dispatch a throttled event
+ * Process event queue with retry mechanism
+ */
+function processEventQueue(): void {
+  if (isProcessingQueue || eventQueue.length === 0) {
+    return;
+  }
+
+  isProcessingQueue = true;
+
+  while (eventQueue.length > 0) {
+    const queuedEvent = eventQueue.shift();
+    if (!queuedEvent) break;
+
+    try {
+      if (isEventSystemReady()) {
+        // Dispatch the event
+        window.dispatchEvent(
+          new CustomEvent(queuedEvent.eventName, {
+            detail: queuedEvent.detail,
+          }),
+        );
+        console.log(
+          `[events] successfully dispatched ${queuedEvent.eventName} after ${queuedEvent.retryCount} retries`,
+        );
+      } else {
+        // Event system not ready, requeue with retry
+        if (queuedEvent.retryCount < queuedEvent.maxRetries) {
+          queuedEvent.retryCount++;
+          eventQueue.unshift(queuedEvent);
+          console.log(
+            `[events] requeuing ${queuedEvent.eventName}, retry ${queuedEvent.retryCount}/${queuedEvent.maxRetries}`,
+          );
+        } else {
+          console.warn(
+            `[events] max retries exceeded for ${queuedEvent.eventName}`,
+          );
+        }
+      }
+    } catch (error) {
+      console.error(
+        `[events] error dispatching ${queuedEvent.eventName}:`,
+        error,
+      );
+
+      // Requeue on error if retries remain
+      if (queuedEvent.retryCount < queuedEvent.maxRetries) {
+        queuedEvent.retryCount++;
+        eventQueue.unshift(queuedEvent);
+        console.log(
+          `[events] requeuing after error, retry ${queuedEvent.retryCount}/${queuedEvent.maxRetries}`,
+        );
+      } else {
+        console.warn(
+          `[events] max retries exceeded after error for ${queuedEvent.eventName}`,
+        );
+      }
+    }
+  }
+
+  isProcessingQueue = false;
+
+  // Continue processing if queue is not empty
+  if (eventQueue.length > 0) {
+    setTimeout(processEventQueue, QUEUE_PROCESS_INTERVAL);
+  }
+}
+
+/**
+ * Queue event for reliable dispatch with retry mechanism
+ */
+function queueEvent(
+  eventName: string,
+  detail: any = {},
+  maxRetries: number = MAX_RETRIES,
+): void {
+  const queuedEvent: QueuedEvent = {
+    eventName,
+    detail,
+    timestamp: Date.now(),
+    retryCount: 0,
+    maxRetries,
+  };
+
+  eventQueue.push(queuedEvent);
+
+  // Start processing if not already running
+  if (!isProcessingQueue) {
+    setTimeout(processEventQueue, QUEUE_PROCESS_INTERVAL);
+  }
+}
+
+/**
+ * Dispatch a throttled event with retry mechanism
  */
 export function dispatchThrottledEvent(
   eventName: string,
   detail: any = {},
-  throttleMs: number = 300,
+  throttleMs: number = THROTTLE_MS,
 ): void {
-  if (typeof window === "undefined") return;
-
-  let throttledFunc = throttleMap.get(eventName);
-  if (!throttledFunc) {
-    throttledFunc = throttle(() => {
-      console.log("[events] throttled dispatch:", eventName, detail);
-      window.dispatchEvent(new CustomEvent(eventName, { detail }));
-    }, throttleMs);
-    throttleMap.set(eventName, throttledFunc);
+  if (typeof window === "undefined") {
+    console.warn(`[events] cannot dispatch ${eventName} - window undefined`);
+    return;
   }
 
-  throttledFunc();
+  const lastDispatch = lastDispatchTimes.get(eventName) || 0;
+  const currentTime = Date.now();
+
+  if (currentTime - lastDispatch < throttleMs) {
+    console.log(`[events] throttling ${eventName} - too frequent`);
+    return;
+  }
+
+  lastDispatchTimes.set(eventName, currentTime);
+  queueEvent(eventName, detail);
 }
 
 /**
- * Dispatch kommunen focus event
+ * Dispatch kommunen focus event with robust retry mechanism
  */
 export function dispatchKommunenFocus(detail: {
   center?: number[];
@@ -62,7 +193,10 @@ export function dispatchKommunenFocus(detail: {
   projection?: string;
   extra?: any;
 }): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined") {
+    console.warn("[events] cannot dispatch kommunen focus - window undefined");
+    return;
+  }
 
   // Validate data before dispatch
   const hasValidCenter =
@@ -93,15 +227,25 @@ export function dispatchKommunenFocus(detail: {
     return;
   }
 
-  // Add small delay to prevent race conditions
-  setTimeout(() => {
-    window.dispatchEvent(new CustomEvent("kommunen:focus", { detail }));
-  }, 50);
+  // Use robust queuing system instead of simple timeout
+  queueEvent("kommunen:focus", detail, MAX_RETRIES);
+  console.log("[events] queued kommunen focus for reliable dispatch");
 }
 
 // Make dispatchKommunenFocus globally available for event delegation
 if (typeof window !== "undefined") {
   (window as any).dispatchKommunenFocus = dispatchKommunenFocus;
+
+  // Initialize event system on document ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("[events] DOM loaded, starting event queue processing");
+      processEventQueue();
+    });
+  } else {
+    console.log("[events] DOM already ready, starting event queue processing");
+    processEventQueue();
+  }
 }
 
 /**

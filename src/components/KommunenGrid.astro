@@ -103,14 +103,21 @@ const sorted = kommunen.sort(
     if (!(window as any).__p2d2KommunenBound) {
       (window as any).__p2d2KommunenBound = true;
 
-      document.addEventListener('click', (e) => {
+      // Enhanced click handler with retry mechanism
+      const handleKommunenClick = (e: Event) => {
         const button = (e.target as HTMLElement)?.closest?.('button.kommunen-card');
         if (!button) return;
+
+        // Prevent double-clicks and rapid successive clicks
+        if ((button as any).__p2d2Processing) {
+          console.log('[kommunen] Click already being processed, ignoring');
+          return;
+        }
+        (button as any).__p2d2Processing = true;
 
         // Extract data from the button with null safety
         const slug = button.getAttribute?.('data-slug') || '';
 
-        // Try to find the original detail data from the button's dataset
         try {
           const detailStr = (button as HTMLElement).dataset?.detail;
           const detail = detailStr ? JSON.parse(detailStr) : {};
@@ -118,22 +125,97 @@ const sorted = kommunen.sort(
           // Ensure we have valid data before proceeding
           if (!detail.center && !detail.extent) {
             console.warn('[kommunen] No valid center or extent data found');
+            (button as any).__p2d2Processing = false;
             return;
           }
 
-          // Use centralized event dispatch with validation and persistence
-          if (typeof (window as any).dispatchKommunenFocus === 'function') {
-            (window as any).dispatchKommunenFocus(detail, slug);
-          } else {
-            // Fallback: dispatch event manually if function is not available
-            window.dispatchEvent(
-              new CustomEvent('kommunen:focus', { detail })
-            );
+          console.log('[kommunen] Processing click for:', slug, detail);
+
+          // Enhanced dispatch with multiple fallback strategies
+          const dispatchWithFallback = () => {
+            if (typeof (window as any).dispatchKommunenFocus === 'function') {
+              (window as any).dispatchKommunenFocus(detail);
+            } else if (typeof window.dispatchEvent === 'function') {
+              window.dispatchEvent(new CustomEvent('kommunen:focus', { detail }));
+            } else {
+              console.error('[kommunen] No event dispatch method available');
+            }
+          };
+
+          // Try immediate dispatch, with retry after short delay if needed
+          try {
+            dispatchWithFallback();
+          } catch (error) {
+            console.warn('[kommunen] Immediate dispatch failed, retrying...', error);
+            setTimeout(dispatchWithFallback, 100);
           }
+
+          // Store selection for potential restore
+          try {
+            localStorage.setItem('p2d2_last_selected_kommune', slug);
+            localStorage.setItem('p2d2_last_selected_detail', JSON.stringify(detail));
+          } catch (storageError) {
+            console.warn('[kommunen] Could not store selection:', storageError);
+          }
+
         } catch (error) {
-          console.error('[kommunen] delegated event dispatch failed', error);
+          console.error('[kommunen] Click handler error:', error);
+        } finally {
+          // Release processing lock after delay
+          setTimeout(() => {
+            (button as any).__p2d2Processing = false;
+          }, 500);
         }
-      }, { passive: true });
+      };
+
+      // Add event listener with enhanced error handling
+      document.addEventListener('click', handleKommunenClick, {
+        passive: true,
+        capture: false
+      });
+
+      // Cleanup function for HMR
+      if (typeof import.meta !== 'undefined' && import.meta.hot) {
+        import.meta.hot.dispose(() => {
+          document.removeEventListener('click', handleKommunenClick);
+          (window as any).__p2d2KommunenBound = false;
+        });
+      }
+    }
+  }
+
+  // Enhanced state restoration on page load
+  if (typeof window !== 'undefined') {
+    const restoreLastSelection = () => {
+      try {
+        const lastSlug = localStorage.getItem('p2d2_last_selected_kommune');
+        const lastDetail = localStorage.getItem('p2d2_last_selected_detail');
+
+        if (lastSlug && lastDetail) {
+          const detail = JSON.parse(lastDetail);
+          console.log('[kommunen] Restoring last selection:', lastSlug);
+
+          // Dispatch restoration event
+          if (typeof (window as any).dispatchKommunenFocus === 'function') {
+            setTimeout(() => {
+              (window as any).dispatchKommunenFocus(detail);
+            }, 300);
+          } else {
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('kommunen:focus', { detail }));
+            }, 300);
+          }
+        }
+      } catch (error) {
+        console.warn('[kommunen] Could not restore last selection:', error);
+      }
+    };
+
+    // Restore selection when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', restoreLastSelection);
+    } else {
+      setTimeout(restoreLastSelection, 200);
     }
   }
 </script>

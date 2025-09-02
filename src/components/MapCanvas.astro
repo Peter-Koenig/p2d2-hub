@@ -1,54 +1,65 @@
 ---
-
+/// <reference types="vite/client" />
 ---
 
 <div id="map" class="w-full h-full relative">
-    <!-- CRS Toggle Button -->
-    <div id="crs-toggle-container" class="absolute top-4 right-4 z-50">
+    <div id="crs-toggle" class="absolute top-2 right-10 z-10">
         <button
-            id="crs-toggle"
-            class="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-            title="Switch between local projection and Web Mercator"
-            disabled
+            id="crs-toggle-button"
+            class="bg-white px-3 py-1 rounded-md shadow-md text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Koordinatensystem umschalten"
         >
-            UTM ↔ Generisch
+            CRS: generisch
         </button>
     </div>
 </div>
 
 <script>
-    // Import all OpenLayers modules needed for client-side
+    // Import OpenLayers modules
     import Map from "ol/Map";
     import View from "ol/View";
     import TileLayer from "ol/layer/Tile";
     import OSM from "ol/source/OSM";
-    import proj4 from "proj4";
-    import { register } from "ol/proj/proj4";
     import ImageLayer from "ol/layer/Image";
     import ImageWMS from "ol/source/ImageWMS";
     import FullScreen from "ol/control/FullScreen";
     import { defaults } from "ol/control/defaults";
-    import { fromLonLat } from "ol/proj";
+    import { transform, transformExtent } from "ol/proj";
 
-    // Import utilities
+    // Import our utility modules
+    import { mapState } from "../utils/map-state";
+    import { CategoryHandler } from "../utils/category-handler";
+    import { FeatureSelectionHandler } from "../utils/feature-selection";
+
+    // Import existing CRS utilities
     import {
-        defaultCRS,
-        wgs84,
-        isUtm,
         registerUtm,
         toNewViewPreservingScale,
-        transformExtentFromWgs84,
-        transformCenterFromWgs84,
+        isValidWgs84Coordinate,
+        isValidWgs84Extent,
     } from "../utils/crs";
-    import {
-        addEventListener,
-        getSelectedCRS,
-        setSelectedCRS,
-        setSelectedKommune,
-        getSelectedKommune,
-    } from "../utils/events";
 
-    // Initialize the map with default projection
+    // Throttled logging utility
+    const createThrottledLogger = () => {
+        const lastLogTimes = new Map();
+        const throttleMs = 5000;
+
+        return {
+            warn: (key: string, message: string, ...args: any[]) => {
+                const now = Date.now();
+                const lastTime = lastLogTimes.get(key) || 0;
+
+                if (now - lastTime > throttleMs) {
+                    console.warn(message, ...args);
+                    lastLogTimes.set(key, now);
+                }
+            },
+        };
+    };
+
+    const throttledLogger = createThrottledLogger();
+
+    // Initialize the map
     const map = new Map({
         target: "map",
         layers: [
@@ -57,19 +68,27 @@
             }),
         ],
         view: new View({
-            projection: defaultCRS,
-            center: fromLonLat([6.9603, 50.9375], defaultCRS),
-            zoom: 10,
+            projection: mapState.getConfig().defaultCRS,
+            center: [0, 0],
+            zoom: 2,
         }),
         controls: defaults().extend([new FullScreen()]),
     });
 
-    // WMS Layer
+    console.log("[MapCanvas] Map initialized successfully");
+    console.log("[MapCanvas] Target element:", document.getElementById("map"));
+    console.log(
+        "[MapCanvas] View projection:",
+        map.getView().getProjection().getCode(),
+    );
+
+    // Add WMS Layer
+    const config = mapState.getConfig();
     const wmsLayer = new ImageLayer({
         source: new ImageWMS({
-            url: "https://ows.data-dna.eu/",
+            url: config.wmsUrl,
             params: {
-                LAYERS: "p2d2_cemeteries_cologne",
+                LAYERS: config.wmsLayer,
                 VERSION: "1.1.1",
                 FORMAT: "image/png",
                 TILED: false,
@@ -80,253 +99,269 @@
         opacity: 0.7,
     });
 
-    // Add layer to map
     map.addLayer(wmsLayer);
+    console.log("[MapCanvas] WMS layer added");
 
-    // State management
-    let activeCRS = defaultCRS;
-    let localCRS: string | null = null;
-    let currentKommune: string | null = null;
-
-    // CRS Toggle button
-    const crsToggle = document.getElementById("crs-toggle");
-    const updateToggleButton = () => {
-        if (!crsToggle) return;
-
-        const hasLocalCRS = localCRS && localCRS !== defaultCRS;
-        (crsToggle as HTMLButtonElement).disabled = !hasLocalCRS;
-
-        if (hasLocalCRS) {
-            const isInLocalCRS = activeCRS === localCRS;
-            crsToggle.textContent = isInLocalCRS ? "← Generisch" : "UTM →";
-            crsToggle.title = isInLocalCRS
-                ? "Back to Web Mercator (EPSG:3857)"
-                : `Switch to local projection (${localCRS})`;
-        }
-    };
-
-    // Handle CRS toggle
-    const handleCrsToggle = () => {
-        if (!localCRS || localCRS === defaultCRS) return;
-
-        const targetCRS = activeCRS === localCRS ? defaultCRS : localCRS;
-
-        if (toNewViewPreservingScale(map, targetCRS)) {
-            activeCRS = targetCRS;
-            setSelectedCRS(activeCRS);
-            updateToggleButton();
-
-            // Refresh WMS after moveend
-            map.once("moveend", () => {
-                wmsLayer.getSource()?.refresh();
-            });
-        }
-    };
-
-    if (crsToggle) {
-        crsToggle.addEventListener("click", handleCrsToggle);
-    }
-
-    // Event listener for kommunen focus
-    addEventListener(
-        "kommunen:focus",
-        (e: CustomEvent) => {
-            const detail = e.detail || {};
-            const view = map?.getView?.();
-
-            if (!view || !view.getProjection) {
-                console.error("[kommunen] map view is not initialized");
-                return;
-            }
-
-            // Extract and validate projection
-            const targetProjection = detail.projection || defaultCRS;
-
-            const shouldUseUtm =
-                isUtm(targetProjection) && targetProjection !== defaultCRS;
-
-            // Register UTM projection if needed
-            if (shouldUseUtm && !registerUtm(targetProjection)) {
-                console.warn(
-                    "[kommunen] failed to register UTM, using default",
-                    targetProjection,
-                );
-            }
-
-            // Set active CRS - prefer local UTM if available, otherwise default
-            localCRS = shouldUseUtm ? targetProjection : null;
-            activeCRS = localCRS || defaultCRS;
-
-            setSelectedCRS(activeCRS);
-            if (detail.slug) {
-                setSelectedKommune(detail.slug);
-                currentKommune = detail.slug;
-            }
-
-            updateToggleButton();
-
-            // Extract and validate data
-            const center =
-                Array.isArray(detail?.center) &&
-                detail.center.length === 2 &&
-                detail.center.every(Number.isFinite)
-                    ? detail.center
-                    : undefined;
-
-            const extent =
-                Array.isArray(detail?.extent) &&
-                detail.extent.length === 4 &&
-                detail.extent.every(Number.isFinite)
-                    ? detail.extent
-                    : undefined;
-
-            const zoom = Number.isFinite(detail?.zoom)
-                ? detail.zoom
-                : undefined;
-
-            try {
-                // Switch to target projection with scale preservation
-                const currentProjCode = view.getProjection()?.getCode();
-                console.log(
-                    "[MapCanvas] current projection:",
-                    currentProjCode,
-                    "target:",
-                    activeCRS,
-                );
-
-                if (activeCRS !== currentProjCode) {
-                    if (!toNewViewPreservingScale(map, activeCRS)) {
-                        console.warn(
-                            "[kommunen] projection switch failed, using default behavior",
-                        );
-                    }
-                }
-
-                // Handle navigation after projection switch
-                if (extent) {
-                    // Validate extent bounds
-                    if (
-                        extent[0] < -180 ||
-                        extent[0] > 180 ||
-                        extent[1] < -90 ||
-                        extent[1] > 90 ||
-                        extent[2] < -180 ||
-                        extent[2] > 180 ||
-                        extent[3] < -90 ||
-                        extent[3] > 90
-                    ) {
-                        console.warn(
-                            "[kommunen] extent coordinates out of bounds",
-                            extent,
-                        );
-                        return;
-                    }
-
-                    const viewProjCode = map
-                        .getView()
-                        .getProjection()
-                        .getCode();
-                    const transformedExtent = transformExtentFromWgs84(
-                        extent,
-                        viewProjCode,
-                    );
-                    if (transformedExtent) {
-                        view.fit(transformedExtent, {
-                            padding: [50, 50, 50, 50],
-                            duration: 300,
-                            ...(detail.extra?.fitOptions || {}),
-                        });
-                    }
-                } else if (center) {
-                    // Validate center bounds
-                    if (
-                        center[0] < -180 ||
-                        center[0] > 180 ||
-                        center[1] < -90 ||
-                        center[1] > 90
-                    ) {
-                        console.warn(
-                            "[kommunen] center coordinates out of bounds",
-                            center,
-                        );
-                        return;
-                    }
-
-                    const viewProjCode = map
-                        .getView()
-                        .getProjection()
-                        .getCode();
-                    const transformedCenter = transformCenterFromWgs84(
-                        center,
-                        viewProjCode,
-                    );
-                    if (transformedCenter) {
-                        const targetZoom = zoom || view?.getZoom?.() || 11;
-                        view.animate({
-                            center: transformedCenter,
-                            zoom: targetZoom,
-                            duration: 300,
-                            ...(detail.extra || {}),
-                        });
-                    }
-                } else {
-                    console.warn(
-                        "[kommunen] no valid center or extent data provided",
-                        detail,
-                    );
-                }
-
-                // Refresh WMS after navigation
-                map.once("moveend", () => {
-                    wmsLayer.getSource()?.refresh();
-                });
-            } catch (err) {
-                console.error("[kommunen] focus error", err, detail);
-            }
-
-            // Dispatch state update for debugging
-            if (typeof window !== "undefined") {
-                const currentView = map?.getView?.();
-                window.dispatchEvent(
-                    new CustomEvent("map:state-update", {
-                        detail: {
-                            projection: activeCRS,
-                            center: currentView?.getCenter(),
-                            zoom: currentView?.getZoom(),
-                            rotation: currentView?.getRotation(),
-                        },
-                    }),
-                );
-            }
-        },
-        { passive: true },
+    // Initialize handlers
+    const categoryHandler = new CategoryHandler(map);
+    const featureSelectionHandler = new FeatureSelectionHandler(
+        map,
+        categoryHandler.getCategorySource(),
     );
 
-    // Initialize toggle button state
-    updateToggleButton();
+    console.log("[MapCanvas] Handlers initialized");
 
-    // TODO: Perplexity: Exchange "Restore previous state"
-    //
+    // CRS Toggle functionality
+    function updateCRSButton(): void {
+        const button = document.getElementById("crs-toggle-button");
+        if (!button) return;
 
-    // Restore previous state if available
-    let hasRestoredState = false;
-    const savedCRS = getSelectedCRS();
-    const savedKommune = getSelectedKommune();
+        const state = mapState.getState();
 
-    if (savedCRS && savedCRS !== defaultCRS) {
-        // Only restore if it's a valid UTM projection
-        if (isUtm(savedCRS) && registerUtm(savedCRS)) {
-            activeCRS = savedCRS;
-            localCRS = savedCRS;
-            toNewViewPreservingScale(map, savedCRS, false);
-            hasRestoredState = true;
+        if (state.localCRS) {
+            (button as HTMLButtonElement).disabled = false;
+            if (state.activeCRS === state.localCRS) {
+                button.textContent = "CRS: UTM";
+                button.title = "Zu generischem Koordinatensystem wechseln";
+            } else {
+                button.textContent = "CRS: generisch";
+                button.title = "Zu lokalem UTM-Koordinatensystem wechseln";
+            }
+        } else {
+            (button as HTMLButtonElement).disabled = true;
+            button.textContent = "CRS: generisch";
+            button.title = "Nur generisches Koordinatensystem verfügbar";
         }
     }
 
-    if (savedKommune) {
-        currentKommune = savedKommune;
+    function toggleCRS(): void {
+        const state = mapState.getState();
+        if (!state.localCRS) return;
+
+        const targetCRS =
+            state.activeCRS === state.localCRS
+                ? mapState.getConfig().defaultCRS
+                : state.localCRS;
+
+        // Update state
+        mapState.setActiveCRS(targetCRS);
+
+        // Use scale-preserving view transition
+        toNewViewPreservingScale(map, targetCRS);
+
+        // Refresh categories and WMS
+        categoryHandler.refreshCategoriesSource();
+
+        map.once("moveend", () => {
+            try {
+                wmsLayer.getSource()?.refresh();
+            } catch (error) {
+                throttledLogger.warn(
+                    "wms-refresh",
+                    "[WMS] Could not refresh layer",
+                    error,
+                );
+            }
+        });
+
+        updateCRSButton();
     }
 
+    // Event listener for CRS toggle button
+    document
+        .getElementById("crs-toggle-button")
+        ?.addEventListener("click", toggleCRS);
+
+    // Subscribe to map state changes
+    mapState.subscribe((state) => {
+        updateCRSButton();
+    });
+
+    // Event listener for kommunen focus
+    if (typeof window !== "undefined") {
+        window.addEventListener(
+            "kommunen:focus",
+            (e) => {
+                const d = (e as CustomEvent)?.detail || {};
+                const view = map?.getView?.();
+
+                if (!view || !view.getProjection) {
+                    console.error("[kommunen] map view is not initialized");
+                    return;
+                }
+
+                // Set local CRS from detail if available
+                const localCRS = (d?.projection as string) || undefined;
+                mapState.setLocalCRS(localCRS);
+
+                // Register UTM projection if needed
+                if (localCRS) {
+                    try {
+                        registerUtm(localCRS);
+                    } catch (error) {
+                        throttledLogger.warn(
+                            "projection-registration",
+                            `Could not register projection ${localCRS}`,
+                            error,
+                        );
+                        mapState.setLocalCRS(undefined);
+                    }
+                }
+
+                // Set active CRS - prefer local CRS if available
+                const targetCRS = localCRS || mapState.getConfig().defaultCRS;
+                mapState.setActiveCRS(targetCRS);
+
+                // Create new view with appropriate projection
+                toNewViewPreservingScale(map, targetCRS);
+
+                // Refresh WMS and categories after view transition
+                map.once("moveend", () => {
+                    try {
+                        wmsLayer.getSource()?.refresh();
+                        categoryHandler.refreshCategoriesSource();
+                    } catch (error) {
+                        throttledLogger.warn(
+                            "refresh-after-focus",
+                            "Could not refresh layers",
+                            error,
+                        );
+                    }
+                });
+
+                // Handle navigation
+                const center = isValidWgs84Coordinate(d?.center)
+                    ? d.center
+                    : undefined;
+                const extent = isValidWgs84Extent(d?.extent)
+                    ? d.extent
+                    : undefined;
+                const zoom = Number.isFinite(d?.zoom) ? d.zoom : undefined;
+
+                try {
+                    if (extent && transformExtent) {
+                        const fitExtent = transformExtent(
+                            extent,
+                            "EPSG:4326",
+                            targetCRS,
+                        );
+                        const fitOpts = {
+                            padding: [50, 50, 50, 50],
+                            duration: 300,
+                            ...(d.extra?.fitOptions || {}),
+                        };
+
+                        map.getView().fit(fitExtent, fitOpts);
+                    } else if (center && transform) {
+                        const c = transform(center, "EPSG:4326", targetCRS);
+                        const targetZoom =
+                            zoom ?? map.getView()?.getZoom?.() ?? 11;
+
+                        map.getView().animate({
+                            center: c,
+                            zoom: targetZoom,
+                            duration: 300,
+                            ...(d.extra || {}),
+                        });
+                    } else {
+                        throttledLogger.warn(
+                            "invalid-data",
+                            "[kommunen] no valid center or extent data provided",
+                            d,
+                        );
+                    }
+                } catch (err) {
+                    console.error("[kommunen] focus error", err, d);
+                }
+            },
+            { passive: true },
+        );
+    }
+
+    // Restore persisted state on DOMContentLoaded
+    document.addEventListener("DOMContentLoaded", () => {
+        console.log("[MapCanvas] DOMContentLoaded event received");
+        try {
+            // Restore map state from localStorage
+            mapState.restoreFromStorage();
+
+            const state = mapState.getState();
+            const savedDetail = localStorage.getItem(
+                "selectedMunicipalityDetail",
+            );
+
+            if (
+                state.activeCRS !== mapState.getConfig().defaultCRS &&
+                savedDetail
+            ) {
+                const detail = JSON.parse(savedDetail);
+                const localCRS =
+                    (detail?.projection as string) &&
+                    detail.projection !== "EPSG:4326"
+                        ? detail.projection
+                        : undefined;
+
+                mapState.setLocalCRS(localCRS);
+
+                if (localCRS) {
+                    registerUtm(localCRS);
+                }
+
+                // Update view projection
+                toNewViewPreservingScale(map, state.activeCRS);
+
+                // Refresh layers after view transition
+                map.once("moveend", () => {
+                    try {
+                        wmsLayer.getSource()?.refresh();
+                    } catch (error) {
+                        throttledLogger.warn(
+                            "wms-refresh-restore",
+                            "[WMS] Could not refresh layer",
+                            error,
+                        );
+                    }
+                });
+
+                // Dispatch focus event after map initialization
+                setTimeout(() => {
+                    window.dispatchEvent(
+                        new CustomEvent("kommunen:focus", { detail }),
+                    );
+                }, 100);
+            }
+
+            // Reselect feature after categories are loaded
+            setTimeout(() => {
+                featureSelectionHandler.reselectFeature();
+            }, 500);
+
+            // Mark as initialized
+            mapState.setInitialized(true);
+            console.log("[MapCanvas] Map state fully initialized");
+        } catch (error) {
+            console.error("Error restoring persisted state:", error);
+        }
+    });
+
     // Initialize toggle button state
-    updateToggleButton();
+    updateCRSButton();
+
+    // Check if map container is visible and has dimensions
+    setTimeout(() => {
+        const mapElement = document.getElementById("map");
+        if (mapElement) {
+            console.log("[MapCanvas] Map container dimensions:", {
+                width: mapElement.offsetWidth,
+                height: mapElement.offsetHeight,
+                visible: mapElement.offsetParent !== null,
+            });
+
+            // Force map update if container was initially hidden
+            if (mapElement.offsetWidth > 0 && mapElement.offsetHeight > 0) {
+                map.updateSize();
+                console.log("[MapCanvas] Map size updated");
+            }
+        }
+    }, 1000);
 </script>
