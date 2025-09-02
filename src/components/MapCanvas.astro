@@ -75,13 +75,6 @@
         controls: defaults().extend([new FullScreen()]),
     });
 
-    console.log("[MapCanvas] Map initialized successfully");
-    console.log("[MapCanvas] Target element:", document.getElementById("map"));
-    console.log(
-        "[MapCanvas] View projection:",
-        map.getView().getProjection().getCode(),
-    );
-
     // Add WMS Layer
     const config = mapState.getConfig();
     const wmsLayer = new ImageLayer({
@@ -100,7 +93,6 @@
     });
 
     map.addLayer(wmsLayer);
-    console.log("[MapCanvas] WMS layer added");
 
     // Initialize handlers
     const categoryHandler = new CategoryHandler(map);
@@ -108,8 +100,6 @@
         map,
         categoryHandler.getCategorySource(),
     );
-
-    console.log("[MapCanvas] Handlers initialized");
 
     // CRS Toggle functionality
     function updateCRSButton(): void {
@@ -280,7 +270,6 @@
 
     // Restore persisted state on DOMContentLoaded
     document.addEventListener("DOMContentLoaded", () => {
-        console.log("[MapCanvas] DOMContentLoaded event received");
         try {
             // Restore map state from localStorage
             mapState.restoreFromStorage();
@@ -338,7 +327,6 @@
 
             // Mark as initialized
             mapState.setInitialized(true);
-            console.log("[MapCanvas] Map state fully initialized");
         } catch (error) {
             console.error("Error restoring persisted state:", error);
         }
@@ -347,21 +335,15 @@
     // Initialize toggle button state
     updateCRSButton();
 
-    // Check if map container is visible and has dimensions
+    // Ensure map size is updated after container becomes visible
     setTimeout(() => {
         const mapElement = document.getElementById("map");
-        if (mapElement) {
-            console.log("[MapCanvas] Map container dimensions:", {
-                width: mapElement.offsetWidth,
-                height: mapElement.offsetHeight,
-                visible: mapElement.offsetParent !== null,
-            });
-
-            // Force map update if container was initially hidden
-            if (mapElement.offsetWidth > 0 && mapElement.offsetHeight > 0) {
-                map.updateSize();
-                console.log("[MapCanvas] Map size updated");
-            }
+        if (
+            mapElement &&
+            mapElement.offsetWidth > 0 &&
+            mapElement.offsetHeight > 0
+        ) {
+            map.updateSize();
         }
     }, 1000);
 </script>
