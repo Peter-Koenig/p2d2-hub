@@ -23,6 +23,19 @@ const QUEUE_PROCESS_INTERVAL = 100; // ms
 const lastDispatchTimes = new Map<string, number>();
 const THROTTLE_MS = 200; // Reduced for better responsiveness
 
+// Event type definitions
+export const EVENT_KOMMUNEN_FOCUS = "kommunen:focus";
+
+// Interface für Kommunen Focus Event Detail
+interface KommunenFocusDetail {
+  center?: [number, number];
+  extent?: [number, number, number, number];
+  zoom?: number;
+  projection?: string;
+  extra?: any;
+  slug?: string;
+}
+
 /**
  * Enhanced throttle implementation with queue integration
  */
@@ -186,38 +199,15 @@ export function dispatchThrottledEvent(
 /**
  * Dispatch kommunen focus event with robust retry mechanism
  */
-export function dispatchKommunenFocus(detail: {
-  center?: number[];
-  extent?: number[];
-  zoom?: number;
-  projection?: string;
-  extra?: any;
-}): void {
+export function dispatchKommunenFocus(detail: KommunenFocusDetail): void {
   if (typeof window === "undefined") {
     console.warn("[events] cannot dispatch kommunen focus - window undefined");
     return;
   }
 
   // Validate data before dispatch
-  const hasValidCenter =
-    detail.center &&
-    Array.isArray(detail.center) &&
-    detail.center.length === 2 &&
-    detail.center.every(Number.isFinite) &&
-    detail.center[0] >= -180 &&
-    detail.center[0] <= 180 &&
-    detail.center[1] >= -90 &&
-    detail.center[1] <= 90;
-
-  const hasValidExtent =
-    detail.extent &&
-    Array.isArray(detail.extent) &&
-    detail.extent.length === 4 &&
-    detail.extent.every(Number.isFinite) &&
-    detail.extent[0] >= -180 &&
-    detail.extent[2] <= 180 &&
-    detail.extent[1] >= -90 &&
-    detail.extent[3] <= 90;
+  const hasValidCenter = isValidWgs84Coordinate(detail.center);
+  const hasValidExtent = isValidWgs84Extent(detail.extent);
 
   if (!hasValidCenter && !hasValidExtent) {
     console.warn(
@@ -230,6 +220,32 @@ export function dispatchKommunenFocus(detail: {
   // Use robust queuing system instead of simple timeout
   queueEvent("kommunen:focus", detail, MAX_RETRIES);
   console.log("[events] queued kommunen focus for reliable dispatch");
+}
+
+function isValidWgs84Coordinate(coord: any): coord is [number, number] {
+  return (
+    Array.isArray(coord) &&
+    coord.length === 2 &&
+    coord.every(Number.isFinite) &&
+    coord[0] >= -180 &&
+    coord[0] <= 180 &&
+    coord[1] >= -90 &&
+    coord[1] <= 90
+  );
+}
+
+function isValidWgs84Extent(
+  extent: any,
+): extent is [number, number, number, number] {
+  return (
+    Array.isArray(extent) &&
+    extent.length === 4 &&
+    extent.every(Number.isFinite) &&
+    extent[0] >= -180 &&
+    extent[2] <= 180 &&
+    extent[1] >= -90 &&
+    extent[3] <= 90
+  );
 }
 
 // Make dispatchKommunenFocus globally available for event delegation

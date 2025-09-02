@@ -1,4 +1,5 @@
 import proj4 from "proj4";
+import type { Map } from "ol";
 import { register } from "ol/proj/proj4";
 import { getPointResolution, transform, transformExtent } from "ol/proj";
 import View from "ol/View";
@@ -105,7 +106,7 @@ export function registerUtm(crs: string): boolean {
  * Switch to a new view while preserving scale and rotation
  */
 export function toNewViewPreservingScale(
-  map: any,
+  map: Map,
   targetEpsg: string,
   animate: boolean = true,
 ): boolean {
