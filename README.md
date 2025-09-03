@@ -72,7 +72,13 @@ Die aktuelle Produktivinstanz (Branch `main`) wird unter
 
 ---
 
-## 🔀 Branching & Deployment
+## 🔀 Repos, Branching & Deployment
+
+Es exisitieren drei synchron gehaltene Repositories:
+
+1. https://gitlab.opencode.de/OC000028072444/p2d2.git → **origin**, für CI/CD
+2. https://gitlab.opencode.de/unbox-cologne/p2d2/p2d2-mirror.git → **mirror**, als Spiegel, Überlassung für un:box cologne
+3. https://github.com/Peter-Koenig/p2d2-hub.git → **hub**, für (internationale) Zusammenarbeit
 
 - **develop** → Integration neuer Features, automatisch nach `dev.data-dna.eu` (geplant)
 - **main** → produktionsreifer Code, Deployment auf `www.data-dna.eu`
