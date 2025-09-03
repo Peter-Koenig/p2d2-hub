@@ -76,9 +76,9 @@ Die aktuelle Produktivinstanz (Branch `main`) wird unter
 
 Es exisitieren drei synchron gehaltene Repositories:
 
-1. **[origin](https://gitlab.opencode.de/OC000028072444/p2d2.git)** → Zentrales Repo, CI/CD (__origin__)
-2. **[mirror](https://gitlab.opencode.de/unbox-cologne/p2d2/p2d2-mirror.git)** → Spiegel für Überlassung (__mirror__)
-3. **[hub auf GitHub](https://github.com/Peter-Koenig/p2d2-hub.git)** → (internationale) Zusammenarbeit (__hub__)
+1. **[origin auf OpenCode.de](https://gitlab.opencode.de/OC000028072444/p2d2.git)** → Zentrales Repo, CI/CD
+2. **[mirror auf OpenCode.de](https://gitlab.opencode.de/unbox-cologne/p2d2/p2d2-mirror.git)** → Spiegel für Überlassung
+3. **[hub auf GitHub](https://github.com/Peter-Koenig/p2d2-hub.git)** → (internationale) Zusammenarbeit
 
 - **develop** → Integration neuer Features, automatisch nach `dev.data-dna.eu` (geplant)
 - **main** → produktionsreifer Code, Deployment auf `www.data-dna.eu`
