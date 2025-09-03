@@ -76,9 +76,9 @@ Die aktuelle Produktivinstanz (Branch `main`) wird unter
 
 Es exisitieren drei synchron gehaltene Repositories:
 
-1. **[origin auf OpenCode.de](https://gitlab.opencode.de/OC000028072444/p2d2.git)** → Zentrales Repo, CI/CD
-2. **[mirror auf OpenCode.de](https://gitlab.opencode.de/unbox-cologne/p2d2/p2d2-mirror.git)** → Spiegel für Überlassung
-3. **[hub auf GitHub](https://github.com/Peter-Koenig/p2d2-hub.git)** → (internationale) Zusammenarbeit
+- **[origin auf OpenCode.de](https://gitlab.opencode.de/OC000028072444/p2d2.git)** → Zentrales Repo, CI/CD
+- **[mirror auf OpenCode.de](https://gitlab.opencode.de/unbox-cologne/p2d2/p2d2-mirror.git)** → Spiegel für -erlassung
+- **[hub auf GitHub](https://github.com/Peter-Koenig/p2d2-hub.git)** → (internationale) Zusammenarbeit
 
 Folgende Branches wurden angelegt, Webseiten und Prozessimplementierung stehen aus (3.9.2025):
 
