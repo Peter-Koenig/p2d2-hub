@@ -80,7 +80,9 @@ Es exisitieren drei synchron gehaltene Repositories:
 2. **[mirror auf OpenCode.de](https://gitlab.opencode.de/unbox-cologne/p2d2/p2d2-mirror.git)** → Spiegel für Überlassung
 3. **[hub auf GitHub](https://github.com/Peter-Koenig/p2d2-hub.git)** → (internationale) Zusammenarbeit
 
-- **develop** → Integration neuer Features, automatisch nach `dev.data-dna.eu` (geplant)
+Folgende Branches wurden angelegt, Webseiten und Prozessimplementierung stehen aus (3.9.2025):
+
+- **develop** → Integration neuer Features, automatisch nach `dev.data-dna.eu`
 - **main** → produktionsreifer Code, Deployment auf `www.data-dna.eu`
 - **release/** → Staging & finale Tests vor Veröffentlichung
 - **feature/team-<name>/** → Neue Features, getrennt nach Teams
