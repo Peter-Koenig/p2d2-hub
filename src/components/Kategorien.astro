@@ -1,23 +1,21 @@
 ---
+import BlumenbeetIcon from "./icons/BlumenbeetIcon.astro";
+import FriedhofIcon from "./icons/FriedhofIcon.astro";
+import LaternenIcon from "./icons/LaternenIcon.astro";
+import GemeinschaftIcon from "./icons/GemeinschaftIcon.astro";
+import OffeneDatenIcon from "./icons/OffeneDatenIcon.astro";
+import TransparenzIcon from "./icons/TransparenzIcon.astro";
 import Modal from "./Modal.astro";
-import { renderIcon } from "../utils/icon-loader";
 
-const { title, icon, order, description, id } = Astro.props;
-
-// Lade Icon-Komponente dynamisch
-let IconComponent;
-try {
-    IconComponent = await renderIcon(icon);
-} catch (error) {
-    console.error(`Fehler beim Laden des Icons "${icon}":`, error);
-    // Fallback zu Default-Icon
-    IconComponent = await renderIcon("fahnenmaste");
-}
+const { title, icon, description, id, slug } = Astro.props;
 ---
 
-<div
-    class="relative bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group"
+<button
+    type="button"
+    class="kategorie-card relative bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group text-left w-full"
     style="max-width: 100%;"
+    data-category-slug={slug}
+    aria-label={`Kategorie ${title} auswählen`}
 >
     <!-- Permanent Glow-Overlay -->
     <div class="absolute -inset-2 z-0 pointer-events-none">
@@ -33,7 +31,101 @@ try {
     <!-- Icon und Content -->
     <div class="relative z-10 p-6 pt-6 flex flex-col gap-3">
         <div>
-            {IconComponent && <IconComponent />}
+            {icon === "blumenbeet" && <BlumenbeetIcon />}
+            {
+                icon === "friedhof" && (
+                    <img
+                        src="/src/components/icons/friedhof.svg"
+                        alt="Friedhof"
+                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+                    />
+                )
+            }
+            {icon === "strassenlaternen" && <LaternenIcon />}
+            {
+                icon === "baume" && (
+                    <img
+                        src="/src/components/icons/Baeume.svg"
+                        alt="Bäume"
+                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+                    />
+                )
+            }
+            {
+                icon === "fahrradstaender" && (
+                    <img
+                        src="/src/components/icons/Fahrradstaender.svg"
+                        alt="Fahrradständer"
+                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+                    />
+                )
+            }
+            {
+                icon === "pflanzenbehaelter" && (
+                    <img
+                        src="/src/components/icons/Pflanzenbehaelter.svg"
+                        alt="Pflanzenbehälter"
+                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+                    />
+                )
+            }
+            {
+                icon === "spielsandkisten" && (
+                    <img
+                        src="/src/components/icons/Spielsandkisten.svg"
+                        alt="Spielsandkisten"
+                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+                    />
+                )
+            }
+            {
+                icon === "abfallbehaelter" && (
+                    <img
+                        src="/src/components/icons/Abfallbehaelter.svg"
+                        alt="Abfallbehälter"
+                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+                    />
+                )
+            }
+            {
+                icon === "sportrasen" && (
+                    <img
+                        src="/src/components/icons/Sportrasen.svg"
+                        alt="Sportrasen"
+                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+                    />
+                )
+            }
+            {
+                icon === "stege" && (
+                    <img
+                        src="/src/components/icons/Stege.svg"
+                        alt="Stege"
+                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+                    />
+                )
+            }
+            {
+                icon === "fahnenmaste" && (
+                    <img
+                        src="/src/components/icons/Fahnenmasten.svg"
+                        alt="Fahnenmasten"
+                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+                    />
+                )
+            }
+            {
+                icon === "tribuenen" && (
+                    <img
+                        src="/src/components/icons/Tribuenen.svg"
+                        alt="Tribünen"
+                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+                    />
+                )
+            }
+            {icon === "gemeinschaft" && <GemeinschaftIcon />}
+            {icon === "transparenz" && <TransparenzIcon />}
+            {icon === "offene-daten" && <OffeneDatenIcon />}
         </div>
         <h3 class="font-poppins font-bold text-xl mt-2">{title}</h3>
         <div class="font-inter text-base text-gray-700 leading-tight">
@@ -55,4 +147,4 @@ try {
         class="absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 group-hover:shadow-[0_0_32px_4px_#D6FFEA] z-10"
     >
     </div>
-</div>
+</button>

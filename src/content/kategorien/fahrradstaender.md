@@ -1,6 +1,6 @@
 ---
 title: Fahrradständer
-icon: blumenbeet
+icon: fahrradstaender
 order: 5
 description: Wo sind Fahrradständer in Köln?
 ---

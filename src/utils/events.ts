@@ -256,6 +256,7 @@ function isValidWgs84Extent(
 // Make dispatchKommunenFocus globally available for event delegation
 if (typeof window !== "undefined") {
   (window as any).dispatchKommunenFocus = dispatchKommunenFocus;
+  (window as any).dispatchThrottledEvent = dispatchThrottledEvent;
 
   // Initialize event system on document ready
   if (document.readyState === "loading") {

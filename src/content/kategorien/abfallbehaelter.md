@@ -1,6 +1,6 @@
 ---
 title: Abfallbehälter
-icon: blumenbeet
+icon: abfallbehaelter
 order: 8
 description: Wo stehen Abfallbehälter in Köln?
 ---

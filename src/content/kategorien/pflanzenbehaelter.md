@@ -1,6 +1,6 @@
 ---
 title: Pflanzenbehälter
-icon: blumenbeet
+icon: pflanzenbehaelter
 order: 6
 description: Wo sind Pflanzenbehälter in Köln?
 ---

@@ -5,6 +5,16 @@ body {
     padding: 0;
     margin: 0;
 }
+
+/* Kategorie Card Styling für Clickability */
+.kategorie-card {
+    position: relative;
+    z-index: 20;
+}
+
+.kategorie-card > *:not(button) {
+    pointer-events: none;
+}
 @import "ol/ol.css";
 @import "tailwindcss";
 @tailwind base;

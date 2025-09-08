@@ -1,6 +1,6 @@
 ---
 title: Stege
-icon: blumenbeet
+icon: stege
 order: 10
 description: Wo sind Stege in Köln?
 ---

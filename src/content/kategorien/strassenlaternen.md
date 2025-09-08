@@ -1,6 +1,6 @@
 ---
 title: Straßenlaternen
-icon: blumenbeet
+icon: strassenlaternen
 order: 3
 description: Wo steht welche Straßenlaterne?
 ---
