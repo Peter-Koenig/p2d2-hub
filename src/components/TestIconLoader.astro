@@ -1,0 +1,43 @@
+---
+import { renderIcon, getAvailableIcons } from '../utils/icon-loader';
+
+// Test verschiedene Icon-Namen
+const testIcons = ['blumenbeet', 'friedhof', 'strassenlaternen', 'nonexistent'];
+const availableIcons = await getAvailableIcons();
+---
+
+<div class="p-6 bg-gray-100 rounded-lg">
+    <h2 class="text-2xl font-bold mb-4">Icon-Loader Test</h2>
+
+    <div class="mb-6">
+        <h3 class="text-lg font-semibold mb-2">Verfügbare Icons:</h3>
+        <ul class="list-disc list-inside">
+            {availableIcons.map(icon => (
+                <li key={icon} class="text-gray-700">{icon}</li>
+            ))}
+        </ul>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {testIcons.map(async (iconName) => {
+            let IconComponent;
+            try {
+                IconComponent = await renderIcon(iconName);
+            } catch (error) {
+                IconComponent = await renderIcon('fahnenmaste');
+            }
+
+            return (
+                <div key={iconName} class="bg-white p-4 rounded-lg shadow-md">
+                    <h4 class="font-semibold mb-2">{iconName}</h4>
+                    <div class="flex items-center justify-center h-16">
+                        {IconComponent && <IconComponent />}
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">
+                        {IconComponent ? '✅ Geladen' : '❌ Nicht gefunden'}
+                    </p>
+                </div>
+            );
+        })}
+    </div>
+</div>
