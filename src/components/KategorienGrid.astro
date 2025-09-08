@@ -19,11 +19,19 @@ const sorted = kategorien.sort(
             isHandlerBound = true;
 
             const handleCategoryClick = (event: MouseEvent) => {
-                console.log("[kategorien] Click event detected");
+                // Verhindere Default-Verhalten und Event-Bubbling
+                event.preventDefault();
+                event.stopPropagation();
+
+                console.log(
+                    "[kategorien] Click event detected, event-Bulleing?",
+                );
+
                 const target = event.target as HTMLElement;
                 const button = target.closest(
                     "button.kategorie-card",
                 ) as HTMLButtonElement | null;
+
                 if (button) {
                     const categorySlug = button.dataset.categorySlug;
                     if (!categorySlug) {
