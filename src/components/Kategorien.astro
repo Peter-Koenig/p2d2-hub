@@ -1,9 +1,18 @@
 ---
-import BlumenbeetIcon from "./icons/BlumenbeetIcon.astro";
-import FriedhofIcon from "./icons/FriedhofIcon.astro";
-import LaternenIcon from "./icons/LaternenIcon.astro";
 import Modal from "./Modal.astro";
+import { renderIcon } from "../utils/icon-loader";
+
 const { title, icon, order, description, id } = Astro.props;
+
+// Lade Icon-Komponente dynamisch
+let IconComponent;
+try {
+    IconComponent = await renderIcon(icon);
+} catch (error) {
+    console.error(`Fehler beim Laden des Icons "${icon}":`, error);
+    // Fallback zu Default-Icon
+    IconComponent = await renderIcon("fahnenmaste");
+}
 ---
 
 <div
@@ -24,9 +33,7 @@ const { title, icon, order, description, id } = Astro.props;
     <!-- Icon und Content -->
     <div class="relative z-10 p-6 pt-6 flex flex-col gap-3">
         <div>
-            {icon === "blumenbeet" && <BlumenbeetIcon />}
-            {icon === "friedhof" && <FriedhofIcon />}
-            {icon === "strassenlaternen" && <LaternenIcon />}
+            {IconComponent && <IconComponent />}
         </div>
         <h3 class="font-poppins font-bold text-xl mt-2">{title}</h3>
         <div class="font-inter text-base text-gray-700 leading-tight">
