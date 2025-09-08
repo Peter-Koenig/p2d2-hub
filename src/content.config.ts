@@ -51,6 +51,7 @@ const kategorien = defineCollection({
     icon: z.string(),
     order: z.number(),
     description: z.string(),
+    containerType: z.string().optional(),
   }),
 });
 
