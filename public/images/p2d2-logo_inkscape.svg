@@ -2,18 +2,42 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="128.38817mm"
-   height="128.38818mm"
-   viewBox="0 0 128.38817 128.38818"
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
    version="1.1"
    id="svg1"
+   sodipodi:docname="p2d2-logo_inkscape.svg"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#111111"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="1.1313833"
+     inkscape:cx="363.71405"
+     inkscape:cy="474.6402"
+     inkscape:window-width="2429"
+     inkscape:window-height="1440"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
   <defs
      id="defs1" />
   <g
-     id="layer1"
-     transform="translate(-40.925197,-82.785829)">
+     inkscape:label="Ebene 1"
+     inkscape:groupmode="layer"
+     id="layer1">
     <rect
        style="fill:#d6f5bf;fill-opacity:0.175969;fill-rule:evenodd;stroke-width:0.939667"
        id="rect2"
@@ -21,14 +45,18 @@
        height="128.38818"
        x="40.925198"
        y="82.78582"
-       ry="4.348968" />
+       ry="4.348968"
+       inkscape:export-filename="p2d2-logo-small.png"
+       inkscape:export-xdpi="19.783754"
+       inkscape:export-ydpi="19.783754" />
     <g
        id="g2"
        transform="translate(0.1192884,-1.2862267)">
       <path
          id="rect1"
          style="fill:#000080;fill-rule:evenodd;stroke-width:0.878999"
-         d="M 60.692329,105.11344 162.38396,90.358927 149.3153,194.45899 47.616042,206.17335 Z" />
+         d="M 60.692329,105.11344 162.38396,90.358927 149.3153,194.45899 47.616042,206.17335 Z"
+         sodipodi:nodetypes="ccccc" />
       <path
          id="path1-6-7"
          style="fill:#008000;fill-rule:evenodd;stroke-width:1.7836"
@@ -36,11 +64,29 @@
       <path
          style="fill:#d35f5f;fill-rule:evenodd;stroke-width:0.588844"
          id="path1-6-3-2"
+         sodipodi:type="arc"
+         sodipodi:cx="16.522419"
+         sodipodi:cy="177.29802"
+         sodipodi:rx="16.136221"
+         sodipodi:ry="16.136221"
+         sodipodi:start="4.7595758"
+         sodipodi:end="4.712389"
+         sodipodi:open="true"
+         sodipodi:arc-type="arc"
          d="m 17.283553,161.17976 a 16.136221,16.136221 0 0 1 15.364983,16.6892 16.136221,16.136221 0 0 1 -16.50679,15.56079 A 16.136221,16.136221 0 0 1 0.38732081,177.10767 16.136221,16.136221 0 0 1 16.522419,161.1618"
          transform="rotate(-42.405324)" />
       <path
          style="fill:#ffff00;fill-rule:evenodd;stroke-width:0.588844"
          id="path1-6-3-2-1"
+         sodipodi:type="arc"
+         sodipodi:cx="-60.342102"
+         sodipodi:cy="180.46115"
+         sodipodi:rx="16.136221"
+         sodipodi:ry="16.136221"
+         sodipodi:start="4.7595758"
+         sodipodi:end="4.712389"
+         sodipodi:open="true"
+         sodipodi:arc-type="arc"
          d="m -59.580968,164.34289 a 16.136221,16.136221 0 0 1 15.364983,16.6892 16.136221,16.136221 0 0 1 -16.50679,15.56079 16.136221,16.136221 0 0 1 -15.754425,-16.32208 16.136221,16.136221 0 0 1 16.135098,-15.94587"
          transform="rotate(-42.405324)" />
     </g>
