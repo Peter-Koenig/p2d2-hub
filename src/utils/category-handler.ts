@@ -10,6 +10,7 @@ import GeoJSON from "ol/format/GeoJSON";
 import { Style, Stroke, Fill } from "ol/style";
 import { mapState } from "./map-state";
 import { transformExtent } from "ol/proj";
+import { wfsAuthClient } from "./wfs-auth";
 
 export class CategoryHandler {
   private map: Map;
@@ -126,17 +127,12 @@ export class CategoryHandler {
     if (!state.selectedCategory) return "";
 
     const bbox = this.getCurrentViewBboxInActiveCRS();
-    const params = new URLSearchParams({
-      cat: state.selectedCategory,
-      crs: state.activeCRS,
+
+    // Build authorized WFS URL with category filter
+    return wfsAuthClient.buildAuthorizedWFSURL("p2d2_containers", {
+      // bbox: bbox,
+      CQL_FILTER: `category='${state.selectedCategory}'`,
     });
-
-    // Only add bbox parameter if it's truthy
-    if (bbox) {
-      params.set("bbox", bbox);
-    }
-
-    return `/api/features?${params.toString()}`;
   }
 
   public refreshCategoriesSource(): void {
@@ -147,8 +143,15 @@ export class CategoryHandler {
 
     // Only set URL and refresh if URL is not empty
     if (url) {
-      this.categorySource.setUrl(url);
-      this.categorySource.refresh();
+      try {
+        this.categorySource.setUrl(() => url);
+        this.categorySource.refresh();
+      } catch (error) {
+        console.error(
+          "[category-handler] Error refreshing category source:",
+          error,
+        );
+      }
     }
   }
 

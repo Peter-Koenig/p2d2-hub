@@ -75,24 +75,23 @@
         controls: defaults().extend([new FullScreen()]),
     });
 
-    // Add WMS Layer
-    const config = mapState.getConfig();
-    const wmsLayer = new ImageLayer({
-        source: new ImageWMS({
-            url: config.wmsUrl,
-            params: {
-                LAYERS: config.wmsLayer,
-                VERSION: "1.1.1",
-                FORMAT: "image/png",
-                TILED: false,
-                TRANSPARENT: true,
-            },
-            serverType: "geoserver",
-        }),
-        opacity: 0.7,
-    });
+    // Initialize authorized WFS layer instead of WMS
+    import { wfsAuthClient } from "../utils/wfs-auth";
 
-    map.addLayer(wmsLayer);
+    // Test WFS connection on startup
+    wfsAuthClient.testConnection().then((isConnected) => {
+        if (isConnected) {
+            console.log("[WFS] Connection successful");
+        } else {
+            console.warn("[WFS] Connection failed - check credentials");
+            console.warn(
+                "[WFS] URL:",
+                wfsAuthClient.buildAuthorizedWFSURL("p2d2_containers", {
+                    maxFeatures: "1",
+                }),
+            );
+        }
+    });
 
     // Initialize handlers
     const categoryHandler = new CategoryHandler(map);
@@ -139,16 +138,16 @@
         // Use scale-preserving view transition
         toNewViewPreservingScale(map, targetCRS);
 
-        // Refresh categories and WMS
+        // Refresh categories
         categoryHandler.refreshCategoriesSource();
 
         map.once("moveend", () => {
             try {
-                wmsLayer.getSource()?.refresh();
+                categoryHandler.refreshCategoriesSource();
             } catch (error) {
                 throttledLogger.warn(
-                    "wms-refresh",
-                    "[WMS] Could not refresh layer",
+                    "category-refresh",
+                    "[Categories] Could not refresh categories",
                     error,
                 );
             }
@@ -207,15 +206,14 @@
                 // Create new view with appropriate projection
                 toNewViewPreservingScale(map, targetCRS);
 
-                // Refresh WMS and categories after view transition
+                // Refresh categories after view transition
                 map.once("moveend", () => {
                     try {
-                        wmsLayer.getSource()?.refresh();
                         categoryHandler.refreshCategoriesSource();
                     } catch (error) {
                         throttledLogger.warn(
                             "refresh-after-focus",
-                            "Could not refresh layers",
+                            "Could not refresh categories",
                             error,
                         );
                     }
@@ -304,11 +302,11 @@
                 // Refresh layers after view transition
                 map.once("moveend", () => {
                     try {
-                        wmsLayer.getSource()?.refresh();
+                        categoryHandler.refreshCategoriesSource();
                     } catch (error) {
                         throttledLogger.warn(
-                            "wms-refresh-restore",
-                            "[WMS] Could not refresh layer",
+                            "category-refresh-restore",
+                            "[Categories] Could not refresh categories",
                             error,
                         );
                     }
@@ -351,14 +349,14 @@
                 mapState.setLocalCRS(koelnProjection);
                 updateCRSButton();
 
-                // WMS Layer nach View-Änderung aktualisieren
+                // Categories nach View-Änderung aktualisieren
                 map.once("moveend", () => {
                     try {
-                        wmsLayer.getSource()?.refresh();
+                        categoryHandler.refreshCategoriesSource();
                     } catch (error) {
                         throttledLogger.warn(
-                            "wms-refresh-initial",
-                            "[WMS] Could not refresh layer on initial load",
+                            "category-refresh-initial",
+                            "[Categories] Could not refresh categories on initial load",
                             error,
                         );
                     }
