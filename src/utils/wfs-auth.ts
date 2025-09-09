@@ -15,6 +15,26 @@ export interface WFSConfig {
   credentials: WFSCredentials;
 }
 
+// Environment detection type
+interface EnvironmentInfo {
+  isDev: boolean;
+  nodeEnv: string | undefined;
+  hostname: string | undefined;
+}
+
+function detectEnvironment(): EnvironmentInfo {
+  return {
+    isDev:
+      (typeof process !== "undefined" &&
+        process.env.NODE_ENV === "development") ||
+      (typeof window !== "undefined" &&
+        window.location.hostname.includes("local")),
+    nodeEnv: typeof process !== "undefined" ? process.env.NODE_ENV : undefined,
+    hostname:
+      typeof window !== "undefined" ? window.location.hostname : undefined,
+  };
+}
+
 /**
  * WFS Authorization Client
  * Handles authentication and authorized requests to WFS endpoints
@@ -36,26 +56,29 @@ export class WFSAuthClient {
   private config: WFSConfig;
 
   constructor(config: Partial<WFSConfig> = {}) {
+    // Environment detection using unified function
+    const envInfo = detectEnvironment();
+    const isDev = envInfo.isDev;
+
     // Environment-spezifische Defaults
     // Weiche für dev/prod ohne import.meta.env Abhängigkeit
-    const isDev =
-      (typeof process !== "undefined" &&
-        process.env.NODE_ENV === "development") ||
-      (typeof window !== "undefined" &&
-        window.location.hostname === "localhost") ||
-      (typeof window !== "undefined" &&
-        window.location.hostname === "127.0.0.1") ||
-      (typeof location !== "undefined" && location.hostname.includes("local"));
 
     // Für Development: Versuche zuerst globalen Endpoint
     const defaultEndpoint = isDev
       ? "https://wfs.data-dna.eu/geoserver/ows" // Development mit CORS-fähigem Endpoint
       : "https://wfs.data-dna.eu/geoserver/Verwaltungsdaten/ows"; // Production Endpoint
 
-    // FIXME: Workaround für Anonymous-Zugang
-    // Sobald der Anonymous-Zugang auf dem GeoServer eingerichtet ist, können diese Platzhalter entfernt werden
+    // TODO: Issue https://gitlab.opencode.de/OC000028072444/p2d2/-/issues/1 - Remove hardcoded credentials once anonymous GeoServer access is configured
+    // These are temporary read-only credentials that will be replaced with anonymous access
     const RO_USERNAME = "p2d2_wfs_user"; // Echter Read-Only User
     const RO_PASSWORD = "eif1nu4ao9Loh0oobeev"; // Echtes Read-Only Passwort
+
+    // Log warning in development about temporary credentials
+    if (isDev && RO_USERNAME === "p2d2_wfs_user") {
+      console.warn(
+        "[WFS-Auth] Using temporary hardcoded read-only credentials. See Issue https://gitlab.opencode.de/OC000028072444/p2d2/-/issues/1 for roadmap to anonymous access.",
+      );
+    }
 
     this.config = {
       endpoint: config.endpoint || defaultEndpoint,
@@ -80,6 +103,19 @@ export class WFSAuthClient {
     // Validierung der kritischen Konfiguration
     if (!this.config.endpoint) {
       throw new Error("[WFS-Auth] Endpoint configuration missing");
+    }
+
+    // Enhanced logging for debugging
+    if (isDev) {
+      console.log("[WFS-Auth] Configuration loaded:", {
+        endpoint: this.config.endpoint,
+        workspace: this.config.workspace,
+        hasCredentials: !!(
+          this.config.credentials.username && this.config.credentials.password
+        ),
+        usingProxy: true,
+        timestamp: new Date().toISOString(),
+      });
     }
 
     // Warnung wenn Credentials fehlen

@@ -2,23 +2,41 @@ import type { APIRoute } from "astro";
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { url, method = "GET", body: requestBody, params = {} } = await request.json();
+    const {
+      url,
+      method = "GET",
+      body: requestBody,
+      params = {},
+    } = await request.json();
 
     // Validate URL
     if (!url || typeof url !== "string") {
       return new Response(
         JSON.stringify({ error: "Missing or invalid URL parameter" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: { "Content-Type": "application/json" } },
       );
+    }
+
+    // Validate that URL is from trusted WFS endpoints
+    const allowedHosts = ["wfs.data-dna.eu", "ows.data-dna.eu"];
+    const urlHost = new URL(url).hostname;
+    if (!allowedHosts.includes(urlHost)) {
+      return new Response(JSON.stringify({ error: "Untrusted WFS endpoint" }), {
+        status: 403,
+      });
     }
 
     // WFS Credentials (aus Environment oder hardcoded als Fallback)
     const WFS_USERNAME = import.meta.env.WFST_USERNAME || "p2d2_wfs_user";
-    const WFS_PASSWORD = import.meta.env.WFST_PASSWORD || "eif1nu4ao9Loh0oobeev";
+    const WFS_PASSWORD =
+      import.meta.env.WFST_PASSWORD || "eif1nu4ao9Loh0oobeev";
 
     // Prepare headers
     const headers = new Headers();
-    headers.set("Authorization", `Basic ${btoa(`${WFS_USERNAME}:${WFS_PASSWORD}`)}`);
+    headers.set(
+      "Authorization",
+      `Basic ${btoa(`${WFS_USERNAME}:${WFS_PASSWORD}`)}`,
+    );
 
     if (requestBody) {
       headers.set("Content-Type", "application/xml");
@@ -46,12 +64,12 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(
         JSON.stringify({
           error: `WFS request failed: ${response.status} ${response.statusText}`,
-          details: errorText
+          details: errorText,
         }),
         {
           status: response.status,
-          headers: { "Content-Type": "application/json" }
-        }
+          headers: { "Content-Type": "application/json" },
+        },
       );
     }
 
@@ -61,25 +79,25 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(responseText, {
       status: response.status,
       headers: {
-        "Content-Type": response.headers.get("Content-Type") || "application/json",
+        "Content-Type":
+          response.headers.get("Content-Type") || "application/json",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization"
-      }
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      },
     });
-
   } catch (error) {
     console.error("WFS Proxy Internal Error:", error);
 
     return new Response(
       JSON.stringify({
         error: "Internal server error",
-        message: error instanceof Error ? error.message : String(error)
+        message: error instanceof Error ? error.message : String(error),
       }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json" }
-      }
+        headers: { "Content-Type": "application/json" },
+      },
     );
   }
 };
@@ -92,8 +110,8 @@ export const OPTIONS: APIRoute = async () => {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Access-Control-Max-Age": "86400"
-    }
+      "Access-Control-Max-Age": "86400",
+    },
   });
 };
 
@@ -104,7 +122,7 @@ export const GET: APIRoute = async ({ url }) => {
   if (!targetUrl) {
     return new Response(
       JSON.stringify({ error: "Missing url query parameter" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      { status: 400, headers: { "Content-Type": "application/json" } },
     );
   }
 
@@ -113,7 +131,7 @@ export const GET: APIRoute = async ({ url }) => {
     request: new Request(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: targetUrl, method: "GET" })
-    })
+      body: JSON.stringify({ url: targetUrl, method: "GET" }),
+    }),
   } as any);
 };
