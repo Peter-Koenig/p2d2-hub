@@ -27,9 +27,8 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // WFS Credentials (aus Environment oder hardcoded als Fallback)
-    const WFS_USERNAME = import.meta.env.WFST_USERNAME || "p2d2_wfs_user";
-    const WFS_PASSWORD =
-      import.meta.env.WFST_PASSWORD || "eif1nu4ao9Loh0oobeev";
+    const WFS_USERNAME = "p2d2_wfs_user";
+    const WFS_PASSWORD = "eif1nu4ao9Loh0oobeev";
 
     // Prepare headers
     const headers = new Headers();
