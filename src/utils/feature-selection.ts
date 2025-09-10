@@ -12,6 +12,9 @@ export class FeatureSelectionHandler {
   private map: Map;
   private selectInteraction: Select;
   private categorySource: VectorSource;
+  private isReselecting: boolean = false;
+  private isHandlingSelection: boolean = false;
+  private reselectDebounceTimer: number | null = null;
 
   constructor(map: Map, categorySource: VectorSource) {
     this.map = map;
@@ -55,13 +58,27 @@ export class FeatureSelectionHandler {
   private setupEventListeners(): void {
     // Listen for category source changes to re-select features
     this.categorySource.on("change", () => {
-      if (this.categorySource.getState() === "ready") {
-        this.reselectFeature();
+      // Debounce reselection to prevent rapid fire events
+      if (this.reselectDebounceTimer) {
+        clearTimeout(this.reselectDebounceTimer);
       }
+
+      this.reselectDebounceTimer = setTimeout(() => {
+        if (this.categorySource.getState() === "ready" && !this.isReselecting) {
+          this.reselectFeature();
+        }
+        this.reselectDebounceTimer = null;
+      }, 150);
     });
   }
 
   private handleFeatureSelect(event: any): void {
+    // Guard gegen Rekursion
+    if (this.isHandlingSelection || this.isReselecting) {
+      return;
+    }
+    this.isHandlingSelection = true;
+
     const selectedFeatures = event.selected;
     const deselectedFeatures = event.deselected;
 
@@ -80,6 +97,8 @@ export class FeatureSelectionHandler {
     if (deselectedFeatures.length > 0) {
       this.clearFeatureSelection();
     }
+
+    this.isHandlingSelection = false;
   }
 
   private persistFeatureSelection(featureId: any, featureProps: any): void {
@@ -110,6 +129,12 @@ export class FeatureSelectionHandler {
   }
 
   public reselectFeature(): void {
+    // Guard gegen Rekursion
+    if (this.isReselecting || this.isHandlingSelection) {
+      return;
+    }
+    this.isReselecting = true;
+
     try {
       const featureId = localStorage.getItem("selectedFeatureId");
       if (featureId && this.categorySource.getState() === "ready") {
@@ -121,6 +146,8 @@ export class FeatureSelectionHandler {
       }
     } catch (error) {
       console.warn("[feature-selection] Could not reselect feature:", error);
+    } finally {
+      this.isReselecting = false;
     }
   }
 

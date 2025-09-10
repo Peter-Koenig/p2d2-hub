@@ -18,6 +18,7 @@ export class CategoryHandler {
   private categoryLayer: VectorLayer<VectorSource>;
   private moveendDebounceTimer: number | null = null;
   private readonly MOVEEND_DEBOUNCE_MS = 400;
+  private isRefreshing: boolean = false;
 
   constructor(map: Map) {
     this.map = map;
@@ -136,9 +137,15 @@ export class CategoryHandler {
   }
 
   public refreshCategoriesSource(): void {
+    // Guard gegen mehrfache simultane Refreshs
+    if (this.isRefreshing) {
+      return;
+    }
+
     const state = mapState.getState();
     if (!state.selectedCategory) return;
 
+    this.isRefreshing = true;
     const url = this.buildCategoryUrl();
 
     // Only set URL and refresh if URL is not empty
@@ -151,7 +158,11 @@ export class CategoryHandler {
           "[category-handler] Error refreshing category source:",
           error,
         );
+      } finally {
+        this.isRefreshing = false;
       }
+    } else {
+      this.isRefreshing = false;
     }
   }
 

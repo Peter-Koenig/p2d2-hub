@@ -364,9 +364,12 @@
             }
 
             // Reselect feature after categories are loaded
-            setTimeout(() => {
-                featureSelectionHandler.reselectFeature();
-            }, 500);
+            // Weniger aggressive Reselection mit Guard
+            map.once("rendercomplete", () => {
+                setTimeout(() => {
+                    featureSelectionHandler.reselectFeature();
+                }, 200);
+            });
 
             // Mark as initialized
             mapState.setInitialized(true);
