@@ -8,14 +8,20 @@ export default defineConfig({
   // Site URL for correct absolute URLs
   site: "https://opn.data-dna.eu",
 
-  telemetry: false,
-
   // Server output with Node.js adapter
   output: "server",
   adapter: node({ mode: "standalone" }),
 
   // Performance: Disable telemetry (avoid 560ms startup delay)
   telemetry: false,
+
+  // Content optimizations to reduce sync time
+  content: {
+    experimental: {
+      // Avoid full content sync on every change
+      contentCollection: true,
+    },
+  },
 
   // Central Shiki configuration for syntax highlighting (Singleton pattern)
   markdown: {
@@ -65,6 +71,8 @@ export default defineConfig({
         "vue", // Vue.js framework
         "@vue/runtime-dom", // Vue runtime
       ],
+      // Force pre-bundling to avoid re-optimization
+      force: true,
     },
 
     // Dev server configuration
@@ -84,7 +92,10 @@ export default defineConfig({
   },
 
   // Experimental features: Session disabled (avoid performance overhead)
-  // experimental: {
-  //   // session: true, // Only enable if actually needed
-  // },
+  experimental: {
+    // Disable sessions completely to prevent filesystem overhead
+    sessions: false,
+    // Content optimizations
+    contentCollection: true,
+  },
 });
