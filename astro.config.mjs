@@ -6,6 +6,8 @@ import mdx from "@astrojs/mdx"; // Nur falls du MDX brauchst
 import vue from "@astrojs/vue";
 
 export default defineConfig({
+  // Performance: Telemetrie deaktivieren (spart ~560ms)
+  telemetry: false,
   // Optional, falls du eine feste Domain hast
   site: "https://opn.data-dna.eu",
 
@@ -15,6 +17,9 @@ export default defineConfig({
   // integrations: [mdx()], // Nur falls du MDX brauchst
   vite: {
     plugins: [tailwindcss()],
+    optimizeDeps: {
+      include: ["ol", "proj4", "vue"], // Pre-bundle GIS-Dependencies
+    },
     server: {
       hmr: {
         host: "localhost",
