@@ -1,7 +1,7 @@
 // Manual Sync CLI Script - Command line interface for admin polygon synchronization
-import { adminPolygonSync } from '../utils/admin-polygon-sync';
-import { KommuneWatcher } from './kommune-watcher';
-import { getAllKommunen } from '../utils/kommune-utils';
+import { AdminPolygonSyncManager } from "../utils/admin-polygon-sync";
+import { KommuneWatcher } from "./kommune-watcher";
+import { getAllKommunen, getKommuneBySlug } from "../utils/kommune-utils";
 
 interface CLIArgs {
   command: string;
@@ -16,16 +16,24 @@ interface CLIArgs {
 function parseArgs(): CLIArgs {
   const args = process.argv.slice(2);
   const command = args[0];
-  const kommuneSlug = args[1] !== '--verbose' && args[1] !== '--dry-run' && args[1] !== '--force' && args[1] !== '--all' ? args[1] : undefined;
+  const kommuneSlug =
+    args[1] !== "--verbose" &&
+    args[1] !== "--dry-run" &&
+    args[1] !== "--force" &&
+    args[1] !== "--all"
+      ? args[1]
+      : undefined;
 
   return {
     command,
     kommuneSlug,
-    verbose: args.includes('--verbose'),
-    dryRun: args.includes('--dry-run'),
-    force: args.includes('--force'),
-    delayMs: args.includes('--delay') ? parseInt(args[args.indexOf('--delay') + 1]) || 1000 : 1000,
-    all: args.includes('--all')
+    verbose: args.includes("--verbose"),
+    dryRun: args.includes("--dry-run"),
+    force: args.includes("--force"),
+    delayMs: args.includes("--delay")
+      ? parseInt(args[args.indexOf("--delay") + 1]) || 1000
+      : 1000,
+    all: args.includes("--all"),
   };
 }
 
@@ -65,68 +73,85 @@ async function handleSyncCommand(args: CLIArgs): Promise<void> {
     dryRun: args.dryRun,
     verbose: args.verbose,
     force: args.force,
-    delayMs: args.delayMs
+    delayMs: args.delayMs,
   });
 
   if (args.all) {
-    console.log(`[manual-sync] Syncing all kommunen${args.dryRun ? ' (dry run)' : ''}`);
+    console.log(
+      `[manual-sync] Syncing all kommunen${args.dryRun ? " (dry run)" : ""}`,
+    );
     const results = await syncManager.syncAllKommunen();
 
-    console.log('\n[manual-sync] Sync Summary:');
-    results.forEach(result => {
-      const status = result.success ? '✓' : '✗';
-      console.log(`  ${status} ${result.kommuneSlug}: ${result.polygonsFound} found, ${result.polygonsInserted} inserted${result.error ? ` - ERROR: ${result.error}` : ''}`);
+    console.log("\n[manual-sync] Sync Summary:");
+    results.forEach((result) => {
+      const status = result.success ? "✓" : "✗";
+      console.log(
+        `  ${status} ${result.kommuneSlug}: ${result.polygonsFound} found, ${result.polygonsInserted} inserted${result.error ? ` - ERROR: ${result.error}` : ""}`,
+      );
     });
 
-    const successCount = results.filter(r => r.success).length;
+    const successCount = results.filter((r) => r.success).length;
     const totalCount = results.length;
-    console.log(`\n[manual-sync] Completed: ${successCount}/${totalCount} kommunen successful`);
-
+    console.log(
+      `\n[manual-sync] Completed: ${successCount}/${totalCount} kommunen successful`,
+    );
   } else if (args.kommuneSlug) {
-    console.log(`[manual-sync] Syncing ${args.kommuneSlug}${args.dryRun ? ' (dry run)' : ''}`);
+    console.log(
+      `[manual-sync] Syncing ${args.kommuneSlug}${args.dryRun ? " (dry run)" : ""}`,
+    );
     const result = await syncManager.syncKommunePolygons(args.kommuneSlug);
 
     if (result.success) {
-      console.log(`[manual-sync] ✓ Success: ${result.polygonsFound} polygons found, ${result.polygonsInserted} inserted in ${result.durationMs}ms`);
+      console.log(
+        `[manual-sync] ✓ Success: ${result.polygonsFound} polygons found, ${result.polygonsInserted} inserted in ${result.durationMs}ms`,
+      );
     } else {
       console.error(`[manual-sync] ✗ Failed: ${result.error}`);
       process.exit(1);
     }
-
   } else {
-    console.error('[manual-sync] Error: Kommune slug required for sync command');
+    console.error(
+      "[manual-sync] Error: Kommune slug required for sync command",
+    );
     process.exit(1);
   }
 }
 
 async function handleDeleteCommand(args: CLIArgs): Promise<void> {
   if (!args.kommuneSlug && !args.all) {
-    console.error('[manual-sync] Error: Kommune slug or --all flag required for delete command');
+    console.error(
+      "[manual-sync] Error: Kommune slug or --all flag required for delete command",
+    );
     process.exit(1);
   }
 
   const syncManager = new AdminPolygonSyncManager({
     dryRun: args.dryRun,
-    verbose: args.verbose
+    verbose: args.verbose,
   });
 
   if (args.all) {
-    console.log(`[manual-sync] Deleting polygons for all kommunen${args.dryRun ? ' (dry run)' : ''}`);
-    const kommunen = await getAllKommunen();
+    console.log(
+      `[manual-sync] Deleting polygons for all kommunen${args.dryRun ? " (dry run)" : ""}`,
+    );
+    const kommunen = await getAllKommunenFromFS();
 
     for (const kommune of kommunen) {
       if (args.dryRun) {
-        console.log(`[manual-sync] Dry run: Would delete polygons for ${kommune.slug}`);
+        console.log(
+          `[manual-sync] Dry run: Would delete polygons for ${kommune.slug}`,
+        );
       } else {
         console.log(`[manual-sync] Deleting polygons for ${kommune.slug}`);
         await syncManager.deleteKommunePolygons(kommune.slug);
       }
-      await new Promise(resolve => setTimeout(resolve, args.delayMs));
+      await new Promise((resolve) => setTimeout(resolve, args.delayMs));
     }
-
   } else if (args.kommuneSlug) {
     if (args.dryRun) {
-      console.log(`[manual-sync] Dry run: Would delete polygons for ${args.kommuneSlug}`);
+      console.log(
+        `[manual-sync] Dry run: Would delete polygons for ${args.kommuneSlug}`,
+      );
     } else {
       console.log(`[manual-sync] Deleting polygons for ${args.kommuneSlug}`);
       await syncManager.deleteKommunePolygons(args.kommuneSlug);
@@ -139,7 +164,7 @@ async function handleStatusCommand(args: CLIArgs): Promise<void> {
   const statuses = await syncManager.getSyncStatus();
 
   if (args.kommuneSlug) {
-    const status = statuses.find(s => s.slug === args.kommuneSlug);
+    const status = statuses.find((s) => s.slug === args.kommuneSlug);
     if (status) {
       console.log(`\nStatus for ${args.kommuneSlug}:`);
       console.log(JSON.stringify(status, null, 2));
@@ -148,11 +173,16 @@ async function handleStatusCommand(args: CLIArgs): Promise<void> {
       process.exit(1);
     }
   } else {
-    console.log('\nSync Status for all kommunen:');
-    statuses.forEach(status => {
-      const levels = status.adminLevels.length > 0 ? `[${status.adminLevels.join(',')}]` : '[none]';
-      const hasData = status.hasOSMData ? '✓' : '✗';
-      console.log(`  ${hasData} ${status.slug.padEnd(15)} ${status.title.padEnd(20)} ${levels}`);
+    console.log("\nSync Status for all kommunen:");
+    statuses.forEach((status) => {
+      const levels =
+        status.adminLevels.length > 0
+          ? `[${status.adminLevels.join(",")}]`
+          : "[none]";
+      const hasData = status.hasOSMData ? "✓" : "✗";
+      console.log(
+        `  ${hasData} ${status.slug.padEnd(15)} ${status.title.padEnd(20)} ${levels}`,
+      );
     });
   }
 }
@@ -160,35 +190,40 @@ async function handleStatusCommand(args: CLIArgs): Promise<void> {
 async function handleListCommand(): Promise<void> {
   const kommunen = await getAllKommunen();
 
-  console.log('\nAvailable kommunen:');
-  kommunen.forEach(kommune => {
-    const levels = kommune.osmAdminLevels?.length > 0 ? `[${kommune.osmAdminLevels.join(',')}]` : '[none]';
-    const wpName = kommune.wp_name || 'none';
-    console.log(`  ${kommune.slug.padEnd(15)} ${kommune.title.padEnd(20)} ${levels} wp:${wpName}`);
+  console.log("\nAvailable kommunen:");
+  kommunen.forEach((kommune) => {
+    const levels =
+      kommune.osmAdminLevels?.length > 0
+        ? `[${kommune.osmAdminLevels.join(",")}]`
+        : "[none]";
+    const wpName = kommune.wp_name || "none";
+    console.log(
+      `  ${kommune.slug.padEnd(15)} ${kommune.title.padEnd(20)} ${levels} wp:${wpName}`,
+    );
   });
   console.log(`\nTotal: ${kommunen.length} kommunen`);
 }
 
 async function handleWatchCommand(args: CLIArgs): Promise<void> {
-  console.log('[manual-sync] Starting file watcher...');
+  console.log("[manual-sync] Starting file watcher...");
 
   const watcher = new KommuneWatcher({
     verbose: args.verbose,
     dryRun: args.dryRun,
-    debounceMs: args.delayMs
+    debounceMs: args.delayMs,
   });
 
   watcher.start();
 
   // Handle graceful shutdown
-  process.on('SIGINT', () => {
-    console.log('\n[manual-sync] Shutting down file watcher...');
+  process.on("SIGINT", () => {
+    console.log("\n[manual-sync] Shutting down file watcher...");
     watcher.stop();
     process.exit(0);
   });
 
-  process.on('SIGTERM', () => {
-    console.log('\n[manual-sync] Terminating file watcher...');
+  process.on("SIGTERM", () => {
+    console.log("\n[manual-sync] Terminating file watcher...");
     watcher.stop();
     process.exit(0);
   });
@@ -197,26 +232,26 @@ async function handleWatchCommand(args: CLIArgs): Promise<void> {
 async function main(): Promise<void> {
   const args = parseArgs();
 
-  if (!args.command || args.command === 'help') {
+  if (!args.command || args.command === "help") {
     printUsage();
     process.exit(0);
   }
 
   try {
     switch (args.command) {
-      case 'sync':
+      case "sync":
         await handleSyncCommand(args);
         break;
-      case 'delete':
+      case "delete":
         await handleDeleteCommand(args);
         break;
-      case 'status':
+      case "status":
         await handleStatusCommand(args);
         break;
-      case 'list':
+      case "list":
         await handleListCommand();
         break;
-      case 'watch':
+      case "watch":
         await handleWatchCommand(args);
         break;
       default:
@@ -225,7 +260,7 @@ async function main(): Promise<void> {
         process.exit(1);
     }
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    const errorMsg = error instanceof Error ? error.message : "Unknown error";
     console.error(`[manual-sync] Error: ${errorMsg}`);
     if (args.verbose) {
       console.error(error);
@@ -236,8 +271,8 @@ async function main(): Promise<void> {
 
 // Run if executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(error => {
-    console.error('[manual-sync] Fatal error:', error);
+  main().catch((error) => {
+    console.error("[manual-sync] Fatal error:", error);
     process.exit(1);
   });
 }

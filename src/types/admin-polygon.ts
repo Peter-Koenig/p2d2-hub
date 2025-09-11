@@ -1,4 +1,5 @@
 // TypeScript interfaces for Admin Polygon Sync functionality
+export type { GeoJSON } from "geojson";
 
 export interface OSMPolygonFeature extends GeoJSON.Feature {
   id: number;
@@ -46,12 +47,12 @@ export interface OverpassResponse {
     copyright: string;
   };
   elements: Array<{
-    type: 'node' | 'way' | 'relation';
+    type: "node" | "way" | "relation";
     id: number;
     tags?: Record<string, string>;
     geometry?: Array<{ lat: number; lon: number }>;
     members?: Array<{
-      type: 'node' | 'way' | 'relation';
+      type: "node" | "way" | "relation";
       ref: number;
       role: string;
       geometry?: Array<{ lat: number; lon: number }>;
@@ -74,5 +75,5 @@ export interface KommuneSyncStatus {
   adminLevels: number[];
   lastSync?: Date;
   polygonCount: number;
-  status: 'pending' | 'synced' | 'error' | 'not_found';
+  status: "pending" | "synced" | "error" | "not_found";
 }

@@ -1,5 +1,5 @@
 // WFS Transaction Builder for WFS-T operations
-import { GeoJSON } from './types/admin-polygon';
+import type { GeoJSON } from "geojson";
 
 export interface WFSTransactionOptions {
   typeName: string;
@@ -10,10 +10,10 @@ export interface WFSTransactionOptions {
 
 export class WFSTransactionBuilder {
   private defaultOptions: Required<WFSTransactionOptions> = {
-    typeName: 'p2d2:admin_polygons',
-    featurePrefix: 'polygon_',
-    srsName: 'EPSG:4326',
-    namespace: 'xmlns:p2d2="http://www.data-dna.eu/p2d2"'
+    typeName: "p2d2:admin_polygons",
+    featurePrefix: "polygon_",
+    srsName: "EPSG:4326",
+    namespace: 'xmlns:p2d2="http://www.data-dna.eu/p2d2"',
   };
 
   constructor(private options: WFSTransactionOptions = {}) {}
@@ -24,13 +24,15 @@ export class WFSTransactionBuilder {
   buildInsertTransaction(
     features: GeoJSON.Feature[],
     kommuneSlug: string,
-    adminLevel: number
+    adminLevel: number,
   ): string {
     const mergedOptions = { ...this.defaultOptions, ...this.options };
 
     const insertElements = features
-      .map((feature, index) => this.buildInsertElement(feature, kommuneSlug, adminLevel, index))
-      .join('\n');
+      .map((feature, index) =>
+        this.buildInsertElement(feature, kommuneSlug, adminLevel, index),
+      )
+      .join("\n");
 
     return `<?xml version="1.0" encoding="UTF-8"?>
 <wfs:Transaction
@@ -53,13 +55,17 @@ export class WFSTransactionBuilder {
     feature: GeoJSON.Feature,
     kommuneSlug: string,
     adminLevel: number,
-    index: number
+    index: number,
   ): string {
     const mergedOptions = { ...this.defaultOptions, ...this.options };
     const featureId = `${mergedOptions.featurePrefix}${feature.id || Date.now()}_${index}`;
 
     const geometryXml = this.convertGeometryToGML(feature.geometry);
-    const propertiesXml = this.buildPropertiesXml(feature.properties, kommuneSlug, adminLevel);
+    const propertiesXml = this.buildPropertiesXml(
+      feature.properties,
+      kommuneSlug,
+      adminLevel,
+    );
 
     return `<wfs:Insert>
   <${mergedOptions.typeName}>
@@ -73,9 +79,9 @@ export class WFSTransactionBuilder {
    * Convert GeoJSON geometry to GML format
    */
   private convertGeometryToGML(geometry: GeoJSON.Geometry): string {
-    if (geometry.type === 'Polygon') {
+    if (geometry.type === "Polygon") {
       return this.convertPolygonToGML(geometry);
-    } else if (geometry.type === 'MultiPolygon') {
+    } else if (geometry.type === "MultiPolygon") {
       return this.convertMultiPolygonToGML(geometry);
     } else {
       throw new Error(`Unsupported geometry type: ${geometry.type}`);
@@ -87,7 +93,7 @@ export class WFSTransactionBuilder {
    */
   private convertPolygonToGML(polygon: GeoJSON.Polygon): string {
     const coordinates = polygon.coordinates[0]; // Outer ring
-    const posList = coordinates.map(coord => coord.join(' ')).join(' ');
+    const posList = coordinates.map((coord) => coord.join(" ")).join(" ");
 
     return `<gml:Polygon>
       <gml:exterior>
@@ -103,8 +109,10 @@ export class WFSTransactionBuilder {
    */
   private convertMultiPolygonToGML(multiPolygon: GeoJSON.MultiPolygon): string {
     const polygonElements = multiPolygon.coordinates
-      .map(polygonCoords => {
-        const posList = polygonCoords[0].map(coord => coord.join(' ')).join(' ');
+      .map((polygonCoords) => {
+        const posList = polygonCoords[0]
+          .map((coord) => coord.join(" "))
+          .join(" ");
         return `<gml:polygonMember>
           <gml:Polygon>
             <gml:exterior>
@@ -115,7 +123,7 @@ export class WFSTransactionBuilder {
           </gml:Polygon>
         </gml:polygonMember>`;
       })
-      .join('\n');
+      .join("\n");
 
     return `<gml:MultiPolygon>${polygonElements}</gml:MultiPolygon>`;
   }
@@ -126,28 +134,38 @@ export class WFSTransactionBuilder {
   private buildPropertiesXml(
     properties: Record<string, any>,
     kommuneSlug: string,
-    adminLevel: number
+    adminLevel: number,
   ): string {
     const propLines = [
       `<kommune_slug>${this.escapeXml(kommuneSlug)}</kommune_slug>`,
       `<admin_level>${adminLevel}</admin_level>`,
-      `<osm_id>${properties.osm_id || ''}</osm_id>`,
-      `<osm_type>${properties.osm_type || ''}</osm_type>`,
-      `<name>${this.escapeXml(properties.name || '')}</name>`,
-      `<wikipedia>${this.escapeXml(properties.wikipedia || '')}</wikipedia>`,
-      `<wikidata>${this.escapeXml(properties.wikidata || '')}</wikidata>`,
-      `<timestamp>${new Date().toISOString()}</timestamp>`
+      `<osm_id>${properties.osm_id || ""}</osm_id>`,
+      `<osm_type>${properties.osm_type || ""}</osm_type>`,
+      `<name>${this.escapeXml(properties.name || "")}</name>`,
+      `<wikipedia>${this.escapeXml(properties.wikipedia || "")}</wikipedia>`,
+      `<wikidata>${this.escapeXml(properties.wikidata || "")}</wikidata>`,
+      `<timestamp>${new Date().toISOString()}</timestamp>`,
     ];
 
     // Add additional OSM tags as properties
     for (const [key, value] of Object.entries(properties)) {
-      if (!['osm_id', 'osm_type', 'name', 'wikipedia', 'wikidata', 'admin_level'].includes(key) &&
-          typeof value === 'string') {
-        propLines.push(`<${key}>${this.escapeXml(value)}</${key}>`);
+      if (
+        ![
+          "osm_id",
+          "osm_type",
+          "name",
+          "wikipedia",
+          "wikidata",
+          "admin_level",
+        ].includes(key) &&
+        typeof value === "string"
+      ) {
+        const safeKey = this.escapeXml(key).replace(/[:]/g, "_");
+        propLines.push(`<${safeKey}>${this.escapeXml(value)}</${safeKey}>`);
       }
     }
 
-    return propLines.join('\n    ');
+    return propLines.join("\n    ");
   }
 
   /**
@@ -155,11 +173,11 @@ export class WFSTransactionBuilder {
    */
   private escapeXml(text: string): string {
     return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&apos;");
   }
 
   /**

@@ -1,20 +1,31 @@
 // Admin Polygon Sync Manager - Main synchronization logic
-import { wfsAuthClient } from './wfs-auth';
-import { getAllKommunen, getKommuneBySlug, type KommuneData } from './kommune-utils';
-import { transformExtentFromWgs84, transformCenterFromWgs84 } from './crs';
-import { osmDataClient } from './osm-data-client';
-import { wfsTransactionBuilder } from './wfs-transaction-builder';
-import type { SyncOptions, SyncResult, KommuneSyncStatus } from '../types/admin-polygon';
+import { writeFile } from "fs/promises";
+import { wfsAuthClient } from "./wfs-auth";
+import { transformExtentFromWgs84, transformCenterFromWgs84 } from "./crs";
+import { osmDataClient } from "./osm-data-client";
+import { wfsTransactionBuilder } from "./wfs-transaction-builder";
+import {
+  getAllKommunen,
+  getKommuneBySlug,
+  type KommuneData,
+} from "./kommune-utils";
+import type {
+  SyncOptions,
+  SyncResult,
+  KommuneSyncStatus,
+} from "../types/admin-polygon";
 
 export class AdminPolygonSyncManager {
   private defaultOptions: Required<SyncOptions> = {
     dryRun: false,
     verbose: false,
     force: false,
-    delayMs: 1000
+    delayMs: 1000,
   };
 
-  constructor(private options: SyncOptions = {}) {}
+  constructor(options: SyncOptions = {}) {
+    this.options = { ...this.defaultOptions, ...options };
+  }
 
   /**
    * Main synchronization method for a single kommune
@@ -28,7 +39,7 @@ export class AdminPolygonSyncManager {
       adminLevel: 0,
       polygonsFound: 0,
       polygonsInserted: 0,
-      durationMs: 0
+      durationMs: 0,
     };
 
     try {
@@ -36,7 +47,9 @@ export class AdminPolygonSyncManager {
       if (mergedOptions.verbose) {
         console.log(`[admin-sync] Waiting for ContentCollection refresh...`);
       }
-      await new Promise(resolve => setTimeout(resolve, mergedOptions.delayMs));
+      await new Promise((resolve) =>
+        setTimeout(resolve, mergedOptions.delayMs),
+      );
 
       const kommune = await getKommuneBySlug(kommuneSlug);
 
@@ -44,7 +57,9 @@ export class AdminPolygonSyncManager {
         const errorMsg = `Kommune '${kommuneSlug}' not found in ContentCollection`;
         console.error(`[admin-sync] ${errorMsg}`);
         const allKommunen = await getAllKommunen();
-        console.error(`[admin-sync] Available kommunen: ${allKommunen.map(k => k.slug).join(', ')}`);
+        console.error(
+          `[admin-sync] Available kommunen: ${allKommunen.map((k) => k.slug).join(", ")}`,
+        );
         throw new Error(errorMsg);
       }
 
@@ -53,13 +68,19 @@ export class AdminPolygonSyncManager {
       }
 
       if (!kommune.osmAdminLevels || kommune.osmAdminLevels.length === 0) {
-        console.log(`[admin-sync] No admin levels defined for ${kommuneSlug}, skipping`);
+        console.log(
+          `[admin-sync] No admin levels defined for ${kommuneSlug}, skipping`,
+        );
         result.success = true;
         return result;
       }
 
-      console.log(`[admin-sync] Starting sync for ${kommuneSlug} (${kommune.title})`);
-      console.log(`[admin-sync] Admin levels: ${kommune.osmAdminLevels.join(', ')}`);
+      console.log(
+        `[admin-sync] Starting sync for ${kommuneSlug} (${kommune.title})`,
+      );
+      console.log(
+        `[admin-sync] Admin levels: ${kommune.osmAdminLevels.join(", ")}`,
+      );
       console.log(`[admin-sync] Wikipedia reference: ${kommune.wp_name}`);
 
       // Delete existing polygons first if not dry run
@@ -72,12 +93,18 @@ export class AdminPolygonSyncManager {
 
       // Process each admin level
       for (const adminLevel of kommune.osmAdminLevels) {
-        const levelResult = await this.processAdminLevel(kommune, adminLevel, mergedOptions);
+        const levelResult = await this.processAdminLevel(
+          kommune,
+          adminLevel,
+          mergedOptions,
+        );
         totalPolygonsFound += levelResult.polygonsFound;
         totalPolygonsInserted += levelResult.polygonsInserted;
 
         if (!levelResult.success) {
-          throw new Error(`Failed to process admin level ${adminLevel}: ${levelResult.error}`);
+          throw new Error(
+            `Failed to process admin level ${adminLevel}: ${levelResult.error}`,
+          );
         }
       }
 
@@ -86,11 +113,14 @@ export class AdminPolygonSyncManager {
       result.polygonsInserted = totalPolygonsInserted;
       result.adminLevel = kommune.osmAdminLevels[0];
 
-      console.log(`[admin-sync] ✓ Sync completed for ${kommuneSlug}: ${totalPolygonsFound} found, ${totalPolygonsInserted} inserted`);
-
+      console.log(
+        `[admin-sync] ✓ Sync completed for ${kommuneSlug}: ${totalPolygonsFound} found, ${totalPolygonsInserted} inserted`,
+      );
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`[admin-sync] ✗ Sync failed for ${kommuneSlug}: ${errorMsg}`);
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      console.error(
+        `[admin-sync] ✗ Sync failed for ${kommuneSlug}: ${errorMsg}`,
+      );
       result.error = errorMsg;
       result.success = false;
     } finally {
@@ -106,7 +136,7 @@ export class AdminPolygonSyncManager {
   private async processAdminLevel(
     kommune: KommuneData,
     adminLevel: number,
-    options: Required<SyncOptions>
+    options: Required<SyncOptions>,
   ): Promise<SyncResult> {
     const result: SyncResult = {
       success: false,
@@ -114,49 +144,74 @@ export class AdminPolygonSyncManager {
       adminLevel,
       polygonsFound: 0,
       polygonsInserted: 0,
-      durationMs: 0
+      durationMs: 0,
     };
 
     try {
       // Fetch polygons from OSM
-      const geojson = await osmDataClient.fetchAdminPolygons(kommune.wp_name, adminLevel);
+      const geojson = await osmDataClient.fetchAdminPolygons(
+        kommune.wp_name,
+        adminLevel,
+      );
       result.polygonsFound = geojson.features.length;
 
       if (geojson.features.length === 0) {
-        console.log(`[admin-sync] No polygons found for ${kommune.slug}, level ${adminLevel}`);
+        console.log(
+          `[admin-sync] No polygons found for ${kommune.slug}, level ${adminLevel}`,
+        );
         result.success = true;
         return result;
       }
 
       if (options.verbose) {
-        console.log(`[admin-sync] Found ${geojson.features.length} polygons for level ${adminLevel}`);
+        console.log(
+          `[admin-sync] Found ${geojson.features.length} polygons for level ${adminLevel}`,
+        );
       }
 
       // Transform coordinates if needed
-      const targetCRS = kommune.map?.projection || 'EPSG:4326';
+      const targetCRS = kommune.map?.projection || "EPSG:4326";
+      // Fallback-Map, falls im Markdown nichts definiert ist
+      const safeMap = kommune.map ?? { projection: "EPSG:4326" };
       let transformedGeoJSON = geojson;
 
-      if (targetCRS !== 'EPSG:4326') {
+      if (targetCRS !== "EPSG:4326") {
         if (options.verbose) {
-          console.log(`[admin-sync] Transforming coordinates from WGS84 to ${targetCRS}`);
+          console.log(
+            `[admin-sync] Transforming coordinates from WGS84 to ${targetCRS}`,
+          );
         }
         transformedGeoJSON = await this.transformPolygons(geojson, targetCRS);
       }
 
       // Insert via WFS-T
       if (!options.dryRun) {
-        await this.insertPolygonsViaWFST(transformedGeoJSON, kommune.slug, adminLevel);
+        await this.insertPolygonsViaWFST(
+          transformedGeoJSON,
+          kommune.slug,
+          adminLevel,
+        );
         result.polygonsInserted = transformedGeoJSON.features.length;
       } else {
-        console.log(`[admin-sync] Dry run: Would insert ${transformedGeoJSON.features.length} polygons`);
+        // Dry run: Dump polygons to EWKT file for inspection
+        const ewktFile = `tmp/${kommune.slug}_L${adminLevel}.ewkt`;
+        const ewkts = transformedGeoJSON.features
+          .map((f) => `SRID=4326;${JSON.stringify(f.geometry)}`)
+          .join("\n");
+
+        await writeFile(ewktFile, ewkts, { flag: "a" });
+        console.log(
+          `[admin-sync] Dry run - ${transformedGeoJSON.features.length} polygons dumped to ${ewktFile}`,
+        );
         result.polygonsInserted = 0;
       }
 
       result.success = true;
-
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`[admin-sync] Failed to process admin level ${adminLevel} for ${kommune.slug}: ${errorMsg}`);
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      console.error(
+        `[admin-sync] Failed to process admin level ${adminLevel} for ${kommune.slug}: ${errorMsg}`,
+      );
       result.error = errorMsg;
     }
 
@@ -166,14 +221,16 @@ export class AdminPolygonSyncManager {
   /**
    * Transform polygons from WGS84 to target CRS
    */
-  private async transformPolygons(
+  private transformPolygons(
     geojson: GeoJSON.FeatureCollection,
-    targetCRS: string
+    targetCRS: string,
   ): Promise<GeoJSON.FeatureCollection> {
     // For now, we'll return the original GeoJSON since coordinate transformation
     // should be handled by the WFS server or database layer
     // In a future version, we could implement client-side transformation using proj4
-    console.log(`[admin-sync] Coordinate transformation to ${targetCRS} would be performed here`);
+    console.log(
+      `[admin-sync] Coordinate transformation to ${targetCRS} would be performed here`,
+    );
     return geojson;
   }
 
@@ -183,32 +240,41 @@ export class AdminPolygonSyncManager {
   private async insertPolygonsViaWFST(
     geojson: GeoJSON.FeatureCollection,
     kommuneSlug: string,
-    adminLevel: number
+    adminLevel: number,
   ): Promise<void> {
     const transactionXml = wfsTransactionBuilder.buildInsertTransaction(
       geojson.features,
       kommuneSlug,
-      adminLevel
+      adminLevel,
     );
 
     if (process.env.DEBUG) {
       console.log(`[admin-sync] WFS-T Transaction XML:\n${transactionXml}`);
     }
 
-    console.log(`[admin-sync] Executing WFS-T transaction for ${kommuneSlug}, level ${adminLevel}`);
+    console.log(
+      `[admin-sync] Executing WFS-T transaction for ${kommuneSlug}, level ${adminLevel}`,
+    );
 
     try {
-      const response = await wfsAuthClient.executeWFSTransaction(transactionXml);
+      const response =
+        await wfsAuthClient.executeWFSTransaction(transactionXml);
 
       if (!response.ok) {
         const responseText = await response.text();
-        throw new Error(`WFS-T transaction failed: ${response.status} ${response.statusText}\n${responseText}`);
+        throw new Error(
+          `WFS-T transaction failed: ${response.status} ${response.statusText}\n${responseText}`,
+        );
       }
 
-      console.log(`[admin-sync] ✓ WFS-T transaction successful for ${kommuneSlug}`);
-
+      console.log(
+        `[admin-sync] ✓ WFS-T transaction successful for ${kommuneSlug}`,
+      );
     } catch (error) {
-      console.error(`[admin-sync] ✗ WFS-T transaction failed for ${kommuneSlug}:`, error);
+      console.error(
+        `[admin-sync] ✗ WFS-T transaction failed for ${kommuneSlug}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -218,25 +284,33 @@ export class AdminPolygonSyncManager {
    */
   async deleteKommunePolygons(kommuneSlug: string): Promise<void> {
     try {
-      const transactionXml = wfsTransactionBuilder.buildDeleteTransaction(kommuneSlug);
+      const transactionXml =
+        wfsTransactionBuilder.buildDeleteTransaction(kommuneSlug);
 
       if (process.env.DEBUG) {
-        console.log(`[admin-sync] WFS-T Delete Transaction XML:\n${transactionXml}`);
+        console.log(
+          `[admin-sync] WFS-T Delete Transaction XML:\n${transactionXml}`,
+        );
       }
 
       console.log(`[admin-sync] Deleting existing polygons for ${kommuneSlug}`);
 
-      const response = await wfsAuthClient.executeWFSTransaction(transactionXml);
+      const response =
+        await wfsAuthClient.executeWFSTransaction(transactionXml);
 
       if (!response.ok) {
         const responseText = await response.text();
-        throw new Error(`WFS-T delete failed: ${response.status} ${response.statusText}\n${responseText}`);
+        throw new Error(
+          `WFS-T delete failed: ${response.status} ${response.statusText}\n${responseText}`,
+        );
       }
 
       console.log(`[admin-sync] ✓ Deleted polygons for ${kommuneSlug}`);
-
     } catch (error) {
-      console.error(`[admin-sync] ✗ Failed to delete polygons for ${kommuneSlug}:`, error);
+      console.error(
+        `[admin-sync] ✗ Failed to delete polygons for ${kommuneSlug}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -255,7 +329,7 @@ export class AdminPolygonSyncManager {
         hasOSMData: !!kommune.wp_name,
         adminLevels: kommune.osmAdminLevels || [],
         polygonCount: 0, // Would require database query to get actual count
-        status: 'not_found'
+        status: "not_found",
       });
     }
 
@@ -270,12 +344,18 @@ export class AdminPolygonSyncManager {
     const results: SyncResult[] = [];
 
     for (const kommune of kommunen) {
-      if (kommune.wp_name && kommune.osmAdminLevels && kommune.osmAdminLevels.length > 0) {
+      if (
+        kommune.wp_name &&
+        kommune.osmAdminLevels &&
+        kommune.osmAdminLevels.length > 0
+      ) {
         const result = await this.syncKommunePolygons(kommune.slug);
         results.push(result);
 
         // Add delay between kommunen to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, this.options.delayMs || 2000));
+        await new Promise((resolve) =>
+          setTimeout(resolve, this.options.delayMs || 2000),
+        );
       }
     }
 
