@@ -2,7 +2,7 @@
 title: "Hangzhou"
 slug: "hangzhou"
 colorStripe: "#FF6900"
-osmAdminLevels: [4,9,10]
+osmAdminLevels: [4,5,6,8]
 wp_name: "de-Hangzhou"
 map:
   center: [120.1551, 30.2741] # center/extent in EPSG:4326 (lon,lat)

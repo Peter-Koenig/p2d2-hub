@@ -2,7 +2,7 @@
 title: "San Francisco"
 slug: "san-francisco"
 colorStripe: "#FF6900"
-osmAdminLevels: [4,9,10]
+osmAdminLevels: [6]
 wp_name: "de-San Francisco"
 map:
   center: [-122.4194, 37.7749] # center/extent in EPSG:4326 (lon,lat)

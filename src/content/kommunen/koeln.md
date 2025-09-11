@@ -2,7 +2,7 @@
 title: "Köln"
 slug: "koeln"
 colorStripe: "#FF6900"
-osmAdminLevels: [4,9,10]
+osmAdminLevels: [6,9,10]
 wp_name: "de-Köln"
 map:
   center: [6.9603, 50.9375]
