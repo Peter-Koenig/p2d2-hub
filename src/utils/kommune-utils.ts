@@ -8,6 +8,8 @@ export const DEFAULT_KOMMUNE_SLUG = "koeln";
 export interface KommuneData {
   slug: string;
   title: string;
+  osmAdminLevels?: number[];
+  wp_name: string;
   colorStripe: string;
   map: {
     center: [number, number];
@@ -31,6 +33,8 @@ export async function getAllKommunen(): Promise<KommuneData[]> {
       .map((kommune) => ({
         slug: kommune.slug,
         title: kommune.data.title,
+        osmAdminLevels: kommune.data.osmAdminLevels,
+        wp_name: kommune.data.wp_name,
         colorStripe: kommune.data.colorStripe,
         map: {
           center: kommune.data.map.center || [0, 0],
@@ -78,6 +82,8 @@ export async function getDefaultKommune(): Promise<KommuneData> {
   return {
     slug: DEFAULT_KOMMUNE_SLUG,
     title: "Köln",
+    osmAdminLevels: [4, 9, 10],
+    wp_name: "de-Köln",
     colorStripe: "#FF6900",
     map: {
       center: [6.9603, 50.9375],

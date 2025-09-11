@@ -59,6 +59,15 @@ const kommunen = defineCollection({
   schema: z.object({
     title: z.string(),
     colorStripe: z.string().default("#FF6900"),
+    osmAdminLevels: z.array(z.number()).optional(),
+    wp_name: z
+      .string()
+      .min(3, "Wikipedia identifier must be at least 3 characters")
+      .regex(/^[a-z]{2,3}-/, "Must start with language code and hyphen")
+      .refine((val) => {
+        const parts = val.split("-", 2);
+        return parts.length === 2 && parts[1].length > 0;
+      }, "Must contain exactly one hyphen separating language code and article name"),
     icon: z.string().optional(),
     order: z.number().optional(),
     map: z.object({
