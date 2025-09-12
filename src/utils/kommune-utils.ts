@@ -29,6 +29,7 @@ export interface KommuneData {
   title: string;
   osmAdminLevels?: number[];
   wp_name: string;
+  osm_refinement?: string;
   colorStripe: string;
   map: {
     center: [number, number];
@@ -51,6 +52,7 @@ export async function getAllKommunen(): Promise<KommuneData[]> {
           title: k.data.title,
           osmAdminLevels: k.data.osmAdminLevels,
           wp_name: k.data.wp_name,
+          osm_refinement: k.data.osm_refinement,
           colorStripe: k.data.colorStripe || "#FF6900",
           map: {
             center: k.data.map?.center || [0, 0],

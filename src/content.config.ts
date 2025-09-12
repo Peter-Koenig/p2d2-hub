@@ -68,6 +68,7 @@ const kommunen = defineCollection({
         const parts = val.split("-", 2);
         return parts.length === 2 && parts[1].length > 0;
       }, "Must contain exactly one hyphen separating language code and article name"),
+    osm_refinement: z.string().optional(),
     icon: z.string().optional(),
     order: z.number().optional(),
     map: z.object({

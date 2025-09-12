@@ -38,28 +38,40 @@ export class OSMDataClient {
     retryDelay: 1000,
     maxElements: 10000,
   };
+  private options: Required<OverpassQueryOptions>;
 
   constructor(options: OverpassQueryOptions = {}) {
     this.options = { ...this.defaultOptions, ...options };
   }
 
   /**
-   * Build Overpass query for administrative polygons
+   * Build Overpass query for administrative polygons using area search
    */
-  buildAdminPolygonQuery(wpName: string, adminLevel: number): string {
-    const cleanWpName = wpName.replace(/"/g, '\\"');
-    const namePart = wpName.split("-")[1]?.slice(0, 50) || "";
+  buildAdminPolygonQuery(
+    wpName: string,
+    adminLevel: number,
+    refinement?: string,
+  ): string {
+    const locationName = wpName.split("-")[1] || wpName;
+
+    // Build area search based on name and optional refinement
+    let areaSearch: string;
+    if (refinement) {
+      // Search for area with name and refinement (e.g., state/region)
+      areaSearch =
+        `area["name"="${refinement}"]->.refinementArea;\n` +
+        `area["name"="${locationName}"](area.refinementArea)->.searchArea;`;
+    } else {
+      // Simple name-based area search
+      areaSearch = `area["name"="${locationName}"]->.searchArea;`;
+    }
 
     return `[out:json][timeout:${this.options.timeout || this.defaultOptions.timeout}];
+${areaSearch}
 (
-  relation["admin_level"="${adminLevel}"]["wikipedia"~"${cleanWpName}"];
-  relation["admin_level"="${adminLevel}"]["name"~"${namePart}", i];
-  way["admin_level"="${adminLevel}"]["wikipedia"~"${cleanWpName}"];
-  way["admin_level"="${adminLevel}"]["name"~"${namePart}", i];
+  relation[boundary=administrative][admin_level=${adminLevel}](area.searchArea);
 );
-out body ${this.options.maxElements || this.defaultOptions.maxElements};
->;
-out skel qt;`;
+out geom;`;
   }
 
   /**
@@ -121,10 +133,10 @@ out skel qt;`;
 
         return data;
       } catch (error) {
-        lastError = error as Error;
+        lastError = error instanceof Error ? error : new Error(String(error));
         console.warn(
           `[osm-client] Overpass query attempt ${attempt} failed:`,
-          error.message,
+          lastError.message,
         );
 
         if (attempt < retryAttempts) {
@@ -186,12 +198,12 @@ out skel qt;`;
             point.lon,
             point.lat,
           ]);
-          // Ring schließen - alle Polygone müssen geschlossen sein für GeoServer
+          // Ring schließen - all polygons must be closed for GeoServer
           if (coordinates.length > 2) {
             const first = coordinates[0];
             const last = coordinates[coordinates.length - 1];
 
-            // Prüfe ob Ring bereits geschlossen ist (erster Punkt = letzter Punkt)
+            // Check if ring is already closed (first point = last point)
             const isClosed = first[0] === last[0] && first[1] === last[1];
 
             if (!isClosed) {
@@ -217,12 +229,12 @@ out skel qt;`;
         point.lon,
         point.lat,
       ]);
-      // Ring schließen - alle Polygone müssen geschlossen sein für GeoServer
+      // Ring schließen - all polygons must be closed for GeoServer
       if (coordinates.length > 2) {
         const first = coordinates[0];
         const last = coordinates[coordinates.length - 1];
 
-        // Prüfe ob Ring bereits geschlossen ist (erster Punkt = letzter Punkt)
+        // Check if ring is already closed (first point = last point)
         const isClosed = first[0] === last[0] && first[1] === last[1];
 
         if (!isClosed) {
@@ -244,12 +256,13 @@ out skel qt;`;
   async fetchAdminPolygons(
     wpName: string,
     adminLevel: number,
+    refinement?: string,
   ): Promise<GeoJSON.FeatureCollection> {
     console.log(
       `[osm-client] Fetching admin polygons for ${wpName}, level ${adminLevel}`,
     );
 
-    const query = this.buildAdminPolygonQuery(wpName, adminLevel);
+    const query = this.buildAdminPolygonQuery(wpName, adminLevel, refinement);
     if (process.env.DEBUG) {
       console.log(`[osm-client] Overpass query:\n${query}`);
     }

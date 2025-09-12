@@ -153,6 +153,7 @@ export class AdminPolygonSyncManager {
       const geojson = await osmDataClient.fetchAdminPolygons(
         kommune.wp_name,
         adminLevel,
+        kommune.osm_refinement,
       );
       result.polygonsFound = geojson.features.length;
 
