@@ -160,12 +160,15 @@ out geom;`;
           clearTimeout(timeoutId); // Ensure timeout is cleared on error
 
           // Handle timeout and abort errors specifically
-          if (error instanceof Error && error.name === 'AbortError') {
-            lastError = new Error(`Overpass query timeout after ${this.options.timeout || this.defaultOptions.timeout} seconds`);
-          } else if (isAxiosError(error) && error.code === 'ECONNABORTED') {
-            lastError = new Error('Overpass query was aborted due to timeout');
+          if (error instanceof Error && error.name === "AbortError") {
+            lastError = new Error(
+              `Overpass query timeout after ${this.options.timeout || this.defaultOptions.timeout} seconds`,
+            );
+          } else if (isAxiosError(error) && error.code === "ECONNABORTED") {
+            lastError = new Error("Overpass query was aborted due to timeout");
           } else {
-            lastError = error instanceof Error ? error : new Error(String(error));
+            lastError =
+              error instanceof Error ? error : new Error(String(error));
           }
 
           console.warn(
@@ -190,6 +193,13 @@ out geom;`;
             await new Promise((resolve) => setTimeout(resolve, dynamicDelay));
           }
         }
+      } catch (error) {
+        // Fallback error handling for unexpected errors in the outer try block
+        lastError = error instanceof Error ? error : new Error(String(error));
+        console.warn(
+          `[osm-client] Unexpected error in Overpass query attempt ${attempt}:`,
+          lastError.message,
+        );
       }
     }
 
