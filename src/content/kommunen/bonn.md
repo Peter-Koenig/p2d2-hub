@@ -3,6 +3,7 @@ title: "Bonn"
 slug: "bonn"
 osmAdminLevels: [6, 9, 10]
 wp_name: "de-Bonn"
+osm_refinement: "Deutschland"
 colorStripe: "#FF6900"
 map:
   center: [7.0998, 50.7374]

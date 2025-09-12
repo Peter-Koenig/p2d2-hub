@@ -32,13 +32,20 @@ export interface OverpassQueryOptions {
 
 export class OSMDataClient {
   private defaultOptions: Required<OverpassQueryOptions> = {
-    timeout: 120,
-    endpoint: "https://overpass-api.de/api/interpreter",
+    timeout: 90,
+    endpoint: "https://overpass-api.de/api/interpreter", // Main instance
     retryAttempts: 3,
-    retryDelay: 1000,
+    retryDelay: 3000,
     maxElements: 10000,
   };
+
+  // Load balancing endpoints with priority order
+  private overpassEndpoints = [
+    "https://overpass-api.de/api/interpreter", // Primary: Main instance
+    "https://z.overpass-api.de/api/interpreter", // Secondary: Main instance mirror
+  ];
   private options: Required<OverpassQueryOptions>;
+  private currentEndpointIndex = 0;
 
   constructor(options: OverpassQueryOptions = {}) {
     this.options = { ...this.defaultOptions, ...options };
@@ -66,7 +73,7 @@ export class OSMDataClient {
       areaSearch = `area["name"="${locationName}"]->.searchArea;`;
     }
 
-    return `[out:json][timeout:${this.options.timeout || this.defaultOptions.timeout}];
+    return `[out:json][timeout:${this.options.timeout || this.defaultOptions.timeout}][maxsize:1073741824];
 ${areaSearch}
 (
   relation[boundary=administrative][admin_level=${adminLevel}](area.searchArea);
@@ -78,7 +85,6 @@ out geom;`;
    * Execute Overpass query with retry logic
    */
   async executeOverpassQuery(query: string): Promise<OverpassResponse> {
-    const endpoint = this.options.endpoint || this.defaultOptions.endpoint;
     const retryAttempts =
       this.options.retryAttempts || this.defaultOptions.retryAttempts;
     const retryDelay =
@@ -87,6 +93,12 @@ out geom;`;
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= retryAttempts; attempt++) {
+      const endpoint = this.overpassEndpoints[this.currentEndpointIndex];
+      if (process.env.DEBUG) {
+        console.log(
+          `[osm-client] Using endpoint: ${endpoint} (${this.currentEndpointIndex + 1}/${this.overpassEndpoints.length})`,
+        );
+      }
       try {
         console.log(
           `[osm-client] Executing Overpass query (attempt ${attempt}/${retryAttempts})`,
@@ -135,19 +147,31 @@ out geom;`;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         console.warn(
-          `[osm-client] Overpass query attempt ${attempt} failed:`,
+          `[osm-client] Overpass query attempt ${attempt} failed (endpoint: ${endpoint}):`,
           lastError.message,
         );
 
         if (attempt < retryAttempts) {
-          console.log(`[osm-client] Retrying in ${retryDelay}ms...`);
-          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+          // Rotate to next endpoint for next attempt
+          this.currentEndpointIndex =
+            (this.currentEndpointIndex + 1) % this.overpassEndpoints.length;
+
+          // Intelligent delay: Longer wait for server errors, shorter for timeouts
+          const dynamicDelay =
+            error.response?.status === 504 ? 5000 : retryDelay;
+
+          if (process.env.DEBUG) {
+            console.log(
+              `[osm-client] Retrying in ${dynamicDelay}ms with next endpoint...`,
+            );
+          }
+          await new Promise((resolve) => setTimeout(resolve, dynamicDelay));
         }
       }
     }
 
     throw new Error(
-      `All ${retryAttempts} Overpass query attempts failed. Last error: ${lastError?.message}`,
+      `All ${retryAttempts} Overpass query attempts across ${this.overpassEndpoints.length} endpoints failed. Last error: ${lastError?.message}`,
     );
   }
 
