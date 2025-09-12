@@ -130,7 +130,7 @@ function isActive(item) {
             .forEach((btn) => {
                 btn.addEventListener("click", (e) => {
                     // KRITISCH: Nur für echte Dropdown-Buttons, nicht für andere Events
-                    const target = e.target as HTMLElement;
+                    const target = e.target;
                     if (!target.closest("[data-dropdown]")) {
                         return; // Nicht unser Event
                     }

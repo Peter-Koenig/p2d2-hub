@@ -1,7 +1,18 @@
 // Admin Polygon Sync Manager - Main synchronization logic
 import { writeFile } from "fs/promises";
-import { wfsAuthClient } from "./wfs-auth";
+import { WFSAuthClient } from "./wfs-auth";
 import { transformExtentFromWgs84, transformCenterFromWgs84 } from "./crs";
+
+let wfstClient: Awaited<
+  ReturnType<typeof WFSAuthClient.createWFSTClient>
+> | null = null;
+
+async function getWFSTClient() {
+  if (!wfstClient) {
+    wfstClient = await WFSAuthClient.createWFSTClient();
+  }
+  return wfstClient;
+}
 import { osmDataClient } from "./osm-data-client";
 import { wfsTransactionBuilder } from "./wfs-transaction-builder";
 import {
@@ -303,8 +314,8 @@ export class AdminPolygonSyncManager {
     );
 
     try {
-      const response =
-        await wfsAuthClient.executeWFSTransaction(transactionXml);
+      const client = await getWFSTClient();
+      const response = await client.executeWFSTransaction(transactionXml);
 
       if (!response.ok) {
         const responseText = await response.text();
@@ -341,8 +352,8 @@ export class AdminPolygonSyncManager {
 
       console.log(`[admin-sync] Deleting existing polygons for ${kommuneSlug}`);
 
-      const response =
-        await wfsAuthClient.executeWFSTransaction(transactionXml);
+      const client = await getWFSTClient();
+      const response = await client.executeWFSTransaction(transactionXml);
 
       if (!response.ok) {
         const responseText = await response.text();

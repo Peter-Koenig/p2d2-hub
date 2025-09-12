@@ -1,4 +1,72 @@
+import { loadEnvironment } from "../utils/env-config";
 // Manual Sync CLI Script - Command line interface for admin polygon synchronization
+
+// Load environment at startup - will be called in main()
+
+// Set NODE_ENV to development for proper credential selection
+process.env.NODE_ENV = process.env.NODE_ENV || "development";
+
+// Load environment variables from .env files using native Node.js
+import fs from "fs";
+import path from "path";
+
+function loadEnvFile(filePath: string) {
+  try {
+    if (fs.existsSync(filePath)) {
+      const content = fs.readFileSync(filePath, "utf8");
+      content.split("\n").forEach((line) => {
+        const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+        if (match) {
+          const key = match[1];
+          let value = match[2] || "";
+
+          // Remove quotes if present
+          if (value.startsWith('"') && value.endsWith('"')) {
+            value = value.slice(1, -1);
+          } else if (value.startsWith("'") && value.endsWith("'")) {
+            value = value.slice(1, -1);
+          }
+
+          process.env[key] = value;
+        }
+      });
+      console.log(
+        `[manual-sync] Loaded environment from ${path.basename(filePath)}`,
+      );
+      return true;
+    }
+  } catch (error) {
+    console.warn(`[manual-sync] Failed to load ${filePath}:`, error.message);
+  }
+  return false;
+}
+
+// Load .env.development first, then .env as fallback
+const envLoaded =
+  loadEnvFile(path.resolve(process.cwd(), ".env.development")) ||
+  loadEnvFile(path.resolve(process.cwd(), ".env"));
+
+// Debug environment variables
+console.log("[manual-sync] Environment check:");
+console.log(
+  "WFST_USERNAME:",
+  process.env.WFST_USERNAME ? "SET" : "MISSING (using read-only fallback)",
+);
+console.log(
+  "WFST_PASSWORD:",
+  process.env.WFST_PASSWORD ? "SET" : "MISSING (using read-only fallback)",
+);
+console.log("NODE_ENV:", process.env.NODE_ENV || "not set");
+
+// Check if we're running in dev mode and suggest loading .env file
+if (!process.env.WFST_USERNAME || !process.env.WFST_PASSWORD) {
+  console.log(
+    "[manual-sync] Note: Using read-only credentials - WFS-T operations may fail",
+  );
+  console.log(
+    "To enable write operations, set WFST_USERNAME and WFST_PASSWORD in .env.development",
+  );
+}
 
 // Top-level error handling für CLI-Skript
 process.on("unhandledRejection", (reason, promise) => {
@@ -247,6 +315,9 @@ async function handleWatchCommand(args: CLIArgs): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  // Load environment at startup
+  await loadEnvironment();
+
   const args = parseArgs();
 
   if (!args.command || args.command === "help") {

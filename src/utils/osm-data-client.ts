@@ -173,21 +173,22 @@ out geom;`;
             lastError.message,
           );
 
-        if (attempt < retryAttempts) {
-          // Rotate to next endpoint for next attempt
-          this.currentEndpointIndex =
-            (this.currentEndpointIndex + 1) % this.overpassEndpoints.length;
+          if (attempt < retryAttempts) {
+            // Rotate to next endpoint for next attempt
+            this.currentEndpointIndex =
+              (this.currentEndpointIndex + 1) % this.overpassEndpoints.length;
 
-          // Intelligent delay: Longer wait for server errors, shorter for timeouts
-          const dynamicDelay =
-            error.response?.status === 504 ? 5000 : retryDelay;
+            // Intelligent delay: Longer wait for server errors, shorter for timeouts
+            const dynamicDelay =
+              error.response?.status === 504 ? 5000 : retryDelay;
 
-          if (process.env.DEBUG) {
-            console.log(
-              `[osm-client] Retrying in ${dynamicDelay}ms with next endpoint...`,
-            );
+            if (process.env.DEBUG) {
+              console.log(
+                `[osm-client] Retrying in ${dynamicDelay}ms with next endpoint...`,
+              );
+            }
+            await new Promise((resolve) => setTimeout(resolve, dynamicDelay));
           }
-          await new Promise((resolve) => setTimeout(resolve, dynamicDelay));
         }
       }
     }
