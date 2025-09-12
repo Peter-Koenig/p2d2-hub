@@ -169,10 +169,19 @@ export class AdminPolygonSyncManager {
         );
       }
 
-      // Transform coordinates if needed
-      const targetCRS = kommune.map?.projection || "EPSG:4326";
-      // Fallback-Map, falls im Markdown nichts definiert ist
-      const safeMap = kommune.map ?? { projection: "EPSG:4326" };
+      // --- Map-Block ist optional ---------------------------------
+      const targetCRS =
+        typeof kommune.map?.projection === "string"
+          ? kommune.map!.projection
+          : "EPSG:4326";
+
+      // centre-Logging nur, wenn map existiert
+      if (kommune.map?.center) {
+        console.log(`[admin-sync] centre ${kommune.map.center.join(", ")}`);
+      }
+
+      // Empty placeholder, verhindert spätere undefined-Zugriffe
+      const safeMap = kommune.map ?? { projection: targetCRS };
       let transformedGeoJSON = geojson;
 
       if (targetCRS !== "EPSG:4326") {
@@ -181,7 +190,26 @@ export class AdminPolygonSyncManager {
             `[admin-sync] Transforming coordinates from WGS84 to ${targetCRS}`,
           );
         }
-        transformedGeoJSON = await this.transformPolygons(geojson, targetCRS);
+
+        // --- NEW: wer greift hier noch auf map zu? -----------------
+        console.log(
+          "[debug] about to call transformPolygons – typeof kommune.map:",
+          typeof kommune.map,
+        );
+        console.log(
+          "[debug] transformPolygons expects 3 params, we pass:",
+          "geojson=",
+          !!geojson,
+          "targetCRS=",
+          targetCRS,
+          "kommune.slug=",
+          kommune.slug,
+        );
+        transformedGeoJSON = await this.transformPolygons(
+          geojson,
+          targetCRS,
+          kommune, // fehlender Parameter nachreichen
+        );
       }
 
       // Insert via WFS-T
@@ -224,14 +252,23 @@ export class AdminPolygonSyncManager {
   private transformPolygons(
     geojson: GeoJSON.FeatureCollection,
     targetCRS: string,
+    kommune: KommuneData,
   ): Promise<GeoJSON.FeatureCollection> {
-    // For now, we'll return the original GeoJSON since coordinate transformation
-    // should be handled by the WFS server or database layer
-    // In a future version, we could implement client-side transformation using proj4
+    // TODO: Hier echte Transformation einbauen.
+    // Bis dahin unbedingt das (unveränderte) GeoJSON
+    // zurückgeben, damit der Aufrufer kein undefined erhält.
+    return geojson;
     console.log(
       `[admin-sync] Coordinate transformation to ${targetCRS} would be performed here`,
     );
-    return geojson;
+
+    // Debug-Ausgabe der Kartenmitte …
+    if (kommune.map?.center) {
+      console.log(`[admin-sync] centre ${kommune.map.center.join(", ")}`);
+    } else {
+      console.log("[admin-sync] centre n/a (no map.center provided)");
+    }
+    return Promise.resolve(geojson);
   }
 
   /**
