@@ -1,5 +1,5 @@
 // OSM Data Client for Overpass API integration
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 
 export interface OverpassResponse {
   version: number;
@@ -105,51 +105,73 @@ out geom;`;
         );
 
         const t0 = Date.now();
-        const response = await axios.post(
-          endpoint,
-          `data=${encodeURIComponent(query)}`,
-          {
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
+
+        // Create AbortController for robust timeout handling
+        const abortController = new AbortController();
+        const timeoutId = setTimeout(
+          () => abortController.abort(),
+          (this.options.timeout || this.defaultOptions.timeout) * 1000,
+        );
+
+        try {
+          const response = await axios.post(
+            endpoint,
+            `data=${encodeURIComponent(query)}`,
+            {
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+              timeout:
+                (this.options.timeout || this.defaultOptions.timeout) * 1000,
+              signal: abortController.signal,
             },
-            timeout:
-              (this.options.timeout || this.defaultOptions.timeout) * 1000,
-          },
-        );
-
-        const responseTime = Date.now() - t0;
-        const contentLength = response.headers?.["content-length"]
-          ? Math.round(parseInt(response.headers["content-length"]) / 1024)
-          : "unknown";
-
-        console.log(
-          `[osm-client] Overpass response ${response.status} in ${responseTime} ms ` +
-            `(size: ${contentLength} kB)`,
-        );
-
-        if (response.status !== 200) {
-          throw new Error(
-            `Overpass API returned status ${response.status}: ${response.statusText}`,
           );
-        }
 
-        const data = response.data as OverpassResponse;
+          clearTimeout(timeoutId); // Clear timeout on success
 
-        if (!data.elements || data.elements.length === 0) {
-          console.log(`[osm-client] No elements found in Overpass response`);
-        } else {
+          const responseTime = Date.now() - t0;
+          const contentLength = response.headers?.["content-length"]
+            ? Math.round(parseInt(response.headers["content-length"]) / 1024)
+            : "unknown";
+
           console.log(
-            `[osm-client] Found ${data.elements.length} elements from Overpass API`,
+            `[osm-client] Overpass response ${response.status} in ${responseTime} ms ` +
+              `(size: ${contentLength} kB)`,
           );
-        }
 
-        return data;
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
-        console.warn(
-          `[osm-client] Overpass query attempt ${attempt} failed (endpoint: ${endpoint}):`,
-          lastError.message,
-        );
+          if (response.status !== 200) {
+            throw new Error(
+              `Overpass API returned status ${response.status}: ${response.statusText}`,
+            );
+          }
+
+          const data = response.data as OverpassResponse;
+
+          if (!data.elements || data.elements.length === 0) {
+            console.log(`[osm-client] No elements found in Overpass response`);
+          } else {
+            console.log(
+              `[osm-client] Found ${data.elements.length} elements from Overpass API`,
+            );
+          }
+
+          return data;
+        } catch (error) {
+          clearTimeout(timeoutId); // Ensure timeout is cleared on error
+
+          // Handle timeout and abort errors specifically
+          if (error instanceof Error && error.name === 'AbortError') {
+            lastError = new Error(`Overpass query timeout after ${this.options.timeout || this.defaultOptions.timeout} seconds`);
+          } else if (isAxiosError(error) && error.code === 'ECONNABORTED') {
+            lastError = new Error('Overpass query was aborted due to timeout');
+          } else {
+            lastError = error instanceof Error ? error : new Error(String(error));
+          }
+
+          console.warn(
+            `[osm-client] Overpass query attempt ${attempt} failed (endpoint: ${endpoint}):`,
+            lastError.message,
+          );
 
         if (attempt < retryAttempts) {
           // Rotate to next endpoint for next attempt
@@ -229,10 +251,12 @@ out geom;`;
 
       for (const member of element.members) {
         if (member.type === "way" && member.geometry) {
-          const coordinates = member.geometry.map((point) => [
-            point.lon,
-            point.lat,
-          ]);
+          // Stream processing for large geometries - avoid multiple copies
+          const coordinates: number[][] = [];
+          for (const point of member.geometry) {
+            coordinates.push([point.lon, point.lat]);
+          }
+
           // Ring schließen - all polygons must be closed for GeoServer
           if (coordinates.length > 2) {
             const first = coordinates[0];
@@ -266,11 +290,12 @@ out geom;`;
           }
         : polygons[0] || { type: "Polygon", coordinates: [] };
     } else if (element.type === "way" && element.geometry) {
-      // For ways, create a Polygon
-      const coordinates = element.geometry.map((point) => [
-        point.lon,
-        point.lat,
-      ]);
+      // For ways, create a Polygon - use stream processing for memory efficiency
+      const coordinates: number[][] = [];
+      for (const point of element.geometry) {
+        coordinates.push([point.lon, point.lat]);
+      }
+
       // Ring schließen - all polygons must be closed for GeoServer
       if (coordinates.length > 2) {
         const first = coordinates[0];
