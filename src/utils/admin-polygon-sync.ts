@@ -260,14 +260,6 @@ export class AdminPolygonSyncManager {
     targetCRS: string,
     kommune: KommuneData,
   ): Promise<GeoJSON.FeatureCollection> {
-    // Defensive Parameter-Validierung
-    if (!geojson || !targetCRS || !kommune) {
-      console.error(
-        "[admin-sync] Invalid parameters passed to transformPolygons",
-      );
-      return Promise.resolve({ type: "FeatureCollection", features: [] });
-    }
-
     console.log(
       `[admin-sync] Coordinate transformation to ${targetCRS} would be performed here`,
     );
