@@ -19,18 +19,28 @@ const sorted = kategorien.sort(
             isHandlerBound = true;
 
             const handleCategoryClick = (event: MouseEvent) => {
-                // Verhindere Default-Verhalten und Event-Bubbling
+                // KRITISCH: Native Links nicht blockieren!
+                if (
+                    event.target instanceof Element &&
+                    event.target.closest("a[href]")
+                ) {
+                    return; // Native navigation erlauben
+                }
+
+                // Nur auf spezifische Kategorie-Cards reagieren
+                const button = (event.target as HTMLElement).closest(
+                    "button.kategorie-card",
+                ) as HTMLButtonElement | null;
+
+                if (!button) return;
+
+                // Verhindere Default-Verhalten nur für Kategorie-Cards
                 event.preventDefault();
                 event.stopPropagation();
 
                 console.log(
                     "[kategorien] Click event detected, event-Bulleing?",
                 );
-
-                const target = event.target as HTMLElement;
-                const button = target.closest(
-                    "button.kategorie-card",
-                ) as HTMLButtonElement | null;
 
                 if (button) {
                     const categorySlug = button.dataset.categorySlug;
@@ -50,12 +60,27 @@ const sorted = kategorien.sort(
                 }
             };
 
-            document.addEventListener("click", handleCategoryClick);
+            // Verwende spezifischen Container statt document
+            const gridContainer = document.querySelector(".grid.grid-cols-1");
+            if (gridContainer) {
+                gridContainer.addEventListener("click", handleCategoryClick);
+            } else {
+                console.warn(
+                    "[kategorien] Grid container not found for event binding",
+                );
+            }
 
             // HMR Cleanup
             if (typeof import.meta !== "undefined" && import.meta.hot) {
                 import.meta.hot.dispose(() => {
-                    document.removeEventListener("click", handleCategoryClick);
+                    const gridContainer =
+                        document.querySelector(".grid.grid-cols-1");
+                    if (gridContainer) {
+                        gridContainer.removeEventListener(
+                            "click",
+                            handleCategoryClick,
+                        );
+                    }
                     (window as any).__p2d2KategorienHandlerBound = false;
                     isHandlerBound = false;
                 });

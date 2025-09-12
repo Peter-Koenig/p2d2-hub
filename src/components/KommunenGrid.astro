@@ -1,5 +1,6 @@
 ---
 import { getCollection } from "astro:content";
+import { KommunenClickHandler } from '../utils/kommunen-click-handler';
 
 
 const kommunen = await getCollection("kommunen");
@@ -108,8 +109,17 @@ const sorted = kommunen.sort(
       (window as any).__p2d2KommunenHandlerBound = true;
       isHandlerBound = true;
 
-      kommunenHandler = new KommunenClickHandler();
-      kommunenHandler.bind();
+      // Wait for DOM to be ready to find the specific grid container
+      const initHandler = () => {
+        kommunenHandler = new KommunenClickHandler();
+        kommunenHandler.bind();
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initHandler);
+      } else {
+        setTimeout(initHandler, 100);
+      }
 
       // Cleanup function for HMR
       if (typeof import.meta !== 'undefined' && import.meta.hot) {

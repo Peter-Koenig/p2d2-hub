@@ -76,6 +76,12 @@ export class KommunenClickHandler {
 
   private handleClick(event: Event): void {
     const target = event.target as HTMLElement;
+
+    // KRITISCH: Native Links nicht blockieren!
+    if (target.closest("a[href]")) {
+      return; // Native navigation erlauben
+    }
+
     const button = target.closest("button.kommunen-card") as HTMLElement;
 
     if (!button) return;
@@ -170,16 +176,28 @@ export class KommunenClickHandler {
   public bind(): void {
     if (typeof window === "undefined") return;
 
-    document.addEventListener("click", this.boundClickHandler, {
-      passive: true,
-      capture: false,
-    });
+    // Use specific container instead of document to avoid blocking navigation links
+    const gridContainer = document.querySelector(".grid.grid-cols-1");
+    if (gridContainer) {
+      gridContainer.addEventListener("click", this.boundClickHandler, {
+        passive: true,
+        capture: false,
+      });
+    } else {
+      console.warn(
+        "[kommunen-handler] Grid container not found for event binding",
+      );
+    }
   }
 
   public unbind(): void {
     if (typeof window === "undefined") return;
 
-    document.removeEventListener("click", this.boundClickHandler);
+    // Remove from specific container instead of document
+    const gridContainer = document.querySelector(".grid.grid-cols-1");
+    if (gridContainer) {
+      gridContainer.removeEventListener("click", this.boundClickHandler);
+    }
     this.processingButtons.clear();
   }
 }

@@ -66,7 +66,10 @@ function isActive(item) {
                                         if (el) el.classList.add("hidden");
                                     }}
                                 >
-                                    <button class="px-1 pb-1">
+                                    <button
+                                        class="px-1 pb-1"
+                                        data-dropdown="true"
+                                    >
                                         {item.name}
                                     </button>
                                     <ul
@@ -121,12 +124,17 @@ function isActive(item) {
     </nav>
     <script is:inline>
         // Fallback für Touch/Tab: Dropdown per Klick öffnen/schließen
-        document.querySelectorAll("li.relative > button").forEach((btn) => {
-            btn.addEventListener("click", (e) => {
-                e.preventDefault();
-                const dropdown = btn.parentElement.querySelector("ul");
-                if (dropdown) dropdown.classList.toggle("hidden");
+        // Only target specific dropdown buttons with data-dropdown attribute
+        document
+            .querySelectorAll("li.relative > button[data-dropdown]")
+            .forEach((btn) => {
+                btn.addEventListener("click", (e) => {
+                    // Only prevent default for actual dropdown buttons, not navigation links
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const dropdown = btn.parentElement.querySelector("ul");
+                    if (dropdown) dropdown.classList.toggle("hidden");
+                });
             });
-        });
     </script>
 </header>
