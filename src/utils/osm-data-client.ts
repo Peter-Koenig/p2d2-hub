@@ -207,6 +207,17 @@ out geom;`;
   }
 
   /**
+   * Validate polygon ring coordinates (closed ring with minimum 4 points)
+   */
+  private validatePolygonRing(coordinates: number[][]): boolean {
+    return (
+      coordinates.length >= 4 &&
+      coordinates[0][0] === coordinates[coordinates.length - 1][0] &&
+      coordinates[0][1] === coordinates[coordinates.length - 1][1]
+    );
+  }
+
+  /**
    * Convert Overpass geometry to GeoJSON geometry
    */
   private convertGeometry(
@@ -234,10 +245,17 @@ out geom;`;
               coordinates.push([first[0], first[1]]);
             }
           }
-          polygons.push({
-            type: "Polygon",
-            coordinates: [coordinates],
-          });
+          // Validate the polygon ring before adding
+          if (this.validatePolygonRing(coordinates)) {
+            polygons.push({
+              type: "Polygon",
+              coordinates: [coordinates],
+            });
+          } else if (process.env.DEBUG) {
+            console.warn(
+              `[osm-client] Skipping invalid polygon ring with ${coordinates.length} points`,
+            );
+          }
         }
       }
 
@@ -265,10 +283,17 @@ out geom;`;
           coordinates.push([first[0], first[1]]); // Ring schließen
         }
       }
-      return {
-        type: "Polygon",
-        coordinates: [coordinates],
-      };
+      // Validate the polygon ring before returning
+      if (this.validatePolygonRing(coordinates)) {
+        return {
+          type: "Polygon",
+          coordinates: [coordinates],
+        };
+      } else if (process.env.DEBUG) {
+        console.warn(
+          `[osm-client] Skipping invalid polygon ring with ${coordinates.length} points`,
+        );
+      }
     }
 
     return { type: "Polygon", coordinates: [] };

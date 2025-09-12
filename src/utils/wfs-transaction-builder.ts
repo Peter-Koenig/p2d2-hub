@@ -10,10 +10,10 @@ export interface WFSTransactionOptions {
 
 export class WFSTransactionBuilder {
   private defaultOptions: Required<WFSTransactionOptions> = {
-    typeName: "p2d2:admin_polygons",
+    typeName: "Verwaltungsdaten:p2d2_containers",
     featurePrefix: "polygon_",
     srsName: "EPSG:4326",
-    namespace: 'xmlns:p2d2="http://www.data-dna.eu/p2d2"',
+    namespace: 'xmlns:Verwaltungsdaten="urn:data-dna:govdata"',
   };
 
   constructor(private options: WFSTransactionOptions = {}) {}
@@ -37,11 +37,11 @@ export class WFSTransactionBuilder {
     return `<?xml version="1.0" encoding="UTF-8"?>
 <wfs:Transaction
   xmlns:wfs="http://www.opengis.net/wfs"
-  xmlns:gml="http://www.opengis.net/gml"
+  xmlns:gml="http://www.opengis.net/gml/3.2"
   xmlns:ogc="http://www.opengis.net/ogc"
   ${mergedOptions.namespace}
   service="WFS"
-  version="1.1.0">
+  version="2.0">
 
   ${insertElements}
 
@@ -69,9 +69,9 @@ export class WFSTransactionBuilder {
 
     return `<wfs:Insert>
   <${mergedOptions.typeName}>
-    ${propertiesXml}
-    <geom>${geometryXml}</geom>
-  </${mergedOptions.typeName}>
+  ${propertiesXml}
+  <geometry>${geometryXml}</geometry>
+</${mergedOptions.typeName}>
 </wfs:Insert>`;
   }
 
@@ -95,25 +95,29 @@ export class WFSTransactionBuilder {
     const coordinates = polygon.coordinates[0]; // Outer ring
     const posList = coordinates.map((coord) => coord.join(" ")).join(" ");
 
-    return `<gml:Polygon>
-      <gml:exterior>
-        <gml:LinearRing>
-          <gml:posList>${posList}</gml:posList>
-        </gml:LinearRing>
-      </gml:exterior>
-    </gml:Polygon>`;
+    return `<gml:MultiSurface>
+      <gml:surfaceMember>
+        <gml:Polygon>
+          <gml:exterior>
+            <gml:LinearRing>
+              <gml:posList>${posList}</gml:posList>
+            </gml:LinearRing>
+          </gml:exterior>
+        </gml:Polygon>
+      </gml:surfaceMember>
+    </gml:MultiSurface>`;
   }
 
   /**
    * Convert MultiPolygon to GML
    */
   private convertMultiPolygonToGML(multiPolygon: GeoJSON.MultiPolygon): string {
-    const polygonElements = multiPolygon.coordinates
+    const surfaceElements = multiPolygon.coordinates
       .map((polygonCoords) => {
         const posList = polygonCoords[0]
           .map((coord) => coord.join(" "))
           .join(" ");
-        return `<gml:polygonMember>
+        return `<gml:surfaceMember>
           <gml:Polygon>
             <gml:exterior>
               <gml:LinearRing>
@@ -121,11 +125,11 @@ export class WFSTransactionBuilder {
               </gml:LinearRing>
             </gml:exterior>
           </gml:Polygon>
-        </gml:polygonMember>`;
+        </gml:surfaceMember>`;
       })
       .join("\n");
 
-    return `<gml:MultiPolygon>${polygonElements}</gml:MultiPolygon>`;
+    return `<gml:MultiSurface>${surfaceElements}</gml:MultiSurface>`;
   }
 
   /**
@@ -136,34 +140,13 @@ export class WFSTransactionBuilder {
     kommuneSlug: string,
     adminLevel: number,
   ): string {
+    // Minimal-Felder basierend auf GeoServer-Schema
     const propLines = [
-      `<kommune_slug>${this.escapeXml(kommuneSlug)}</kommune_slug>`,
-      `<admin_level>${adminLevel}</admin_level>`,
       `<osm_id>${properties.osm_id || ""}</osm_id>`,
-      `<osm_type>${properties.osm_type || ""}</osm_type>`,
-      `<name>${this.escapeXml(properties.name || "")}</name>`,
-      `<wikipedia>${this.escapeXml(properties.wikipedia || "")}</wikipedia>`,
-      `<wikidata>${this.escapeXml(properties.wikidata || "")}</wikidata>`,
-      `<timestamp>${new Date().toISOString()}</timestamp>`,
+      `<category>admin_boundary</category>`,
+      `<container_type>administrative_polygon</container_type>`,
+      `<municipality>${this.escapeXml(kommuneSlug)}</municipality>`,
     ];
-
-    // Add additional OSM tags as properties
-    for (const [key, value] of Object.entries(properties)) {
-      if (
-        ![
-          "osm_id",
-          "osm_type",
-          "name",
-          "wikipedia",
-          "wikidata",
-          "admin_level",
-        ].includes(key) &&
-        typeof value === "string"
-      ) {
-        const safeKey = this.escapeXml(key).replace(/[:]/g, "_");
-        propLines.push(`<${safeKey}>${this.escapeXml(value)}</${safeKey}>`);
-      }
-    }
 
     return propLines.join("\n    ");
   }
@@ -189,11 +172,11 @@ export class WFSTransactionBuilder {
     return `<?xml version="1.0" encoding="UTF-8"?>
 <wfs:Transaction
   xmlns:wfs="http://www.opengis.net/wfs"
-  xmlns:gml="http://www.opengis.net/gml"
+  xmlns:gml="http://www.opengis.net/gml/3.2"
   xmlns:ogc="http://www.opengis.net/ogc"
   ${mergedOptions.namespace}
   service="WFS"
-  version="1.1.0">
+  version="2.0">
 
   <wfs:Delete typeName="${mergedOptions.typeName}">
     <ogc:Filter>
