@@ -1,4 +1,21 @@
 // Manual Sync CLI Script - Command line interface for admin polygon synchronization
+
+// Top-level error handling für CLI-Skript
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+  process.exit(1);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception:", error);
+  process.exit(1);
+});
+
+// Parameter Validation
+if (process.argv.length < 3) {
+  console.error("Usage: npm run sync:manual <kommune-slug> [dry-run]");
+  process.exit(1);
+}
 import { AdminPolygonSyncManager } from "../utils/admin-polygon-sync";
 import { KommuneWatcher } from "./kommune-watcher";
 import { getAllKommunen, getKommuneBySlug } from "../utils/kommune-utils";
@@ -271,8 +288,13 @@ async function main(): Promise<void> {
 
 // Run if executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((error) => {
-    console.error("[manual-sync] Fatal error:", error);
-    process.exit(1);
-  });
+  main()
+    .catch((error) => {
+      console.error("[manual-sync] Fatal error:", error);
+      process.exit(1);
+    })
+    .finally(() => {
+      // Sicherstellen, dass der Prozess beendet wird
+      process.exit(0);
+    });
 }

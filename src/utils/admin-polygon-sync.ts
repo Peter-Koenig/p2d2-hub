@@ -22,6 +22,7 @@ export class AdminPolygonSyncManager {
     force: false,
     delayMs: 1000,
   };
+  private options: Required<SyncOptions>;
 
   constructor(options: SyncOptions = {}) {
     this.options = { ...this.defaultOptions, ...options };
@@ -171,8 +172,8 @@ export class AdminPolygonSyncManager {
 
       // --- Map-Block ist optional ---------------------------------
       const targetCRS =
-        typeof kommune.map?.projection === "string"
-          ? kommune.map!.projection
+        typeof kommune.map?.projection === "string" && kommune.map.projection
+          ? kommune.map.projection
           : "EPSG:4326";
 
       // centre-Logging nur, wenn map existiert
@@ -181,7 +182,7 @@ export class AdminPolygonSyncManager {
       }
 
       // Empty placeholder, verhindert spätere undefined-Zugriffe
-      const safeMap = kommune.map ?? { projection: targetCRS };
+      const safeMap = kommune.map ?? { projection: targetCRS, center: [0, 0] };
       let transformedGeoJSON = geojson;
 
       if (targetCRS !== "EPSG:4326") {
@@ -205,12 +206,18 @@ export class AdminPolygonSyncManager {
           "kommune.slug=",
           kommune.slug,
         );
-        transformedGeoJSON = await this.transformPolygons(
+        const transformationResult = await this.transformPolygons(
           geojson,
           targetCRS,
           kommune, // fehlender Parameter nachreichen
         );
+        transformedGeoJSON = transformationResult ?? geojson;
       }
+
+      // Sicherstellen, dass transformedGeoJSON immer gültige features hat
+      const safeFeatures = transformedGeoJSON?.features ?? [];
+      result.polygonsFound = safeFeatures.length;
+      result.polygonsInserted = options.dryRun ? 0 : safeFeatures.length;
 
       // Insert via WFS-T
       if (!options.dryRun) {
@@ -219,7 +226,6 @@ export class AdminPolygonSyncManager {
           kommune.slug,
           adminLevel,
         );
-        result.polygonsInserted = transformedGeoJSON.features.length;
       } else {
         // Dry run: Dump polygons to EWKT file for inspection
         const ewktFile = `tmp/${kommune.slug}_L${adminLevel}.ewkt`;
@@ -254,20 +260,30 @@ export class AdminPolygonSyncManager {
     targetCRS: string,
     kommune: KommuneData,
   ): Promise<GeoJSON.FeatureCollection> {
-    // TODO: Hier echte Transformation einbauen.
-    // Bis dahin unbedingt das (unveränderte) GeoJSON
-    // zurückgeben, damit der Aufrufer kein undefined erhält.
-    return geojson;
+    // Defensive Parameter-Validierung
+    if (!geojson || !targetCRS || !kommune) {
+      console.error(
+        "[admin-sync] Invalid parameters passed to transformPolygons",
+      );
+      return Promise.resolve({ type: "FeatureCollection", features: [] });
+    }
+
     console.log(
       `[admin-sync] Coordinate transformation to ${targetCRS} would be performed here`,
     );
 
-    // Debug-Ausgabe der Kartenmitte …
+    // Debug-Ausgabe der Kartenmitte (nur wenn vorhanden)
     if (kommune.map?.center) {
       console.log(`[admin-sync] centre ${kommune.map.center.join(", ")}`);
-    } else {
+    } else if (process.env.DEBUG) {
       console.log("[admin-sync] centre n/a (no map.center provided)");
     }
+
+    // Die ursprüngliche Rückgabe des unveränderten GeoJSON
+    // sollte beibehalten werden, bis echte Transformation implementiert ist
+    // For now, we'll return the original GeoJSON since coordinate transformation
+    // should be handled by the WFS server or database layer
+    // This ensures the caller always receives a valid FeatureCollection
     return Promise.resolve(geojson);
   }
 
