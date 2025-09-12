@@ -76,6 +76,14 @@ export class CategoryHandler {
     const detail = (e as CustomEvent)?.detail || {};
     const categorySlug = detail?.categorySlug || null;
 
+    console.log("[DEBUG] Category select handler called with:", {
+      detail,
+      categorySlug,
+    });
+
+    console.log("[DEBUG] Category select received:", categorySlug);
+    console.log("[DEBUG] Current map state:", mapState.getState());
+
     mapState.setSelectedCategory(categorySlug);
     this.refreshCategoriesSource();
   }

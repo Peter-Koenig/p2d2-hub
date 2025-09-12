@@ -19,31 +19,45 @@ const sorted = kategorien.sort(
             isHandlerBound = true;
 
             const handleCategoryClick = (event: MouseEvent) => {
+                console.log("[DEBUG] Raw category click detected:", {
+                    target: event.target,
+                    currentTarget: event.currentTarget,
+                    bubbles: event.bubbles,
+                });
+
+                console.log("[DEBUG] Category click detected:", event.target);
+                console.log("[DEBUG] Event path:", event.composedPath());
+
+                const target = event.target as HTMLElement;
+
                 // KRITISCH: Native Links nicht blockieren!
-                if (
-                    event.target instanceof Element &&
-                    event.target.closest("a[href]")
-                ) {
+                if (target.closest("a[href]")) {
                     return; // Native navigation erlauben
                 }
 
-                // Nur auf spezifische Kategorie-Cards reagieren
-                const button = (event.target as HTMLElement).closest(
+                // Nur auf Kategorie-Cards reagieren
+                const button = target.closest(
                     "button.kategorie-card",
                 ) as HTMLButtonElement | null;
 
-                if (!button) return;
+                if (!button) {
+                    console.log(
+                        "[DEBUG] No kategorie-card button found, ignoring",
+                    );
+                    return;
+                }
 
-                // Verhindere Default-Verhalten nur für Kategorie-Cards
+                console.log("[DEBUG] Found kategorie-card button:", button);
+
+                // Event nur für unsere Buttons stoppen
                 event.preventDefault();
                 event.stopPropagation();
 
-                console.log(
-                    "[kategorien] Click event detected, event-Bulleing?",
-                );
+                console.log("[kategorien] Click event detected, processing...");
 
                 if (button) {
                     const categorySlug = button.dataset.categorySlug;
+                    console.log("[DEBUG] Found category slug:", categorySlug);
                     if (!categorySlug) {
                         console.warn("[kategorien] No category slug found");
                         return;
@@ -61,22 +75,47 @@ const sorted = kategorien.sort(
             };
 
             // Verwende spezifischen Container statt document
-            const gridContainer = document.querySelector(".grid.grid-cols-1");
-            if (gridContainer) {
-                gridContainer.addEventListener("click", handleCategoryClick);
-            } else {
-                console.warn(
-                    "[kategorien] Grid container not found for event binding",
+            const initEventHandler = () => {
+                // Spezifischer Selector für Kategorien-Grid
+                const kategorienGrid = document.querySelector(
+                    "#kategorien-grid .grid",
                 );
+                console.log(
+                    "[DEBUG] Kategorien grid container found:",
+                    !!kategorienGrid,
+                );
+
+                if (kategorienGrid) {
+                    kategorienGrid.addEventListener(
+                        "click",
+                        handleCategoryClick,
+                        { passive: false }, // Damit preventDefault funktioniert
+                    );
+                    console.log(
+                        "[DEBUG] Kategorien event handler bound successfully",
+                    );
+                } else {
+                    console.warn(
+                        "[kategorien] Kategorien grid container not found, using document fallback",
+                    );
+                    document.addEventListener("click", handleCategoryClick);
+                }
+            };
+
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", initEventHandler);
+            } else {
+                setTimeout(initEventHandler, 100);
             }
 
             // HMR Cleanup
             if (typeof import.meta !== "undefined" && import.meta.hot) {
                 import.meta.hot.dispose(() => {
-                    const gridContainer =
-                        document.querySelector(".grid.grid-cols-1");
-                    if (gridContainer) {
-                        gridContainer.removeEventListener(
+                    const kategorienGrid = document.querySelector(
+                        "#kategorien-grid .grid",
+                    );
+                    if (kategorienGrid) {
+                        kategorienGrid.removeEventListener(
                             "click",
                             handleCategoryClick,
                         );
@@ -90,6 +129,7 @@ const sorted = kategorien.sort(
 </script>
 
 <div
+    id="kategorien-grid"
     class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-5xl mx-auto py-12 mb-section"
 >
     {

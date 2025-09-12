@@ -129,9 +129,14 @@ function isActive(item) {
             .querySelectorAll("li.relative > button[data-dropdown]")
             .forEach((btn) => {
                 btn.addEventListener("click", (e) => {
-                    // Only prevent default for actual dropdown buttons, not navigation links
+                    // KRITISCH: Nur für echte Dropdown-Buttons, nicht für andere Events
+                    const target = e.target as HTMLElement;
+                    if (!target.closest("[data-dropdown]")) {
+                        return; // Nicht unser Event
+                    }
+
                     e.preventDefault();
-                    e.stopPropagation();
+                    // e.stopPropagation(); // ENTFERNT: Blockiert andere Handler
                     const dropdown = btn.parentElement.querySelector("ul");
                     if (dropdown) dropdown.classList.toggle("hidden");
                 });

@@ -1,5 +1,11 @@
 ---
 /// <reference types="vite/client" />
+
+// Import WFS layer components
+import VectorLayer from "ol/layer/Vector";
+import VectorSource from "ol/source/Vector";
+import GeoJSON from "ol/format/GeoJSON";
+import { Style, Stroke, Fill, Circle } from "ol/style";
 ---
 
 <div id="map" class="w-full h-full relative">
@@ -82,8 +88,13 @@
     wfsAuthClient.testConnection().then((isConnected) => {
         if (isConnected) {
             console.log("[WFS] Connection successful");
+            console.log(
+                "[DEBUG] WFS Endpoint:",
+                wfsAuthClient.getConfig().endpoint,
+            );
         } else {
             console.warn("[WFS] Connection failed - check credentials");
+            console.warn("[DEBUG] Testing direct WFS URL...");
             console.warn(
                 "[WFS] URL:",
                 wfsAuthClient.buildAuthorizedWFSURL("p2d2_containers", {
