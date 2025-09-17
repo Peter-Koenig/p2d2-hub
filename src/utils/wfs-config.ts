@@ -1,25 +1,17 @@
 // src/utils/wfs-config.ts
 /**
  * Server-side WFS Configuration
- * Lädt Credentials sicher serverseitig
+ * Lädt Credentials sicher über import.meta.env (Build-time injection)
  */
 
 export function getWFSConfig() {
   return {
-    endpoint: process.env.WFST_ENDPOINT || import.meta.env.WFST_ENDPOINT,
-    workspace:
-      process.env.WFST_WORKSPACE ||
-      import.meta.env.WFST_WORKSPACE ||
-      "Verwaltungsdaten",
-    namespace:
-      process.env.WFST_NAMESPACE ||
-      import.meta.env.WFST_NAMESPACE ||
-      "urn:data-dna:govdata",
+    endpoint: import.meta.env.WFST_ENDPOINT,
+    workspace: import.meta.env.WFST_WORKSPACE || "Verwaltungsdaten",
+    namespace: import.meta.env.WFST_NAMESPACE || "urn:data-dna:govdata",
     credentials: {
-      username:
-        process.env.WFST_USERNAME || import.meta.env.WFST_USERNAME || "",
-      password:
-        process.env.WFST_PASSWORD || import.meta.env.WFST_PASSWORD || "",
+      username: import.meta.env.WFST_USERNAME || "",
+      password: import.meta.env.WFST_PASSWORD || "",
     },
   };
 }

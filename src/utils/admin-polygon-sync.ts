@@ -3,13 +3,11 @@ import { writeFile } from "fs/promises";
 import { WFSAuthClient } from "./wfs-auth";
 import { transformExtentFromWgs84, transformCenterFromWgs84 } from "./crs";
 
-let wfstClient: Awaited<
-  ReturnType<typeof WFSAuthClient.createWFSTClient>
-> | null = null;
+let wfstClient: WFSAuthClient | null = null;
 
-async function getWFSTClient() {
+function getWFSTClient() {
   if (!wfstClient) {
-    wfstClient = await WFSAuthClient.createWFSTClient();
+    wfstClient = WFSAuthClient.createWFSTClient();
   }
   return wfstClient;
 }
@@ -314,7 +312,7 @@ export class AdminPolygonSyncManager {
     );
 
     try {
-      const client = await getWFSTClient();
+      const client = getWFSTClient();
       const response = await client.executeWFSTransaction(transactionXml);
 
       if (!response.ok) {
@@ -352,7 +350,7 @@ export class AdminPolygonSyncManager {
 
       console.log(`[admin-sync] Deleting existing polygons for ${kommuneSlug}`);
 
-      const client = await getWFSTClient();
+      const client = getWFSTClient();
       const response = await client.executeWFSTransaction(transactionXml);
 
       if (!response.ok) {

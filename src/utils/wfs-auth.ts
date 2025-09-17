@@ -1,5 +1,3 @@
-import { loadEnvironment } from "./env-config";
-
 /**
  * WFS Authorization Client
  * Handles authentication and authorized requests to WFS endpoints
@@ -378,18 +376,18 @@ export class WFSAuthClient {
   }
 
   /**
-   * Create WFS-T client with write credentials from environment
+   * Create WFS-T client with write credentials from import.meta.env
    */
-  static async createWFSTClient(): Promise<WFSAuthClient> {
-    const env = await loadEnvironment();
-
+  static createWFSTClient(): WFSAuthClient {
     return new WFSAuthClient({
-      endpoint: env.wfstEndpoint || "https://wfs.data-dna.eu/geoserver/ows",
-      workspace: env.wfstWorkspace || "Verwaltungsdaten",
-      namespace: "urn:data-dna:govdata",
+      endpoint:
+        import.meta.env.WFST_ENDPOINT ||
+        "https://wfs.data-dna.eu/geoserver/ows",
+      workspace: import.meta.env.WFST_WORKSPACE || "Verwaltungsdaten",
+      namespace: import.meta.env.WFST_NAMESPACE || "urn:data-dna:govdata",
       credentials: {
-        username: env.wfstUsername || "",
-        password: env.wfstPassword || "",
+        username: import.meta.env.WFST_USERNAME || "",
+        password: import.meta.env.WFST_PASSWORD || "",
       },
     });
   }
