@@ -8,399 +8,562 @@ import GeoJSON from "ol/format/GeoJSON";
 import { Style, Stroke, Fill, Circle } from "ol/style";
 ---
 
-<div id="map" class="w-full h-full relative">
-    <div id="crs-toggle" class="absolute top-2 right-10 z-10">
-        <button
-            id="crs-toggle-button"
-            class="bg-white px-3 py-1 rounded-md shadow-md text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Koordinatensystem umschalten"
+<div class="w-full h-full flex justify-center items-center p-4 md:p-6">
+    <!-- Äußerer Container für Shadow und Border -->
+    <div
+        class="w-full max-w-[98%] h-full
+      rounded-2xl md:rounded-3xl
+      shadow-2xl shadow-green-500/30
+      border-2 border-green-100/50
+      hover:shadow-green-500/40
+      transition-all duration-300
+      transform hover:scale-[1.01]
+      relative"
+    >
+        <!-- Innerer Container für Canvas-Clipping -->
+        <div
+            id="map"
+            class="w-full h-full overflow-hidden relative"
+            on:load={() => {
+                // OpenLayers Canvas nach Laden stylen
+                setTimeout(() => {
+                    const mapElement = document.getElementById("map");
+                    if (mapElement) {
+                        const canvases = mapElement.querySelectorAll("canvas");
+                        canvases.forEach((canvas) => {
+                            canvas.style.borderRadius = "inherit";
+                            canvas.style.clipPath = "inherit";
+                        });
+                    }
+                }, 100);
+            }}
         >
-            CRS: generisch
-        </button>
+            <div id="crs-toggle" class="absolute top-2 right-18 z-10">
+                <button
+                    id="crs-toggle-button"
+                    class="bg-white px-3 py-1 rounded-md shadow-md text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Koordinatensystem umschalten"
+                >
+                    CRS: generisch
+                </button>
+            </div>
+        </div>
     </div>
-</div>
 
-<script>
-    // Import OpenLayers modules
-    import Map from "ol/Map";
-    import View from "ol/View";
-    import TileLayer from "ol/layer/Tile";
-    import OSM from "ol/source/OSM";
-    import ImageLayer from "ol/layer/Image";
-    import ImageWMS from "ol/source/ImageWMS";
-    import FullScreen from "ol/control/FullScreen";
-    import { defaults } from "ol/control/defaults";
-    import { transform, transformExtent } from "ol/proj";
+    <script>
+        // Import OpenLayers modules
+        import Map from "ol/Map";
+        import View from "ol/View";
+        import TileLayer from "ol/layer/Tile";
+        import OSM from "ol/source/OSM";
+        import ImageLayer from "ol/layer/Image";
+        import ImageWMS from "ol/source/ImageWMS";
+        import FullScreen from "ol/control/FullScreen";
+        import { defaults } from "ol/control/defaults";
+        import { transform, transformExtent } from "ol/proj";
 
-    // Import our utility modules
-    import { mapState } from "../utils/map-state";
-    import { CategoryHandler } from "../utils/category-handler";
-    import { FeatureSelectionHandler } from "../utils/feature-selection";
+        // Import our utility modules
+        import { mapState } from "../utils/map-state";
+        import { CategoryHandler } from "../utils/category-handler";
+        import { FeatureSelectionHandler } from "../utils/feature-selection";
 
-    // Import existing CRS utilities
-    import {
-        registerUtm,
-        toNewViewPreservingScale,
-        isValidWgs84Coordinate,
-        isValidWgs84Extent,
-    } from "../utils/crs";
+        // Import existing CRS utilities
+        import {
+            registerUtm,
+            toNewViewPreservingScale,
+            isValidWgs84Coordinate,
+            isValidWgs84Extent,
+        } from "../utils/crs";
 
-    // Throttled logging utility
-    const createThrottledLogger = () => {
-        const lastLogTimes = new Map();
-        const throttleMs = 5000;
+        // Throttled logging utility
+        const createThrottledLogger = () => {
+            const lastLogTimes = new Map();
+            const throttleMs = 5000;
 
-        return {
-            warn: (key: string, message: string, ...args: any[]) => {
-                const now = Date.now();
-                const lastTime = lastLogTimes.get(key) || 0;
+            return {
+                warn: (key: string, message: string, ...args: any[]) => {
+                    const now = Date.now();
+                    const lastTime = lastLogTimes.get(key) || 0;
 
-                if (now - lastTime > throttleMs) {
-                    console.warn(message, ...args);
-                    lastLogTimes.set(key, now);
-                }
-            },
+                    if (now - lastTime > throttleMs) {
+                        console.warn(message, ...args);
+                        lastLogTimes.set(key, now);
+                    }
+                },
+            };
         };
-    };
 
-    const throttledLogger = createThrottledLogger();
+        const throttledLogger = createThrottledLogger();
 
-    // Initialize the map
-    const map = new Map({
-        target: "map",
-        layers: [
-            new TileLayer({
-                source: new OSM(),
-            }),
-        ],
-        view: new View({
-            projection: mapState.getConfig().defaultCRS,
-            center: [0, 0],
-            zoom: 2,
-        }),
-        controls: defaults().extend([new FullScreen()]),
-    });
-
-    // Initialize authorized WFS layer instead of WMS
-    import { wfsAuthClient } from "../utils/wfs-auth";
-
-    // Test WFS connection on startup
-    wfsAuthClient.testConnection().then((isConnected) => {
-        if (isConnected) {
-            console.log("[WFS] Connection successful");
-            console.log(
-                "[DEBUG] WFS Endpoint:",
-                wfsAuthClient.getConfig().endpoint,
-            );
-        } else {
-            console.warn("[WFS] Connection failed - check credentials");
-            console.warn("[DEBUG] Testing direct WFS URL...");
-            console.warn(
-                "[WFS] URL:",
-                wfsAuthClient.buildAuthorizedWFSURL("p2d2_containers", {
-                    maxFeatures: "1",
+        // Initialize the map
+        const map = new Map({
+            target: "map",
+            layers: [
+                new TileLayer({
+                    source: new OSM(),
                 }),
-            );
-        }
-    });
+            ],
+            view: new View({
+                projection: mapState.getConfig().defaultCRS,
+                center: [0, 0],
+                zoom: 2,
+            }),
+            controls: defaults().extend([new FullScreen()]),
+        });
 
-    // Initialize handlers
-    const categoryHandler = new CategoryHandler(map);
-    const featureSelectionHandler = new FeatureSelectionHandler(
-        map,
-        categoryHandler.getCategorySource(),
-    );
+        // Nach Map-Initialisierung Canvas-Elemente stylen
+        map.once("postrender", () => {
+            setTimeout(() => {
+                const mapElement = document.getElementById("map");
+                if (mapElement) {
+                    const canvases = mapElement.querySelectorAll("canvas");
+                    canvases.forEach((canvas) => {
+                        canvas.style.borderRadius = "16px";
+                        canvas.style.willChange = "transform";
+                    });
 
-    // CRS Toggle functionality
-    function updateCRSButton(): void {
-        const button = document.getElementById("crs-toggle-button");
-        if (!button) return;
+                    // Für zukünftige Canvas-Updates
+                    const observer = new MutationObserver((mutations) => {
+                        mutations.forEach((mutation) => {
+                            if (mutation.addedNodes) {
+                                mutation.addedNodes.forEach((node) => {
+                                    if (node.nodeName === "CANVAS") {
+                                        (
+                                            node as HTMLCanvasElement
+                                        ).style.borderRadius = "16px";
+                                    }
+                                });
+                            }
+                        });
+                    });
 
-        const state = mapState.getState();
+                    observer.observe(mapElement, {
+                        childList: true,
+                        subtree: true,
+                    });
+                }
+            }, 50);
+        });
 
-        if (state.localCRS) {
-            (button as HTMLButtonElement).disabled = false;
-            if (state.activeCRS === state.localCRS) {
-                button.textContent = "CRS: UTM";
-                button.title = "Zu generischem Koordinatensystem wechseln";
+        // Initialize authorized WFS layer instead of WMS
+        import { wfsAuthClient } from "../utils/wfs-auth";
+
+        // Test WFS connection on startup
+        wfsAuthClient.testConnection().then((isConnected) => {
+            if (isConnected) {
+                console.log("[WFS] Connection successful");
+                console.log(
+                    "[DEBUG] WFS Endpoint:",
+                    wfsAuthClient.getConfig().endpoint,
+                );
             } else {
-                button.textContent = "CRS: generisch";
-                button.title = "Zu lokalem UTM-Koordinatensystem wechseln";
-            }
-        } else {
-            (button as HTMLButtonElement).disabled = true;
-            button.textContent = "CRS: generisch";
-            button.title = "Nur generisches Koordinatensystem verfügbar";
-        }
-    }
-
-    function toggleCRS(): void {
-        const state = mapState.getState();
-        if (!state.localCRS) return;
-
-        const targetCRS =
-            state.activeCRS === state.localCRS
-                ? mapState.getConfig().defaultCRS
-                : state.localCRS;
-
-        // Update state
-        mapState.setActiveCRS(targetCRS);
-
-        // Use scale-preserving view transition
-        toNewViewPreservingScale(map, targetCRS);
-
-        // Refresh categories
-        categoryHandler.refreshCategoriesSource();
-
-        map.once("moveend", () => {
-            try {
-                categoryHandler.refreshCategoriesSource();
-            } catch (error) {
-                throttledLogger.warn(
-                    "category-refresh",
-                    "[Categories] Could not refresh categories",
-                    error,
+                console.warn("[WFS] Connection failed - check credentials");
+                console.warn("[DEBUG] Testing direct WFS URL...");
+                console.warn(
+                    "[WFS] URL:",
+                    wfsAuthClient.buildAuthorizedWFSURL("p2d2_containers", {
+                        maxFeatures: "1",
+                    }),
                 );
             }
         });
 
-        updateCRSButton();
-    }
-
-    // Event listener for CRS toggle button
-    const crsToggleButton = document.getElementById("crs-toggle-button");
-    if (crsToggleButton && !crsToggleButton.dataset.listenerBound) {
-        crsToggleButton.addEventListener("click", toggleCRS);
-        crsToggleButton.dataset.listenerBound = "true";
-    }
-
-    // Subscribe to map state changes
-    mapState.subscribe((state) => {
-        updateCRSButton();
-    });
-
-    // Event listener for kommunen focus
-    if (typeof window !== "undefined") {
-        window.addEventListener(
-            "kommunen:focus",
-            (e) => {
-                const d = (e as CustomEvent)?.detail || {};
-                const view = map?.getView?.();
-
-                if (!view || !view.getProjection) {
-                    console.error("[kommunen] map view is not initialized");
-                    return;
-                }
-
-                // Set local CRS from detail if available
-                const localCRS = (d?.projection as string) || undefined;
-                mapState.setLocalCRS(localCRS);
-
-                // Register UTM projection if needed
-                if (localCRS) {
-                    try {
-                        registerUtm(localCRS);
-                    } catch (error) {
-                        throttledLogger.warn(
-                            "projection-registration",
-                            `Could not register projection ${localCRS}`,
-                            error,
-                        );
-                        mapState.setLocalCRS(undefined);
-                    }
-                }
-
-                // Set active CRS - prefer local CRS if available
-                const targetCRS = localCRS || mapState.getConfig().defaultCRS;
-                mapState.setActiveCRS(targetCRS);
-
-                // Create new view with appropriate projection
-                toNewViewPreservingScale(map, targetCRS);
-
-                // Refresh categories after view transition
-                map.once("moveend", () => {
-                    try {
-                        categoryHandler.refreshCategoriesSource();
-                    } catch (error) {
-                        throttledLogger.warn(
-                            "refresh-after-focus",
-                            "Could not refresh categories",
-                            error,
-                        );
-                    }
-                });
-
-                // Handle navigation
-                const center = isValidWgs84Coordinate(d?.center)
-                    ? d.center
-                    : undefined;
-                const extent = isValidWgs84Extent(d?.extent)
-                    ? d.extent
-                    : undefined;
-                const zoom = Number.isFinite(d?.zoom) ? d.zoom : undefined;
-
-                try {
-                    if (extent && transformExtent) {
-                        const fitExtent = transformExtent(
-                            extent,
-                            "EPSG:4326",
-                            targetCRS,
-                        );
-                        const fitOpts = {
-                            padding: [50, 50, 50, 50],
-                            duration: 300,
-                            ...(d.extra?.fitOptions || {}),
-                        };
-
-                        map.getView().fit(fitExtent, fitOpts);
-                    } else if (center && transform) {
-                        const c = transform(center, "EPSG:4326", targetCRS);
-                        const targetZoom =
-                            zoom ?? map.getView()?.getZoom?.() ?? 11;
-
-                        map.getView().animate({
-                            center: c,
-                            zoom: targetZoom,
-                            duration: 300,
-                            ...(d.extra || {}),
-                        });
-                    } else {
-                        throttledLogger.warn(
-                            "invalid-data",
-                            "[kommunen] no valid center or extent data provided",
-                            d,
-                        );
-                    }
-                } catch (err) {
-                    console.error("[kommunen] focus error", err, d);
-                }
-            },
-            { passive: true },
+        // Initialize handlers
+        const categoryHandler = new CategoryHandler(map);
+        const featureSelectionHandler = new FeatureSelectionHandler(
+            map,
+            categoryHandler.getCategorySource(),
         );
-    }
 
-    // Restore persisted state on DOMContentLoaded
-    document.addEventListener("DOMContentLoaded", () => {
-        try {
-            // Restore map state from localStorage
-            mapState.restoreFromStorage();
+        // CRS Toggle functionality
+        function updateCRSButton(): void {
+            const button = document.getElementById("crs-toggle-button");
+            if (!button) return;
 
             const state = mapState.getState();
-            const savedDetail = localStorage.getItem(
-                "selectedMunicipalityDetail",
-            );
 
-            if (
-                state.activeCRS !== mapState.getConfig().defaultCRS &&
-                savedDetail
-            ) {
-                const detail = JSON.parse(savedDetail);
-                const localCRS =
-                    (detail?.projection as string) &&
-                    detail.projection !== "EPSG:4326"
-                        ? detail.projection
-                        : undefined;
-
-                mapState.setLocalCRS(localCRS);
-
-                if (localCRS) {
-                    registerUtm(localCRS);
+            if (state.localCRS) {
+                (button as HTMLButtonElement).disabled = false;
+                if (state.activeCRS === state.localCRS) {
+                    button.textContent = "CRS: UTM";
+                    button.title = "Zu generischem Koordinatensystem wechseln";
+                } else {
+                    button.textContent = "CRS: generisch";
+                    button.title = "Zu lokalem UTM-Koordinatensystem wechseln";
                 }
-
-                // Update view projection
-                toNewViewPreservingScale(map, state.activeCRS);
-
-                // Refresh layers after view transition
-                map.once("moveend", () => {
-                    try {
-                        categoryHandler.refreshCategoriesSource();
-                    } catch (error) {
-                        throttledLogger.warn(
-                            "category-refresh-restore",
-                            "[Categories] Could not refresh categories",
-                            error,
-                        );
-                    }
-                });
-
-                // Dispatch focus event after map initialization
-                setTimeout(() => {
-                    window.dispatchEvent(
-                        new CustomEvent("kommunen:focus", { detail }),
-                    );
-                }, 100);
             } else {
-                // Kein gespeicherter Zustand - initial auf Köln zentrieren
-                const koelnCenter = [6.9603, 50.9375];
-                const koelnZoom = 11;
-                const koelnProjection = "EPSG:25832";
+                (button as HTMLButtonElement).disabled = true;
+                button.textContent = "CRS: generisch";
+                button.title = "Nur generisches Koordinatensystem verfügbar";
+            }
+        }
 
+        function toggleCRS(): void {
+            const state = mapState.getState();
+            if (!state.localCRS) return;
+
+            const targetCRS =
+                state.activeCRS === state.localCRS
+                    ? mapState.getConfig().defaultCRS
+                    : state.localCRS;
+
+            // Update state
+            mapState.setActiveCRS(targetCRS);
+
+            // Use scale-preserving view transition
+            toNewViewPreservingScale(map, targetCRS);
+
+            // Refresh categories
+            categoryHandler.refreshCategoriesSource();
+
+            map.once("moveend", () => {
                 try {
-                    registerUtm(koelnProjection);
+                    categoryHandler.refreshCategoriesSource();
                 } catch (error) {
-                    console.warn(
-                        "[initial] Could not register UTM projection, using default",
+                    throttledLogger.warn(
+                        "category-refresh",
+                        "[Categories] Could not refresh categories",
+                        error,
                     );
                 }
-
-                // View auf Köln setzen mit UTM-Projektion
-                toNewViewPreservingScale(map, koelnProjection, false);
-
-                // Center und Zoom explizit setzen
-                const transformedCenter = transform(
-                    koelnCenter,
-                    "EPSG:4326",
-                    koelnProjection,
-                );
-                map.getView().setCenter(transformedCenter);
-                map.getView().setZoom(koelnZoom);
-
-                // CRS-Status aktualisieren
-                mapState.setActiveCRS(koelnProjection);
-                mapState.setLocalCRS(koelnProjection);
-                updateCRSButton();
-
-                // Categories nach View-Änderung aktualisieren
-                map.once("moveend", () => {
-                    try {
-                        categoryHandler.refreshCategoriesSource();
-                    } catch (error) {
-                        throttledLogger.warn(
-                            "category-refresh-initial",
-                            "[Categories] Could not refresh categories on initial load",
-                            error,
-                        );
-                    }
-                });
-            }
-
-            // Reselect feature after categories are loaded
-            // Weniger aggressive Reselection mit Guard
-            map.once("rendercomplete", () => {
-                setTimeout(() => {
-                    featureSelectionHandler.reselectFeature();
-                }, 200);
             });
 
-            // Mark as initialized
-            mapState.setInitialized(true);
-        } catch (error) {
-            console.error("Error restoring persisted state:", error);
+            updateCRSButton();
         }
-    });
 
-    // Initialize toggle button state
-    updateCRSButton();
-
-    // Ensure map size is updated after container becomes visible
-    setTimeout(() => {
-        const mapElement = document.getElementById("map");
-        if (
-            mapElement &&
-            mapElement.offsetWidth > 0 &&
-            mapElement.offsetHeight > 0
-        ) {
-            map.updateSize();
+        // Event listener for CRS toggle button
+        const crsToggleButton = document.getElementById("crs-toggle-button");
+        if (crsToggleButton && !crsToggleButton.dataset.listenerBound) {
+            crsToggleButton.addEventListener("click", toggleCRS);
+            crsToggleButton.dataset.listenerBound = "true";
         }
-    }, 1000);
-</script>
+
+        // Subscribe to map state changes
+        mapState.subscribe((state) => {
+            updateCRSButton();
+        });
+
+        // Event listener for kommunen focus
+        if (typeof window !== "undefined") {
+            window.addEventListener(
+                "kommunen:focus",
+                (e) => {
+                    const d = (e as CustomEvent)?.detail || {};
+                    const view = map?.getView?.();
+
+                    if (!view || !view.getProjection) {
+                        console.error("[kommunen] map view is not initialized");
+                        return;
+                    }
+
+                    // Set local CRS from detail if available
+                    const localCRS = (d?.projection as string) || undefined;
+                    mapState.setLocalCRS(localCRS);
+
+                    // Register UTM projection if needed
+                    if (localCRS) {
+                        try {
+                            registerUtm(localCRS);
+                        } catch (error) {
+                            throttledLogger.warn(
+                                "projection-registration",
+                                `Could not register projection ${localCRS}`,
+                                error,
+                            );
+                            mapState.setLocalCRS(undefined);
+                        }
+                    }
+
+                    // Set active CRS - prefer local CRS if available
+                    const targetCRS =
+                        localCRS || mapState.getConfig().defaultCRS;
+                    mapState.setActiveCRS(targetCRS);
+
+                    // Create new view with appropriate projection
+                    toNewViewPreservingScale(map, targetCRS);
+
+                    // Refresh categories after view transition
+                    map.once("moveend", () => {
+                        try {
+                            categoryHandler.refreshCategoriesSource();
+                        } catch (error) {
+                            throttledLogger.warn(
+                                "refresh-after-focus",
+                                "Could not refresh categories",
+                                error,
+                            );
+                        }
+                    });
+
+                    // Handle navigation
+                    const center = isValidWgs84Coordinate(d?.center)
+                        ? d.center
+                        : undefined;
+                    const extent = isValidWgs84Extent(d?.extent)
+                        ? d.extent
+                        : undefined;
+                    const zoom = Number.isFinite(d?.zoom) ? d.zoom : undefined;
+
+                    try {
+                        if (extent && transformExtent) {
+                            const fitExtent = transformExtent(
+                                extent,
+                                "EPSG:4326",
+                                targetCRS,
+                            );
+                            const fitOpts = {
+                                padding: [50, 50, 50, 50],
+                                duration: 300,
+                                ...(d.extra?.fitOptions || {}),
+                            };
+
+                            map.getView().fit(fitExtent, fitOpts);
+                        } else if (center && transform) {
+                            const c = transform(center, "EPSG:4326", targetCRS);
+                            const targetZoom =
+                                zoom ?? map.getView()?.getZoom?.() ?? 11;
+
+                            map.getView().animate({
+                                center: c,
+                                zoom: targetZoom,
+                                duration: 300,
+                                ...(d.extra || {}),
+                            });
+                        } else {
+                            throttledLogger.warn(
+                                "invalid-data",
+                                "[kommunen] no valid center or extent data provided",
+                                d,
+                            );
+                        }
+                    } catch (err) {
+                        console.error("[kommunen] focus error", err, d);
+                    }
+                },
+                { passive: true },
+            );
+        }
+
+        // Restore persisted state on DOMContentLoaded
+        document.addEventListener("DOMContentLoaded", () => {
+            try {
+                // Restore map state from localStorage
+                mapState.restoreFromStorage();
+
+                const state = mapState.getState();
+                const savedDetail = localStorage.getItem(
+                    "selectedMunicipalityDetail",
+                );
+
+                if (
+                    state.activeCRS !== mapState.getConfig().defaultCRS &&
+                    savedDetail
+                ) {
+                    const detail = JSON.parse(savedDetail);
+                    const localCRS =
+                        (detail?.projection as string) &&
+                        detail.projection !== "EPSG:4326"
+                            ? detail.projection
+                            : undefined;
+
+                    mapState.setLocalCRS(localCRS);
+
+                    if (localCRS) {
+                        registerUtm(localCRS);
+                    }
+
+                    // Update view projection
+                    toNewViewPreservingScale(map, state.activeCRS);
+
+                    // Refresh layers after view transition
+                    map.once("moveend", () => {
+                        try {
+                            categoryHandler.refreshCategoriesSource();
+                        } catch (error) {
+                            throttledLogger.warn(
+                                "category-refresh-restore",
+                                "[Categories] Could not refresh categories",
+                                error,
+                            );
+                        }
+                    });
+
+                    // Dispatch focus event after map initialization
+                    setTimeout(() => {
+                        window.dispatchEvent(
+                            new CustomEvent("kommunen:focus", { detail }),
+                        );
+                    }, 100);
+                } else {
+                    // Kein gespeicherter Zustand - initial auf Köln zentrieren
+                    const koelnCenter = [6.9603, 50.9375];
+                    const koelnZoom = 11;
+                    const koelnProjection = "EPSG:25832";
+
+                    try {
+                        registerUtm(koelnProjection);
+                    } catch (error) {
+                        console.warn(
+                            "[initial] Could not register UTM projection, using default",
+                        );
+                    }
+
+                    // View auf Köln setzen mit UTM-Projektion
+                    toNewViewPreservingScale(map, koelnProjection, false);
+
+                    // Center und Zoom explizit setzen
+                    const transformedCenter = transform(
+                        koelnCenter,
+                        "EPSG:4326",
+                        koelnProjection,
+                    );
+                    map.getView().setCenter(transformedCenter);
+                    map.getView().setZoom(koelnZoom);
+
+                    // CRS-Status aktualisieren
+                    mapState.setActiveCRS(koelnProjection);
+                    mapState.setLocalCRS(koelnProjection);
+                    updateCRSButton();
+
+                    // Categories nach View-Änderung aktualisieren
+                    map.once("moveend", () => {
+                        try {
+                            categoryHandler.refreshCategoriesSource();
+                        } catch (error) {
+                            throttledLogger.warn(
+                                "category-refresh-initial",
+                                "[Categories] Could not refresh categories on initial load",
+                                error,
+                            );
+                        }
+                    });
+                }
+
+                // Reselect feature after categories are loaded
+                // Weniger aggressive Reselection mit Guard
+                map.once("rendercomplete", () => {
+                    setTimeout(() => {
+                        featureSelectionHandler.reselectFeature();
+                    }, 200);
+                });
+
+                // Mark as initialized
+                mapState.setInitialized(true);
+            } catch (error) {
+                console.error("Error restoring persisted state:", error);
+            }
+        });
+
+        // Initialize toggle button state
+        updateCRSButton();
+
+        // Ensure map size is updated after container becomes visible
+        setTimeout(() => {
+            const mapElement = document.getElementById("map");
+            if (
+                mapElement &&
+                mapElement.offsetWidth > 0 &&
+                mapElement.offsetHeight > 0
+            ) {
+                map.updateSize();
+            }
+        }, 1000);
+    </script>
+
+    <style>
+        /* Zusätzliche Feinabstimmung für OpenLayers Controls */
+        #map .ol-zoom,
+        #map .ol-rotate,
+        #map .ol-attribution {
+            margin: 12px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        /* Doppelter Container-Lösung:
+         * Äußerer Container hat Shadow, innerer Container hat Overflow
+         */
+
+        /* Innerer Container für Canvas-Clipping */
+        #map {
+            width: 100%;
+            height: 100%;
+            border-radius: inherit;
+            clip-path: inset(0 round 16px);
+        }
+
+        /* Canvas-Elemente für abgerundete Ecken */
+        #map canvas {
+            border-radius: inherit !important;
+            clip-path: inherit !important;
+            transform: translateZ(0); /* GPU-Beschleunigung */
+        }
+
+        @media (min-width: 768px) {
+            #map {
+                clip-path: inset(0 round 24px);
+            }
+            #map canvas {
+                border-radius: inherit !important;
+                clip-path: inherit !important;
+            }
+        }
+
+        /* Responsive Anpassungen für mobile Geräte */
+        @media (max-width: 768px) {
+            #map {
+                clip-path: inset(0 round 12px);
+            }
+            #map canvas {
+                border-radius: inherit !important;
+                clip-path: inherit !important;
+            }
+
+            #crs-toggle {
+                top: 3px;
+                right: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #map {
+                clip-path: inset(0 round 8px);
+            }
+            #map canvas {
+                border-radius: inherit !important;
+                clip-path: inherit !important;
+            }
+        }
+
+        /* Sicherstellen, dass OpenLayers Controls über dem Clip-Path liegen */
+        #map .ol-zoom,
+        #map .ol-rotate,
+        #map .ol-attribution {
+            position: relative;
+            z-index: 20;
+        }
+
+        /* Korrekte Positionierung des CRS-Toggle Buttons */
+        #crs-toggle {
+            position: absolute;
+            top: 12px;
+            right: 20px;
+            z-index: 30;
+        }
+
+        @media (max-width: 768px) {
+            #crs-toggle {
+                top: 10px;
+                right: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #crs-toggle {
+                top: 6px;
+                right: 12px;
+            }
+        }
+    </style>
+</div>
