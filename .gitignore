@@ -51,3 +51,4 @@ src_feature_broken.txt
 .env.production
 src_develop.txt
 src_feature.txt
+src/utils/geo/__pycache__/*
