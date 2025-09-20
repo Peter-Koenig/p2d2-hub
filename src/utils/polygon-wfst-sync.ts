@@ -48,14 +48,6 @@ export async function syncKommunePolygons(slug: string): Promise<SyncResult> {
 
     if (!kommune?.data.osmAdminLevels || !kommune.data.wp_name) {
       throw new Error(`Kommune ${slug} hat keine OSM-Daten definiert`);
-
-      console.debug("DEBUG wp_name original:", kommune.data.wp_name);
-      const municipalityName = extractMunicipalityName(kommune.data.wp_name);
-      console.debug("DEBUG municipalityName extracted:", municipalityName);
-      console.debug(
-        "DEBUG Will call Python script with municipality:",
-        municipalityName,
-      );
     }
 
     const municipalityName = extractMunicipalityName(kommune.data.wp_name);
@@ -148,12 +140,46 @@ async function fetchAdminPolygons(
           }
 
           const result = JSON.parse(jsonMatch[0]);
-          if (process.env.DEBUG) {
-            console.debug(
-              `[DEBUG] Python script returned ${result.features?.length || 0} features`,
-            );
+
+          // Check if result contains GeoJSON files - read the actual GeoJSON
+          if (result.files && result.files[level.toString()]) {
+            import("fs")
+              .then(({ readFileSync }) => {
+                try {
+                  const geoJsonPath = result.files[level.toString()];
+                  const geoJsonData = JSON.parse(
+                    readFileSync(geoJsonPath, "utf8"),
+                  );
+                  if (process.env.DEBUG) {
+                    console.debug(
+                      `[DEBUG] Loaded GeoJSON: ${geoJsonData.features?.length || 0} features from ${geoJsonPath}`,
+                    );
+                  }
+                  resolve(geoJsonData);
+                } catch (fileError) {
+                  if (process.env.DEBUG) {
+                    console.debug(
+                      "DEBUG Failed to read GeoJSON file:",
+                      fileError,
+                    );
+                  }
+                  reject(new Error("Failed to read generated GeoJSON file"));
+                }
+              })
+              .catch((importError) => {
+                if (process.env.DEBUG) {
+                  console.debug("DEBUG Failed to import fs:", importError);
+                }
+                reject(new Error("Failed to import filesystem module"));
+              });
+          } else {
+            if (process.env.DEBUG) {
+              console.debug(
+                `[DEBUG] Python script returned ${result.features?.length || 0} features`,
+              );
+            }
+            resolve(result);
           }
-          resolve(result);
         } catch (e) {
           if (process.env.DEBUG) {
             console.debug(
@@ -285,7 +311,7 @@ function buildWFSTInsertXML(records: PolygonRecord[]): string {
 
 // Hilfsfunktionen
 function extractMunicipalityName(wpName: string): string {
-  return wpName.replace(/^[a-z]{2}(?:-[a-z]{2})?-/, "").trim();
+  return wpName.replace(/^[a-z]{2}-/, ""); // Entferne Länderkürzel
 }
 
 function escapeXml(text: string): string {
