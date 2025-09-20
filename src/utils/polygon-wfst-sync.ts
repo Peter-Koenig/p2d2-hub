@@ -61,24 +61,9 @@ export async function syncKommunePolygons(slug: string): Promise<SyncResult> {
           );
         }
         const geoJsonData = await fetchAdminPolygons(municipalityName, level);
-        const polygons = convertToPolygonRecords(
-          geoJsonData,
-          kommune.data,
-          level,
-        );
-
-        if (polygons.length > 0) {
-          if (process.env.DEBUG) {
-            console.debug(
-              `[DEBUG] Converted ${polygons.length} polygons to WFS-T records for level ${level}`,
-            );
-          }
-          await persistViaWFST(polygons);
-          result.processedLevels.push(level);
-          result.insertedPolygons += polygons.length;
-        } else if (process.env.DEBUG) {
-          console.debug(`[DEBUG] No polygons found for level ${level}`);
-        }
+        await persistGMLViaWFST(geoJsonData.gmlContent, kommune.data);
+        result.processedLevels.push(level);
+        result.insertedPolygons += 1; // Count as one transaction for GML
       } catch (error) {
         result.errors.push(`Level ${level}: ${error.message}`);
         result.success = false;
@@ -141,29 +126,27 @@ async function fetchAdminPolygons(
 
           const result = JSON.parse(jsonMatch[0]);
 
-          // Check if result contains GeoJSON files - read the actual GeoJSON
-          if (result.files && result.files[level.toString()]) {
+          // Check if result contains WFS-T GML files - read the actual GML
+          if (result.wfst_files && result.wfst_files[level.toString()]) {
             import("fs")
               .then(({ readFileSync }) => {
                 try {
-                  const geoJsonPath = result.files[level.toString()];
-                  const geoJsonData = JSON.parse(
-                    readFileSync(geoJsonPath, "utf8"),
-                  );
+                  const wfstGmlPath = result.wfst_files[level.toString()];
+                  const gmlContent = readFileSync(wfstGmlPath, "utf8");
                   if (process.env.DEBUG) {
                     console.debug(
-                      `[DEBUG] Loaded GeoJSON: ${geoJsonData.features?.length || 0} features from ${geoJsonPath}`,
+                      `[DEBUG] Loaded WFS-T GML from: ${wfstGmlPath}`,
                     );
                   }
-                  resolve(geoJsonData);
+                  resolve({ gmlContent, metadata: result });
                 } catch (fileError) {
                   if (process.env.DEBUG) {
                     console.debug(
-                      "DEBUG Failed to read GeoJSON file:",
+                      "DEBUG Failed to read WFS-T GML file:",
                       fileError,
                     );
                   }
-                  reject(new Error("Failed to read generated GeoJSON file"));
+                  reject(new Error("Failed to read generated WFS-T GML file"));
                 }
               })
               .catch((importError) => {
@@ -234,6 +217,25 @@ async function persistViaWFST(records: PolygonRecord[]): Promise<void> {
   }
 
   const wfsClient = WFSAuthClient.createWFSTClient();
+
+  // DEBUG: Environment-Variablen prüfen
+  if (process.env.DEBUG) {
+    console.debug("DEBUG WFST Config:");
+    console.debug(
+      "  ENDPOINT:",
+      import.meta.env.WFST_ENDPOINT ??
+        "DEFAULT: https://wfs.data-dna.eu/geoserver/ows",
+    );
+    console.debug(
+      "  USERNAME:",
+      import.meta.env.WFST_USERNAME ? "SET" : "MISSING",
+    );
+    console.debug(
+      "  PASSWORD:",
+      import.meta.env.WFST_PASSWORD ? "SET" : "MISSING",
+    );
+  }
+
   const transactionXml = buildWFSTInsertXML(records);
 
   if (process.env.DEBUG) {
@@ -254,10 +256,16 @@ async function persistViaWFST(records: PolygonRecord[]): Promise<void> {
 
   if (!response.ok) {
     const error = await response.text();
+    if (process.env.DEBUG)
+      console.debug("DEBUG WFS-T GML Error response:", error);
+    // Log the full transaction XML that failed
     if (process.env.DEBUG) {
-      console.debug(`[DEBUG] WFS-T Error response: ${error}`);
+      console.debug(
+        "DEBUG Failed transaction XML:",
+        transactionXml.substring(0, 1000) + "...",
+      );
     }
-    throw new Error(`WFS-T failed: ${response.status} - ${error}`);
+    throw new Error(`WFS-T GML failed: ${response.status} - ${error}`);
   }
 
   if (process.env.DEBUG) {
@@ -321,4 +329,62 @@ function escapeXml(text: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
+}
+
+// WFS-T Transaction für direkten GML-Insert
+async function persistGMLViaWFST(
+  gmlContent: string,
+  kommuneData: any,
+): Promise<void> {
+  if (process.env.DEBUG) {
+    console.debug(`[DEBUG] Starting WFS-T GML transaction`);
+  }
+
+  const wfsClient = WFSAuthClient.createWFSTClient();
+
+  // Remove XML declaration from GML content
+  const cleanedGML = gmlContent.replace(/^<\?xml[^>]*\?>\s*/, "");
+
+  const transactionXml = buildWFSTInsertFromGML(cleanedGML);
+
+  if (process.env.DEBUG) {
+    console.debug(
+      `[DEBUG] WFS-T GML Transaction XML size: ${transactionXml.length} chars`,
+    );
+    // Log first 200 chars of XML for debugging
+    console.debug(
+      `[DEBUG] WFS-T GML Transaction start: ${transactionXml.substring(0, 200)}...`,
+    );
+  }
+
+  const response = await wfsClient.executeWFSTransaction(transactionXml);
+
+  if (process.env.DEBUG) {
+    console.debug(`[DEBUG] WFS-T GML Response status: ${response.status}`);
+  }
+
+  if (!response.ok) {
+    const error = await response.text();
+    if (process.env.DEBUG) {
+      console.debug(`[DEBUG] WFS-T GML Error response: ${error}`);
+    }
+    throw new Error(`WFS-T GML failed: ${response.status} - ${error}`);
+  }
+
+  if (process.env.DEBUG) {
+    console.debug(`[DEBUG] WFS-T GML transaction completed successfully`);
+  }
+}
+
+// Direkter GML-Insert mit fertigen GML-Dateien
+function buildWFSTInsertFromGML(gmlContent: string): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<wfs:Transaction xmlns:wfs="http://www.opengis.net/wfs/2.0"
+                 xmlns:p2d2="urn:data-dna:govdata"
+                 xmlns:gml="http://www.opengis.net/gml/3.2"
+                 service="WFS" version="2.0.0">
+  <wfs:Insert>
+    ${gmlContent}
+  </wfs:Insert>
+</wfs:Transaction>`;
 }

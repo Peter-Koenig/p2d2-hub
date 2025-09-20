@@ -101,13 +101,21 @@ def main():
             # Extract only polygon features
             polygon_features = gml_converter.extract_polygon_features(geojson_data)
 
-            # Convert to GML
+            # Convert to standard GML (for QGIS)
             gml_content = gml_converter.convert_to_gml(polygon_features, args.kommune, level)
 
-            # Save GML file
+            # Save standard GML file
             gml_output_file = output_dir / f"{args.kommune.lower().replace(' ', '_').replace('(', '').replace(')', '')}_admin_level_{level}.gml"
             with open(gml_output_file, 'w', encoding='utf-8') as f:
                 f.write(gml_content)
+
+            # Convert to WFS-T GML (for direct database insertion)
+            wfst_gml_content = gml_converter.convert_to_wfst_gml(polygon_features, args.kommune, level)
+
+            # Save WFS-T GML file
+            wfst_gml_output_file = output_dir / f"{args.kommune.lower().replace(' ', '_').replace('(', '').replace(')', '')}_admin_level_{level}_wfst.gml"
+            with open(wfst_gml_output_file, 'w', encoding='utf-8') as f:
+                f.write(wfst_gml_content)
 
             # Save GeoJSON file (for debugging)
             output_file = output_dir / f"{args.kommune.lower().replace(' ', '_').replace('(', '').replace(')', '')}_admin_level_{level}.geojson"
@@ -119,9 +127,11 @@ def main():
             result["files"][str(level)] = str(output_file)
             result["gml_files"] = result.get("gml_files", {})
             result["gml_files"][str(level)] = str(gml_output_file)
+            result["wfst_files"] = result.get("wfst_files", {})
+            result["wfst_files"][str(level)] = str(wfst_gml_output_file)
             result["polygon_counts"][str(level)] = feature_count
 
-            logger.info(f"Saved {len(polygon_features)} polygon features to {gml_output_file} and {output_file}")
+            logger.info(f"Saved {len(polygon_features)} polygon features to {gml_output_file}, {wfst_gml_output_file} and {output_file}")
 
     except Exception as e:
         logger.error(f"Download failed: {e}")
