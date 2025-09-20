@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import mdx from "@astrojs/mdx"; // Nur falls du MDX brauchst
 
 import vue from "@astrojs/vue";
+import { polygonSyncPlugin } from "./src/integrations/polygon-sync-plugin.mjs";
 
 export default defineConfig({
   // Performance: Telemetrie deaktivieren (spart ~560ms)
@@ -37,5 +38,14 @@ export default defineConfig({
     port: 4321,
   },
 
-  integrations: [vue()],
+  integrations: [
+    vue(),
+    polygonSyncPlugin({
+      watchDir: "src/content/kommunen",
+      autoSync: true,
+      followSymlinks: true,
+      debounceMs: 5000, // Warte länger auf Vite HMR completion
+      debug: process.env.DEBUG === "true",
+    }),
+  ],
 });
