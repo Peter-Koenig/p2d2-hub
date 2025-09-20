@@ -9,7 +9,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "kommune-watcher": "cross-env NODE_ENV=development tsx src/scripts/kommune-watcher.ts",
-    "manual-sync": "cross-env NODE_ENV=development tsx src/scripts/manual-sync.ts"
+    "manual-sync": "cross-env NODE_ENV=development tsx src/scripts/manual-sync.ts",
+    "test-polygon-sync": "cross-env NODE_ENV=development tsx src/scripts/test-polygon-sync.ts"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.2.6",
@@ -23,6 +24,7 @@
     "chokidar": "^3.6.0",
     "gray-matter": "^4.0.3",
     "ol": "^10.5.0",
+    "osmtogeojson": "^3.0.0-beta.5",
     "proj4": "^2.17.0",
     "tailwindcss": "^4.1.7",
     "vue": "^3.5.14"
