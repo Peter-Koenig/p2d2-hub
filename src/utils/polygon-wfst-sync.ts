@@ -9,7 +9,7 @@ interface SyncResult {
 }
 
 interface PolygonRecord {
-  category: "admin_boundary" | "cemetery";
+  category: "administrative" | "cemetery";
   osm_id: string;
   name: string;
   geometry: any; // GeoJSON Geometry
@@ -17,7 +17,7 @@ interface PolygonRecord {
   updated_at: string;
   last_updated: string;
   cache_expires: string;
-  container_type: "admin_boundary" | "cemetery";
+  container_type: "administrative" | "cemetery";
   municipality: string;
   wp_name: string;
   osm_admin_level: number;
@@ -313,7 +313,7 @@ function convertToPolygonRecords(
   if (!geoJsonData.features) return [];
 
   return geoJsonData.features.map((feature: any) => ({
-    category: "admin_boundary",
+    category: "administrative",
     osm_id: feature.properties.osm_id?.toString() || "",
     name: feature.properties.name || "",
     geometry: feature.geometry,
@@ -323,7 +323,7 @@ function convertToPolygonRecords(
     cache_expires: new Date(
       Date.now() + 4 * 7 * 24 * 60 * 60 * 1000,
     ).toISOString(), // 4 Wochen
-    container_type: "admin_boundary",
+    container_type: "administrative",
     municipality: extractMunicipalityName(kommuneData.wp_name),
     wp_name: kommuneData.wp_name,
     osm_admin_level: level,

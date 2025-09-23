@@ -109,8 +109,8 @@ def main():
             with open(gml_output_file, 'w', encoding='utf-8') as f:
                 f.write(gml_content)
 
-            # Convert to WFS-T GML (for direct database insertion)
-            wfst_gml_content = gml_converter.convert_to_wfst_gml(polygon_features, args.kommune, level)
+            # Convert to WFS-T GML for direct database insertion
+            wfst_gml_content = gml_converter.convert_to_wfst_gml(polygon_features, args.kommune, level, "administrative")
 
             # Save WFS-T GML file
             wfst_gml_output_file = output_dir / f"{args.kommune.lower().replace(' ', '_').replace('(', '').replace(')', '')}_admin_level_{level}_wfst.gml"

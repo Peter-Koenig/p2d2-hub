@@ -104,7 +104,7 @@ def main():
             f.write(gml_content)
 
         # Convert to WFS-T GML (for direct database insertion)
-        wfst_gml_content = gml_converter.convert_to_wfst_gml(polygon_features, args.kommune, 8)
+        wfst_gml_content = gml_converter.convert_to_wfst_gml(polygon_features, args.kommune, 8, "cemetery")
 
         # Save WFS-T GML file
         wfst_gml_output_file = output_dir / f"{args.kommune.lower().replace(' ', '_').replace('(', '').replace(')', '')}_cemetery_wfst.gml"

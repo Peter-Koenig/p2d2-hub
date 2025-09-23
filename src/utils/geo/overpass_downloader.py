@@ -79,12 +79,11 @@ out geom;'''
     def build_cemetery_query(self, municipality_name: str) -> str:
         """Build cemetery query"""
         return f"""
-[out:json][timeout:{self.timeout}];
-area[name="{municipality_name}"]->.area_0;
+[out:json][timeout:{self.timeout}][maxsize:1073741824];
 (
-  way[landuse=cemetery][area!="no"](area.area_0);
-  relation[landuse=cemetery][type=multipolygon](area.area_0);
+  area[name="{municipality_name}"][boundary=administrative] -> .area0;
+  way[landuse=cemetery](area.area0);
+  relation[landuse=cemetery][type=multipolygon](area.area0);
 );
-(._;>;);
 out geom;
 """

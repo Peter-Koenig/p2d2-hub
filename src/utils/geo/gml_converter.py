@@ -157,7 +157,7 @@ class GMLConverter:
 
         return multipolygon
 
-    def convert_to_wfst_gml(self, polygon_features: List[Dict], municipality: str, admin_level: int) -> str:
+    def convert_to_wfst_gml(self, polygon_features: List[Dict], municipality: str, admin_level: int, container_type: str = "administrative") -> str:
         """Convert polygon features to WFS-T compatible GML format for direct insertion"""
 
         # Create a list to hold all container elements
@@ -174,9 +174,9 @@ class GMLConverter:
             # Add properties from feature
             properties = feature.get('properties', {})
 
-            # Category
-            category_elem = ET.SubElement(container, "p2d2:category")
-            category_elem.text = "admin_boundary"
+            # Container type (technical classification)
+            containertype_elem = ET.SubElement(container, "p2d2:container_type")
+            containertype_elem.text = container_type
 
             # OSM ID
             osm_id_elem = ET.SubElement(container, "p2d2:osm_id")
