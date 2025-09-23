@@ -89,41 +89,41 @@ def main():
         # Download cemetery data
         overpass_data = downloader.download_cemeteries(args.kommune)
 
-            # Convert to GeoJSON
-            geojson_data = convert_to_geojson(overpass_data)
+        # Convert to GeoJSON
+        geojson_data = convert_to_geojson(overpass_data)
 
-            # Extract only polygon features
-            polygon_features = gml_converter.extract_polygon_features(geojson_data)
+        # Extract only polygon features
+        polygon_features = gml_converter.extract_polygon_features(geojson_data)
 
-            # Convert to standard GML (for QGIS)
-            gml_content = gml_converter.convert_to_gml(polygon_features, args.kommune, 8)
+        # Convert to standard GML (for QGIS)
+        gml_content = gml_converter.convert_to_gml(polygon_features, args.kommune, 8)
 
-            # Save standard GML file
-            gml_output_file = output_dir / f"{args.kommune.lower().replace(' ', '_').replace('(', '').replace(')', '')}_cemetery.gml"
-            with open(gml_output_file, 'w', encoding='utf-8') as f:
-                f.write(gml_content)
+        # Save standard GML file
+        gml_output_file = output_dir / f"{args.kommune.lower().replace(' ', '_').replace('(', '').replace(')', '')}_cemetery.gml"
+        with open(gml_output_file, 'w', encoding='utf-8') as f:
+            f.write(gml_content)
 
-            # Convert to WFS-T GML (for direct database insertion)
-            wfst_gml_content = gml_converter.convert_to_wfst_gml(polygon_features, args.kommune, 8)
+        # Convert to WFS-T GML (for direct database insertion)
+        wfst_gml_content = gml_converter.convert_to_wfst_gml(polygon_features, args.kommune, 8)
 
-            # Save WFS-T GML file
-            wfst_gml_output_file = output_dir / f"{args.kommune.lower().replace(' ', '_').replace('(', '').replace(')', '')}_cemetery_wfst.gml"
-            with open(wfst_gml_output_file, 'w', encoding='utf-8') as f:
-                f.write(wfst_gml_content)
+        # Save WFS-T GML file
+        wfst_gml_output_file = output_dir / f"{args.kommune.lower().replace(' ', '_').replace('(', '').replace(')', '')}_cemetery_wfst.gml"
+        with open(wfst_gml_output_file, 'w', encoding='utf-8') as f:
+            f.write(wfst_gml_content)
 
-            # Save GeoJSON file (for debugging)
-            output_file = output_dir / f"{args.kommune.lower().replace(' ', '_').replace('(', '').replace(')', '')}_cemetery.geojson"
-            with open(output_file, 'w', encoding='utf-8') as f:
-                json.dump(geojson_data, f, indent=2, ensure_ascii=False)
+        # Save GeoJSON file (for debugging)
+        output_file = output_dir / f"{args.kommune.lower().replace(' ', '_').replace('(', '').replace(')', '')}_cemetery.geojson"
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(geojson_data, f, indent=2, ensure_ascii=False)
 
-            # Update result
-            feature_count = len(geojson_data.get('features', []))
-            result["files"]["cemetery"] = str(output_file)
-            result["gml_files"] = {"cemetery": str(gml_output_file)}
-            result["wfst_files"] = {"cemetery": str(wfst_gml_output_file)}
-            result["polygon_counts"]["cemetery"] = len(polygon_features)
+        # Update result
+        feature_count = len(geojson_data.get('features', []))
+        result["files"]["cemetery"] = str(output_file)
+        result["gml_files"] = {"cemetery": str(gml_output_file)}
+        result["wfst_files"] = {"cemetery": str(wfst_gml_output_file)}
+        result["polygon_counts"]["cemetery"] = len(polygon_features)
 
-            logger.info(f"Saved {len(polygon_features)} cemetery polygon features to {gml_output_file}, {wfst_gml_output_file} and {output_file}")
+        logger.info(f"Saved {len(polygon_features)} cemetery polygon features to {gml_output_file}, {wfst_gml_output_file} and {output_file}")
 
     except Exception as e:
         logger.error(f"Download failed: {e}")

@@ -80,10 +80,11 @@ out geom;'''
         """Build cemetery query"""
         return f"""
 [out:json][timeout:{self.timeout}];
-area[name="{municipality_name}"]->.searchArea;
+area[name="{municipality_name}"]->.area_0;
 (
-  way[landuse=cemetery](area.searchArea);
-  relation[landuse=cemetery][type=multipolygon](area.searchArea);
+  way[landuse=cemetery][area!="no"](area.area_0);
+  relation[landuse=cemetery][type=multipolygon](area.area_0);
 );
+(._;>;);
 out geom;
 """
