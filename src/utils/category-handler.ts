@@ -135,12 +135,24 @@ export class CategoryHandler {
     const state = mapState.getState();
     if (!state.selectedCategory) return "";
 
+    // Map UI category to database container_type
+    const categoryToContainer: Record<string, string> = {
+      cemeteries: "cemetery",
+      administrative: "administrative",
+    };
+
+    const containerType = categoryToContainer[state.selectedCategory];
+    if (!containerType) return "";
+
     const bbox = this.getCurrentViewBboxInActiveCRS();
 
-    // Build authorized WFS URL with category filter
+    // TEMPORARY: Use wp_name filter with hardcoded fallback
+    const wpName = "de-Köln"; // TODO: Get from selectedKommune
+
+    // Build authorized WFS URL with container_type filter
     return wfsAuthClient.buildAuthorizedWFSURL("p2d2_containers", {
       // bbox: bbox,
-      CQL_FILTER: `category='${state.selectedCategory}'`,
+      CQL_FILTER: `container_type='${containerType}' AND wp_name='${wpName}'`,
     });
   }
 

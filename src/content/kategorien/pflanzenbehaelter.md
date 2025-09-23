@@ -2,5 +2,6 @@
 title: Pflanzenbehälter
 icon: pflanzenbehaelter
 order: 6
-description: Wo sind Pflanzenbehälter in Köln?
+description: Wo stehen Pflanzenbehälter in Köln?
+containerType: "administrative"
 ---

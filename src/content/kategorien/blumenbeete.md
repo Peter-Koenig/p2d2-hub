@@ -1,6 +1,7 @@
 ---
 title: Blumenbeete
-icon: blumenbeet
-order: 2
-description: Abgleich der Daten zu Blumenbeeten
+icon: blumenbeete
+order: 3
+description: Wo stehen Blumenbeete in Köln?
+containerType: "administrative"
 ---
