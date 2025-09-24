@@ -9,8 +9,47 @@ const sorted = kategorien.sort(
 ---
 
 <script>
-    // PLACEHOLDER: Ready for new WFS implementation
-    console.log("KategorienGrid: Ready for clean WFS implementation");
+    import { mapState } from "../utils/map-state";
+
+    // Global window interface extensions
+    interface Window {
+        wfsManager: any;
+    }
+
+    // Phase 2: Event handler for category selection
+    let isHandlerBound = false;
+
+    if (typeof window !== "undefined" && !isHandlerBound) {
+        const handleCategoryClick = async (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            const button = target.closest(
+                "[data-category-slug]",
+            ) as HTMLElement;
+
+            if (button) {
+                const categorySlug = button.getAttribute("data-category-slug");
+                if (categorySlug && (window as any).wfsManager) {
+                    // Get current selected kommune from mapState
+                    const currentKommune = mapState.getSelectedKommune();
+
+                    if (currentKommune) {
+                        await (window as any).wfsManager.toggleLayer(
+                            currentKommune,
+                            categorySlug,
+                        );
+                    } else {
+                        console.warn(
+                            "[WFS] No kommune selected for category toggle",
+                        );
+                    }
+                }
+            }
+        };
+
+        // Bind event listener
+        document.addEventListener("click", handleCategoryClick);
+        isHandlerBound = true;
+    }
 </script>
 
 <div

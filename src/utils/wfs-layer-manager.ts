@@ -26,32 +26,70 @@ interface KommuneData {
 export class WFSLayerManager {
   private map: Map;
   private activeLayer: VectorLayer<VectorSource> | null = null;
+  // Phase 2: State-Tracking hinzufügen
+  private currentState: {
+    kommune: KommuneData | null;
+    categorySlug: string | null;
+  } = { kommune: null, categorySlug: null };
 
   constructor(map: Map) {
     this.map = map;
   }
 
   /**
-   * Display WFS layer for kommune/kategorie combination
+   * Phase 2: Toggle WFS layer for kommune/kategorie combination
+   * Smart toggle logic with state management
+   */
+  async toggleLayer(kommune: KommuneData, categorySlug: string): Promise<void> {
+    try {
+      const isSameSelection = this.isSameSelection(kommune, categorySlug);
+
+      if (isSameSelection && this.activeLayer) {
+        // Toggle OFF: Hide current layer
+        this.hideLayer();
+        this.clearButtonStates();
+      } else {
+        // Toggle ON: Show new layer (or switch to different)
+        await this.displayLayer(kommune, categorySlug);
+        this.updateButtonStates(kommune, categorySlug);
+      }
+    } catch (error) {
+      console.error("[WFS] Toggle failed:", error);
+    }
+  }
+
+  /**
+   * Phase 2: Enhanced displayLayer with state management
    */
   async displayLayer(
     kommune: KommuneData,
     categorySlug: string,
   ): Promise<void> {
     try {
-      // Clear existing layer
+      // Clear existing layer visibility
       if (this.activeLayer) {
-        this.map.removeLayer(this.activeLayer);
-        this.activeLayer = null;
+        this.activeLayer.setVisible(false); // Phase 2: Use visibility instead of remove
       }
 
       // Create layer config
       const config = this.buildLayerConfig(kommune, categorySlug);
 
-      // Create and add layer
-      const layer = await this.createWFSLayer(config);
-      this.map.addLayer(layer);
-      this.activeLayer = layer;
+      // Create new layer if needed, or reuse if same config
+      if (!this.activeLayer || !this.isSameSelection(kommune, categorySlug)) {
+        if (this.activeLayer) {
+          this.map.removeLayer(this.activeLayer);
+        }
+
+        const layer = await this.createWFSLayer(config);
+        this.map.addLayer(layer);
+        this.activeLayer = layer;
+      }
+
+      // Show layer
+      this.activeLayer.setVisible(true);
+
+      // Update state
+      this.currentState = { kommune, categorySlug };
 
       console.log(
         `[WFS] Layer displayed: ${config.wpName} - ${config.containerType}`,
@@ -62,12 +100,12 @@ export class WFSLayerManager {
   }
 
   /**
-   * Hide current active layer
+   * Phase 2: Enhanced hideLayer with state management
    */
   hideLayer(): void {
     if (this.activeLayer) {
-      this.map.removeLayer(this.activeLayer);
-      this.activeLayer = null;
+      this.activeLayer.setVisible(false); // Phase 2: Use visibility
+      this.currentState = { kommune: null, categorySlug: null };
       console.log("[WFS] Layer hidden");
     }
   }
@@ -170,6 +208,88 @@ export class WFSLayerManager {
    */
   hasActiveLayer(): boolean {
     return this.activeLayer !== null;
+  }
+
+  /**
+   * Check if selection is same as current
+   */
+  private isSameSelection(kommune: KommuneData, categorySlug: string): boolean {
+    return (
+      this.currentState.kommune?.slug === kommune.slug &&
+      this.currentState.categorySlug === categorySlug
+    );
+  }
+
+  /**
+   * Update button states for active kommune/category
+   */
+  private updateButtonStates(kommune: KommuneData, categorySlug: string): void {
+    // Clear all button states first
+    this.clearButtonStates();
+
+    // Set active states
+    this.setKommuneButtonState(kommune.slug, true);
+    this.setCategoryButtonState(categorySlug, true);
+  }
+
+  /**
+   * Clear all button active states
+   */
+  private clearButtonStates(): void {
+    // Clear all kommune buttons
+    const kommuneButtons = document.querySelectorAll("[data-kommune-slug]");
+    kommuneButtons.forEach((button) => {
+      button.classList.remove("wfs-active");
+    });
+
+    // Clear all category buttons
+    const categoryButtons = document.querySelectorAll("[data-category-slug]");
+    categoryButtons.forEach((button) => {
+      button.classList.remove("wfs-active");
+    });
+  }
+
+  /**
+   * Set kommune button state
+   */
+  private setKommuneButtonState(kommuneSlug: string, active: boolean): void {
+    const button = document.querySelector(
+      `[data-kommune-slug="${kommuneSlug}"]`,
+    );
+    if (button) {
+      if (active) {
+        button.classList.add("wfs-active");
+      } else {
+        button.classList.remove("wfs-active");
+      }
+    }
+  }
+
+  /**
+   * Set category button state
+   */
+  private setCategoryButtonState(categorySlug: string, active: boolean): void {
+    const button = document.querySelector(
+      `[data-category-slug="${categorySlug}"]`,
+    );
+    if (button) {
+      if (active) {
+        button.classList.add("wfs-active");
+      } else {
+        button.classList.remove("wfs-active");
+      }
+    }
+  }
+
+  /**
+   * Get current state (for debugging)
+   */
+  getCurrentState() {
+    return {
+      ...this.currentState,
+      hasActiveLayer: this.hasActiveLayer(),
+      isVisible: this.activeLayer?.getVisible() || false,
+    };
   }
 }
 

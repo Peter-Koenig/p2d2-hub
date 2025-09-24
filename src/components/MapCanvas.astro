@@ -232,6 +232,9 @@
                         return;
                     }
 
+                    // Store selected kommune in state
+                    mapState.setSelectedKommune(d);
+
                     // Set local CRS from detail if available
                     const localCRS = (d?.projection as string) || undefined;
                     mapState.setLocalCRS(localCRS);
@@ -341,6 +344,9 @@
                     toNewViewPreservingScale(map, state.activeCRS);
 
                     // PLACEHOLDER: Ready for new WFS implementation
+
+                    // Store selected kommune in state
+                    mapState.setSelectedKommune(detail);
 
                     // Dispatch focus event after map initialization
                     setTimeout(() => {
