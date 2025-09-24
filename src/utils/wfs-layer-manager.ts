@@ -1,9 +1,5 @@
-/**
- * WFS Layer Manager - Phase 1: Basic Display
- * State-of-the-Art WFS Layer Management für p2d2
- */
-
-import type { Map } from "ol";
+// WFS Layer Manager - Complete corrected version
+import { Map as OLMap } from "ol";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import { Style, Stroke, Fill } from "ol/style";
@@ -12,34 +8,58 @@ import { wfsAuthClient } from "./wfs-auth";
 
 // Type definitions
 interface WFSLayerConfig {
-  wpName: string; // 'de-Köln', 'de-Frankfurt am Main'
-  containerType: string; // 'cemetery', 'administrative'
-  osmAdminLevel: number; // 8, 9, etc.
+  wpName: string;
+  containerType: string;
+  osmAdminLevel: number;
 }
 
 interface KommuneData {
-  slug: string; // 'koeln'
-  wp_name: string; // 'de-Köln'
-  osmAdminLevels: number[]; // [6, 9, 10]
+  slug: string;
+  wp_name: string; // KORRIGIERT: wp_name statt wpname
+  osmAdminLevels: number[];
 }
 
 export class WFSLayerManager {
-  private map: Map;
+  private map: OLMap; // KORRIGIERT: Typ-Alias
   private activeLayer: VectorLayer<VectorSource> | null = null;
-  // Phase 2: State-Tracking hinzufügen
   private currentState: {
     kommune: KommuneData | null;
     categorySlug: string | null;
   } = { kommune: null, categorySlug: null };
+  private layerCache: Map<string, VectorLayer<VectorSource>> = new Map(); // KORRIGIERT: JavaScript Map
 
-  constructor(map: Map) {
+  constructor(map: OLMap) {
     this.map = map;
   }
 
-  /**
-   * Phase 2: Toggle WFS layer for kommune/kategorie combination
-   * Smart toggle logic with state management
-   */
+  // NEW: switchLayer method für direkten Kommune-Wechsel
+  async switchLayer(kommune: KommuneData, categorySlug: string): Promise<void> {
+    try {
+      console.log(
+        "[WFS] Switching layer to:",
+        kommune.wp_name,
+        "-",
+        categorySlug,
+      );
+
+      // ALWAYS hide current layer first
+      if (this.activeLayer) {
+        this.activeLayer.setVisible(false);
+        console.log("[WFS] Hidden previous layer");
+      }
+
+      // Clear UI state
+      this.clearButtonStates();
+
+      // Show new layer
+      await this.displayLayer(kommune, categorySlug);
+      this.updateButtonStates(kommune, categorySlug);
+    } catch (error) {
+      console.error("[WFS] Switch failed:", error);
+    }
+  }
+
+  // EXISTING toggleLayer method für Kategorie-Klicks
   async toggleLayer(kommune: KommuneData, categorySlug: string): Promise<void> {
     try {
       const isSameSelection = this.isSameSelection(kommune, categorySlug);
@@ -49,7 +69,7 @@ export class WFSLayerManager {
         this.hideLayer();
         this.clearButtonStates();
       } else {
-        // Toggle ON: Show new layer (or switch to different)
+        // Toggle ON: Show new layer
         await this.displayLayer(kommune, categorySlug);
         this.updateButtonStates(kommune, categorySlug);
       }
@@ -58,37 +78,33 @@ export class WFSLayerManager {
     }
   }
 
-  /**
-   * Phase 2: Enhanced displayLayer with state management
-   */
   async displayLayer(
     kommune: KommuneData,
     categorySlug: string,
   ): Promise<void> {
     try {
-      // Clear existing layer visibility
+      // Hide existing layer but keep cached
       if (this.activeLayer) {
-        this.activeLayer.setVisible(false); // Phase 2: Use visibility instead of remove
+        this.activeLayer.setVisible(false);
       }
 
-      // Create layer config
+      this.clearButtonStates();
+
       const config = this.buildLayerConfig(kommune, categorySlug);
+      const cacheKey = `${config.wpName}-${config.containerType}-${config.osmAdminLevel}`;
 
-      // Create new layer if needed, or reuse if same config
-      if (!this.activeLayer || !this.isSameSelection(kommune, categorySlug)) {
-        if (this.activeLayer) {
-          this.map.removeLayer(this.activeLayer);
-        }
-
-        const layer = await this.createWFSLayer(config);
+      let layer = this.layerCache.get(cacheKey);
+      if (!layer) {
+        console.log("[WFS] Creating new layer for:", cacheKey);
+        layer = await this.createWFSLayer(config);
+        this.layerCache.set(cacheKey, layer);
         this.map.addLayer(layer);
-        this.activeLayer = layer;
+      } else {
+        console.log("[WFS] Reusing cached layer for:", cacheKey);
       }
 
-      // Show layer
+      this.activeLayer = layer;
       this.activeLayer.setVisible(true);
-
-      // Update state
       this.currentState = { kommune, categorySlug };
 
       console.log(
@@ -99,104 +115,73 @@ export class WFSLayerManager {
     }
   }
 
-  /**
-   * Phase 2: Enhanced hideLayer with state management
-   */
   hideLayer(): void {
     if (this.activeLayer) {
-      this.activeLayer.setVisible(false); // Phase 2: Use visibility
+      this.activeLayer.setVisible(false);
       this.currentState = { kommune: null, categorySlug: null };
+      this.clearButtonStates();
       console.log("[WFS] Layer hidden");
     }
   }
 
-  /**
-   * Build WFS layer configuration from kommune and category
-   */
+  // KORRIGIERT: buildLayerConfig
   private buildLayerConfig(
     kommune: KommuneData,
     categorySlug: string,
   ): WFSLayerConfig {
-    // Map category to container type
     const containerType = this.getContainerType(categorySlug);
 
-    // Determine admin level
-    const osmAdminLevel = this.getOsmAdminLevel(kommune, containerType);
-
     return {
-      wpName: kommune.wp_name,
+      wpName: kommune.wp_name, // KORRIGIERT: wp_name statt wpname
       containerType,
-      osmAdminLevel,
+      osmAdminLevel: this.getOsmAdminLevel(kommune, containerType),
     };
   }
 
-  /**
-   * Map category slug to container type
-   */
   private getContainerType(categorySlug: string): string {
     const categoryMapping: Record<string, string> = {
       cemeteries: "cemetery",
       administrative: "administrative",
-      // Erweiterbar für weitere Kategorien
     };
-
     return categoryMapping[categorySlug] || "cemetery";
   }
 
-  /**
-   * Determine OSM admin level based on kommune and container type
-   */
   private getOsmAdminLevel(
     kommune: KommuneData,
     containerType: string,
   ): number {
     if (containerType === "cemetery") {
-      return 8; // Immer Level 8 für Friedhöfe
+      return 8;
     }
-
     if (containerType === "administrative") {
-      // Zweithöchste Gliederungsebene
       const levels = kommune.osmAdminLevels || [];
-      return levels.length > 1 ? levels[1] : 8; // Fallback zu Level 8
+      return levels.length > 1 ? levels[1] : 8;
     }
-
-    return 8; // Fallback
+    return 8;
   }
 
-  /**
-   * Create OpenLayers WFS VectorLayer
-   */
   private async createWFSLayer(
     config: WFSLayerConfig,
   ): Promise<VectorLayer<VectorSource>> {
-    // Build WFS URL with proper encoding
     console.log("[WFS] WFS request with:", {
       wp_name: config.wpName,
       containertype: config.containerType,
       osmadminlevel: config.osmAdminLevel,
     });
 
-    // Create properly encoded CQL filter - wp_name should NOT be double-encoded
     const cqlFilter = `wp_name='${config.wpName}' AND container_type='${config.containerType}' AND osm_admin_level=${config.osmAdminLevel}`;
-
     const wfsUrl = wfsAuthClient.buildAuthorizedWFSURL("p2d2_containers", {
       CQL_FILTER: cqlFilter,
     });
 
-    // Create vector layer
     const layer = new VectorLayer({
       source: new VectorSource({
         url: wfsUrl,
         format: new GeoJSON(),
       }),
       style: new Style({
-        stroke: new Stroke({
-          color: "#FF6900",
-          width: 2,
-        }),
-        fill: new Fill({
-          color: "rgba(255, 105, 0, 0.1)",
-        }),
+        stroke: new Stroke({ color: "#FF6900", width: 2 }),
+        fill: new Fill({ color: "rgba(255, 105, 0, 0.1)" }),
       }),
       visible: true,
     });
@@ -204,23 +189,7 @@ export class WFSLayerManager {
     return layer;
   }
 
-  /**
-   * Get current active layer (for debugging)
-   */
-  getActiveLayer(): VectorLayer<VectorSource> | null {
-    return this.activeLayer;
-  }
-
-  /**
-   * Check if layer is currently displayed
-   */
-  hasActiveLayer(): boolean {
-    return this.activeLayer !== null;
-  }
-
-  /**
-   * Check if selection is same as current
-   */
+  // Helper methods
   private isSameSelection(kommune: KommuneData, categorySlug: string): boolean {
     return (
       this.currentState.kommune?.slug === kommune.slug &&
@@ -228,77 +197,31 @@ export class WFSLayerManager {
     );
   }
 
-  /**
-   * Update button states for active kommune/category
-   */
-  private updateButtonStates(kommune: KommuneData, categorySlug: string): void {
-    // Clear all button states first
-    this.clearButtonStates();
-
-    // Set active states
-    this.setKommuneButtonState(kommune.slug, true);
-    this.setCategoryButtonState(categorySlug, true);
-  }
-
-  /**
-   * Clear all button active states
-   */
   private clearButtonStates(): void {
-    // Clear all kommune buttons
-    const kommuneButtons = document.querySelectorAll("[data-kommune-slug]");
-    kommuneButtons.forEach((button) => {
-      button.classList.remove("wfs-active");
-    });
-
-    // Clear all category buttons
-    const categoryButtons = document.querySelectorAll("[data-category-slug]");
-    categoryButtons.forEach((button) => {
-      button.classList.remove("wfs-active");
-    });
+    document
+      .querySelectorAll(".wfs-active")
+      .forEach((btn) => btn.classList.remove("wfs-active"));
   }
 
-  /**
-   * Set kommune button state
-   */
-  private setKommuneButtonState(kommuneSlug: string, active: boolean): void {
+  private updateButtonStates(kommune: KommuneData, categorySlug: string): void {
+    this.clearButtonStates();
     const button = document.querySelector(
-      `[data-kommune-slug="${kommuneSlug}"]`,
+      `[data-kommune-slug="${kommune.slug}"]`,
     );
     if (button) {
-      if (active) {
-        button.classList.add("wfs-active");
-      } else {
-        button.classList.remove("wfs-active");
-      }
+      button.classList.add("wfs-active");
     }
   }
 
-  /**
-   * Set category button state
-   */
-  private setCategoryButtonState(categorySlug: string, active: boolean): void {
-    const button = document.querySelector(
-      `[data-category-slug="${categorySlug}"]`,
-    );
-    if (button) {
-      if (active) {
-        button.classList.add("wfs-active");
-      } else {
-        button.classList.remove("wfs-active");
-      }
-    }
+  getActiveLayer(): VectorLayer<VectorSource> | null {
+    return this.activeLayer;
   }
 
-  /**
-   * Get current state (for debugging)
-   */
-  getCurrentState() {
-    return {
-      ...this.currentState,
-      hasActiveLayer: this.hasActiveLayer(),
-      isVisible: this.activeLayer?.getVisible() || false,
-    };
+  hasActiveLayer(): boolean {
+    return this.activeLayer !== null && this.activeLayer.getVisible();
   }
 }
+
+export const createWFSLayerManager = (map: OLMap) => new WFSLayerManager(map);
 
 export default WFSLayerManager;

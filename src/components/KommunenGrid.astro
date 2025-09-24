@@ -1,255 +1,133 @@
 ---
 import { getCollection } from "astro:content";
-import { KommunenClickHandler } from '../utils/kommunen-click-handler';
-
+import KommunenClickHandler from "../utils/kommunen-click-handler";
 
 const kommunen = await getCollection("kommunen");
 const sorted = kommunen.sort(
-  (a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),
+    (a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),
 );
 
 // Create client-side accessible kommune data map
-const kommuneDataMap: Record<string, { wp_name: string; osmAdminLevels: number[] }> = {};
-kommunen.forEach(kommune => {
-
-
-  kommuneDataMap[kommune.slug] = {
-    wp_name: kommune.data.wp_name,
-    osmAdminLevels: kommune.data.osmAdminLevels || []
-  };
+const kommuneDataMap: Record<
+    string,
+    { wp_name: string; osmAdminLevels: number[] }
+> = {};
+kommunen.forEach((kommune) => {
+    kommuneDataMap[kommune.slug] = {
+        wp_name: kommune.data.wp_name, // KORRIGIERT: wp_name statt wpname
+        osmAdminLevels: kommune.data.osmAdminLevels || [],
+    };
 });
-
-
 ---
 
 <div
-  class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 items-stretch max-w-5xl mx-auto py-12 mb-section"
-  data-kommune-map={JSON.stringify(kommuneDataMap)}
+    class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 items-stretch max-w-5xl mx-auto py-12 mb-section"
+    data-kommune-map={JSON.stringify(kommuneDataMap)}
 >
-  {sorted.map((entry) => {
-    const m = entry.data.map || {};
-    const detail = {
-      center: m.center,
-      extent: m.extent,
-      zoom: m.zoom,
-      projection: m.projection,
-      extra: m.extra,
-      slug: entry.slug
-    };
+    {
+        sorted.map((entry) => {
+            const m = entry.data.map || {};
+            const detail = {
+                center: m.center,
+                extent: m.extent,
+                zoom: m.zoom,
+                projection: m.projection,
+                extra: m.extra,
+                slug: entry.slug,
+            };
 
-    // Validate data before dispatch
-    const hasValidCenter = detail.center && Array.isArray(detail.center) && detail.center.length === 2 && detail.center.every(Number.isFinite);
-    const hasValidExtent = detail.extent && Array.isArray(detail.extent) && detail.extent.length === 4 && detail.extent.every(Number.isFinite);
-    const hasValidZoom = detail.zoom && Number.isFinite(detail.zoom);
+            // Validate data before dispatch
+            const hasValidCenter =
+                detail.center &&
+                Array.isArray(detail.center) &&
+                detail.center.length === 2 &&
+                detail.center.every(Number.isFinite);
+            const hasValidExtent =
+                detail.extent &&
+                Array.isArray(detail.extent) &&
+                detail.extent.length === 4 &&
+                detail.extent.every(Number.isFinite);
+            const hasValidZoom = detail.zoom && Number.isFinite(detail.zoom);
 
-    if (!hasValidCenter && !hasValidExtent) {
-      console.warn('[kommunen] invalid data for dispatch - missing both center and extent', { slug: entry.slug, detail });
-      detail.center = undefined;
-      detail.extent = undefined;
+            if (!hasValidCenter && !hasValidExtent) {
+                console.warn(
+                    "[kommunen] invalid data for dispatch - missing both center and extent",
+                    { slug: entry.slug, detail },
+                );
+            }
+            const colorStripe = entry.data.colorStripe ?? "#FF6900";
+
+            return (
+                <button
+                    type="button"
+                    class="kommunen-card relative bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group text-left w-full h-full flex flex-col"
+                    style={`--color-stripe: ${colorStripe}`}
+                    aria-label={`Kommune ${entry.data.title} auswählen`}
+                    data-slug={entry.slug}
+                    data-detail={JSON.stringify(detail)}
+                    data-kommune-slug={entry.slug}
+                >
+                    <div class="absolute -inset-2 z-0 pointer-events-none">
+                        <div class="w-full h-full mx-auto opacity-30 blur-lg filter bg-gradient-to-r from-primary-600 to-primary-400 pointer-events-none" />
+                    </div>
+
+                    <div
+                        class="absolute top-0 left-0 w-full h-1.5 z-10"
+                        style={`background-color: ${colorStripe}`}
+                    />
+
+                    <div class="relative z-10 p-6 pt-6 flex flex-col items-start gap-3">
+                        <h3 class="font-poppins font-bold text-xl mt-2">
+                            {entry.data.title}
+                        </h3>
+                        <div class="font-inter text-base text-gray-700 leading-tight">
+                            {entry.body
+                                ? entry.body
+                                : `Entdecke Projekte in ${entry.data.title}`}
+                        </div>
+                    </div>
+
+                    <div class="absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 group-hover:shadow-[0_0_32px_4px_rgba(255,105,0,0.3)] z-10" />
+                </button>
+            );
+        })
     }
-    const colorStripe = entry.data.colorStripe ?? '#FF6900';
-
-    // Frontmatter validation
-    if (m.center && (!Array.isArray(m.center) || m.center.length !== 2 || !m.center.every(Number.isFinite))) {
-      console.warn('[kommunen] invalid frontmatter center', entry.slug, { center: m.center });
-    }
-    if (m.extent && (!Array.isArray(m.extent) || m.extent.length !== 4 || !m.extent.every(Number.isFinite))) {
-      console.warn('[kommunen] invalid frontmatter extent', entry.slug, { extent: m.extent });
-    }
-
-    return (
-      <button
-      type="button"
-      class="kommunen-card relative bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group text-left w-full h-full flex flex-col"
-      style={`--color-stripe: ${colorStripe}`}
-      aria-label={`Kommune ${entry.data.title} auswählen`}
-      data-slug={entry.slug}
-      data-detail={JSON.stringify(detail)}
-      data-kommune-slug={entry.slug}
-    >
-        <!-- Permanent Glow-Overlay -->
-        <div class="absolute -inset-2 z-0 pointer-events-none">
-          <div
-            class="w-full h-full mx-auto opacity-30 blur-lg filter bg-gradient-to-r from-primary-600 to-primary-400 pointer-events-none"
-          >
-          </div>
-        </div>
-
-        <!-- Farbiger Streifen oben -->
-        <div class="absolute top-0 left-0 w-full h-1.5 z-10" style={`background-color: ${colorStripe}`}></div>
-
-        <!-- Content -->
-        <div class="relative z-10 p-6 pt-6 flex flex-col items-start gap-3">
-          <h3 class="font-poppins font-bold text-xl mt-2">{entry.data.title}</h3>
-          <div class="font-inter text-base text-gray-700 leading-tight">
-            {entry.body ? entry.body : `Entdecke Projekte in ${entry.data.title}`}
-          </div>
-        </div>
-
-        <!-- Hover Glow -->
-        <div
-          class="absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 group-hover:shadow-[0_0_32px_4px_rgba(255,105,0,0.3)] z-10"
-        >
-        </div>
-      </button>
-    );
-  })}
 </div>
 
-<style>
-  [style*="--color-stripe"] .group:hover .absolute.inset-0 {
-    box-shadow: 0 0 32px 4px color-mix(in srgb, var(--color-stripe) 30%, transparent);
-  }
-
-  /* Ensure button is always clickable */
-  .kommunen-card {
-    position: relative;
-    z-index: 20;
-  }
-
-  .kommunen-card > *:not(button) {
-    pointer-events: none;
-  }
-</style>
-
 <script>
-  import { KommunenClickHandler } from '../utils/kommunen-click-handler';
+    import KommunenClickHandler from "../utils/kommunen-click-handler";
 
-  let kommunenHandler: KommunenClickHandler | null = null;
-  let isHandlerBound = false;
+    let kommunenHandler: KommunenClickHandler | null = null;
+    let isHandlerBound = false;
 
-  if (typeof window !== 'undefined') {
-    // Prevent duplicate handler binding
-    if (!(window as any).__p2d2KommunenHandlerBound && !isHandlerBound) {
-      (window as any).__p2d2KommunenHandlerBound = true;
-      isHandlerBound = true;
+    if (typeof window !== "undefined") {
+        if (!(window as any).__p2d2KommunenHandlerBound && !isHandlerBound) {
+            (window as any).__p2d2KommunenHandlerBound = true;
+            isHandlerBound = true;
 
-      // Wait for DOM to be ready to find the specific grid container
-      const initHandler = () => {
-        kommunenHandler = new KommunenClickHandler();
-        kommunenHandler.bind();
+            const initHandler = () => {
+                kommunenHandler = new KommunenClickHandler();
+                kommunenHandler.bind();
+                // ENTFERNT: addWFSLayerToggleHandler(); - war redundant!
+            };
 
-        // Add WFS layer toggle handler
-        addWFSLayerToggleHandler();
-      };
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", initHandler);
+            } else {
+                setTimeout(initHandler, 100);
+            }
 
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initHandler);
-      } else {
-        setTimeout(initHandler, 100);
-      }
-
-      // Cleanup function for HMR
-      if (typeof import.meta !== 'undefined' && import.meta.hot) {
-        import.meta.hot.dispose(() => {
-          if (kommunenHandler) {
-            kommunenHandler.unbind();
-            kommunenHandler = null;
-          }
-          (window as any).__p2d2KommunenHandlerBound = false;
-          isHandlerBound = false;
-        });
-      }
-    }
-  }
-
-  // WFS Layer Toggle Handler - Uses real content collection data
-  function addWFSLayerToggleHandler() {
-    if (typeof window === 'undefined') return;
-
-    document.addEventListener('click', async (event) => {
-      const target = event.target as HTMLElement;
-      const button = target.closest('[data-kommune-slug]');
-
-      if (!button) return;
-
-      const kommuneSlug = button.getAttribute('data-kommune-slug');
-      if (!kommuneSlug) return;
-
-
-
-
-      // Get full kommune data from embedded content collection
-      const kommuneData = getKommuneDataFromHTML(kommuneSlug);
-      if (!kommuneData) {
-        console.error('[WFS] Kommune data not found for slug:', kommuneSlug);
-        return;
-      }
-
-
-
-
-
-      // WFS-LAYER-TOGGLE with real content collection data
-      if ((window as any).wfsManager) {
-        const selectedCategory = (window as any).mapState?.getSelectedCategory?.();
-
-        if (selectedCategory) {
-          const wpNameForCQL = kommuneData.wp_name;
-          const containerTypeForCQL = selectedCategory;
-          const adminLevelForCQL = kommuneData.osmAdminLevels?.[1] || 8;
-
-
-
-
-
-
-
-            (window as any).wfsManager.displayLayer(kommuneData, selectedCategory);
-        } else {
-          console.log('[WFS] No category selected, skipping WFS layer toggle');
+            // Cleanup für HMR
+            if (typeof import.meta !== "undefined" && import.meta.hot) {
+                import.meta.hot.dispose(() => {
+                    if (kommunenHandler) {
+                        kommunenHandler.unbind();
+                        kommunenHandler = null;
+                    }
+                    (window as any).__p2d2KommunenHandlerBound = false;
+                    isHandlerBound = false;
+                });
+            }
         }
-      }
-    });
-  }
-
-  // Get kommune data from embedded HTML data attribute
-  function getKommuneDataFromHTML(slug: string) {
-    try {
-      const gridContainer = document.querySelector('.grid.grid-cols-1');
-      if (!gridContainer) {
-        console.error('[WFS] Grid container not found');
-        return null;
-      }
-
-      const kommuneMapStr = gridContainer.getAttribute('data-kommune-map');
-      if (!kommuneMapStr) {
-        console.error('[WFS] Kommune data map not found in HTML');
-        return null;
-      }
-
-      const kommuneMap = JSON.parse(kommuneMapStr);
-
-
-      const kommuneData = kommuneMap[slug];
-
-      if (!kommuneData) {
-        console.error('[WFS] Kommune data not found for slug:', slug);
-
-        return null;
-      }
-
-
-      return kommuneData;
-    } catch (error) {
-      console.error('[WFS] Failed to get kommune data:', error);
-      return null;
     }
-  }
-
-  // Enhanced state restoration on page load
-  if (typeof window !== 'undefined') {
-    const restoreLastSelection = () => {
-      if (kommunenHandler) {
-        kommunenHandler.restoreLastSelection();
-      }
-    };
-
-    // Restore selection when DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', restoreLastSelection);
-    } else {
-      setTimeout(restoreLastSelection, 200);
-    }
-  }
 </script>
