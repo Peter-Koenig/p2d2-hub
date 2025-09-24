@@ -163,7 +163,7 @@ export default class KommunenClickHandler {
       "[WFS] Auto-switching layer for kommune change to:",
       detail.slug,
     );
-    (window as any).wfsManager.switchLayer(detail, selectedCategory);
+    (window as any).wfsManager.displayLayer(detail, selectedCategory);
   }
 
   private dispatchKommunenFocus(detail: KommunenDetail): void {

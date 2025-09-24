@@ -95,6 +95,10 @@ class MapStateManager {
     return this.state.selectedKommune;
   }
 
+  getSelectedCategory(): string | null {
+    return this.state.selectedCategory;
+  }
+
   // Restore state from localStorage
   restoreFromStorage(): void {
     try {

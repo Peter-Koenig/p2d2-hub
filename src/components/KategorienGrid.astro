@@ -28,19 +28,39 @@ const sorted = kategorien.sort(
 
             if (button) {
                 const categorySlug = button.getAttribute("data-category-slug");
-                if (categorySlug && (window as any).wfsManager) {
-                    // Get current selected kommune from mapState
-                    const currentKommune = mapState.getSelectedKommune();
+                if (categorySlug) {
+                    console.log("[DEBUG] Category clicked:", categorySlug);
 
-                    if (currentKommune) {
-                        await (window as any).wfsManager.toggleLayer(
-                            currentKommune,
-                            categorySlug,
-                        );
-                    } else {
-                        console.warn(
-                            "[WFS] No kommune selected for category toggle",
-                        );
+                    // NEU HINZUFÜGEN - Kategorie-Highlighting:
+                    document
+                        .querySelectorAll("[data-category-slug]")
+                        .forEach((btn) => btn.classList.remove("active"));
+                    button.classList.add("active");
+
+                    // ✅ FIX: Kategorie-State setzen BEVOR WFS-Toggle!
+                    mapState.setSelectedCategory(categorySlug);
+
+                    console.log(
+                        "[DEBUG] Selected category set to:",
+                        mapState.getSelectedCategory(),
+                    );
+
+                    if ((window as any).wfsManager) {
+                        // Get current selected kommune from mapState
+                        const currentKommune = mapState.getSelectedKommune();
+
+                        console.log("[DEBUG] Current kommune:", currentKommune);
+
+                        if (currentKommune) {
+                            await (window as any).wfsManager.toggleLayer(
+                                currentKommune,
+                                categorySlug,
+                            );
+                        } else {
+                            console.warn(
+                                "[WFS] No kommune selected for category toggle",
+                            );
+                        }
                     }
                 }
             }
