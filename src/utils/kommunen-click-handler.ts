@@ -10,6 +10,14 @@ export interface KommunenDetail {
   projection?: string;
   extra?: any;
   slug?: string;
+  wp_name?: string;
+  osmAdminLevels?: number[];
+}
+
+export interface KommuneData {
+  slug: string;
+  wp_name: string;
+  osmAdminLevels: number[];
 }
 
 export class KommunenClickHandler {
@@ -95,10 +103,40 @@ export class KommunenClickHandler {
     this.processingButtons.add(button);
 
     try {
-      const detail = this.extractDetailFromButton(button);
-      if (!detail) {
+      const slug = button.getAttribute("data-slug");
+      if (!slug) {
+        console.warn("[kommunen-handler] No slug found for button");
         return;
       }
+
+      console.log("[kommunen-handler] Loading kommune data for:", slug);
+
+      // Get full kommune data from content collection
+      const kommuneData = this.getKommuneData(slug);
+      if (!kommuneData) {
+        console.error(
+          "[kommunen-handler] Kommune data not found for slug:",
+          slug,
+        );
+        return;
+      }
+
+      console.log("[kommunen-handler] Found kommune:", {
+        wp_name: kommuneData.wp_name,
+        adminLevels: kommuneData.osmAdminLevels,
+      });
+
+      // Extract map detail from button
+      const mapDetail = this.extractDetailFromButton(button);
+      if (!mapDetail) {
+        return;
+      }
+
+      // Combine map detail with kommune data
+      const detail: KommunenDetail = {
+        ...mapDetail,
+        ...kommuneData,
+      };
 
       console.log(
         "[kommunen-handler] Processing click for:",
@@ -170,6 +208,41 @@ export class KommunenClickHandler {
         "[kommunen-handler] Could not restore last selection:",
         error,
       );
+    }
+  }
+
+  /**
+   * Get full kommune data from embedded content collection data
+   */
+  private getKommuneData(slug: string): KommuneData | null {
+    try {
+      const gridContainer = document.querySelector(".grid.grid-cols-1");
+      if (!gridContainer) {
+        console.error("[kommunen-handler] Grid container not found");
+        return null;
+      }
+
+      const kommuneMapStr = gridContainer.getAttribute("data-kommune-map");
+      if (!kommuneMapStr) {
+        console.error("[kommunen-handler] Kommune data map not found in HTML");
+        return null;
+      }
+
+      const kommuneMap: Record<string, KommuneData> = JSON.parse(kommuneMapStr);
+      const kommuneData = kommuneMap[slug];
+
+      if (!kommuneData) {
+        console.error(
+          "[kommunen-handler] Kommune data not found for slug:",
+          slug,
+        );
+        return null;
+      }
+
+      return kommuneData;
+    } catch (error) {
+      console.error("[kommunen-handler] Failed to get kommune data:", error);
+      return null;
     }
   }
 

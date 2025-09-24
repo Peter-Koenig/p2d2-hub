@@ -7,10 +7,24 @@ const kommunen = await getCollection("kommunen");
 const sorted = kommunen.sort(
   (a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),
 );
+
+// Create client-side accessible kommune data map
+const kommuneDataMap: Record<string, { wp_name: string; osmAdminLevels: number[] }> = {};
+kommunen.forEach(kommune => {
+
+
+  kommuneDataMap[kommune.slug] = {
+    wp_name: kommune.data.wp_name,
+    osmAdminLevels: kommune.data.osmAdminLevels || []
+  };
+});
+
+
 ---
 
 <div
   class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 items-stretch max-w-5xl mx-auto py-12 mb-section"
+  data-kommune-map={JSON.stringify(kommuneDataMap)}
 >
   {sorted.map((entry) => {
     const m = entry.data.map || {};
@@ -51,6 +65,7 @@ const sorted = kommunen.sort(
       aria-label={`Kommune ${entry.data.title} auswählen`}
       data-slug={entry.slug}
       data-detail={JSON.stringify(detail)}
+      data-kommune-slug={entry.slug}
     >
         <!-- Permanent Glow-Overlay -->
         <div class="absolute -inset-2 z-0 pointer-events-none">
@@ -113,6 +128,9 @@ const sorted = kommunen.sort(
       const initHandler = () => {
         kommunenHandler = new KommunenClickHandler();
         kommunenHandler.bind();
+
+        // Add WFS layer toggle handler
+        addWFSLayerToggleHandler();
       };
 
       if (document.readyState === 'loading') {
@@ -132,6 +150,90 @@ const sorted = kommunen.sort(
           isHandlerBound = false;
         });
       }
+    }
+  }
+
+  // WFS Layer Toggle Handler - Uses real content collection data
+  function addWFSLayerToggleHandler() {
+    if (typeof window === 'undefined') return;
+
+    document.addEventListener('click', async (event) => {
+      const target = event.target as HTMLElement;
+      const button = target.closest('[data-kommune-slug]');
+
+      if (!button) return;
+
+      const kommuneSlug = button.getAttribute('data-kommune-slug');
+      if (!kommuneSlug) return;
+
+
+
+
+      // Get full kommune data from embedded content collection
+      const kommuneData = getKommuneDataFromHTML(kommuneSlug);
+      if (!kommuneData) {
+        console.error('[WFS] Kommune data not found for slug:', kommuneSlug);
+        return;
+      }
+
+
+
+
+
+      // WFS-LAYER-TOGGLE with real content collection data
+      if ((window as any).wfsManager) {
+        const selectedCategory = (window as any).mapState?.getSelectedCategory?.();
+
+        if (selectedCategory) {
+          const wpNameForCQL = kommuneData.wp_name;
+          const containerTypeForCQL = selectedCategory;
+          const adminLevelForCQL = kommuneData.osmAdminLevels?.[1] || 8;
+
+
+
+
+
+
+
+            (window as any).wfsManager.displayLayer(kommuneData, selectedCategory);
+        } else {
+          console.log('[WFS] No category selected, skipping WFS layer toggle');
+        }
+      }
+    });
+  }
+
+  // Get kommune data from embedded HTML data attribute
+  function getKommuneDataFromHTML(slug: string) {
+    try {
+      const gridContainer = document.querySelector('.grid.grid-cols-1');
+      if (!gridContainer) {
+        console.error('[WFS] Grid container not found');
+        return null;
+      }
+
+      const kommuneMapStr = gridContainer.getAttribute('data-kommune-map');
+      if (!kommuneMapStr) {
+        console.error('[WFS] Kommune data map not found in HTML');
+        return null;
+      }
+
+      const kommuneMap = JSON.parse(kommuneMapStr);
+
+
+      const kommuneData = kommuneMap[slug];
+
+      if (!kommuneData) {
+        console.error('[WFS] Kommune data not found for slug:', slug);
+
+        return null;
+      }
+
+
+      return kommuneData;
+    } catch (error) {
+      console.error('[WFS] Failed to get kommune data:', error);
+      return null;
     }
   }
 

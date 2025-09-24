@@ -19,8 +19,8 @@ interface WFSLayerConfig {
 
 interface KommuneData {
   slug: string; // 'koeln'
-  wpname: string; // 'de-Köln'
-  osmAdminLevels: number[]; // [6, 8]
+  wp_name: string; // 'de-Köln'
+  osmAdminLevels: number[]; // [6, 9, 10]
 }
 
 export class WFSLayerManager {
@@ -124,7 +124,7 @@ export class WFSLayerManager {
     const osmAdminLevel = this.getOsmAdminLevel(kommune, containerType);
 
     return {
-      wpName: kommune.wpname,
+      wpName: kommune.wp_name,
       containerType,
       osmAdminLevel,
     };
@@ -170,9 +170,17 @@ export class WFSLayerManager {
     config: WFSLayerConfig,
   ): Promise<VectorLayer<VectorSource>> {
     // Build WFS URL with proper encoding
-    const wpNameEncoded = encodeURIComponent(config.wpName);
+    console.log("[WFS] WFS request with:", {
+      wp_name: config.wpName,
+      containertype: config.containerType,
+      osmadminlevel: config.osmAdminLevel,
+    });
+
+    // Create properly encoded CQL filter - wp_name should NOT be double-encoded
+    const cqlFilter = `wp_name='${config.wpName}' AND container_type='${config.containerType}' AND osm_admin_level=${config.osmAdminLevel}`;
+
     const wfsUrl = wfsAuthClient.buildAuthorizedWFSURL("p2d2_containers", {
-      CQL_FILTER: `wp_name='${wpNameEncoded}' AND container_type='${config.containerType}' AND osm_admin_level=${config.osmAdminLevel}`,
+      CQL_FILTER: cqlFilter,
     });
 
     // Create vector layer

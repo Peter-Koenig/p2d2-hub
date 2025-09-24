@@ -191,11 +191,10 @@ export class WFSAuthClient {
 
     const queryParams = new URLSearchParams(baseParams);
     const wfsUrl = `${this.config.endpoint}?${queryParams.toString()}`;
-    console.log("[DEBUG] Built WFS URL:", wfsUrl);
 
     // Proxy-URL für CORS-Umgehung verwenden
-    const proxyUrl = `/api/wfs-proxy?url=${encodeURIComponent(wfsUrl)}`;
-    console.log("[DEBUG] Final proxy URL:", proxyUrl);
+    const encodedWfsUrl = encodeURIComponent(wfsUrl);
+    const proxyUrl = `/api/wfs-proxy?url=${encodedWfsUrl}`;
 
     console.log(`[WFS-Auth] Built Proxy URL: ${proxyUrl}`);
     return proxyUrl;
