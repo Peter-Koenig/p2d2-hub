@@ -9,122 +9,66 @@ const sorted = kategorien.sort(
 ---
 
 <script>
-    import { dispatchThrottledEvent } from "../utils/events";
+    import { mapState } from "../utils/map-state";
 
+    // Global window interface extensions
+    interface Window {
+        wfsManager: any;
+    }
+
+    // Phase 2: Event handler for category selection
     let isHandlerBound = false;
 
-    if (typeof window !== "undefined") {
-        if (!(window as any).__p2d2KategorienHandlerBound && !isHandlerBound) {
-            (window as any).__p2d2KategorienHandlerBound = true;
-            isHandlerBound = true;
+    if (typeof window !== "undefined" && !isHandlerBound) {
+        const handleCategoryClick = async (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            const button = target.closest(
+                "[data-category-slug]",
+            ) as HTMLElement;
 
-            const handleCategoryClick = (event: MouseEvent) => {
-                console.log("[DEBUG] Raw category click detected:", {
-                    target: event.target,
-                    currentTarget: event.currentTarget,
-                    bubbles: event.bubbles,
-                });
+            if (button) {
+                const categorySlug = button.getAttribute("data-category-slug");
+                if (categorySlug) {
+                    console.log("[DEBUG] Category clicked:", categorySlug);
 
-                console.log("[DEBUG] Category click detected:", event.target);
-                console.log("[DEBUG] Event path:", event.composedPath());
+                    // NEU HINZUFÜGEN - Kategorie-Highlighting:
+                    document
+                        .querySelectorAll("[data-category-slug]")
+                        .forEach((btn) => btn.classList.remove("active"));
+                    button.classList.add("active");
 
-                const target = event.target as HTMLElement;
+                    // ✅ FIX: Kategorie-State setzen BEVOR WFS-Toggle!
+                    mapState.setSelectedCategory(categorySlug);
 
-                // KRITISCH: Native Links nicht blockieren!
-                if (target.closest("a[href]")) {
-                    return; // Native navigation erlauben
-                }
-
-                // Nur auf Kategorie-Cards reagieren
-                const button = target.closest(
-                    "button.kategorie-card",
-                ) as HTMLButtonElement | null;
-
-                if (!button) {
                     console.log(
-                        "[DEBUG] No kategorie-card button found, ignoring",
+                        "[DEBUG] Selected category set to:",
+                        mapState.getSelectedCategory(),
                     );
-                    return;
-                }
 
-                console.log("[DEBUG] Found kategorie-card button:", button);
+                    if ((window as any).wfsManager) {
+                        // Get current selected kommune from mapState
+                        const currentKommune = mapState.getSelectedKommune();
 
-                // Event nur für unsere Buttons stoppen
-                event.preventDefault();
-                event.stopPropagation();
+                        console.log("[DEBUG] Current kommune:", currentKommune);
 
-                console.log("[kategorien] Click event detected, processing...");
-
-                if (button) {
-                    const categorySlug = button.dataset.categorySlug;
-                    console.log("[DEBUG] Found category slug:", categorySlug);
-                    if (!categorySlug) {
-                        console.warn("[kategorien] No category slug found");
-                        return;
+                        if (currentKommune) {
+                            await (window as any).wfsManager.toggleLayer(
+                                currentKommune,
+                                categorySlug,
+                            );
+                        } else {
+                            console.warn(
+                                "[WFS] No kommune selected for category toggle",
+                            );
+                        }
                     }
-                    console.log(
-                        "[kategorien] Processing click for:",
-                        categorySlug,
-                    );
-
-                    dispatchThrottledEvent("ui:select-category", {
-                        categorySlug,
-                    });
-                    console.log("[kategorien] Event dispatched successfully");
                 }
-            };
-
-            // Verwende spezifischen Container statt document
-            const initEventHandler = () => {
-                // Spezifischer Selector für Kategorien-Grid
-                const kategorienGrid = document.querySelector(
-                    "#kategorien-grid .grid",
-                );
-                console.log(
-                    "[DEBUG] Kategorien grid container found:",
-                    !!kategorienGrid,
-                );
-
-                if (kategorienGrid) {
-                    kategorienGrid.addEventListener(
-                        "click",
-                        handleCategoryClick,
-                        { passive: false }, // Damit preventDefault funktioniert
-                    );
-                    console.log(
-                        "[DEBUG] Kategorien event handler bound successfully",
-                    );
-                } else {
-                    console.warn(
-                        "[kategorien] Kategorien grid container not found, using document fallback",
-                    );
-                    document.addEventListener("click", handleCategoryClick);
-                }
-            };
-
-            if (document.readyState === "loading") {
-                document.addEventListener("DOMContentLoaded", initEventHandler);
-            } else {
-                setTimeout(initEventHandler, 100);
             }
+        };
 
-            // HMR Cleanup
-            if (typeof import.meta !== "undefined" && import.meta.hot) {
-                import.meta.hot.dispose(() => {
-                    const kategorienGrid = document.querySelector(
-                        "#kategorien-grid .grid",
-                    );
-                    if (kategorienGrid) {
-                        kategorienGrid.removeEventListener(
-                            "click",
-                            handleCategoryClick,
-                        );
-                    }
-                    (window as any).__p2d2KategorienHandlerBound = false;
-                    isHandlerBound = false;
-                });
-            }
-        }
+        // Bind event listener
+        document.addEventListener("click", handleCategoryClick);
+        isHandlerBound = true;
     }
 </script>
 

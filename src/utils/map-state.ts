@@ -7,6 +7,7 @@ export interface MapState {
   activeCRS: string;
   localCRS: string | undefined;
   selectedCategory: string | null;
+  selectedKommune: any | null;
   isInitialized: boolean;
 }
 
@@ -27,6 +28,7 @@ class MapStateManager {
       activeCRS: config.defaultCRS,
       localCRS: undefined,
       selectedCategory: null,
+      selectedKommune: null,
       isInitialized: false,
     };
   }
@@ -85,11 +87,24 @@ class MapStateManager {
     this.updateState({ isInitialized: initialized });
   }
 
+  setSelectedKommune(kommune: any | null): void {
+    this.updateState({ selectedKommune: kommune });
+  }
+
+  getSelectedKommune(): any | null {
+    return this.state.selectedKommune;
+  }
+
+  getSelectedCategory(): string | null {
+    return this.state.selectedCategory;
+  }
+
   // Restore state from localStorage
   restoreFromStorage(): void {
     try {
       const savedCRS = localStorage.getItem("selectedCRS");
       const savedCategory = localStorage.getItem("selectedCategory");
+      const savedKommune = localStorage.getItem("selectedMunicipalityDetail");
 
       if (savedCRS) {
         this.updateState({ activeCRS: savedCRS });
@@ -97,6 +112,15 @@ class MapStateManager {
 
       if (savedCategory) {
         this.updateState({ selectedCategory: savedCategory });
+      }
+
+      if (savedKommune) {
+        try {
+          const kommuneData = JSON.parse(savedKommune);
+          this.updateState({ selectedKommune: kommuneData });
+        } catch (error) {
+          console.warn("[map-state] Could not parse saved kommune:", error);
+        }
       }
     } catch (error) {
       console.warn("[map-state] Could not restore from storage:", error);

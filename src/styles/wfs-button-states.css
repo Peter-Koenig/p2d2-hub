@@ -1,0 +1,28 @@
+/* Phase 2: WFS Button Active States - Korrigierte Farben */
+
+/* Grüne Schatten für KategorienGrid-Buttons */
+[data-category-slug].wfs-active {
+    box-shadow:
+        0 4px 8px rgba(22, 240, 121, 0.3),
+        0 8px 16px rgba(22, 240, 121, 0.2),
+        0 0 0 2px rgba(22, 240, 121, 0.1);
+    transform: translateY(-2px);
+    transition: all 0.2s ease;
+}
+
+/* Orange Schatten für KommunenGrid-Buttons */
+[data-kommune-slug].wfs-active {
+    box-shadow:
+        0 4px 8px rgba(255, 105, 0, 0.3),
+        0 8px 16px rgba(255, 105, 0, 0.2),
+        0 0 0 2px rgba(255, 105, 0, 0.1);
+    transform: translateY(-2px);
+    transition: all 0.2s ease;
+}
+
+/* Hover states remain unchanged for inactive buttons */
+[data-category-slug]:not(.wfs-active):hover,
+[data-kommune-slug]:not(.wfs-active):hover {
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}

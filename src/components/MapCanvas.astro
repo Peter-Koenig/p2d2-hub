@@ -1,11 +1,5 @@
 ---
 /// <reference types="vite/client" />
-
-// Import WFS layer components
-import VectorLayer from "ol/layer/Vector";
-import VectorSource from "ol/source/Vector";
-import GeoJSON from "ol/format/GeoJSON";
-import { Style, Stroke, Fill, Circle } from "ol/style";
 ---
 
 <div class="w-full h-full flex justify-center items-center p-4 md:p-6">
@@ -24,19 +18,19 @@ import { Style, Stroke, Fill, Circle } from "ol/style";
         <div
             id="map"
             class="w-full h-full overflow-hidden relative"
-            on:load={() => {
+            onload="
                 // OpenLayers Canvas nach Laden stylen
                 setTimeout(() => {
-                    const mapElement = document.getElementById("map");
+                    const mapElement = document.getElementById('map');
                     if (mapElement) {
-                        const canvases = mapElement.querySelectorAll("canvas");
+                        const canvases = mapElement.querySelectorAll('canvas');
                         canvases.forEach((canvas) => {
-                            canvas.style.borderRadius = "inherit";
-                            canvas.style.clipPath = "inherit";
+                            canvas.style.borderRadius = 'inherit';
+                            canvas.style.clipPath = 'inherit';
                         });
                     }
                 }, 100);
-            }}
+            "
         >
             <div id="crs-toggle" class="px-3 py-2">
                 <button
@@ -64,8 +58,7 @@ import { Style, Stroke, Fill, Circle } from "ol/style";
 
         // Import our utility modules
         import { mapState } from "../utils/map-state";
-        import { CategoryHandler } from "../utils/category-handler";
-        import { FeatureSelectionHandler } from "../utils/feature-selection";
+        import WFSLayerManager from "../utils/wfs-layer-manager";
 
         // Import existing CRS utilities
         import {
@@ -168,12 +161,8 @@ import { Style, Stroke, Fill, Circle } from "ol/style";
             }
         });
 
-        // Initialize handlers
-        const categoryHandler = new CategoryHandler(map);
-        const featureSelectionHandler = new FeatureSelectionHandler(
-            map,
-            categoryHandler.getCategorySource(),
-        );
+        // Initialize WFS Layer Manager
+        const wfsManager = new WFSLayerManager(map);
 
         // CRS Toggle functionality
         function updateCRSButton(): void {
@@ -213,20 +202,7 @@ import { Style, Stroke, Fill, Circle } from "ol/style";
             // Use scale-preserving view transition
             toNewViewPreservingScale(map, targetCRS);
 
-            // Refresh categories
-            categoryHandler.refreshCategoriesSource();
-
-            map.once("moveend", () => {
-                try {
-                    categoryHandler.refreshCategoriesSource();
-                } catch (error) {
-                    throttledLogger.warn(
-                        "category-refresh",
-                        "[Categories] Could not refresh categories",
-                        error,
-                    );
-                }
-            });
+            // PLACEHOLDER: Ready for new WFS implementation
 
             updateCRSButton();
         }
@@ -256,6 +232,9 @@ import { Style, Stroke, Fill, Circle } from "ol/style";
                         return;
                     }
 
+                    // Store selected kommune in state
+                    mapState.setSelectedKommune(d);
+
                     // Set local CRS from detail if available
                     const localCRS = (d?.projection as string) || undefined;
                     mapState.setLocalCRS(localCRS);
@@ -282,18 +261,7 @@ import { Style, Stroke, Fill, Circle } from "ol/style";
                     // Create new view with appropriate projection
                     toNewViewPreservingScale(map, targetCRS);
 
-                    // Refresh categories after view transition
-                    map.once("moveend", () => {
-                        try {
-                            categoryHandler.refreshCategoriesSource();
-                        } catch (error) {
-                            throttledLogger.warn(
-                                "refresh-after-focus",
-                                "Could not refresh categories",
-                                error,
-                            );
-                        }
-                    });
+                    // PLACEHOLDER: Ready for new WFS implementation
 
                     // Handle navigation
                     const center = isValidWgs84Coordinate(d?.center)
@@ -375,18 +343,10 @@ import { Style, Stroke, Fill, Circle } from "ol/style";
                     // Update view projection
                     toNewViewPreservingScale(map, state.activeCRS);
 
-                    // Refresh layers after view transition
-                    map.once("moveend", () => {
-                        try {
-                            categoryHandler.refreshCategoriesSource();
-                        } catch (error) {
-                            throttledLogger.warn(
-                                "category-refresh-restore",
-                                "[Categories] Could not refresh categories",
-                                error,
-                            );
-                        }
-                    });
+                    // PLACEHOLDER: Ready for new WFS implementation
+
+                    // Store selected kommune in state
+                    mapState.setSelectedKommune(detail);
 
                     // Dispatch focus event after map initialization
                     setTimeout(() => {
@@ -425,27 +385,10 @@ import { Style, Stroke, Fill, Circle } from "ol/style";
                     mapState.setLocalCRS(koelnProjection);
                     updateCRSButton();
 
-                    // Categories nach View-Änderung aktualisieren
-                    map.once("moveend", () => {
-                        try {
-                            categoryHandler.refreshCategoriesSource();
-                        } catch (error) {
-                            throttledLogger.warn(
-                                "category-refresh-initial",
-                                "[Categories] Could not refresh categories on initial load",
-                                error,
-                            );
-                        }
-                    });
+                    // PLACEHOLDER: Ready for new WFS implementation
                 }
 
-                // Reselect feature after categories are loaded
-                // Weniger aggressive Reselection mit Guard
-                map.once("rendercomplete", () => {
-                    setTimeout(() => {
-                        featureSelectionHandler.reselectFeature();
-                    }, 200);
-                });
+                // PLACEHOLDER: Ready for new WFS implementation
 
                 // Mark as initialized
                 mapState.setInitialized(true);
@@ -453,6 +396,12 @@ import { Style, Stroke, Fill, Circle } from "ol/style";
                 console.error("Error restoring persisted state:", error);
             }
         });
+
+        // Make map and WFS manager available globally
+        if (typeof window !== "undefined") {
+            (window as any).map = map;
+            (window as any).wfsManager = wfsManager;
+        }
 
         // Initialize toggle button state
         updateCRSButton();

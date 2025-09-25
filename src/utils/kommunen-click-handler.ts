@@ -1,18 +1,23 @@
-/**
- * Kommunen Click Handler
- * Centralized handling of kommunen card click events
- */
+// Kommunen Click Handler - Centralized handling of kommunen card click events
 
-export interface KommunenDetail {
+interface KommunenDetail {
   center?: [number, number];
   extent?: [number, number, number, number];
   zoom?: number;
   projection?: string;
   extra?: any;
   slug?: string;
+  wp_name?: string; // KORRIGIERT: wp_name statt wpname
+  osmAdminLevels?: number[];
 }
 
-export class KommunenClickHandler {
+interface KommuneData {
+  slug: string;
+  wp_name: string; // KORRIGIERT: wp_name statt wpname
+  osmAdminLevels: number[];
+}
+
+export default class KommunenClickHandler {
   private processingButtons: Set<HTMLElement> = new Set();
   private boundClickHandler: (event: Event) => void;
 
@@ -54,7 +59,6 @@ export class KommunenClickHandler {
       const detail: KommunenDetail = JSON.parse(detailStr);
       const slug = button.getAttribute("data-slug") || "";
 
-      // Validate data
       if (
         !this.isValidCoordinate(detail.center) &&
         !this.isValidExtent(detail.extent)
@@ -78,15 +82,11 @@ export class KommunenClickHandler {
     const target = event.target as HTMLElement;
 
     // KRITISCH: Native Links nicht blockieren!
-    if (target.closest("a[href]")) {
-      return; // Native navigation erlauben
-    }
+    if (target.closest("a[href]")) return; // Native navigation erlauben
 
     const button = target.closest("button.kommunen-card") as HTMLElement;
-
     if (!button) return;
 
-    // Prevent double processing
     if (this.processingButtons.has(button)) {
       console.log("[kommunen-handler] Click already being processed, ignoring");
       return;
@@ -95,10 +95,35 @@ export class KommunenClickHandler {
     this.processingButtons.add(button);
 
     try {
-      const detail = this.extractDetailFromButton(button);
-      if (!detail) {
+      const slug = button.getAttribute("data-slug");
+      if (!slug) {
+        console.warn("[kommunen-handler] No slug found for button");
         return;
       }
+
+      console.log("[kommunen-handler] Loading kommune data for:", slug);
+
+      // Get full kommune data from content collection
+      const kommuneData = this.getKommuneData(slug);
+      if (!kommuneData) {
+        console.error(
+          "[kommunen-handler] Kommune data not found for slug:",
+          slug,
+        );
+        return;
+      }
+
+      console.log("[kommunen-handler] Found kommune:", {
+        wp_name: kommuneData.wp_name, // KORRIGIERT: wp_name statt wpname!
+        adminLevels: kommuneData.osmAdminLevels,
+      });
+
+      // Extract map detail from button
+      const mapDetail = this.extractDetailFromButton(button);
+      if (!mapDetail) return;
+
+      // Combine map detail with kommune data
+      const detail: KommunenDetail = { ...mapDetail, ...kommuneData };
 
       console.log(
         "[kommunen-handler] Processing click for:",
@@ -106,19 +131,39 @@ export class KommunenClickHandler {
         detail,
       );
 
-      // Dispatch event
+      // 1. NAVIGATION
       this.dispatchKommunenFocus(detail);
+
+      // 2. WFS LAYER MANAGEMENT - NEU HINZUGEFÜGT!
+      this.handleWFSLayerToggle(detail);
 
       // Persist selection
       this.persistSelection(detail);
     } catch (error) {
       console.error("[kommunen-handler] Click handler error:", error);
     } finally {
-      // Release processing lock after delay
       setTimeout(() => {
         this.processingButtons.delete(button);
       }, 500);
     }
+  }
+
+  // NEW: Handle WFS layer switching on kommune change
+  private handleWFSLayerToggle(detail: KommunenDetail): void {
+    if (!(window as any).wfsManager) return;
+
+    const selectedCategory = (window as any).mapState?.getSelectedCategory?.();
+    if (!selectedCategory) {
+      console.log("[WFS] No category selected, skipping WFS layer toggle");
+      return;
+    }
+
+    // CRITICAL: Always switch layer - this will handle hide old and show new
+    console.log(
+      "[WFS] Auto-switching layer for kommune change to:",
+      detail.slug,
+    );
+    (window as any).wfsManager.displayLayer(detail, selectedCategory);
   }
 
   private dispatchKommunenFocus(detail: KommunenDetail): void {
@@ -173,10 +218,42 @@ export class KommunenClickHandler {
     }
   }
 
+  // Get full kommune data from embedded content collection data
+  private getKommuneData(slug: string): KommuneData | null {
+    try {
+      const gridContainer = document.querySelector(".grid.grid-cols-1");
+      if (!gridContainer) {
+        console.error("[kommunen-handler] Grid container not found");
+        return null;
+      }
+
+      const kommuneMapStr = gridContainer.getAttribute("data-kommune-map");
+      if (!kommuneMapStr) {
+        console.error("[kommunen-handler] Kommune data map not found in HTML");
+        return null;
+      }
+
+      const kommuneMap: Record<string, KommuneData> = JSON.parse(kommuneMapStr);
+      const kommuneData = kommuneMap[slug];
+
+      if (!kommuneData) {
+        console.error(
+          "[kommunen-handler] Kommune data not found for slug:",
+          slug,
+        );
+        return null;
+      }
+
+      return kommuneData;
+    } catch (error) {
+      console.error("[kommunen-handler] Failed to get kommune data:", error);
+      return null;
+    }
+  }
+
   public bind(): void {
     if (typeof window === "undefined") return;
 
-    // Use specific container instead of document to avoid blocking navigation links
     const gridContainer = document.querySelector(".grid.grid-cols-1");
     if (gridContainer) {
       gridContainer.addEventListener("click", this.boundClickHandler, {
@@ -193,7 +270,6 @@ export class KommunenClickHandler {
   public unbind(): void {
     if (typeof window === "undefined") return;
 
-    // Remove from specific container instead of document
     const gridContainer = document.querySelector(".grid.grid-cols-1");
     if (gridContainer) {
       gridContainer.removeEventListener("click", this.boundClickHandler);

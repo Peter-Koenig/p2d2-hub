@@ -11,6 +11,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Validate URL
     if (!url || typeof url !== "string") {
+      console.error("[WFS-PROXY-DEBUG] Invalid URL parameter:", url);
       return new Response(
         JSON.stringify({ error: "Missing or invalid URL parameter" }),
         { status: 400, headers: { "Content-Type": "application/json" } },
@@ -20,7 +21,9 @@ export const POST: APIRoute = async ({ request }) => {
     // Validate that URL is from trusted WFS endpoints
     const allowedHosts = ["wfs.data-dna.eu", "ows.data-dna.eu"];
     const urlHost = new URL(url).hostname;
+
     if (!allowedHosts.includes(urlHost)) {
+      console.error("[WFS-PROXY-DEBUG] Untrusted endpoint:", urlHost);
       return new Response(JSON.stringify({ error: "Untrusted WFS endpoint" }), {
         status: 403,
       });
@@ -54,6 +57,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Make the request to WFS endpoint
+
     const response = await fetch(url, requestOptions);
 
     if (!response.ok) {
@@ -119,6 +123,7 @@ export const GET: APIRoute = async ({ url }) => {
   const targetUrl = new URL(url).searchParams.get("url");
 
   if (!targetUrl) {
+    console.error("[WFS-PROXY-DEBUG] Missing url query parameter");
     return new Response(
       JSON.stringify({ error: "Missing url query parameter" }),
       { status: 400, headers: { "Content-Type": "application/json" } },
