@@ -132,14 +132,7 @@ const { title, icon, description, id, slug } = Astro.props;
             {description}
         </div>
 
-        {
-            icon === "friedhof" && (
-                <p class="text-sm text-gray-600 italic mt-2">
-                    Die Liste der Friedhöfe wird später über die Karte oder die
-                    Kommunen gesteuert.
-                </p>
-            )
-        }
+        {icon === "friedhof"}
     </div>
 
     <!-- Optional: zusätzlicher Glow auf Hover -->
