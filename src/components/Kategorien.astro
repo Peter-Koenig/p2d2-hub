@@ -1,10 +1,4 @@
 ---
-import BlumenbeetIcon from "./icons/BlumenbeetIcon.astro";
-import FriedhofIcon from "./icons/FriedhofIcon.astro";
-import LaternenIcon from "./icons/LaternenIcon.astro";
-import GemeinschaftIcon from "./icons/GemeinschaftIcon.astro";
-import OffeneDatenIcon from "./icons/OffeneDatenIcon.astro";
-import TransparenzIcon from "./icons/TransparenzIcon.astro";
 import Modal from "./Modal.astro";
 
 const { title, icon, description, id, slug } = Astro.props;
@@ -12,8 +6,8 @@ const { title, icon, description, id, slug } = Astro.props;
 
 <button
     type="button"
-    class="kategorie-card relative bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group text-left w-full"
-    style="max-width: 100%;"
+    class="kategorie-card relative bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group text-left w-full h-full"
+    style="max-width: 100%"
     data-category-slug={slug}
     aria-label={`Kategorie ${title} auswählen`}
 >
@@ -28,116 +22,21 @@ const { title, icon, description, id, slug } = Astro.props;
     <!-- Grüner Streifen oben -->
     <div class="absolute top-0 left-0 w-full h-1.5 bg-[#0FF078] z-10"></div>
 
-    <!-- Icon und Content -->
-    <div class="relative z-10 p-6 pt-6 flex flex-col gap-3">
-        <div>
-            {icon === "blumenbeet" && <BlumenbeetIcon />}
-            {
-                icon === "friedhof" && (
-                    <img
-                        src="/src/components/icons/friedhof.svg"
-                        alt="Friedhof"
-                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
-                    />
-                )
-            }
-            {icon === "strassenlaternen" && <LaternenIcon />}
-            {
-                icon === "baume" && (
-                    <img
-                        src="/src/components/icons/Baeume.svg"
-                        alt="Bäume"
-                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
-                    />
-                )
-            }
-            {
-                icon === "fahrradstaender" && (
-                    <img
-                        src="/src/components/icons/Fahrradstaender.svg"
-                        alt="Fahrradständer"
-                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
-                    />
-                )
-            }
-            {
-                icon === "pflanzenbehaelter" && (
-                    <img
-                        src="/src/components/icons/Pflanzenbehaelter.svg"
-                        alt="Pflanzenbehälter"
-                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
-                    />
-                )
-            }
-            {
-                icon === "spielsandkisten" && (
-                    <img
-                        src="/src/components/icons/Spielsandkisten.svg"
-                        alt="Spielsandkisten"
-                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
-                    />
-                )
-            }
-            {
-                icon === "abfallbehaelter" && (
-                    <img
-                        src="/src/components/icons/Abfallbehaelter.svg"
-                        alt="Abfallbehälter"
-                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
-                    />
-                )
-            }
-            {
-                icon === "sportrasen" && (
-                    <img
-                        src="/src/components/icons/Sportrasen.svg"
-                        alt="Sportrasen"
-                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
-                    />
-                )
-            }
-            {
-                icon === "stege" && (
-                    <img
-                        src="/src/components/icons/Stege.svg"
-                        alt="Stege"
-                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
-                    />
-                )
-            }
-            {
-                icon === "fahnenmaste" && (
-                    <img
-                        src="/src/components/icons/Fahnenmasten.svg"
-                        alt="Fahnenmasten"
-                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
-                    />
-                )
-            }
-            {
-                icon === "tribuenen" && (
-                    <img
-                        src="/src/components/icons/Tribuenen.svg"
-                        alt="Tribünen"
-                        class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
-                    />
-                )
-            }
-            {icon === "gemeinschaft" && <GemeinschaftIcon />}
-            {icon === "transparenz" && <TransparenzIcon />}
-            {icon === "offene-daten" && <OffeneDatenIcon />}
-        </div>
-        <h3 class="font-poppins font-bold text-xl mt-2">{title}</h3>
-        <div class="font-inter text-base text-gray-700 leading-tight">
+    <!-- Content - Button nimmt volle Höhe, Inhalt oben ausgerichtet -->
+    <div
+        class="relative z-10 p-6 pt-6 h-full flex flex-col items-start justify-start"
+    >
+        <h3 class="font-poppins font-bold text-xl leading-tight mb-3">
+            {title}
+        </h3>
+        <div class="font-inter text-base text-gray-700 leading-tight flex-1">
             {description}
         </div>
-
-        {icon === "friedhof"}
     </div>
 
-    <!-- Optional: zusätzlicher Glow auf Hover -->
+    <!-- Optional zusätzlicher Glow auf Hover -->
     <div
-        class="absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 group-hover:shadow-[0_0_32px_4px_#D6FFEA] z-10"
+        class="absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 group-hover:shadow-[0_32px_4px_#D6FFEA] z-10"
     >
     </div>
 </button>
