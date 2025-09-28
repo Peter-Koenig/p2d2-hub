@@ -1,0 +1,146 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout 
+  title="Community | p2d2 - Public-Public Data-DNA" 
+  description="Lerne unsere vielfältige Community kennen und werde Teil der p2d2-Bewegung."
+>
+  <main class="flex flex-col items-center w-full">
+    
+    <!-- Community-Werte -->
+    <section class="w-full max-w-5xl mx-auto px-6 py-12">
+      <div class="text-center mb-12">
+        <h2 class="font-poppins font-bold text-3xl text-gray-900 mb-6">Gemeinsam sind wir stärker</h2>
+        <p class="text-lg text-gray-700 max-w-3xl mx-auto">
+          Unsere diverse Community vereint Menschen mit unterschiedlichen Hintergründen und Fähigkeiten. 
+          Alle gesammelten Daten sind frei verfügbar und können von jedem genutzt, geteilt und verbessert werden.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        <!-- Mapper Community -->
+        <div class="community-group bg-white p-8 rounded-xl border border-gray-200 shadow-lg text-center">
+          <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3"></path>
+            </svg>
+          </div>
+          <h3 class="font-poppins font-bold text-xl mb-4">OpenStreetMap-Mapper</h3>
+          <p class="text-gray-700 mb-4">
+            Erfahrene Mapper, die bereits bei OSM aktiv sind und ihr Wissen über Geodatenerfassung einbringen.
+          </p>
+          <ul class="text-sm text-gray-600 space-y-2 text-left">
+            <li>• Qualitätssicherung von Geodaten</li>
+            <li>• Schulungen für Newcomer</li>
+            <li>• Integration von OSM-Daten</li>
+          </ul>
+        </div>
+
+        <!-- Schulen & Bildung -->
+        <div class="community-group bg-white p-8 rounded-xl border border-gray-200 shadow-lg text-center">
+          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+          </div>
+          <h3 class="font-poppins font-bold text-xl mb-4">Schulen & Jugendgruppen</h3>
+          <p class="text-gray-700 mb-4">
+            Schüler und Jugendgruppen, die p2d2 als praktisches Lernprojekt in den Unterricht integrieren.
+          </p>
+          <ul class="text-sm text-gray-600 space-y-2 text-left">
+            <li>• Geografieunterricht mit echten Daten</li>
+            <li>• Digitale Kompetenz entwickeln</li>
+            <li>• Gemeinschaftsprojekte umsetzen</li>
+          </ul>
+        </div>
+
+        <!-- Glaubensgemeinschaften -->
+        <div class="community-group bg-white p-8 rounded-xl border border-gray-200 shadow-lg text-center">
+          <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+          </div>
+          <h3 class="font-poppins font-bold text-xl mb-4">Glaubensgemeinschaften</h3>
+          <p class="text-gray-700 mb-4">
+            Kirchengemeinden und andere Glaubensgemeinschaften, die ihre Friedhöfe und Gemeindezentren dokumentieren.
+          </p>
+          <ul class="text-sm text-gray-600 space-y-2 text-left">
+            <li>• Friedhofsdokumentation</li>
+            <li>• Historische Aufarbeitung</li>
+            <li>• Gemeindliche Infrastruktur</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Mitmach-Formate -->
+    <section class="w-full bg-gray-50 py-16">
+      <div class="max-w-5xl mx-auto px-6">
+        <h2 class="font-poppins font-bold text-3xl text-gray-900 text-center mb-12">Wie kannst du mitmachen?</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+          <!-- Online-Beitrag -->
+          <div class="mitmach-format bg-white p-8 rounded-xl shadow-lg">
+            <h3 class="font-poppins font-bold text-2xl mb-4 text-primary-700">Online beitragen</h3>
+            <p class="text-gray-700 mb-6">
+              Unterstütze p2d2 von überall aus durch digitale Beiträge und Datenqualitätssicherung.
+            </p>
+            <ul class="space-y-3 text-gray-700">
+              <li class="flex items-start">
+                <span class="text-primary-500 mr-3">✓</span>
+                Daten aus der Ferne validieren und korrigieren
+              </li>
+              <li class="flex items-start">
+                <span class="text-primary-500 mr-3">✓</span>
+                Historische Recherche zu Orten betreiben
+              </li>
+              <li class="flex items-start">
+                <span class="text-primary-500 mr-3">✓</span>
+                Software-Entwicklung unterstützen
+              </li>
+              <li class="flex items-start">
+                <span class="text-primary-500 mr-3">✓</span>
+                Community-Moderation übernehmen
+              </li>
+            </ul>
+          </div>
+
+          <!-- Vor-Ort-Aktionen -->
+          <div class="mitmach-format bg-white p-8 rounded-xl shadow-lg">
+            <h3 class="font-poppins font-bold text-2xl mb-4 text-green-700">Vor Ort aktiv werden</h3>
+            <p class="text-gray-700 mb-6">
+              Sammle Daten direkt in deiner Umgebung und dokumentiere den öffentlichen Raum vor deiner Haustür.
+            </p>
+            <ul class="space-y-3 text-gray-700">
+              <li class="flex items-start">
+                <span class="text-green-500 mr-3">✓</span>
+                Mapping-Walks in der Nachbarschaft
+              </li>
+              <li class="flex items-start">
+                <span class="text-green-500 mr-3">✓</span>
+                Fotos und Beschreibungen vor Ort erfassen
+              </li>
+              <li class="flex items-start">
+                <span class="text-green-500 mr-3">✓</span>
+                Community-Events organisieren
+              </li>
+              <li class="flex items-start">
+                <span class="text-green-500 mr-3">✓</span>
+                Workshops und Schulungen halten
+              </li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+
+  </main>
+</Layout>
+

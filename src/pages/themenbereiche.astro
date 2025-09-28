@@ -1,0 +1,112 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ThemenbereicheOverview from '../components/ThemenbereicheOverview.astro';
+---
+
+<BaseLayout 
+  title="Themenbereiche | p2d2 - Public-Public Data-DNA" 
+  description="Entdecke die verschiedenen Themenbereiche von p2d2 und finde Projekte, die zu deinen Interessen passen."
+>
+  <main class="flex flex-col items-center w-full">
+
+    <!-- Detaillierte Themenbereiche -->
+    <section class="w-full max-w-5xl mx-auto px-6 py-12">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        
+        <!-- Friedhöfe digitalisieren -->
+        <div class="themenbereich-card bg-white p-8 rounded-xl border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+          <div class="h-2 bg-primary-500 rounded-full mb-6"></div>
+          <h3 class="font-poppins font-bold text-2xl mb-4 text-gray-900">Friedhöfe digitalisieren</h3>
+          <p class="text-gray-700 mb-4 leading-relaxed">
+            Hilf mit, Friedhöfe zu digitalisieren und schaffe einen virtuellen Ort des Gedenkens. Erfasse Grabsteine, historische Informationen und Geschichten.
+          </p>
+          <ul class="text-sm text-gray-600 space-y-2">
+            <li>• Grabstellen und deren Belegung dokumentieren</li>
+            <li>• Historische Bedeutung von Persönlichkeiten erfassen</li>
+            <li>• Pflegezustand und Wartungsbedarf melden</li>
+            <li>• Familienzusammenhänge und Grabpatenschaften</li>
+          </ul>
+        </div>
+
+        <!-- Stadtbäume dokumentieren -->
+        <div class="themenbereich-card bg-white p-8 rounded-xl border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+          <div class="h-2 bg-green-500 rounded-full mb-6"></div>
+          <h3 class="font-poppins font-bold text-2xl mb-4 text-gray-900">Stadtbäume dokumentieren</h3>
+          <p class="text-gray-700 mb-4 leading-relaxed">
+            Übernimm Verantwortung für Stadtbäume, dokumentiere ihren Zustand und hilf bei der Pflege. Mache die grüne Infrastruktur sichtbar.
+          </p>
+          <ul class="text-sm text-gray-600 space-y-2">
+            <li>• Baumart, Alter und Größe bestimmen</li>
+            <li>• Gesundheitszustand und Schäden melden</li>
+            <li>• Baumpflege-Termine koordinieren</li>
+            <li>• CO₂-Bindung und Ökosystemleistungen berechnen</li>
+          </ul>
+        </div>
+
+        <!-- Gemeinschaftsgärten kartieren -->
+        <div class="themenbereich-card bg-white p-8 rounded-xl border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+          <div class="h-2 bg-yellow-500 rounded-full mb-6"></div>
+          <h3 class="font-poppins font-bold text-2xl mb-4 text-gray-900">Gemeinschaftsgärten kartieren</h3>
+          <p class="text-gray-700 mb-4 leading-relaxed">
+            Kartiere Gemeinschaftsgärten und Beet-Patenschaften. Teile Wissen über Pflanzen und schaffe ein Netzwerk urbaner Gärtner.
+          </p>
+          <ul class="text-sm text-gray-600 space-y-2">
+            <li>• Standorte und Größe von Beeten erfassen</li>
+            <li>• Patenschaft-Kontakte und Ansprechpartner</li>
+            <li>• Pflanzen- und Erntekalender dokumentieren</li>
+            <li>• Gemeinschaftsveranstaltungen koordinieren</li>
+          </ul>
+        </div>
+
+        <!-- Öffentlichen Raum sichtbar machen -->
+        <div class="themenbereich-card bg-white p-8 rounded-xl border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+          <div class="h-2 bg-blue-500 rounded-full mb-6"></div>
+          <h3 class="font-poppins font-bold text-2xl mb-4 text-gray-900">Öffentlichen Raum sichtbar machen</h3>
+          <p class="text-gray-700 mb-4 leading-relaxed">
+          Hierüber wird aus den Kataster-Daten sichtbar gemacht, wo die Grenzen zwischen öffentlichem und privatem Raum tatsächlich verlaufen: Was ist Allgemeingut, was ist privates Eigentum?
+          </p>
+          <ul class="text-sm text-gray-600 space-y-2">
+            <li>• Plätze und Parks systematisch erfassen</li>
+            <li>• Zugänglichkeit und Barrierefreiheit bewerten</li>
+            <li>• Nutzungsarten und -intensität dokumentieren</li>
+            <li>• Wartungs- und Pflegebedarf melden</li>
+          </ul>
+        </div>
+
+        <!-- Infrastruktur dokumentieren -->
+        <div class="themenbereich-card bg-white p-8 rounded-xl border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+          <div class="h-2 bg-purple-500 rounded-full mb-6"></div>
+          <h3 class="font-poppins font-bold text-2xl mb-4 text-gray-900">Infrastruktur dokumentieren</h3>
+          <p class="text-gray-700 mb-4 leading-relaxed">
+            Erfasse Fahrradständer, Bänke, Spielplätze und andere öffentliche Einrichtungen. Hilf dabei, die Stadt benutzerfreundlicher zu machen. Hier ergeben sich sicherlioch Schnittstellen zu Mängelmeldern und zum kommunalen Ideenmanagement.
+          </p>
+          <ul class="text-sm text-gray-600 space-y-2">
+            <li>• Standorte und Zustand von Stadtmobiliar</li>
+            <li>• Defekte und Reparaturbedarfe melden</li>
+            <li>• Nutzungsfrequenz und -muster beobachten</li>
+            <li>• Verbesserungsvorschläge einbringen</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Call-to-Action -->
+    <section class="w-full max-w-4xl mx-auto px-6 py-12 text-center">
+      <div class="bg-gradient-to-r from-primary-600 to-primary-400 text-white p-12 rounded-2xl">
+        <h2 class="font-poppins font-bold text-3xl mb-6">Bereit zum Mitmachen?</h2>
+        <p class="text-xl mb-8 max-w-2xl mx-auto">
+          Wähle einen Themenbereich aus und starte noch heute mit der Erfassung in deiner Umgebung.
+        </p>
+        <a 
+          href="/mitmachen" 
+          class="inline-block bg-white text-primary-700 font-bold px-8 py-4 rounded-lg hover:bg-gray-100 transition-all duration-300 hover:scale-105"
+        >
+          Jetzt mitmachen!
+        </a>
+      </div>
+    </section>
+
+  </main>
+</Layout>
+
