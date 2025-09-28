@@ -82,3 +82,87 @@ dialog[open] {
     padding: 0 !important;
     z-index: 50;
 }
+
+/* Tab-Switch Button Styling auf der Karte */
+.tab-button {
+    position: relative;
+    z-index: 51;
+    min-width: 120px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* Orange für Kommunen */
+.tab-button[data-tab="kommunen"] {
+    background-color: rgba(255, 105, 0, 0.9);
+    border-top-color: #ff6900;
+    box-shadow:
+        0 4px 8px rgba(255, 105, 0, 0.3),
+        0 8px 16px rgba(255, 105, 0, 0.2);
+}
+
+.tab-button[data-tab="kommunen"]:hover {
+    background-color: rgba(255, 105, 0, 1);
+    transform: translateY(-2px);
+    box-shadow:
+        0 6px 12px rgba(255, 105, 0, 0.4),
+        0 12px 24px rgba(255, 105, 0, 0.3);
+}
+
+/* Grün für Kategorien */
+.tab-button[data-tab="kategorien"] {
+    background-color: rgba(22, 240, 121, 0.9);
+    border-top-color: #0ff078;
+    box-shadow:
+        0 4px 8px rgba(22, 240, 121, 0.3),
+        0 8px 16px rgba(22, 240, 121, 0.2);
+}
+
+.tab-button[data-tab="kategorien"]:hover {
+    background-color: rgba(22, 240, 121, 1);
+    transform: translateY(-2px);
+    box-shadow:
+        0 6px 12px rgba(22, 240, 121, 0.4),
+        0 12px 24px rgba(22, 240, 121, 0.3);
+}
+
+/* Active State */
+.tab-button.active {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Kommunen Active mit oranger Farbe */
+.tab-button[data-tab="kommunen"].active {
+    background-color: #ff6900;
+    border-top-color: #cc5200;
+    box-shadow:
+        0 6px 12px rgba(255, 105, 0, 0.4),
+        0 12px 24px rgba(255, 105, 0, 0.3);
+}
+
+/* Kategorien Active mit grüner Farbe */
+.tab-button[data-tab="kategorien"].active {
+    background-color: #0ff078;
+    border-top-color: #00cc5a;
+    box-shadow:
+        0 6px 12px rgba(22, 240, 121, 0.4),
+        0 12px 24px rgba(22, 240, 121, 0.3);
+}
+
+/* Disabled State */
+.tab-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+    .tab-button {
+        min-width: 100px;
+        padding-left: 4px;
+        padding-right: 4px;
+        font-size: 0.875rem;
+    }
+}

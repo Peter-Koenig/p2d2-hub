@@ -10,32 +10,12 @@ import OpenLayersMap from "../components/OpenLayersMap.astro";
 import KategorienGrid from "../components/KategorienGrid.astro";
 import KommunenGrid from "../components/KommunenGrid.astro";
 import WerteGrid from "../components/WerteGrid.astro";
-import { dispatchSelectCategory } from "../utils/events.js";
+// import { dispatchSelectCategory } from "../utils/events.js";
 ---
 
 <BaseLayout>
     <HeroSection />
     <OpenLayersMap />
-
-    <!-- Tab-Umschaltung -->
-    <div class="max-w-5xl mx-auto mb-8">
-        <div class="flex border-b border-gray-200">
-            <button
-                id="tab-kommunen"
-                class="tab-button active px-6 py-3 font-medium text-gray-700 border-b-2 border-primary-600 transition-colors"
-                data-tab="kommunen"
-            >
-                Kommunen
-            </button>
-            <button
-                id="tab-kategorien"
-                class="tab-button px-6 py-3 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 transition-colors"
-                data-tab="kategorien"
-            >
-                Kategorien
-            </button>
-        </div>
-    </div>
 
     <!-- Grid-Container mit Swipe-Unterstützung -->
     <div id="grid-container" class="relative overflow-hidden">
@@ -80,20 +60,27 @@ import { dispatchSelectCategory } from "../utils/events.js";
         // Prevent multiple tab initialization
         let tabsInitialized = false;
 
-        function switchTab(tabName) {
+        function switchTab(tabName: "kommunen" | "kategorien") {
             // Update internal state
             currentTab = tabName;
 
             // Persist tab selection using precise storage key
             setPersistedTab(tabName);
 
-            tabButtons.forEach((btn) => {
-                const isActive = btn.dataset.tab === tabName;
+            tabButtons.forEach((btn: Element) => {
+                const isActive = (btn as HTMLElement).dataset.tab === tabName;
                 btn.classList.toggle("active", isActive);
-                btn.classList.toggle("border-primary-600", isActive);
-                btn.classList.toggle("border-transparent", !isActive);
-                btn.classList.toggle("text-gray-700", isActive);
-                btn.classList.toggle("text-gray-500", !isActive);
+
+                // Spezifische Farben für die Buttons
+                if ((btn as HTMLElement).dataset.tab === "kommunen") {
+                    btn.className = isActive
+                        ? "tab-button active bg-orange-500 text-white font-semibold px-6 py-3 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 border-t-4 border-orange-400"
+                        : "tab-button bg-orange-400/80 hover:bg-orange-500 text-white font-semibold px-6 py-3 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 border-t-4 border-orange-300";
+                } else if ((btn as HTMLElement).dataset.tab === "kategorien") {
+                    btn.className = isActive
+                        ? "tab-button active bg-green-500 text-white font-semibold px-6 py-3 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 border-t-4 border-green-400"
+                        : "tab-button bg-green-400/80 hover:bg-green-500 text-white font-semibold px-6 py-3 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 border-t-4 border-green-300";
+                }
             });
 
             if (tabName === "kommunen") {
@@ -113,19 +100,37 @@ import { dispatchSelectCategory } from "../utils/events.js";
             }
         }
 
-        tabButtons.forEach((btn) => {
+        tabButtons.forEach((btn: Element) => {
             // Remove existing listeners to prevent duplicates
-            btn.removeEventListener("click", btn.dataset.clickHandler);
+            const existingHandler = (btn as HTMLButtonElement).dataset
+                .clickHandler;
+            if (existingHandler) {
+                btn.removeEventListener(
+                    "click",
+                    (window as any)[existingHandler],
+                );
+            }
 
             const clickHandler = () => {
-                switchTab((btn as HTMLElement).dataset.tab || "kommunen");
+                const tabValue = (btn as HTMLElement).dataset.tab;
+                if (tabValue === "kommunen" || tabValue === "kategorien") {
+                    switchTab(tabValue);
+                } else {
+                    switchTab("kommunen");
+                }
             };
 
-            btn.dataset.clickHandler = clickHandler;
+            (btn as HTMLElement).dataset.clickHandler =
+                "clickHandler_" + Math.random().toString(36).substr(2, 9);
             btn.addEventListener(
                 "click",
                 () => {
-                    switchTab((btn as HTMLElement).dataset.tab || "kommunen");
+                    const tabValue = (btn as HTMLElement).dataset.tab;
+                    if (tabValue === "kommunen" || tabValue === "kategorien") {
+                        switchTab(tabValue);
+                    } else {
+                        switchTab("kommunen");
+                    }
                 },
                 { passive: true },
             );
@@ -151,7 +156,7 @@ import { dispatchSelectCategory } from "../utils/events.js";
                 // Dispatch category selection event if saved
                 if (savedCategory) {
                     setTimeout(() => {
-                        dispatchSelectCategory(savedCategory);
+                        // dispatchSelectCategory(category);
                     }, 100);
                 }
             } catch (error) {
