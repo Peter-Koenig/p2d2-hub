@@ -1,195 +1,315 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout 
-  title="Kontakt | p2d2 - Public-Public Data-DNA" 
-  description="Kontaktiere das p2d2-Team und erfahre, wie du Teil der Community werden kannst."
+<BaseLayout
+    title="Kontakt | p2d2 - Public-Public Data-DNA"
+    description="Kontaktiere das p2d2-Team und erfahre, wie du Teil der Community werden kannst."
 >
-  <main class="flex flex-col items-center w-full">
-    
-    <div class="w-full max-w-6xl mx-auto px-6 py-12">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        
-        <!-- Kontakt-Informationen -->
-        <div class="space-y-8">
-          
-          <div class="contact-section">
-            <h2 class="font-poppins font-bold text-2xl text-gray-900 mb-6">Direkte Kontaktmöglichkeiten</h2>
-            
-            <div class="space-y-6">
-              
-              <!-- E-Mail -->
-              <div class="contact-item flex items-start space-x-4">
-                <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                  </svg>
-                </div>
-                <div>
-                  <h3 class="font-semibold text-gray-900 mb-1">E-Mail</h3>
-                  <p class="text-gray-700">Für allgemeine Anfragen und Support</p>
-                  <a href="mailto:info@data-dna.eu" class="text-primary-600 hover:text-primary-700 font-medium">
-                    info@data-dna.eu
-                  </a>
-                </div>
-              </div>
+    <main class="flex flex-col items-center w-full">
+        <div class="w-full max-w-6xl mx-auto px-6 py-12">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <!-- Kontakt-Informationen -->
+                <div class="space-y-8">
+                    <div class="contact-section">
+                        <h2
+                            class="font-poppins font-bold text-2xl text-gray-900 mb-6"
+                        >
+                            Direkte Kontaktmöglichkeiten
+                        </h2>
 
-              <!-- Mastodon -->
-              <div class="contact-item flex items-start space-x-4">
-                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23.268 5.313c-.35-2.578-2.617-4.61-5.304-5.004C17.51.242 15.792 0 11.813 0h-.03c-3.98 0-4.835.242-5.288.309C3.882.692 1.496 2.518.917 5.127.64 6.412.61 7.837.661 9.143c.074 1.874.088 3.745.26 5.611.118 1.24.325 2.47.62 3.68.55 2.237 2.777 4.098 4.96 4.857 2.336.792 4.849.923 7.256.38.265-.061.527-.132.786-.213.585-.184 1.27-.39 1.774-.753a.057.057 0 0 0 .023-.043v-1.809a.052.052 0 0 0-.02-.041.053.053 0 0 0-.046-.01 20.282 20.282 0 0 1-4.709.545c-2.73 0-3.463-1.284-3.674-1.818a5.593 5.593 0 0 1-.319-1.433.053.053 0 0 1 .066-.054c1.517.363 3.072.546 4.632.546.376 0 .75 0 1.125-.01 1.57-.044 3.224-.124 4.768-.422.038-.008.077-.015.11-.024 2.435-.464 4.753-1.92 4.989-5.604.008-.145.03-1.52.03-1.67.002-.512.167-3.63-.024-5.545zm-3.748 9.195h-2.561V8.29c0-1.309-.55-1.976-1.67-1.976-1.23 0-1.846.79-1.846 2.35v3.403h-2.546V8.663c0-1.56-.617-2.35-1.848-2.35-1.112 0-1.668.668-1.67 1.977v6.218H4.822V8.102c0-1.31.337-2.35 1.011-3.12.696-.77 1.608-1.164 2.74-1.164 1.311 0 2.302.5 2.962 1.498l.638 1.06.638-1.06c.66-.999 1.65-1.498 2.96-1.498 1.13 0 2.043.395 2.74 1.164.675.77 1.012 1.81 1.012 3.12z"/>
-                  </svg>
-                </div>
-                <div>
-                  <h3 class="font-semibold text-gray-900 mb-1">Mastodon</h3>
-                  <p class="text-gray-700">Folge uns für Updates und Community-News</p>
-                  <a href="https://nrw.social/@P2D2" target="_blank" rel="noopener" class="text-primary-600 hover:text-primary-700 font-medium">
-                    @P2D2@nrw.social
-                  </a>
-                </div>
-              </div>
+                        <div class="space-y-6">
+                            <!-- E-Mail -->
+                            <div
+                                class="contact-item flex items-start space-x-4"
+                            >
+                                <div
+                                    class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0"
+                                >
+                                    <svg
+                                        class="w-6 h-6 text-primary-600"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                        ></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3
+                                        class="font-semibold text-gray-900 mb-1"
+                                    >
+                                        E-Mail
+                                    </h3>
+                                    <p class="text-gray-700">
+                                        Für allgemeine Anfragen und Support
+                                    </p>
+                                    <a
+                                        href="mailto:info@data-dna.eu"
+                                        class="text-primary-600 hover:text-primary-700 font-medium"
+                                    >
+                                        info@data-dna.eu
+                                    </a>
+                                </div>
+                            </div>
 
-              <!-- GitLab -->
-              <div class="contact-item flex items-start space-x-4">
-                <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg class="w-6 h-6 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="m23.6004 9.5927-.0337-.0862L20.3.9814a.851.851 0 0 0-.3362-.405.8748.8748 0 0 0-.9997.0539.8748.8748 0 0 0-.29.4399l-2.2055 6.748H7.5375l-2.2057-6.748a.8573.8573 0 0 0-.29-.4412.8748.8748 0 0 0-.9997-.0537.8585.8585 0 0 0-.3362.4049L.4332 9.5015l-.0325.0862a6.0814 6.0814 0 0 0 2.0119 7.0105l.0113.0087.03.0213 4.976 3.7264 2.462 1.8633 1.4995 1.1321a1.0085 1.0085 0 0 0 1.2197 0l1.4995-1.1321 2.4619-1.8633 5.006-3.7477.0125-.01a6.0814 6.0814 0 0 0 2.0094-7.003z"/>
-                  </svg>
-                </div>
-                <div>
-                  <h3 class="font-semibold text-gray-900 mb-1">GitLab Repository</h3>
-                  <p class="text-gray-700">Für technische Fragen und Entwicklung</p>
-                  <a href="https://gitlab.opencode.de/OC000028072444/p2d2" target="_blank" rel="noopener" class="text-primary-600 hover:text-primary-700 font-medium">
-                    gitlab.opencode.de/p2d2
-                  </a>
-                </div>
-              </div>
+                            <!-- Mastodon -->
+                            <div
+                                class="contact-item flex items-start space-x-4"
+                            >
+                                <div
+                                    class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0"
+                                >
+                                    <svg
+                                        class="w-6 h-6 text-green-600"
+                                        fill="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            d="M23.268 5.313c-.35-2.578-2.617-4.61-5.304-5.004C17.51.242 15.792 0 11.813 0h-.03c-3.98 0-4.835.242-5.288.309C3.882.692 1.496 2.518.917 5.127.64 6.412.61 7.837.661 9.143c.074 1.874.088 3.745.26 5.611.118 1.24.325 2.47.62 3.68.55 2.237 2.777 4.098 4.96 4.857 2.336.792 4.849.923 7.256.38.265-.061.527-.132.786-.213.585-.184 1.27-.39 1.774-.753a.057.057 0 0 0 .023-.043v-1.809a.052.052 0 0 0-.02-.041.053.053 0 0 0-.046-.01 20.282 20.282 0 0 1-4.709.545c-2.73 0-3.463-1.284-3.674-1.818a5.593 5.593 0 0 1-.319-1.433.053.053 0 0 1 .066-.054c1.517.363 3.072.546 4.632.546.376 0 .75 0 1.125-.01 1.57-.044 3.224-.124 4.768-.422.038-.008.077-.015.11-.024 2.435-.464 4.753-1.92 4.989-5.604.008-.145.03-1.52.03-1.67.002-.512.167-3.63-.024-5.545zm-3.748 9.195h-2.561V8.29c0-1.309-.55-1.976-1.67-1.976-1.23 0-1.846.79-1.846 2.35v3.403h-2.546V8.663c0-1.56-.617-2.35-1.848-2.35-1.112 0-1.668.668-1.67 1.977v6.218H4.822V8.102c0-1.31.337-2.35 1.011-3.12.696-.77 1.608-1.164 2.74-1.164 1.311 0 2.302.5 2.962 1.498l.638 1.06.638-1.06c.66-.999 1.65-1.498 2.96-1.498 1.13 0 2.043.395 2.74 1.164.675.77 1.012 1.81 1.012 3.12z"
+                                        ></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3
+                                        class="font-semibold text-gray-900 mb-1"
+                                    >
+                                        Mastodon
+                                    </h3>
+                                    <p class="text-gray-700">
+                                        Folge uns für Updates und Community-News
+                                    </p>
+                                    <a
+                                        href="https://nrw.social/@P2D2"
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="text-primary-600 hover:text-primary-700 font-medium"
+                                    >
+                                        @P2D2@nrw.social
+                                    </a>
+                                </div>
+                            </div>
 
+                            <!-- GitLab -->
+                            <div
+                                class="contact-item flex items-start space-x-4"
+                            >
+                                <div
+                                    class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0"
+                                >
+                                    <svg
+                                        class="w-6 h-6 text-orange-600"
+                                        fill="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            d="m23.6004 9.5927-.0337-.0862L20.3.9814a.851.851 0 0 0-.3362-.405.8748.8748 0 0 0-.9997.0539.8748.8748 0 0 0-.29.4399l-2.2055 6.748H7.5375l-2.2057-6.748a.8573.8573 0 0 0-.29-.4412.8748.8748 0 0 0-.9997-.0537.8585.8585 0 0 0-.3362.4049L.4332 9.5015l-.0325.0862a6.0814 6.0814 0 0 0 2.0119 7.0105l.0113.0087.03.0213 4.976 3.7264 2.462 1.8633 1.4995 1.1321a1.0085 1.0085 0 0 0 1.2197 0l1.4995-1.1321 2.4619-1.8633 5.006-3.7477.0125-.01a6.0814 6.0814 0 0 0 2.0094-7.003z"
+                                        ></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3
+                                        class="font-semibold text-gray-900 mb-1"
+                                    >
+                                        GitLab Repository
+                                    </h3>
+                                    <p class="text-gray-700">
+                                        Für technische Fragen und Entwicklung
+                                    </p>
+                                    <a
+                                        href="https://gitlab.opencode.de/OC000028072444/p2d2"
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="text-primary-600 hover:text-primary-700 font-medium"
+                                    >
+                                        gitlab.opencode.de/p2d2
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FAQ -->
+                    <div class="faq-section">
+                        <h2
+                            class="font-poppins font-bold text-2xl text-gray-900 mb-6"
+                        >
+                            Häufige Fragen
+                        </h2>
+
+                        <div class="space-y-4">
+                            <div
+                                class="faq-item border-l-4 border-primary-500 pl-4"
+                            >
+                                <h3 class="font-semibold text-gray-900 mb-2">
+                                    Wie kann ich bei p2d2 mitmachen?
+                                </h3>
+                                <p class="text-gray-700 text-sm">
+                                    Du kannst entweder vor Ort Daten sammeln
+                                    oder online zur Qualitätssicherung
+                                    beitragen. Besuche unsere
+                                    <a
+                                        href="/mitmachen"
+                                        class="text-primary-600 hover:underline"
+                                        >Mitmachen-Seite</a
+                                    > für detaillierte Anleitungen.
+                                </p>
+                            </div>
+
+                            <div
+                                class="faq-item border-l-4 border-green-500 pl-4"
+                            >
+                                <h3 class="font-semibold text-gray-900 mb-2">
+                                    Sind die Daten wirklich kostenlos?
+                                </h3>
+                                <p class="text-gray-700 text-sm">
+                                    Ja, alle p2d2-Daten stehen unter freien
+                                    Lizenzen und können von jedem genutzt,
+                                    geteilt und verbessert werden.
+                                </p>
+                            </div>
+
+                            <div
+                                class="faq-item border-l-4 border-blue-500 pl-4"
+                            >
+                                <h3 class="font-semibold text-gray-900 mb-2">
+                                    Welche technischen Kenntnisse brauche ich?
+                                </h3>
+                                <p class="text-gray-700 text-sm">
+                                    Für die Grundnutzung brauchst du keine
+                                    technischen Kenntnisse. Für die Entwicklung
+                                    sind Kenntnisse in AstroJS, OpenLayers oder
+                                    GIS hilfreich.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kontakt-Formular -->
+                <div class="contact-form-section">
+                    <h2
+                        class="font-poppins font-bold text-2xl text-gray-900 mb-6"
+                    >
+                        Schreib uns eine Nachricht
+                    </h2>
+
+                    <form
+                        class="space-y-6 bg-white p-8 rounded-xl border border-gray-200 shadow-lg"
+                    >
+                        <div>
+                            <label
+                                for="name"
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >Name</label
+                            >
+                            <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                                placeholder="Dein vollständiger Name"
+                            />
+                        </div>
+
+                        <div>
+                            <label
+                                for="email"
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >E-Mail</label
+                            >
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                                placeholder="deine@email.de"
+                            />
+                        </div>
+
+                        <div>
+                            <label
+                                for="subject"
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >Betreff</label
+                            >
+                            <select
+                                id="subject"
+                                name="subject"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                            >
+                                <option value="">Bitte wählen...</option>
+                                <option value="mitmachen"
+                                    >Ich möchte mitmachen</option
+                                >
+                                <option value="kommune"
+                                    >Interesse als Kommune</option
+                                >
+                                <option value="technical"
+                                    >Technische Frage</option
+                                >
+                                <option value="partnership"
+                                    >Partnerschaft/Kooperation</option
+                                >
+                                <option value="press">Presse-Anfrage</option>
+                                <option value="other">Sonstiges</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label
+                                for="message"
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >Nachricht</label
+                            >
+                            <textarea
+                                id="message"
+                                name="message"
+                                rows="5"
+                                required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors resize-vertical"
+                                placeholder="Teile uns mit, wie wir dir helfen können..."
+                            ></textarea>
+                        </div>
+
+                        <button
+                            type="submit"
+                            class="w-full bg-primary-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                        >
+                            Nachricht senden
+                        </button>
+
+                        <p class="text-xs text-gray-500 text-center">
+                            Mit dem Absenden stimmst du unserer
+                            Datenschutzerklärung zu. Wir verwenden deine Daten
+                            nur zur Bearbeitung deiner Anfrage.
+                        </p>
+                    </form>
+                </div>
             </div>
-          </div>
-
-          <!-- FAQ -->
-          <div class="faq-section">
-            <h2 class="font-poppins font-bold text-2xl text-gray-900 mb-6">Häufige Fragen</h2>
-            
-            <div class="space-y-4">
-              <div class="faq-item border-l-4 border-primary-500 pl-4">
-                <h3 class="font-semibold text-gray-900 mb-2">Wie kann ich bei p2d2 mitmachen?</h3>
-                <p class="text-gray-700 text-sm">
-                  Du kannst entweder vor Ort Daten sammeln oder online zur Qualitätssicherung beitragen. Besuche unsere 
-                  <a href="/mitmachen" class="text-primary-600 hover:underline">Mitmachen-Seite</a> für detaillierte Anleitungen.
-                </p>
-              </div>
-              
-              <div class="faq-item border-l-4 border-green-500 pl-4">
-                <h3 class="font-semibold text-gray-900 mb-2">Sind die Daten wirklich kostenlos?</h3>
-                <p class="text-gray-700 text-sm">
-                  Ja, alle p2d2-Daten stehen unter freien Lizenzen und können von jedem genutzt, geteilt und verbessert werden.
-                </p>
-              </div>
-              
-              <div class="faq-item border-l-4 border-blue-500 pl-4">
-                <h3 class="font-semibold text-gray-900 mb-2">Welche technischen Kenntnisse brauche ich?</h3>
-                <p class="text-gray-700 text-sm">
-                  Für die Grundnutzung brauchst du keine technischen Kenntnisse. Für die Entwicklung sind Kenntnisse in AstroJS, OpenLayers oder GIS hilfreich.
-                </p>
-              </div>
-            </div>
-          </div>
-
         </div>
-
-        <!-- Kontakt-Formular -->
-        <div class="contact-form-section">
-          <h2 class="font-poppins font-bold text-2xl text-gray-900 mb-6">Schreib uns eine Nachricht</h2>
-          
-          <form class="space-y-6 bg-white p-8 rounded-xl border border-gray-200 shadow-lg">
-            <div>
-              <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Name</label>
-              <input 
-                type="text" 
-                id="name" 
-                name="name" 
-                required 
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                placeholder="Dein vollständiger Name"
-              >
-            </div>
-            
-            <div>
-              <label for="email" class="block text-sm font-medium text-gray-700 mb-2">E-Mail</label>
-              <input 
-                type="email" 
-                id="email" 
-                name="email" 
-                required 
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                placeholder="deine@email.de"
-              >
-            </div>
-            
-            <div>
-              <label for="subject" class="block text-sm font-medium text-gray-700 mb-2">Betreff</label>
-              <select 
-                id="subject" 
-                name="subject" 
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-              >
-                <option value="">Bitte wählen...</option>
-                <option value="mitmachen">Ich möchte mitmachen</option>
-                <option value="kommune">Interesse als Kommune</option>
-                <option value="technical">Technische Frage</option>
-                <option value="partnership">Partnerschaft/Kooperation</option>
-                <option value="press">Presse-Anfrage</option>
-                <option value="other">Sonstiges</option>
-              </select>
-            </div>
-            
-            <div>
-              <label for="message" class="block text-sm font-medium text-gray-700 mb-2">Nachricht</label>
-              <textarea 
-                id="message" 
-                name="message" 
-                rows="5" 
-                required 
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors resize-vertical"
-                placeholder="Teile uns mit, wie wir dir helfen können..."
-              ></textarea>
-            </div>
-            
-            <button 
-              type="submit" 
-              class="w-full bg-primary-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-            >
-              Nachricht senden
-            </button>
-            
-            <p class="text-xs text-gray-500 text-center">
-              Mit dem Absenden stimmst du unserer Datenschutzerklärung zu. 
-              Wir verwenden deine Daten nur zur Bearbeitung deiner Anfrage.
-            </p>
-          </form>
-        </div>
-
-      </div>
-    </div>
-
-  </main>
-</Layout>
+    </main>
+</BaseLayout>
 
 <script>
-// Einfache Formular-Behandlung (placeholder)
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.querySelector('form');
-  if (form) {
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      // Hier würdest du normalerweise das Formular an einen Server senden
-      alert('Danke für deine Nachricht! Wir melden uns bald bei dir.');
+    // Einfache Formular-Behandlung (placeholder)
+    document.addEventListener("DOMContentLoaded", () => {
+        const form = document.querySelector("form");
+        if (form) {
+            form.addEventListener("submit", (e) => {
+                e.preventDefault();
+                // Hier würdest du normalerweise das Formular an einen Server senden
+                alert(
+                    "Leider ist die Mail-Funktion noch nicht implementiert. Bitte nutze derzeit noch die Mail- oder Mastodon-Kontakte auf der Kontakt-Seite. Vielen Dank :-)",
+                );
+            });
+        }
     });
-  }
-});
 </script>
-
