@@ -6,6 +6,7 @@
 import { Map as OLMap } from "ol";
 import { Feature } from "ol";
 import { Geometry } from "ol/geom";
+import { transformExtent } from "ol/proj";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Overlay from "ol/Overlay";
@@ -192,24 +193,22 @@ export class FeaturePopupHandler {
     }
 
     try {
-      // Load grabflur data
+      // Check if sub-features exist before opening editor
       const grabflurFeatures = await this.loadGrabflurData(properties);
 
-      // Show popup with data
-      this.showPopup(coordinate, {
-        cemetery: properties,
-        grabflurFeatures,
-      });
+      if (grabflurFeatures.length > 0) {
+        // Open feature editor in new window
+        this.openFeatureEditor(properties, geometry);
+      } else {
+        // Show simple info popup
+        this.showInfoPopup(coordinate, properties);
+      }
 
       // Zoom to feature
       this.zoomToFeature(geometry);
     } catch (error) {
       console.error("[FeaturePopup] Failed to handle cemetery click:", error);
-      this.showPopup(coordinate, {
-        cemetery: properties,
-        grabflurFeatures: [],
-        error: "Fehler beim Laden der Grabflur-Daten",
-      });
+      this.showInfoPopup(coordinate, properties);
     }
   }
 
@@ -392,6 +391,75 @@ export class FeaturePopupHandler {
     } catch (error) {
       console.error("[FeaturePopup] Failed to zoom to feature:", error);
     }
+  }
+
+  /**
+   * Show info popup for features without sub-features
+   */
+  private showInfoPopup(
+    coordinate: number[],
+    props: CemeteryFeatureProperties,
+  ): void {
+    const content: PopupContent = {
+      cemetery: props,
+      grabflurFeatures: [],
+      error: "Für dieses Feature sind noch keine Detail-Polygone verfügbar.",
+    };
+    this.showPopup(coordinate, content);
+  }
+
+  /**
+   * Open feature editor in new browser window
+   */
+  private openFeatureEditor(
+    props: CemeteryFeatureProperties,
+    geometry: Geometry,
+  ): void {
+    const extent = geometry.getExtent();
+    const editorUrl = this.buildEditorUrl(props, extent);
+
+    console.log("[FeaturePopup] Opening feature editor:", editorUrl);
+
+    // Open new browser window
+    const editorWindow = window.open(
+      editorUrl,
+      `feature-editor-${encodeURIComponent(props.name)}`,
+      "width=1200,height=800,resizable=yes,scrollbars=yes,location=yes",
+    );
+
+    if (!editorWindow) {
+      alert(
+        "Popup-Blocker verhindert das Öffnen des Feature-Editors. Bitte erlauben Sie Popups für diese Seite.",
+      );
+    }
+  }
+
+  /**
+   * Build URL for feature editor page with WGS84 extent and local projection
+   */
+  private buildEditorUrl(
+    props: CemeteryFeatureProperties,
+    extent: number[],
+  ): string {
+    // Get current map projection (could be UTM or Web Mercator)
+    const currentProjection = this.map.getView().getProjection().getCode();
+
+    // Transform extent to WGS84 for URL transport
+    const wgs84Extent = transformExtent(extent, currentProjection, "EPSG:4326");
+
+    // Get local CRS from map state (e.g. EPSG:25832 for Köln)
+    const localCRS = mapState.getState().localCRS || "EPSG:3857";
+
+    const params = new URLSearchParams({
+      wp_name: props.wp_name,
+      container_type: this.getActiveContainerType(),
+      name: props.name,
+      extent: wgs84Extent.join(","), // Send as WGS84
+      osm_admin_level: String(props.osm_admin_level),
+      projection: localCRS, // Send local projection (UTM)
+    });
+
+    return `/feature-editor/${encodeURIComponent(props.name)}?${params}`;
   }
 
   /**
