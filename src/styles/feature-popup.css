@@ -1,0 +1,257 @@
+/**
+ * Feature Popup Styles for p2d2 OpenLayers Map
+ * Styling for cemetery feature popups with grabflur data
+ */
+
+.feature-popup {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+  min-width: 280px;
+  max-width: 400px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  z-index: 1000;
+  animation: popupFadeIn 0.2s ease-out;
+}
+
+.feature-popup.error {
+  border-left: 4px solid #e53e3e;
+}
+
+.popup-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 70vh;
+  overflow: hidden;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 16px 16px 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.popup-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.3;
+  flex: 1;
+  padding-right: 8px;
+}
+
+.popup-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.popup-close:hover {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.popup-close:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.popup-body {
+  padding: 16px;
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.popup-info {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.popup-info p {
+  margin: 0 0 8px 0;
+  font-size: 0.875rem;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.popup-info p:last-child {
+  margin-bottom: 0;
+}
+
+.popup-info strong {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.popup-grabflur h4 {
+  margin: 0 0 12px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.grabflur-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.grabflur-list li {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.875rem;
+  color: #475569;
+  transition: background-color 0.15s ease;
+}
+
+.grabflur-list li:last-child {
+  border-bottom: none;
+}
+
+.grabflur-list li:hover {
+  background: #f1f5f9;
+}
+
+.grabflur-list li.no-data {
+  color: #94a3b8;
+  font-style: italic;
+  text-align: center;
+  padding: 16px 12px;
+}
+
+.popup-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.popup-error p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #dc2626;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Animation for popup appearance */
+@keyframes popupFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .feature-popup {
+    max-width: 90vw;
+    min-width: 250px;
+  }
+
+  .popup-header {
+    padding: 12px 12px 8px 12px;
+  }
+
+  .popup-body {
+    padding: 12px;
+    max-height: 60vh;
+  }
+
+  .popup-title {
+    font-size: 1rem;
+  }
+}
+
+/* Scrollbar styling for webkit browsers */
+.grabflur-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.grabflur-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 0 6px 6px 0;
+}
+
+.grabflur-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.grabflur-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Focus styles for accessibility */
+.feature-popup:focus-within {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .feature-popup {
+    border: 2px solid #000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .popup-header {
+    background: #000;
+    color: #fff;
+  }
+
+  .popup-title {
+    color: #fff;
+  }
+
+  .popup-close {
+    color: #fff;
+    border: 1px solid #fff;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .feature-popup {
+    animation: none;
+  }
+
+  .popup-close {
+    transition: none;
+  }
+
+  .grabflur-list li {
+    transition: none;
+  }
+}
