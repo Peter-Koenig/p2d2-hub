@@ -36,30 +36,40 @@ interface PopupContent {
 
 export class FeaturePopupHandler {
   private map: OLMap;
-  private popupOverlay: Overlay | null = null;
+  private modalElement: HTMLDialogElement | null = null;
   private isInitialized: boolean = false;
+  private backdropClickHandler: ((event: MouseEvent) => void) | null = null;
 
   constructor(map: OLMap) {
     this.map = map;
-    this.initializePopupOverlay();
+    this.initializeModal();
   }
 
   /**
-   * Initialize the popup overlay system
+   * Initialize the modal dialog system
    */
-  private initializePopupOverlay(): void {
-    // Create popup container
-    const popupElement = document.createElement("div");
-    popupElement.className = "feature-popup";
-    popupElement.style.display = "none";
+  private initializeModal(): void {
+    // Create modal dialog element
+    this.modalElement = document.createElement("dialog");
+    this.modalElement.className = "feature-popup-modal";
+    this.modalElement.style.cssText = `
+      padding: 0;
+      border: none;
+      border-radius: 1rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      min-width: 320px;
+      max-width: 90vw;
+      width: 400px;
+      text-align: left;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10000;
+    `;
 
-    // Create overlay
-    this.popupOverlay = new Overlay({
-      element: popupElement,
-      autoPan: true,
-    });
-
-    this.map.addOverlay(this.popupOverlay);
+    // Add modal to document body
+    document.body.appendChild(this.modalElement);
     this.isInitialized = true;
   }
 
@@ -165,20 +175,21 @@ export class FeaturePopupHandler {
     cemeteryProps: CemeteryFeatureProperties,
   ): Promise<GrabflurFeatureProperties[]> {
     // Build CQL filter for grabflur features
-    // Note: Double URL encoding for name pattern due to WFS proxy setup
+    // Das % für SQL LIKE wird im URL-Encoding automatisch korrekt behandelt
     const namePattern = `${cemeteryProps.name}-%`;
-    const encodedNamePattern = encodeURIComponent(
-      encodeURIComponent(namePattern),
-    );
 
-    const cqlFilter = `osm_admin_level=10 AND wp_name='${cemeteryProps.wp_name}' AND container_type='cemetery' AND name like '${encodedNamePattern}'`;
+    // Use correct CQL filter syntax with parentheses and LIKE operator
+    const cqlFilter = `osm_admin_level=10 AND wp_name='${cemeteryProps.wp_name}' AND container_type='cemetery' AND (name LIKE '${namePattern}')`;
 
     console.log("[FeaturePopup] Loading grabflur data with filter:", cqlFilter);
 
     try {
+      // Use the corrected buildAuthorizedWFSURL method that now handles encoding correctly
       const url = wfsAuthClient.buildAuthorizedWFSURL("p2d2_containers", {
         CQL_FILTER: cqlFilter,
       });
+
+      console.log("[FeaturePopup] Using corrected WFS URL:", url);
 
       const response = await wfsAuthClient.fetchWithAuth(url);
 
@@ -216,34 +227,59 @@ export class FeaturePopupHandler {
   }
 
   /**
-   * Show popup with cemetery and grabflur data
+   * Show popup with cemetery and grabflur data as modal dialog
    */
   private showPopup(coordinate: number[], content: PopupContent): void {
-    if (!this.popupOverlay) {
-      console.error("[FeaturePopup] Popup overlay not initialized");
+    if (!this.modalElement) {
+      console.error("[FeaturePopup] Modal element not initialized");
       return;
     }
 
-    const popupElement = this.popupOverlay.getElement();
-    if (!popupElement) {
-      console.error("[FeaturePopup] Popup element not found");
-      return;
+    // Generate popup HTML with modal structure
+    const modalHTML = `
+      <form method="dialog" style="margin:0;padding:.5rem 1rem 0 0;text-align:right;">
+        <button class="text-2xl" aria-label="Schließen" style="background:none;border:none;cursor:pointer;">×</button>
+      </form>
+      <div style="padding: 1rem 1.5rem 1.5rem 1.5rem;">
+        ${this.generatePopupHTML(content)}
+      </div>
+    `;
+
+    // Set modal content
+    this.modalElement.innerHTML = modalHTML;
+
+    // Show modal dialog
+    this.modalElement.showModal();
+
+    // Remove old backdrop listener if exists
+    if (this.backdropClickHandler) {
+      this.modalElement.removeEventListener("click", this.backdropClickHandler);
     }
-
-    // Generate popup HTML
-    popupElement.innerHTML = this.generatePopupHTML(content);
-    popupElement.style.display = "block";
-
-    // Position popup
-    this.popupOverlay.setPosition(coordinate);
 
     // Add event listener for close button
-    const closeButton = popupElement.querySelector(".popup-close");
+    const closeButton = this.modalElement.querySelector("button");
     if (closeButton) {
-      closeButton.addEventListener("click", () => this.closePopup());
+      closeButton.addEventListener("click", () => this.closePopup(), {
+        once: true,
+      });
     }
 
-    console.log("[FeaturePopup] Popup shown");
+    // Close modal when clicking on backdrop
+    this.backdropClickHandler = (event: MouseEvent) => {
+      const rect = this.modalElement!.getBoundingClientRect();
+      if (
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom
+      ) {
+        this.closePopup();
+      }
+    };
+
+    this.modalElement.addEventListener("click", this.backdropClickHandler);
+
+    console.log("[FeaturePopup] Modal popup shown");
   }
 
   /**
@@ -261,7 +297,6 @@ export class FeaturePopupHandler {
       <div class="popup-container">
         <div class="popup-header">
           <h3 class="popup-title">${cemetery.name}</h3>
-          <button class="popup-close" aria-label="Popup schließen">×</button>
         </div>
         <div class="popup-body">
           <div class="popup-info">
@@ -312,15 +347,10 @@ export class FeaturePopupHandler {
    * Close the popup
    */
   public closePopup(): void {
-    if (!this.popupOverlay) return;
+    if (!this.modalElement) return;
 
-    const popupElement = this.popupOverlay.getElement();
-    if (popupElement) {
-      popupElement.style.display = "none";
-    }
-
-    this.popupOverlay.setPosition(undefined);
-    console.log("[FeaturePopup] Popup closed");
+    this.modalElement.close();
+    console.log("[FeaturePopup] Modal popup closed");
   }
 
   /**
@@ -329,13 +359,10 @@ export class FeaturePopupHandler {
   public destroy(): void {
     this.closePopup();
 
-    if (this.popupOverlay) {
-      this.map.removeOverlay(this.popupOverlay);
-      this.popupOverlay = null;
+    if (this.modalElement) {
+      this.modalElement.remove();
+      this.modalElement = null;
     }
-
-    // Note: Event listeners are automatically cleaned up by OpenLayers
-    // when the map is destroyed
 
     this.isInitialized = false;
     console.log("[FeaturePopup] Handler destroyed");

@@ -189,8 +189,12 @@ export class WFSAuthClient {
       ...safeParams,
     };
 
-    const queryParams = new URLSearchParams(baseParams);
-    const wfsUrl = `${this.config.endpoint}?${queryParams.toString()}`;
+    // Manueller URL-Bau um doppeltes Encoding zu vermeiden
+    const queryString = Object.entries(baseParams)
+      .map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`)
+      .join("&");
+
+    const wfsUrl = `${this.config.endpoint}?${queryString}`;
 
     // Proxy-URL für CORS-Umgehung verwenden
     const encodedWfsUrl = encodeURIComponent(wfsUrl);
