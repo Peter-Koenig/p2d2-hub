@@ -53,3 +53,4 @@ src_develop.txt
 src_feature.txt
 src/utils/geo/__pycache__/*
 src_temp.txt
+.directory
