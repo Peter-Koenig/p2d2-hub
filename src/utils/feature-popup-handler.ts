@@ -10,6 +10,7 @@ import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Overlay from "ol/Overlay";
 import { wfsAuthClient } from "./wfs-auth";
+import { mapState } from "./map-state";
 
 // Type definitions for feature properties
 interface CemeteryFeatureProperties {
@@ -128,7 +129,51 @@ export class FeaturePopupHandler {
     }
 
     const properties = feature.getProperties();
-    return properties?.container_type === "cemetery";
+    const activeContainerType = this.getActiveContainerType();
+
+    return properties?.container_type === activeContainerType;
+  }
+
+  /**
+   * Get container type for currently selected category
+   * Returns 'cemetery' as fallback if no category selected
+   */
+  private getActiveContainerType(): string {
+    const categorySlug = mapState.getSelectedCategory();
+
+    if (!categorySlug) {
+      console.warn(
+        '[FeaturePopup] No category selected, using fallback "cemetery"',
+      );
+      return "cemetery";
+    }
+
+    // Try to get from embedded category data
+    try {
+      const categoryDataElement = document.getElementById("category-data");
+      if (categoryDataElement) {
+        const categoryMapStr =
+          categoryDataElement.getAttribute("data-category-map");
+        if (categoryMapStr) {
+          const categoryMap = JSON.parse(categoryMapStr);
+          if (categoryMap[categorySlug]?.containerType) {
+            return categoryMap[categorySlug].containerType;
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(
+        "[FeaturePopup] Could not load category data, using fallback",
+      );
+    }
+
+    // Hardcoded fallback mapping
+    const fallbackMapping: Record<string, string> = {
+      cemeteries: "cemetery",
+      administrative: "administrative",
+    };
+
+    return fallbackMapping[categorySlug] || "cemetery";
   }
 
   /**
@@ -178,10 +223,16 @@ export class FeaturePopupHandler {
     // Das % für SQL LIKE wird im URL-Encoding automatisch korrekt behandelt
     const namePattern = `${cemeteryProps.name}-%`;
 
-    // Use correct CQL filter syntax with parentheses and LIKE operator
-    const cqlFilter = `osm_admin_level=10 AND wp_name='${cemeteryProps.wp_name}' AND container_type='cemetery' AND (name LIKE '${namePattern}')`;
+    // Get container type dynamically from selected category
+    const containerType = this.getActiveContainerType();
 
-    console.log("[FeaturePopup] Loading grabflur data with filter:", cqlFilter);
+    // Use correct CQL filter syntax with DYNAMIC container_type
+    const cqlFilter = `osm_admin_level=10 AND wp_name='${cemeteryProps.wp_name}' AND container_type='${containerType}' AND (name LIKE '${namePattern}')`;
+
+    console.log(
+      `[FeaturePopup] Loading grabflur data with container_type="${containerType}"`,
+    );
+    console.log("[FeaturePopup] CQL Filter:", cqlFilter);
 
     try {
       // Use the corrected buildAuthorizedWFSURL method that now handles encoding correctly
