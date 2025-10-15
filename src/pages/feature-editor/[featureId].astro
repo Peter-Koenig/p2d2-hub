@@ -191,6 +191,22 @@ const decodedName = decodeURIComponent(name);
         border-left: 3px solid #dc2626;
     }
 
+    /* Hover-Popup Animation */
+    .grabflur-hover-popup {
+        animation: fadeIn 0.2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(4px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
     .feature-name {
         font-weight: 500;
         color: #1e293b;
@@ -234,7 +250,7 @@ const decodedName = decodeURIComponent(name);
     import VectorSource from "ol/source/Vector";
     import OSM from "ol/source/OSM";
     import GeoJSON from "ol/format/GeoJSON";
-    import { Style, Stroke, Fill } from "ol/style";
+    import { Style, Stroke, Fill, Text } from "ol/style";
     import { transformExtent } from "ol/proj";
     import { defaults } from "ol/control/defaults";
     import FullScreen from "ol/control/FullScreen";
@@ -242,6 +258,19 @@ const decodedName = decodeURIComponent(name);
     import { registerUtm } from "../../utils/crs";
     import { fromExtent } from "ol/geom/Polygon";
     import { Feature } from "ol";
+    import Overlay from "ol/Overlay";
+
+    // Layer Z-Index constants for consistent ordering
+    // WICHTIG: Muss VOR Map-Initialisierung definiert werden!
+    const LAYER_ZINDEX = {
+        BASE: 0, // OSM base map
+        CEMETERY_BG: 5, // Cemetery background polygon
+        GEOTIFF: 7, // Future: GeoTIFF layer
+        ORTHOPHOTO: 8, // Future: Orthophoto layer
+        GRABFLUR: 10, // Grabflur polygons
+        GRAVES: 15, // Future: Individual graves
+        LABELS: 20, // Future: Text labels
+    };
 
     // Initialize feature editor (wrapped in async IIFE to allow early returns)
     (async () => {
@@ -252,17 +281,6 @@ const decodedName = decodeURIComponent(name);
         const name = urlParams.get("name");
         const extentStr = urlParams.get("extent");
         const projectionParam = urlParams.get("projection");
-
-        // Layer Z-Index constants for consistent ordering
-        const LAYER_ZINDEX = {
-            BASE: 0, // OSM base map
-            CEMETERY_BG: 5, // Cemetery background polygon
-            GEOTIFF: 7, // Future: GeoTIFF layer
-            ORTHOPHOTO: 8, // Future: Orthophoto layer
-            GRABFLUR: 10, // Grabflur polygons
-            GRAVES: 15, // Future: Individual graves
-            LABELS: 20, // Future: Text labels
-        };
 
         // Validate parameters
         if (
@@ -576,6 +594,56 @@ const decodedName = decodeURIComponent(name);
                 }),
             });
 
+            // Extrahiere Nummer aus Name (z.B. "Rheinkassel-007" → "007")
+            function extractGrabflurNumber(name: string): string {
+                const match = name.match(/-(\d+)$/);
+                return match ? match[1] : name;
+            }
+
+            // Erstelle Label-Features für Grabflur-Nummern
+            const labelFeatures = olFeatures
+                .map((feature: any) => {
+                    const name = feature.get("name") || "Unbenannt";
+                    const number = extractGrabflurNumber(name);
+                    const geometry = feature.getGeometry();
+
+                    if (
+                        geometry &&
+                        typeof geometry.getInteriorPoint === "function"
+                    ) {
+                        const labelFeature = new Feature({
+                            geometry: geometry.getInteriorPoint(),
+                            label: number,
+                        });
+
+                        labelFeature.setStyle(
+                            new Style({
+                                text: new Text({
+                                    text: number,
+                                    font: "bold 16px Inter, sans-serif",
+                                    fill: new Fill({ color: "#dc2626" }),
+                                    stroke: new Stroke({
+                                        color: "#ffffff",
+                                        width: 3,
+                                    }),
+                                    textAlign: "center",
+                                    textBaseline: "middle",
+                                }),
+                            }),
+                        );
+
+                        return labelFeature;
+                    }
+                    return null;
+                })
+                .filter((f: any) => f !== null);
+
+            // Label-Layer erstellen
+            const labelLayer = new VectorLayer({
+                source: new VectorSource({ features: labelFeatures }),
+                zIndex: layerZIndex.LABELS, // 20, über allen anderen
+            });
+
             // VectorLayer erstellen mit Hover-Interaktion
             const grabflurLayer = new VectorLayer({
                 source: vectorSource,
@@ -583,8 +651,37 @@ const decodedName = decodeURIComponent(name);
                 zIndex: layerZIndex.GRABFLUR, // Über Cemetery-Background
             });
 
-            // ✅ KORREKTUR: Layer-spezifische Hover-Detection
+            // Hover-Popup erstellen
+            const popupElement = document.createElement("div");
+            popupElement.className = "grabflur-hover-popup";
+            popupElement.style.cssText = `
+                position: absolute;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(8px);
+                border: 1px solid #dc2626;
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-family: 'Inter', sans-serif;
+                font-size: 14px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                pointer-events: none;
+                white-space: nowrap;
+                z-index: 1000;
+                animation: fadeIn 0.2s ease-in-out;
+            `;
+            document.body.appendChild(popupElement);
+
+            const popup = new Overlay({
+                element: popupElement,
+                positioning: "bottom-center",
+                offset: [0, -10],
+                stopEvent: false,
+            });
+            map.addOverlay(popup);
+
+            // ✅ KORREKTUR: Layer-spezifische Hover-Detection mit Popup
             let hoverFeature: any = null;
+            let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
 
             map.on("pointermove", (evt: any) => {
                 if (evt.dragging) {
@@ -602,13 +699,43 @@ const decodedName = decodeURIComponent(name);
 
                 // Style-Update nur bei Änderung
                 if (feature !== hoverFeature) {
+                    // Clear existing timeout
+                    if (hoverTimeout) {
+                        clearTimeout(hoverTimeout);
+                        hoverTimeout = null;
+                    }
+
                     if (hoverFeature) {
                         hoverFeature.setStyle(GRABFLUR_STYLE);
                     }
 
+                    // Hide popup when leaving feature
+                    if (!feature) {
+                        popup.setPosition(undefined);
+                    }
+
                     hoverFeature = feature;
+
                     if (feature) {
+                        // Apply hover style immediately
                         feature.setStyle(GRABFLUR_HOVER_STYLE);
+
+                        // Show popup after 600ms delay
+                        hoverTimeout = setTimeout(() => {
+                            const name = feature.get("name") || "Unbenannt";
+                            const number = extractGrabflurNumber(name);
+
+                            popupElement.innerHTML = `
+                                <div style="font-weight: 600; color: #dc2626; margin-bottom: 4px;">
+                                    Grabflur ${number}
+                                </div>
+                                <div style="font-size: 12px; color: #6b7280;">
+                                    ${name}
+                                </div>
+                            `;
+
+                            popup.setPosition(evt.coordinate);
+                        }, 600);
                     }
 
                     // Sidebar-Highlight aktualisieren
@@ -618,6 +745,7 @@ const decodedName = decodeURIComponent(name);
 
             // Layer zur Karte hinzufügen
             map.addLayer(grabflurLayer);
+            map.addLayer(labelLayer);
 
             console.log(
                 "Feature-Editor: Grabflur layer added to map with hover interaction",
