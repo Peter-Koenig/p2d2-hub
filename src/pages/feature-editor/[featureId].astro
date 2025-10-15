@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import "../../styles/feature-popup.css";
 
 const { featureId } = Astro.params;
 const wp_name = Astro.url.searchParams.get("wp_name");
@@ -189,22 +190,6 @@ const decodedName = decodeURIComponent(name);
     .feature-list li.active {
         background: #ffedd5;
         border-left: 3px solid #dc2626;
-    }
-
-    /* Hover-Popup Animation */
-    .grabflur-hover-popup {
-        animation: fadeIn 0.2s ease-in-out;
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(4px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
     }
 
     .feature-name {
@@ -654,21 +639,6 @@ const decodedName = decodeURIComponent(name);
             // Hover-Popup erstellen
             const popupElement = document.createElement("div");
             popupElement.className = "grabflur-hover-popup";
-            popupElement.style.cssText = `
-                position: absolute;
-                background: rgba(255, 255, 255, 0.95);
-                backdrop-filter: blur(8px);
-                border: 1px solid #dc2626;
-                border-radius: 8px;
-                padding: 8px 12px;
-                font-family: 'Inter', sans-serif;
-                font-size: 14px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                pointer-events: none;
-                white-space: nowrap;
-                z-index: 1000;
-                animation: fadeIn 0.2s ease-in-out;
-            `;
             document.body.appendChild(popupElement);
 
             const popup = new Overlay({
@@ -678,6 +648,12 @@ const decodedName = decodeURIComponent(name);
                 stopEvent: false,
             });
             map.addOverlay(popup);
+
+            // Cleanup bei Fenster-Schließen (Memory Leak Prevention)
+            window.addEventListener("beforeunload", () => {
+                if (hoverTimeout) clearTimeout(hoverTimeout);
+                map.setTarget(undefined); // OpenLayers Cleanup
+            });
 
             // ✅ KORREKTUR: Layer-spezifische Hover-Detection mit Popup
             let hoverFeature: any = null;
