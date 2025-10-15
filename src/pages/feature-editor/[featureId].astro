@@ -187,8 +187,8 @@ const decodedName = decodeURIComponent(name);
     }
 
     .feature-list li.active {
-        background: #dbeafe;
-        border-left: 3px solid #3b82f6;
+        background: #ffedd5;
+        border-left: 3px solid #dc2626;
     }
 
     .feature-name {
@@ -240,6 +240,8 @@ const decodedName = decodeURIComponent(name);
     import FullScreen from "ol/control/FullScreen";
     import { wfsAuthClient } from "../../utils/wfs-auth";
     import { registerUtm } from "../../utils/crs";
+    import { fromExtent } from "ol/geom/Polygon";
+    import { Feature } from "ol";
 
     // Initialize feature editor (wrapped in async IIFE to allow early returns)
     (async () => {
@@ -250,6 +252,17 @@ const decodedName = decodeURIComponent(name);
         const name = urlParams.get("name");
         const extentStr = urlParams.get("extent");
         const projectionParam = urlParams.get("projection");
+
+        // Layer Z-Index constants for consistent ordering
+        const LAYER_ZINDEX = {
+            BASE: 0, // OSM base map
+            CEMETERY_BG: 5, // Cemetery background polygon
+            GEOTIFF: 7, // Future: GeoTIFF layer
+            ORTHOPHOTO: 8, // Future: Orthophoto layer
+            GRABFLUR: 10, // Grabflur polygons
+            GRAVES: 15, // Future: Individual graves
+            LABELS: 20, // Future: Text labels
+        };
 
         // Validate parameters
         if (
@@ -346,6 +359,101 @@ const decodedName = decodeURIComponent(name);
                     zoom: map.getView().getZoom(),
                 });
 
+                // Load actual cemetery polygon
+                const cemeteryCqlFilter = `osm_admin_level=8 AND wp_name='${wpName}' AND container_type='${containerType}' AND name='${name}'`;
+                console.log(
+                    "Feature-Editor: Loading cemetery polygon with filter:",
+                    cemeteryCqlFilter,
+                );
+
+                const cemeteryUrl = wfsAuthClient.buildAuthorizedWFSURL(
+                    "p2d2_containers",
+                    {
+                        CQL_FILTER: cemeteryCqlFilter,
+                    },
+                );
+
+                const cemeteryResponse =
+                    await wfsAuthClient.fetchWithAuth(cemeteryUrl);
+                if (!cemeteryResponse.ok) {
+                    throw new Error(
+                        `WFS request for cemetery failed: ${cemeteryResponse.status}`,
+                    );
+                }
+
+                const cemeteryGeoJson = await cemeteryResponse.json();
+                const cemeteryFeatures = cemeteryGeoJson.features || [];
+
+                console.log(
+                    `Feature-Editor: Loaded ${cemeteryFeatures.length} cemetery features`,
+                );
+
+                if (cemeteryFeatures.length > 0) {
+                    // Parse cemetery geometry
+                    const geojsonFormat = new GeoJSON();
+                    const cemeteryOlFeatures = geojsonFormat.readFeatures(
+                        cemeteryGeoJson,
+                        {
+                            dataProjection: "EPSG:4326",
+                            featureProjection: targetProjection,
+                        },
+                    );
+
+                    // Create cemetery background layer with orange-red color scheme
+                    const CEMETERY_BG_STYLE = new Style({
+                        stroke: new Stroke({
+                            color: "rgba(194, 65, 12, 0.1)", // 10% Deckkraft
+                            width: 1,
+                        }),
+                        fill: new Fill({
+                            color: "rgba(234, 88, 12, 0.15)", // 15% Deckkraft
+                        }),
+                    });
+
+                    const cemeteryBgLayer = new VectorLayer({
+                        source: new VectorSource({
+                            features: cemeteryOlFeatures,
+                        }),
+                        style: CEMETERY_BG_STYLE,
+                        zIndex: LAYER_ZINDEX.CEMETERY_BG,
+                    });
+
+                    map.addLayer(cemeteryBgLayer);
+                    console.log(
+                        "Feature-Editor: Cemetery background layer added",
+                    );
+                } else {
+                    console.warn(
+                        "Feature-Editor: No cemetery polygon found, using extent as fallback",
+                    );
+                    // Fallback: Use extent if no cemetery polygon found
+                    const cemeteryPolygon = fromExtent(transformedExtent);
+                    const cemeteryFeature = new Feature(cemeteryPolygon);
+
+                    const CEMETERY_BG_STYLE = new Style({
+                        stroke: new Stroke({
+                            color: "rgba(194, 65, 12, 0.1)", // 10% Deckkraft
+                            width: 1,
+                        }),
+                        fill: new Fill({
+                            color: "rgba(234, 88, 12, 0.15)", // 15% Deckkraft
+                        }),
+                    });
+
+                    const cemeteryBgLayer = new VectorLayer({
+                        source: new VectorSource({
+                            features: [cemeteryFeature],
+                        }),
+                        style: CEMETERY_BG_STYLE,
+                        zIndex: LAYER_ZINDEX.CEMETERY_BG,
+                    });
+
+                    map.addLayer(cemeteryBgLayer);
+                    console.log(
+                        "Feature-Editor: Cemetery background layer added (extent fallback)",
+                    );
+                }
+
                 // Load grabflur features and add to map
                 await loadAndDisplayGrabflurFeatures(
                     map,
@@ -353,6 +461,7 @@ const decodedName = decodeURIComponent(name);
                     containerType,
                     name,
                     targetProjection,
+                    LAYER_ZINDEX,
                 );
             } catch (error) {
                 console.error("Feature-Editor: Initialization error", error);
@@ -374,6 +483,7 @@ const decodedName = decodeURIComponent(name);
         containerType: string,
         parentName: string,
         projection: string,
+        layerZIndex: any,
     ) {
         try {
             const featureList = document.getElementById("feature-list");
@@ -445,28 +555,100 @@ const decodedName = decodeURIComponent(name);
                 features: olFeatures,
             });
 
-            // Styling für Grabflur-Polygone
-            const grabflurStyle = new Style({
+            // ✅ KORREKTUR: Separate Style-Konstanten definieren
+            const GRABFLUR_STYLE = new Style({
                 stroke: new Stroke({
-                    color: "#2563eb", // Blau
+                    color: "#dc2626", // Rot
                     width: 2,
                 }),
                 fill: new Fill({
-                    color: "rgba(37, 99, 235, 0.1)", // Transparentes Blau
+                    color: "rgba(234, 88, 12, 0.2)", // 20% Deckkraft
                 }),
             });
 
-            // VectorLayer erstellen
+            const GRABFLUR_HOVER_STYLE = new Style({
+                stroke: new Stroke({
+                    color: "#dc2626", // Rot
+                    width: 3,
+                }),
+                fill: new Fill({
+                    color: "rgba(234, 88, 12, 0.4)", // 40% Deckkraft bei Hover
+                }),
+            });
+
+            // VectorLayer erstellen mit Hover-Interaktion
             const grabflurLayer = new VectorLayer({
                 source: vectorSource,
-                style: grabflurStyle,
-                zIndex: 10, // Über Basiskarte
+                style: GRABFLUR_STYLE,
+                zIndex: layerZIndex.GRABFLUR, // Über Cemetery-Background
+            });
+
+            // ✅ KORREKTUR: Layer-spezifische Hover-Detection
+            let hoverFeature: any = null;
+
+            map.on("pointermove", (evt: any) => {
+                if (evt.dragging) {
+                    return;
+                }
+
+                // Nur Features vom Grabflur-Layer erkennen
+                let feature: any = null;
+                map.forEachFeatureAtPixel(evt.pixel, (f: any, layer: any) => {
+                    if (layer === grabflurLayer) {
+                        feature = f;
+                        return true; // Stop iteration
+                    }
+                });
+
+                // Style-Update nur bei Änderung
+                if (feature !== hoverFeature) {
+                    if (hoverFeature) {
+                        hoverFeature.setStyle(GRABFLUR_STYLE);
+                    }
+
+                    hoverFeature = feature;
+                    if (feature) {
+                        feature.setStyle(GRABFLUR_HOVER_STYLE);
+                    }
+
+                    // Sidebar-Highlight aktualisieren
+                    updateSidebarHighlight(feature);
+                }
             });
 
             // Layer zur Karte hinzufügen
             map.addLayer(grabflurLayer);
 
-            console.log("Feature-Editor: Grabflur layer added to map");
+            console.log(
+                "Feature-Editor: Grabflur layer added to map with hover interaction",
+            );
+
+            // Helper: Sidebar-Highlight-Aktualisierung
+            function updateSidebarHighlight(feature: any) {
+                const featureListItems =
+                    document.querySelectorAll(".feature-list li");
+                featureListItems.forEach((item) => {
+                    item.classList.remove("active");
+                });
+
+                if (feature) {
+                    const featureName = feature.get("name");
+                    if (featureName) {
+                        const listItems =
+                            document.querySelectorAll(".feature-list li");
+                        listItems.forEach((item) => {
+                            const nameElement =
+                                item.querySelector(".feature-name");
+                            if (
+                                nameElement &&
+                                nameElement.textContent === featureName
+                            ) {
+                                item.classList.add("active");
+                            }
+                        });
+                    }
+                }
+            }
 
             // ===== ENDE NEU =====
 
@@ -494,13 +676,21 @@ const decodedName = decodeURIComponent(name);
                                 maxZoom: 19,
                             });
 
-                            // Highlight selected feature
+                            // Highlight selected feature and apply hover style
                             document
                                 .querySelectorAll(".feature-list li")
                                 .forEach((li) => {
                                     li.classList.remove("active");
                                 });
                             listItem.classList.add("active");
+
+                            // Reset previous hover feature
+                            if (hoverFeature) {
+                                hoverFeature.setStyle(GRABFLUR_STYLE);
+                            }
+                            // Apply hover style to clicked feature
+                            olFeature.setStyle(GRABFLUR_HOVER_STYLE);
+                            hoverFeature = olFeature;
                         }
                     }
                 });
