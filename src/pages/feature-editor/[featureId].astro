@@ -1,0 +1,526 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+const { featureId } = Astro.params;
+const wp_name = Astro.url.searchParams.get("wp_name");
+const container_type = Astro.url.searchParams.get("container_type");
+const name = Astro.url.searchParams.get("name");
+const extent = Astro.url.searchParams.get("extent");
+
+// Validate required parameters
+if (!wp_name || !container_type || !name || !extent) {
+    throw new Error("Missing required URL parameters for feature editor");
+}
+
+// Decode feature name for display
+const decodedName = decodeURIComponent(name);
+---
+
+<BaseLayout title={`Feature Editor: ${decodedName}`}>
+    <div class="feature-editor-container">
+        <header class="editor-header">
+            <div class="header-content">
+                <h1 class="editor-title">{decodedName}</h1>
+                <div class="header-info">
+                    <span class="info-item">
+                        <strong>Typ:</strong>
+                        {container_type}
+                    </span>
+                    <span class="info-item">
+                        <strong>Wikipedia:</strong>
+                        {wp_name}
+                    </span>
+                </div>
+            </div>
+            <button
+                id="close-editor"
+                class="close-button"
+                onclick="window.close()"
+            >
+                Schließen
+            </button>
+        </header>
+
+        <div class="editor-content">
+            <!-- Map Container -->
+            <div class="map-container">
+                <div id="feature-editor-map" class="w-full h-full"></div>
+            </div>
+
+            <!-- Sidebar for feature list -->
+            <aside id="feature-sidebar" class="feature-sidebar">
+                <div class="sidebar-header">
+                    <h2>Grabflure</h2>
+                    <div class="feature-count" id="feature-count">Lade...</div>
+                </div>
+                <div class="feature-list-container">
+                    <ul id="feature-list" class="feature-list">
+                        <!-- Will be populated dynamically -->
+                    </ul>
+                </div>
+            </aside>
+        </div>
+    </div>
+</BaseLayout>
+
+<style>
+    .feature-editor-container {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background: #f8fafc;
+    }
+
+    .editor-header {
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-content {
+        flex: 1;
+    }
+
+    .editor-title {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .header-info {
+        display: flex;
+        gap: 1.5rem;
+        font-size: 0.875rem;
+        color: #64748b;
+    }
+
+    .info-item strong {
+        color: #475569;
+    }
+
+    .close-button {
+        background: #ef4444;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .close-button:hover {
+        background: #dc2626;
+    }
+
+    .editor-content {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+    }
+
+    .map-container {
+        flex: 1;
+        position: relative;
+        min-height: 500px; /* Mindesthöhe für Map */
+    }
+
+    #feature-editor-map {
+        width: 100%;
+        height: 100%;
+        min-height: 500px; /* OpenLayers braucht explizite Höhe! */
+        background-color: #f0f0f0; /* Fallback während Laden */
+    }
+
+    .feature-sidebar {
+        width: 350px;
+        background: white;
+        border-left: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .sidebar-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+
+    .sidebar-header h2 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .feature-count {
+        font-size: 0.875rem;
+        color: #64748b;
+    }
+
+    .feature-list-container {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .feature-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .feature-list li {
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid #f1f5f9;
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+
+    .feature-list li:hover {
+        background: #f8fafc;
+    }
+
+    .feature-list li.active {
+        background: #dbeafe;
+        border-left: 3px solid #3b82f6;
+    }
+
+    .feature-name {
+        font-weight: 500;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    .feature-type {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+
+    .no-features {
+        padding: 2rem 1.25rem;
+        text-align: center;
+        color: #64748b;
+        font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+        .editor-content {
+            flex-direction: column;
+        }
+
+        .feature-sidebar {
+            width: 100%;
+            height: 300px;
+        }
+
+        .header-info {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
+</style>
+
+<script>
+    // Client-side logic for feature editor
+    import { Map as OLMap, View } from "ol";
+    import TileLayer from "ol/layer/Tile";
+    import VectorLayer from "ol/layer/Vector";
+    import VectorSource from "ol/source/Vector";
+    import OSM from "ol/source/OSM";
+    import GeoJSON from "ol/format/GeoJSON";
+    import { Style, Stroke, Fill } from "ol/style";
+    import { transformExtent } from "ol/proj";
+    import { defaults } from "ol/control/defaults";
+    import FullScreen from "ol/control/FullScreen";
+    import { wfsAuthClient } from "../../utils/wfs-auth";
+    import { registerUtm } from "../../utils/crs";
+
+    // Initialize feature editor (wrapped in async IIFE to allow early returns)
+    (async () => {
+        // Parse URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const wpName = urlParams.get("wp_name");
+        const containerType = urlParams.get("container_type");
+        const name = urlParams.get("name");
+        const extentStr = urlParams.get("extent");
+        const projectionParam = urlParams.get("projection");
+
+        // Validate parameters
+        if (
+            !wpName ||
+            !containerType ||
+            !name ||
+            !extentStr ||
+            !projectionParam
+        ) {
+            console.error("Feature-Editor: Missing required URL parameters");
+            const featureCount = document.getElementById("feature-count");
+            if (featureCount) {
+                featureCount.textContent =
+                    "Fehler: Benötigte Parameter fehlen (wpName, containerType, name, extent, projection)";
+            }
+            return; // Now works inside function!
+        }
+
+        // Register UTM projection if needed
+        const targetProjection = projectionParam || "EPSG:3857";
+        if (targetProjection.startsWith("EPSG:258")) {
+            try {
+                registerUtm(targetProjection);
+                console.log(
+                    `Feature-Editor: Registered UTM projection ${targetProjection}`,
+                );
+            } catch (error) {
+                console.error(
+                    `Feature-Editor: Failed to register projection ${targetProjection}`,
+                    error,
+                );
+            }
+        }
+
+        // Parse extent (in WGS84) and transform to target projection
+        const extent = extentStr.split(",").map(Number);
+        const transformedExtent = transformExtent(
+            extent,
+            "EPSG:4326",
+            targetProjection,
+        );
+
+        console.log("Feature-Editor: Initialization", {
+            wpName,
+            containerType,
+            name,
+            projection: targetProjection,
+            extentWGS84: extent,
+            extentTransformed: transformedExtent,
+        });
+
+        // Initialize map once DOM is ready
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                // Initialize the map
+                const map = new OLMap({
+                    target: "feature-editor-map",
+                    layers: [
+                        new TileLayer({
+                            source: new OSM({
+                                attributions:
+                                    '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                            }),
+                        }),
+                    ],
+                    view: new View({
+                        projection: targetProjection, // Use local UTM projection!
+                        center: [
+                            (transformedExtent[0] + transformedExtent[2]) / 2,
+                            (transformedExtent[1] + transformedExtent[3]) / 2,
+                        ],
+                        zoom: 16,
+                    }),
+                    controls: defaults().extend([new FullScreen()]),
+                });
+
+                // Fit view to the feature extent
+                map.getView().fit(transformedExtent, {
+                    duration: 500,
+                    padding: [50, 50, 50, 50],
+                    maxZoom: 18,
+                });
+
+                // Force map size update after render
+                setTimeout(() => {
+                    map.updateSize();
+                    console.log("Feature-Editor: Map size updated");
+                }, 100);
+
+                console.log("Feature-Editor: Map initialized", {
+                    projection: targetProjection,
+                    extent: transformedExtent,
+                    center: map.getView().getCenter(),
+                    zoom: map.getView().getZoom(),
+                });
+
+                // Load grabflur features and add to map
+                await loadAndDisplayGrabflurFeatures(
+                    map,
+                    wpName,
+                    containerType,
+                    name,
+                    targetProjection,
+                );
+            } catch (error) {
+                console.error("Feature-Editor: Initialization error", error);
+                const errorCountElement =
+                    document.getElementById("feature-count");
+                if (errorCountElement) {
+                    errorCountElement.textContent = "Fehler beim Laden";
+                }
+            }
+        });
+    })();
+
+    /**
+     * Load grabflur features, display on map and populate sidebar
+     */
+    async function loadAndDisplayGrabflurFeatures(
+        map: any,
+        wpName: string,
+        containerType: string,
+        parentName: string,
+        projection: string,
+    ) {
+        try {
+            const featureList = document.getElementById("feature-list");
+            const featureCount = document.getElementById("feature-count");
+
+            if (!featureList || !featureCount) {
+                console.error("Feature-Editor: Could not find DOM elements");
+                return;
+            }
+
+            // Build CQL filter for grabflur features
+            const namePattern = `${parentName}-%`;
+            const cqlFilter = `osm_admin_level=10 AND wp_name='${wpName}' AND container_type='${containerType}' AND (name LIKE '${namePattern}')`;
+
+            console.log(
+                "Feature-Editor: Loading grabflur data with filter:",
+                cqlFilter,
+            );
+
+            // Load features via WFS
+            const url = wfsAuthClient.buildAuthorizedWFSURL("p2d2_containers", {
+                CQL_FILTER: cqlFilter,
+            });
+
+            const response = await wfsAuthClient.fetchWithAuth(url);
+
+            if (!response.ok) {
+                throw new Error(`WFS request failed: ${response.status}`);
+            }
+
+            const geoJson = await response.json();
+            const features = geoJson.features || [];
+
+            console.log(
+                `Feature-Editor: Loaded ${features.length} grabflur features`,
+            );
+
+            // Update feature count
+            featureCount.textContent = `${features.length} Grabflure`;
+
+            // Clear existing list
+            featureList.innerHTML = "";
+
+            if (features.length === 0) {
+                featureList.innerHTML =
+                    '<li class="no-features">Keine Grabflur-Daten verfügbar</li>';
+                return;
+            }
+
+            // ===== NEU: VectorLayer für Polygone erstellen =====
+
+            // GeoJSON Reader für OpenLayers
+            const geojsonFormat = new GeoJSON();
+
+            // Parse GeoJSON features und transformiere in Ziel-Projektion
+            const olFeatures = geojsonFormat.readFeatures(geoJson, {
+                dataProjection: "EPSG:4326", // GeoJSON kommt immer in WGS84
+                featureProjection: projection, // Transform zu UTM/Web Mercator
+            });
+
+            console.log(
+                "Feature-Editor: Parsed",
+                olFeatures.length,
+                "OpenLayers features",
+            );
+
+            // VectorSource mit Features
+            const vectorSource = new VectorSource({
+                features: olFeatures,
+            });
+
+            // Styling für Grabflur-Polygone
+            const grabflurStyle = new Style({
+                stroke: new Stroke({
+                    color: "#2563eb", // Blau
+                    width: 2,
+                }),
+                fill: new Fill({
+                    color: "rgba(37, 99, 235, 0.1)", // Transparentes Blau
+                }),
+            });
+
+            // VectorLayer erstellen
+            const grabflurLayer = new VectorLayer({
+                source: vectorSource,
+                style: grabflurStyle,
+                zIndex: 10, // Über Basiskarte
+            });
+
+            // Layer zur Karte hinzufügen
+            map.addLayer(grabflurLayer);
+
+            console.log("Feature-Editor: Grabflur layer added to map");
+
+            // ===== ENDE NEU =====
+
+            // Populate feature list
+            features.forEach((feature: any, index: number) => {
+                const properties = feature.properties || {};
+                const featureName = properties.name || `Grabflur ${index + 1}`;
+
+                const listItem = document.createElement("li");
+                listItem.innerHTML = `
+          <div class="feature-name">${featureName}</div>
+          <div class="feature-type">${properties.container_type || containerType}</div>
+        `;
+
+                // Add click handler to zoom to feature
+                listItem.addEventListener("click", () => {
+                    const olFeature = olFeatures[index];
+                    if (olFeature) {
+                        const geometry = olFeature.getGeometry();
+                        if (geometry) {
+                            const extent = geometry.getExtent();
+                            map.getView().fit(extent, {
+                                duration: 300,
+                                padding: [50, 50, 50, 50],
+                                maxZoom: 19,
+                            });
+
+                            // Highlight selected feature
+                            document
+                                .querySelectorAll(".feature-list li")
+                                .forEach((li) => {
+                                    li.classList.remove("active");
+                                });
+                            listItem.classList.add("active");
+                        }
+                    }
+                });
+
+                featureList.appendChild(listItem);
+            });
+        } catch (error) {
+            console.error(
+                "Feature-Editor: Failed to load grabflur features",
+                error,
+            );
+            const errorCount = document.getElementById("feature-count");
+            const errorList = document.getElementById("feature-list");
+            if (errorCount) {
+                errorCount.textContent = "Fehler beim Laden";
+            }
+            if (errorList) {
+                errorList.innerHTML =
+                    '<li class="no-features">Fehler beim Laden der Daten</li>';
+            }
+        }
+    }
+</script>
