@@ -46,20 +46,49 @@ const decodedName = decodeURIComponent(name);
             <!-- Map Container -->
             <div class="map-container">
                 <div id="feature-editor-map" class="w-full h-full"></div>
-            </div>
 
-            <!-- Sidebar for feature list -->
-            <aside id="feature-sidebar" class="feature-sidebar">
-                <div class="sidebar-header">
-                    <h2>Grabflure</h2>
-                    <div class="feature-count" id="feature-count">Lade...</div>
+                <!-- Navigation Controls -->
+                <div class="nav-controls">
+                    <button
+                        id="nav-back"
+                        class="nav-btn"
+                        title="Zurück (Alt+←)"
+                        disabled
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <button
+                        id="nav-forward"
+                        class="nav-btn"
+                        title="Vor (Alt+→)"
+                        disabled
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
                 </div>
-                <div class="feature-list-container">
-                    <ul id="feature-list" class="feature-list">
-                        <!-- Will be populated dynamically -->
-                    </ul>
-                </div>
-            </aside>
+            </div>
         </div>
     </div>
 </BaseLayout>
@@ -121,108 +150,95 @@ const decodedName = decodeURIComponent(name);
 
     .editor-content {
         flex: 1;
+        padding: 1.5rem;
         display: flex;
         overflow: hidden;
+        background: #f1f5f9;
     }
 
     .map-container {
         flex: 1;
         position: relative;
-        min-height: 500px; /* Mindesthöhe für Map */
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
     }
 
     #feature-editor-map {
         width: 100%;
         height: 100%;
-        min-height: 500px; /* OpenLayers braucht explizite Höhe! */
-        background-color: #f0f0f0; /* Fallback während Laden */
+        min-height: calc(100vh - 200px);
     }
 
-    .feature-sidebar {
-        width: 350px;
-        background: white;
-        border-left: 1px solid #e2e8f0;
+    /* Navigation Controls */
+    .nav-controls {
+        position: absolute;
+        top: 0.5rem;
+        left: 2.5rem;
         display: flex;
-        flex-direction: column;
-        overflow: hidden;
+        gap: 0.5rem;
+        z-index: 1000;
     }
 
-    .sidebar-header {
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid #e2e8f0;
-        background: #f8fafc;
-    }
-
-    .sidebar-header h2 {
-        margin: 0 0 0.5rem 0;
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: #1e293b;
-    }
-
-    .feature-count {
-        font-size: 0.875rem;
-        color: #64748b;
-    }
-
-    .feature-list-container {
-        flex: 1;
-        overflow-y: auto;
-    }
-
-    .feature-list {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-    }
-
-    .feature-list li {
-        padding: 0.75rem 1.25rem;
-        border-bottom: 1px solid #f1f5f9;
+    .nav-btn {
+        width: 20px;
+        height: 20px;
+        background: white;
+        border: none;
+        border-radius: 0.25rem;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
         cursor: pointer;
-        transition: background-color 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        color: #dc2626;
     }
 
-    .feature-list li:hover {
-        background: #f8fafc;
+    .nav-btn:hover:not(:disabled) {
+        background: #dc2626;
+        color: white;
+        transform: scale(1.05);
     }
 
-    .feature-list li.active {
-        background: #ffedd5;
-        border-left: 3px solid #dc2626;
+    .nav-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
     }
 
-    .feature-name {
-        font-weight: 500;
-        color: #1e293b;
-        margin-bottom: 0.25rem;
-    }
-
-    .feature-type {
-        font-size: 0.75rem;
-        color: #64748b;
-    }
-
-    .no-features {
-        padding: 2rem 1.25rem;
-        text-align: center;
-        color: #64748b;
-        font-style: italic;
+    .nav-btn svg {
+        width: 10px;
+        height: 10px;
     }
 
     @media (max-width: 768px) {
         .editor-content {
+            padding: 1rem;
             flex-direction: column;
         }
 
-        .feature-sidebar {
-            width: 100%;
-            height: 300px;
+        .map-container {
+            border-radius: 0.75rem;
         }
 
         .header-info {
             flex-direction: column;
             gap: 0.5rem;
+        }
+
+        .nav-controls {
+            top: 0.75rem;
+            left: 0.75rem;
+        }
+
+        .nav-btn {
+            width: 18px;
+            height: 18px;
+        }
+
+        .nav-btn svg {
+            width: 9px;
+            height: 9px;
         }
     }
 </style>
@@ -244,6 +260,7 @@ const decodedName = decodeURIComponent(name);
     import { fromExtent } from "ol/geom/Polygon";
     import { Feature } from "ol";
     import Overlay from "ol/Overlay";
+    import { ViewHistoryManager } from "../../utils/view-history-manager";
 
     // Layer Z-Index constants for consistent ordering
     // WICHTIG: Muss VOR Map-Initialisierung definiert werden!
@@ -320,6 +337,14 @@ const decodedName = decodeURIComponent(name);
         // Initialize map once DOM is ready
         document.addEventListener("DOMContentLoaded", async () => {
             try {
+                // ✅ UNIVERSAL: Calculate resolutions for ALL UTM projections
+                // maxResolution ~15km/px at zoom 0 (identical for all UTM zones)
+                const maxResolution = 15000; // meters per pixel at zoom 0
+                const resolutions: number[] = [];
+                for (let z = 0; z <= 28; z++) {
+                    resolutions.push(maxResolution / Math.pow(2, z));
+                }
+
                 // Initialize the map
                 const map = new OLMap({
                     target: "feature-editor-map",
@@ -338,16 +363,45 @@ const decodedName = decodeURIComponent(name);
                             (transformedExtent[1] + transformedExtent[3]) / 2,
                         ],
                         zoom: 16,
+                        resolutions: resolutions, // ✅ EXPLIZIT setzen für korrekte Zoom-Berechnung
+                        constrainResolution: false,
                     }),
                     controls: defaults().extend([new FullScreen()]),
                 });
 
+                // DEBUGGING: Log map size and extent for initial fit
+                console.log("=== ZOOM DEBUG (Initial Fit) ===");
+                console.log("Map container size BEFORE update:", map.getSize());
+                console.log(
+                    "Map target element:",
+                    map.getTargetElement()?.offsetWidth,
+                    "x",
+                    map.getTargetElement()?.offsetHeight,
+                );
+                console.log("Extent to fit:", transformedExtent);
+
+                // Force map size update
+                map.updateSize();
+
+                // Wait for size update to complete
+                await new Promise((resolve) => setTimeout(resolve, 50));
+
+                const actualSize = map.getSize();
+                console.log("Map container size AFTER update:", actualSize);
+
                 // Fit view to the feature extent
                 map.getView().fit(transformedExtent, {
+                    size: actualSize, // Use freshly updated size
                     duration: 500,
-                    padding: [50, 50, 50, 50],
+                    padding: [20, 20, 20, 20], // 20px Abstand für Luftigkeit
+                    constrainResolution: false, // Floating-Point-Zoom erlauben
                     maxZoom: 18,
                 });
+
+                console.log(
+                    "Zoom level after initial fit:",
+                    map.getView().getZoom(),
+                );
 
                 // Force map size update after render
                 setTimeout(() => {
@@ -361,6 +415,43 @@ const decodedName = decodeURIComponent(name);
                     center: map.getView().getCenter(),
                     zoom: map.getView().getZoom(),
                 });
+
+                // DEBUG: Check View projection
+                const view = map.getView();
+                const projection = view.getProjection();
+
+                console.log("=== PROJECTION DEBUG ===");
+                console.log("Projection Code:", projection.getCode());
+                console.log("Projection Units:", projection.getUnits());
+                console.log("View maxResolution:", view.getMaxResolution());
+                console.log("Expected maxResolution:", maxResolution);
+                console.log("Resolution at Zoom 15:", resolutions[15]);
+                console.log("Resolution at Zoom 20:", resolutions[20]);
+                console.log("View minResolution:", view.getMinResolution());
+                console.log("View maxZoom:", view.getMaxZoom());
+                console.log("View minZoom:", view.getMinZoom());
+                console.log("=======================");
+
+                // Initialize view history manager
+                const viewHistory = new ViewHistoryManager(map.getView());
+
+                // Save initial view as first history state
+                viewHistory.pushState();
+
+                // Update navigation button states
+                function updateNavButtons() {
+                    const state = viewHistory.getState();
+                    const backBtn = document.getElementById(
+                        "nav-back",
+                    ) as HTMLButtonElement;
+                    const fwdBtn = document.getElementById(
+                        "nav-forward",
+                    ) as HTMLButtonElement;
+
+                    if (backBtn) backBtn.disabled = !state.canGoBack;
+                    if (fwdBtn) fwdBtn.disabled = !state.canGoForward;
+                }
+                updateNavButtons();
 
                 // Load actual cemetery polygon
                 const cemeteryCqlFilter = `osm_admin_level=8 AND wp_name='${wpName}' AND container_type='${containerType}' AND name='${name}'`;
@@ -465,6 +556,8 @@ const decodedName = decodeURIComponent(name);
                     name,
                     targetProjection,
                     LAYER_ZINDEX,
+                    viewHistory,
+                    updateNavButtons,
                 );
             } catch (error) {
                 console.error("Feature-Editor: Initialization error", error);
@@ -487,15 +580,11 @@ const decodedName = decodeURIComponent(name);
         parentName: string,
         projection: string,
         layerZIndex: any,
+        viewHistory: ViewHistoryManager,
+        updateNavButtons: () => void,
     ) {
         try {
-            const featureList = document.getElementById("feature-list");
-            const featureCount = document.getElementById("feature-count");
-
-            if (!featureList || !featureCount) {
-                console.error("Feature-Editor: Could not find DOM elements");
-                return;
-            }
+            // NOTE: Sidebar removed - no DOM elements needed for feature list
 
             // Build CQL filter for grabflur features
             const namePattern = `${parentName}-%`;
@@ -524,15 +613,12 @@ const decodedName = decodeURIComponent(name);
                 `Feature-Editor: Loaded ${features.length} grabflur features`,
             );
 
-            // Update feature count
-            featureCount.textContent = `${features.length} Grabflure`;
-
-            // Clear existing list
-            featureList.innerHTML = "";
+            console.log(
+                `Feature-Editor: Loaded ${features.length} grabflur features`,
+            );
 
             if (features.length === 0) {
-                featureList.innerHTML =
-                    '<li class="no-features">Keine Grabflur-Daten verfügbar</li>';
+                console.warn("Feature-Editor: No grabflur features available");
                 return;
             }
 
@@ -756,65 +842,166 @@ const decodedName = decodeURIComponent(name);
 
             // ===== ENDE NEU =====
 
-            // Populate feature list
-            features.forEach((feature: any, index: number) => {
-                const properties = feature.properties || {};
-                const featureName = properties.name || `Grabflur ${index + 1}`;
+            // Add click interaction for grabflur features on the map
+            map.on("click", async (evt: any) => {
+                let clickedFeature: any = null;
 
-                const listItem = document.createElement("li");
-                listItem.innerHTML = `
-          <div class="feature-name">${featureName}</div>
-          <div class="feature-type">${properties.container_type || containerType}</div>
-        `;
-
-                // Add click handler to zoom to feature
-                listItem.addEventListener("click", () => {
-                    const olFeature = olFeatures[index];
-                    if (olFeature) {
-                        const geometry = olFeature.getGeometry();
-                        if (geometry) {
-                            const extent = geometry.getExtent();
-                            map.getView().fit(extent, {
-                                duration: 300,
-                                padding: [50, 50, 50, 50],
-                                maxZoom: 19,
-                            });
-
-                            // Highlight selected feature and apply hover style
-                            document
-                                .querySelectorAll(".feature-list li")
-                                .forEach((li) => {
-                                    li.classList.remove("active");
-                                });
-                            listItem.classList.add("active");
-
-                            // Reset previous hover feature
-                            if (hoverFeature) {
-                                hoverFeature.setStyle(GRABFLUR_STYLE);
-                            }
-                            // Apply hover style to clicked feature
-                            olFeature.setStyle(GRABFLUR_HOVER_STYLE);
-                            hoverFeature = olFeature;
+                // Find clicked feature (only from grabflur layer)
+                map.forEachFeatureAtPixel(
+                    evt.pixel,
+                    (feature: any, layer: any) => {
+                        if (layer === grabflurLayer) {
+                            clickedFeature = feature;
+                            return true; // Stop iteration
                         }
-                    }
-                });
+                    },
+                );
 
-                featureList.appendChild(listItem);
+                if (clickedFeature) {
+                    const geometry = clickedFeature.getGeometry();
+                    if (geometry) {
+                        const extent = geometry.getExtent();
+
+                        // DEBUGGING: Log map size and extent
+                        console.log("=== ZOOM DEBUG (Feature-Editor) ===");
+                        const mapSize = map.getSize();
+                        console.log("Map container size:", mapSize);
+                        console.log("Extent to fit:", extent);
+
+                        // Berechne Extent-Dimensionen
+                        const extentWidth = extent[2] - extent[0];
+                        const extentHeight = extent[3] - extent[1];
+                        console.log(
+                            "Extent size:",
+                            extentWidth,
+                            "x",
+                            extentHeight,
+                            "m",
+                        );
+
+                        // Berechne Zentrum der Extent
+                        const centerX = (extent[0] + extent[2]) / 2;
+                        const centerY = (extent[1] + extent[3]) / 2;
+
+                        // Berechne benötigte Resolution für optimale Ausfüllung
+                        // Resolution = Meter pro Pixel
+                        const padding = 40; // 40px Padding
+                        const resolutionX =
+                            extentWidth / (mapSize[0] - 2 * padding);
+                        const resolutionY =
+                            extentHeight / (mapSize[1] - 2 * padding);
+                        const targetResolution = Math.max(
+                            resolutionX,
+                            resolutionY,
+                        );
+
+                        console.log(
+                            "Target resolution:",
+                            targetResolution,
+                            "m/px",
+                        );
+
+                        // Get actual maxResolution from View
+                        const maxResolution = map.getView().getMaxResolution();
+                        console.log(
+                            "View maxResolution:",
+                            maxResolution,
+                            "m/px",
+                        );
+
+                        const calculatedZoom = Math.log2(
+                            maxResolution / targetResolution,
+                        );
+
+                        // Begrenze Zoom auf vernünftige Werte
+                        const minZoom = 16;
+                        const maxZoom = 21;
+                        const targetZoom = Math.min(
+                            maxZoom,
+                            Math.max(minZoom, calculatedZoom),
+                        );
+
+                        console.log("Calculated zoom:", calculatedZoom);
+                        console.log("Target zoom (clamped):", targetZoom);
+
+                        // Zoom mit Animation
+                        map.getView().animate({
+                            center: [centerX, centerY],
+                            zoom: targetZoom,
+                            duration: 300,
+                        });
+
+                        // Log final zoom after animation
+                        setTimeout(() => {
+                            console.log(
+                                "Final zoom level:",
+                                map.getView().getZoom(),
+                            );
+                        }, 350);
+
+                        // Reset previous hover feature
+                        if (hoverFeature) {
+                            hoverFeature.setStyle(GRABFLUR_STYLE);
+                        }
+
+                        // Apply hover style to clicked feature
+                        clickedFeature.setStyle(GRABFLUR_HOVER_STYLE);
+                        hoverFeature = clickedFeature;
+
+                        // Save view state after zoom for back navigation
+                        setTimeout(() => {
+                            viewHistory.pushState();
+                            updateNavButtons();
+                        }, 400); // After zoom animation
+                    }
+                }
+            });
+
+            // Set names for hover popup display
+            olFeatures.forEach((olFeature: any, index: number) => {
+                const properties = features[index]?.properties || {};
+                const featureName = properties.name || `Grabflur ${index + 1}`;
+                olFeature.set("name", featureName);
             });
         } catch (error) {
             console.error(
                 "Feature-Editor: Failed to load grabflur features",
                 error,
             );
-            const errorCount = document.getElementById("feature-count");
-            const errorList = document.getElementById("feature-list");
-            if (errorCount) {
-                errorCount.textContent = "Fehler beim Laden";
-            }
-            if (errorList) {
-                errorList.innerHTML =
-                    '<li class="no-features">Fehler beim Laden der Daten</li>';
-            }
+            console.error(
+                "Feature-Editor: Failed to load grabflur features",
+                error,
+            );
+            // NOTE: Sidebar removed - no error display needed
         }
+
+        // Navigation event handlers
+        document.getElementById("nav-back")?.addEventListener("click", () => {
+            if (viewHistory.back()) {
+                updateNavButtons();
+            }
+        });
+
+        document
+            .getElementById("nav-forward")
+            ?.addEventListener("click", () => {
+                if (viewHistory.forward()) {
+                    updateNavButtons();
+                }
+            });
+
+        // Keyboard shortcuts
+        document.addEventListener("keydown", (e) => {
+            if (e.altKey && e.key === "ArrowLeft") {
+                if (viewHistory.back()) {
+                    updateNavButtons();
+                }
+            }
+            if (e.altKey && e.key === "ArrowRight") {
+                if (viewHistory.forward()) {
+                    updateNavButtons();
+                }
+            }
+        });
     }
 </script>

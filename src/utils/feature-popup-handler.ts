@@ -381,11 +381,35 @@ export class FeaturePopupHandler {
       const extent = geometry.getExtent();
       const view = this.map.getView();
 
-      view.fit(extent, {
-        duration: 300,
-        maxZoom: 16,
-        padding: [50, 50, 50, 50],
-      });
+      // DEBUGGING: Log map size and extent
+      console.log("=== ZOOM DEBUG (Haupt-Map) ===");
+      console.log("Map container size BEFORE update:", this.map.getSize());
+      console.log(
+        "Map target element:",
+        this.map.getTargetElement()?.offsetWidth,
+        "x",
+        this.map.getTargetElement()?.offsetHeight,
+      );
+      console.log("Extent to fit:", extent);
+
+      // Force map size update
+      this.map.updateSize();
+
+      // Wait briefly for size update
+      setTimeout(() => {
+        const actualSize = this.map.getSize();
+        console.log("Map container size AFTER update:", actualSize);
+
+        view.fit(extent, {
+          size: actualSize,
+          duration: 300,
+          padding: [30, 30, 30, 30],
+          constrainResolution: false,
+          maxZoom: 18,
+        });
+
+        console.log("Zoom level after fit:", view.getZoom());
+      }, 50);
 
       console.log("[FeaturePopup] Zoomed to feature");
     } catch (error) {

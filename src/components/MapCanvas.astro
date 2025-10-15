@@ -308,8 +308,10 @@
                             targetCRS,
                         );
                         const fitOpts = {
-                            padding: [50, 50, 50, 50],
+                            padding: [20, 20, 20, 20],
                             duration: 300,
+                            constrainResolution: false,
+                            maxZoom: 19,
                             ...(d.extra?.fitOptions || {}),
                         };
 
