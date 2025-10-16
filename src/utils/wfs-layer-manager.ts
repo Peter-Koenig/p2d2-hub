@@ -277,13 +277,13 @@ export class WFSLayerManager {
     // Clear all kommune buttons
     const kommuneButtons = document.querySelectorAll("[data-kommune-slug]");
     kommuneButtons.forEach((button) => {
-      button.classList.remove("wfs-active");
+      button.classList.remove("highlighted");
     });
 
     // Clear all category buttons
     const categoryButtons = document.querySelectorAll("[data-category-slug]");
     categoryButtons.forEach((button) => {
-      button.classList.remove("wfs-active");
+      button.classList.remove("highlighted");
     });
   }
 
@@ -296,9 +296,9 @@ export class WFSLayerManager {
     );
     if (button) {
       if (active) {
-        button.classList.add("wfs-active");
+        button.classList.add("highlighted");
       } else {
-        button.classList.remove("wfs-active");
+        button.classList.remove("highlighted");
       }
     }
   }
@@ -312,9 +312,9 @@ export class WFSLayerManager {
     );
     if (button) {
       if (active) {
-        button.classList.add("wfs-active");
+        button.classList.add("highlighted");
       } else {
-        button.classList.remove("wfs-active");
+        button.classList.remove("highlighted");
       }
     }
   }

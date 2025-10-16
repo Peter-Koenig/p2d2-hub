@@ -6,6 +6,36 @@ body {
     margin: 0;
 }
 
+/* Button-Highlighting für aktive Auswahl - ORANGE für Kommunen */
+[data-kommune-slug].highlighted {
+    box-shadow: 0 0 20px 4px rgba(255, 105, 0, 0.6);
+    border-color: #ff6900;
+    transform: scale(1.02);
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    z-index: 10;
+}
+
+/* Button-Highlighting für aktive Auswahl - GRÜN für Kategorien */
+[data-category-slug].highlighted {
+    box-shadow: 0 0 20px 4px rgba(15, 255, 120, 0.6);
+    border-color: #0ff078;
+    transform: scale(1.02);
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    z-index: 10;
+}
+
+/* Fallback für generische .highlighted Klasse (falls anderswo verwendet) */
+.highlighted {
+    box-shadow: 0 0 20px 4px rgba(15, 255, 120, 0.6);
+    border-color: #0ff078;
+    transform: scale(1.02);
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    z-index: 10;
+}
+
 /* Kategorie Card Styling für Clickability */
 .kategorie-card {
     position: relative;

@@ -34,8 +34,8 @@ const sorted = kategorien.sort(
                     // NEU HINZUFÜGEN - Kategorie-Highlighting:
                     document
                         .querySelectorAll("[data-category-slug]")
-                        .forEach((btn) => btn.classList.remove("active"));
-                    button.classList.add("active");
+                        .forEach((btn) => btn.classList.remove("highlighted"));
+                    button.classList.add("highlighted");
 
                     // ✅ FIX: Kategorie-State setzen BEVOR WFS-Toggle!
                     mapState.setSelectedCategory(categorySlug);
