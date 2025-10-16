@@ -261,6 +261,7 @@ const decodedName = decodeURIComponent(name);
     import { Feature } from "ol";
     import Overlay from "ol/Overlay";
     import { ViewHistoryManager } from "../../utils/view-history-manager";
+    import { calculateUtmResolutions } from "../../utils/utm-resolutions";
 
     // Layer Z-Index constants for consistent ordering
     // WICHTIG: Muss VOR Map-Initialisierung definiert werden!
@@ -337,13 +338,8 @@ const decodedName = decodeURIComponent(name);
         // Initialize map once DOM is ready
         document.addEventListener("DOMContentLoaded", async () => {
             try {
-                // ✅ UNIVERSAL: Calculate resolutions for ALL UTM projections
-                // maxResolution ~15km/px at zoom 0 (identical for all UTM zones)
-                const maxResolution = 15000; // meters per pixel at zoom 0
-                const resolutions: number[] = [];
-                for (let z = 0; z <= 28; z++) {
-                    resolutions.push(maxResolution / Math.pow(2, z));
-                }
+                // Calculate resolutions using centralized utility
+                const resolutions = calculateUtmResolutions();
 
                 // Initialize the map
                 const map = new OLMap({
@@ -423,8 +419,11 @@ const decodedName = decodeURIComponent(name);
                 console.log("=== PROJECTION DEBUG ===");
                 console.log("Projection Code:", projection.getCode());
                 console.log("Projection Units:", projection.getUnits());
-                console.log("View maxResolution:", view.getMaxResolution());
-                console.log("Expected maxResolution:", maxResolution);
+                console.log(
+                    "View maxResolution:",
+                    view.getMaxResolution(),
+                    "(expected: 15000)",
+                );
                 console.log("Resolution at Zoom 15:", resolutions[15]);
                 console.log("Resolution at Zoom 20:", resolutions[20]);
                 console.log("View minResolution:", view.getMinResolution());

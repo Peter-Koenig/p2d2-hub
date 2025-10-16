@@ -383,33 +383,50 @@ export class FeaturePopupHandler {
 
       // DEBUGGING: Log map size and extent
       console.log("=== ZOOM DEBUG (Haupt-Map) ===");
-      console.log("Map container size BEFORE update:", this.map.getSize());
-      console.log(
-        "Map target element:",
-        this.map.getTargetElement()?.offsetWidth,
-        "x",
-        this.map.getTargetElement()?.offsetHeight,
-      );
+      const mapSize = this.map.getSize();
+      console.log("Map container size:", mapSize);
       console.log("Extent to fit:", extent);
+
+      // Calculate extent dimensions
+      const extentWidth = extent[2] - extent[0];
+      const extentHeight = extent[3] - extent[1];
+      console.log("Extent size:", extentWidth, "x", extentHeight, "m");
+
+      // Calculate target resolution for optimal fit
+      const padding = 30;
+      const resolutionX = extentWidth / (mapSize[0] - 2 * padding);
+      const resolutionY = extentHeight / (mapSize[1] - 2 * padding);
+      const targetResolution = Math.max(resolutionX, resolutionY);
+
+      console.log("Target resolution:", targetResolution, "m/px");
+
+      // Get maxResolution from View
+      const maxResolution = view.getMaxResolution();
+      console.log("View maxResolution:", maxResolution, "m/px");
+
+      // Calculate zoom level
+      const calculatedZoom = Math.log2(maxResolution / targetResolution);
+      const targetZoom = Math.min(18, Math.max(10, calculatedZoom));
+
+      console.log("Calculated zoom:", calculatedZoom);
+      console.log("Target zoom (clamped):", targetZoom);
 
       // Force map size update
       this.map.updateSize();
 
-      // Wait briefly for size update
+      // Zoom with calculated level
+      const centerX = (extent[0] + extent[2]) / 2;
+      const centerY = (extent[1] + extent[3]) / 2;
+
+      view.animate({
+        center: [centerX, centerY],
+        zoom: targetZoom,
+        duration: 300,
+      });
+
       setTimeout(() => {
-        const actualSize = this.map.getSize();
-        console.log("Map container size AFTER update:", actualSize);
-
-        view.fit(extent, {
-          size: actualSize,
-          duration: 300,
-          padding: [30, 30, 30, 30],
-          constrainResolution: false,
-          maxZoom: 18,
-        });
-
-        console.log("Zoom level after fit:", view.getZoom());
-      }, 50);
+        console.log("Final zoom level:", view.getZoom());
+      }, 350);
 
       console.log("[FeaturePopup] Zoomed to feature");
     } catch (error) {
