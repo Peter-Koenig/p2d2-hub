@@ -1,4 +1,5 @@
 /* Feature Popup Modal Styles for p2d2 Cemetery Features */
+/* Hover Popup Styles for Feature Editor */
 
 .feature-popup-modal::backdrop {
     background: rgba(0, 0, 0, 0.5);
@@ -204,5 +205,41 @@
 
     .grabflur-list li {
         transition: none;
+    }
+}
+
+/* Hover Popup Styles */
+.grabflur-hover-popup {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid #dc2626;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: "Inter", sans-serif;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+/* Hover Popup Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Reduced motion support for hover popup */
+@media (prefers-reduced-motion: reduce) {
+    .grabflur-hover-popup {
+        animation: none;
     }
 }

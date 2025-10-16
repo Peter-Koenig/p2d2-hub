@@ -381,11 +381,52 @@ export class FeaturePopupHandler {
       const extent = geometry.getExtent();
       const view = this.map.getView();
 
-      view.fit(extent, {
+      // DEBUGGING: Log map size and extent
+      console.log("=== ZOOM DEBUG (Haupt-Map) ===");
+      const mapSize = this.map.getSize();
+      console.log("Map container size:", mapSize);
+      console.log("Extent to fit:", extent);
+
+      // Calculate extent dimensions
+      const extentWidth = extent[2] - extent[0];
+      const extentHeight = extent[3] - extent[1];
+      console.log("Extent size:", extentWidth, "x", extentHeight, "m");
+
+      // Calculate target resolution for optimal fit
+      const padding = 30;
+      const resolutionX = extentWidth / (mapSize[0] - 2 * padding);
+      const resolutionY = extentHeight / (mapSize[1] - 2 * padding);
+      const targetResolution = Math.max(resolutionX, resolutionY);
+
+      console.log("Target resolution:", targetResolution, "m/px");
+
+      // Get maxResolution from View
+      const maxResolution = view.getMaxResolution();
+      console.log("View maxResolution:", maxResolution, "m/px");
+
+      // Calculate zoom level
+      const calculatedZoom = Math.log2(maxResolution / targetResolution);
+      const targetZoom = Math.min(18, Math.max(10, calculatedZoom));
+
+      console.log("Calculated zoom:", calculatedZoom);
+      console.log("Target zoom (clamped):", targetZoom);
+
+      // Force map size update
+      this.map.updateSize();
+
+      // Zoom with calculated level
+      const centerX = (extent[0] + extent[2]) / 2;
+      const centerY = (extent[1] + extent[3]) / 2;
+
+      view.animate({
+        center: [centerX, centerY],
+        zoom: targetZoom,
         duration: 300,
-        maxZoom: 16,
-        padding: [50, 50, 50, 50],
       });
+
+      setTimeout(() => {
+        console.log("Final zoom level:", view.getZoom());
+      }, 350);
 
       console.log("[FeaturePopup] Zoomed to feature");
     } catch (error) {

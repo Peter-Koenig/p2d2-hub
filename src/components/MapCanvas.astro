@@ -78,6 +78,10 @@
     import ImageWMS from "ol/source/ImageWMS";
     import FullScreen from "ol/control/FullScreen";
     import { defaults } from "ol/control/defaults";
+    import {
+        calculateUtmResolutions,
+        isUtmProjection,
+    } from "../utils/utm-resolutions";
     import { transform, transformExtent } from "ol/proj";
 
     // Import our utility modules
@@ -114,6 +118,15 @@
     const throttledLogger = createThrottledLogger();
 
     // Initialize the map
+    const targetProjection = mapState.getConfig().defaultCRS;
+
+    // Calculate resolutions for UTM projections
+    let resolutions: number[] | undefined = undefined;
+    if (isUtmProjection(targetProjection)) {
+        resolutions = calculateUtmResolutions();
+        console.log("Main Map: Using UTM resolutions for", targetProjection);
+    }
+
     const map = new Map({
         target: "map",
         layers: [
@@ -122,9 +135,11 @@
             }),
         ],
         view: new View({
-            projection: mapState.getConfig().defaultCRS,
+            projection: targetProjection,
             center: [0, 0],
             zoom: 2,
+            resolutions: resolutions, // ✅ Only set for UTM, undefined for EPSG:3857
+            constrainResolution: false,
         }),
         controls: defaults().extend([new FullScreen()]),
     });
@@ -308,8 +323,10 @@
                             targetCRS,
                         );
                         const fitOpts = {
-                            padding: [50, 50, 50, 50],
+                            padding: [20, 20, 20, 20],
                             duration: 300,
+                            constrainResolution: false,
+                            maxZoom: 19,
                             ...(d.extra?.fitOptions || {}),
                         };
 
