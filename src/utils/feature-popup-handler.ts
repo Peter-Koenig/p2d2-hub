@@ -59,14 +59,14 @@ export class FeaturePopupHandler {
       border: none;
       border-radius: 1rem;
       box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-      min-width: 320px;
+      min-width: 250px;
       max-width: 90vw;
-      width: 400px;
+      width: 250px;
       text-align: left;
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      top: 10%;
+      left: 50%; 
+      transform: translate(-50%, -10%);
       z-index: 10000;
     `;
 
@@ -444,7 +444,7 @@ export class FeaturePopupHandler {
     const content: PopupContent = {
       cemetery: props,
       grabflurFeatures: [],
-      error: "Für dieses Feature sind noch keine Detail-Polygone verfügbar.",
+      error: "Keine Details verfügbar.",
     };
     this.showPopup(coordinate, content);
   }
