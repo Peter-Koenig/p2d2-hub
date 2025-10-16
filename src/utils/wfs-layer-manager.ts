@@ -149,18 +149,16 @@ export class WFSLayerManager {
         }
       }
     } catch (error) {
-      console.warn(
-        "[WFS] Could not load category data from HTML, using fallback:",
-        error,
-      );
+      console.error("[WFS] Failed to load category data from HTML:", error);
     }
 
-    // Fallback to hardcoded mapping
-    const categoryMapping: Record<string, string> = {
-      cemeteries: "cemetery",
-      administrative: "administrative",
-    };
-    return categoryMapping[categorySlug] || "cemetery";
+    // Fehler werfen statt Fallback, wenn containerType nicht gefunden
+    const errorMsg =
+      `[WFS] No containerType found for category '${categorySlug}'. ` +
+      `Make sure the category exists in src/content/kategorien/ ` +
+      `and has a 'containerType' field in its frontmatter.`;
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
 
   /**

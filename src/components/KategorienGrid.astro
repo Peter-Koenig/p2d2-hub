@@ -41,6 +41,11 @@ const sorted = kategorien.sort(
                         // Aus mapState entfernen
                         mapState.setSelectedCategory(null);
 
+                        // WFS-Layer ausblenden, da Kategorie nicht mehr ausgewählt
+                        if ((window as any).wfsManager?.hideLayer) {
+                            (window as any).wfsManager.hideLayer();
+                        }
+
                         console.log(
                             "[KategorienGrid] Kategorie deselektiert:",
                             categorySlug,

@@ -10,10 +10,29 @@ import OpenLayersMap from "../components/OpenLayersMap.astro";
 import KategorienGrid from "../components/KategorienGrid.astro";
 import KommunenGrid from "../components/KommunenGrid.astro";
 import WerteGrid from "../components/WerteGrid.astro";
+import { getAllKategorien } from "../utils/kategorie-utils";
 // import { dispatchSelectCategory } from "../utils/events.js";
+
+// Lade Kategorien für data-category-map
+const kategorien = await getAllKategorien();
+
+// Erstelle Mapping: slug -> containerType
+const categoryMap: Record<string, { containerType?: string }> = {};
+for (const kategorie of kategorien) {
+    categoryMap[kategorie.slug] = { containerType: kategorie.containerType };
+}
 ---
 
 <BaseLayout>
+    <!-- Verstecktes Element mit data-category-map -->
+    <div
+        id="category-data"
+        data-category-map={JSON.stringify(categoryMap)}
+        style="display: none;"
+        aria-hidden="true"
+    >
+    </div>
+
     <HeroSection />
     <OpenLayersMap />
 
