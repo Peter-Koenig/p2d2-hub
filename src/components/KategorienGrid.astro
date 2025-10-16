@@ -31,14 +31,36 @@ const sorted = kategorien.sort(
                 if (categorySlug) {
                     console.log("[DEBUG] Category clicked:", categorySlug);
 
-                    // NEU HINZUFÜGEN - Kategorie-Highlighting:
+                    // Toggle-Logik: Wenn gleiche Kategorie nochmal geklickt → deaktivieren
+                    const currentCategory = mapState.getSelectedCategory();
+
+                    if (currentCategory === categorySlug) {
+                        // Highlighting entfernen
+                        button.classList.remove("highlighted");
+
+                        // Aus mapState entfernen
+                        mapState.setSelectedCategory(null);
+
+                        console.log(
+                            "[KategorienGrid] Kategorie deselektiert:",
+                            categorySlug,
+                        );
+                        return;
+                    }
+
+                    // Alle anderen Buttons deselektieren
                     document
                         .querySelectorAll("[data-category-slug]")
                         .forEach((btn) => btn.classList.remove("highlighted"));
+                    // Highlight selected button
                     button.classList.add("highlighted");
 
-                    // ✅ FIX: Kategorie-State setzen BEVOR WFS-Toggle!
+                    // ✅ KRITISCH: Kategorie-State setzen BEVOR WFS-Toggle!
                     mapState.setSelectedCategory(categorySlug);
+                    console.log(
+                        "[KategorienGrid] Kategorie ausgewählt:",
+                        categorySlug,
+                    );
 
                     console.log(
                         "[DEBUG] Selected category set to:",
