@@ -4,7 +4,7 @@ slug: "kiel"
 colorStripe: "#FF6900"
 order: 50
 osmAdminLevels: [6,9,10]
-wpname: "de-Kiel"
+wp_name: "de-Kiel"
 map:
   center: [10.1228, 54.3233]  # centerextent in EPSG:4326 (lon,lat)
   zoom: 12
