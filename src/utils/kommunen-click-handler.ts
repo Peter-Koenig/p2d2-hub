@@ -125,6 +125,35 @@ export default class KommunenClickHandler {
       // Combine map detail with kommune data
       const detail: KommunenDetail = { ...mapDetail, ...kommuneData };
 
+      // Toggle-Logik: Wenn gleiche Kommune nochmal geklickt → deaktivieren
+      const currentKommune = (window as any).mapState?.getSelectedKommune?.();
+
+      if (currentKommune?.slug === slug) {
+        // Alle Buttons deselektieren
+        document.querySelectorAll("[data-kommune-slug]").forEach((btn) => {
+          btn.classList.remove("highlighted");
+        });
+
+        // Aus mapState entfernen
+        (window as any).mapState?.setSelectedKommune?.(null);
+
+        // WFS-Layer ausblenden, da Kommune nicht mehr ausgewählt
+        if ((window as any).wfsManager?.hideLayer) {
+          (window as any).wfsManager.hideLayer();
+        }
+
+        console.log("[KommunenClickHandler] Kommune deselektiert:", slug);
+        return;
+      }
+
+      // Alle Buttons deselektieren (für neue Auswahl)
+      document.querySelectorAll("[data-kommune-slug]").forEach((btn) => {
+        btn.classList.remove("highlighted");
+      });
+
+      // Neuen Button highlighten
+      button.classList.add("highlighted");
+
       console.log(
         "[kommunen-handler] Processing click for:",
         detail.slug,
@@ -136,6 +165,13 @@ export default class KommunenClickHandler {
 
       // 2. WFS LAYER MANAGEMENT - NEU HINZUGEFÜGT!
       this.handleWFSLayerToggle(detail);
+
+      // In mapState speichern
+      (window as any).mapState?.setSelectedKommune?.(detail);
+      console.log(
+        "[KommunenClickHandler] Kommune in mapState gespeichert:",
+        slug,
+      );
 
       // Persist selection
       this.persistSelection(detail);

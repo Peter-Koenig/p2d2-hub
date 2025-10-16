@@ -46,11 +46,11 @@ export class WFSLayerManager {
       if (isSameSelection && this.activeLayer) {
         // Toggle OFF: Hide current layer
         this.hideLayer();
-        this.clearButtonStates();
+        // Button-States werden von Grid-Komponenten verwaltet
       } else {
         // Toggle ON: Show new layer (or switch to different)
         await this.displayLayer(kommune, categorySlug);
-        this.updateButtonStates(kommune, categorySlug);
+        // Button-States werden von Grid-Komponenten verwaltet
       }
     } catch (error) {
       console.error("[WFS] Toggle failed:", error);
@@ -70,7 +70,7 @@ export class WFSLayerManager {
         this.activeLayer.setVisible(false);
       }
 
-      this.clearButtonStates();
+      // Button-States werden von Grid-Komponenten verwaltet
 
       const config = this.buildLayerConfig(kommune, categorySlug);
       const cacheKey = `${config.wpName}-${config.containerType}-${config.osmAdminLevel}`;
@@ -109,7 +109,7 @@ export class WFSLayerManager {
     if (this.activeLayer) {
       this.activeLayer.setVisible(false);
       this.currentState = { kommune: null, categorySlug: null };
-      this.clearButtonStates();
+      // Button-States werden von Grid-Komponenten verwaltet
       console.log("[WFS] Layer hidden");
     }
   }
@@ -149,18 +149,16 @@ export class WFSLayerManager {
         }
       }
     } catch (error) {
-      console.warn(
-        "[WFS] Could not load category data from HTML, using fallback:",
-        error,
-      );
+      console.error("[WFS] Failed to load category data from HTML:", error);
     }
 
-    // Fallback to hardcoded mapping
-    const categoryMapping: Record<string, string> = {
-      cemeteries: "cemetery",
-      administrative: "administrative",
-    };
-    return categoryMapping[categorySlug] || "cemetery";
+    // Fehler werfen statt Fallback, wenn containerType nicht gefunden
+    const errorMsg =
+      `[WFS] No containerType found for category '${categorySlug}'. ` +
+      `Make sure the category exists in src/content/kategorien/ ` +
+      `and has a 'containerType' field in its frontmatter.`;
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
 
   /**
@@ -256,67 +254,6 @@ export class WFSLayerManager {
       this.currentState.kommune?.slug === kommune.slug &&
       this.currentState.categorySlug === categorySlug
     );
-  }
-
-  /**
-   * Update button states for active kommune/category
-   */
-  private updateButtonStates(kommune: KommuneData, categorySlug: string): void {
-    // Clear all button states first
-    this.clearButtonStates();
-
-    // Set active states
-    this.setKommuneButtonState(kommune.slug, true);
-    this.setCategoryButtonState(categorySlug, true);
-  }
-
-  /**
-   * Clear all button active states
-   */
-  private clearButtonStates(): void {
-    // Clear all kommune buttons
-    const kommuneButtons = document.querySelectorAll("[data-kommune-slug]");
-    kommuneButtons.forEach((button) => {
-      button.classList.remove("wfs-active");
-    });
-
-    // Clear all category buttons
-    const categoryButtons = document.querySelectorAll("[data-category-slug]");
-    categoryButtons.forEach((button) => {
-      button.classList.remove("wfs-active");
-    });
-  }
-
-  /**
-   * Set kommune button state
-   */
-  private setKommuneButtonState(kommuneSlug: string, active: boolean): void {
-    const button = document.querySelector(
-      `[data-kommune-slug="${kommuneSlug}"]`,
-    );
-    if (button) {
-      if (active) {
-        button.classList.add("wfs-active");
-      } else {
-        button.classList.remove("wfs-active");
-      }
-    }
-  }
-
-  /**
-   * Set category button state
-   */
-  private setCategoryButtonState(categorySlug: string, active: boolean): void {
-    const button = document.querySelector(
-      `[data-category-slug="${categorySlug}"]`,
-    );
-    if (button) {
-      if (active) {
-        button.classList.add("wfs-active");
-      } else {
-        button.classList.remove("wfs-active");
-      }
-    }
   }
 
   /**
