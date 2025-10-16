@@ -56,17 +56,23 @@ export class FeaturePopupHandler {
     this.modalElement.className = "feature-popup-modal";
     this.modalElement.style.cssText = `
       padding: 0;
+      box-sizing: border-box;
       border: none;
-      border-radius: 1rem;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-      min-width: 250px;
-      max-width: 90vw;
-      width: 250px;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      min-width: 280px;
+      max-width: min(90vw, 360px);
+      width: auto;
+      max-height: 80vh;
+      overflow-y: auto;
+      overflow-x: hidden;
       text-align: left;
       position: fixed;
-      top: 10%;
-      left: 50%; 
-      transform: translate(-50%, -10%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      word-wrap: break-word;
+      word-break: break-word;
       z-index: 10000;
     `;
 
@@ -286,14 +292,7 @@ export class FeaturePopupHandler {
     }
 
     // Generate popup HTML with modal structure
-    const modalHTML = `
-      <form method="dialog" style="margin:0;padding:.5rem 1rem 0 0;text-align:right;">
-        <button class="text-2xl" aria-label="Schließen" style="background:none;border:none;cursor:pointer;">×</button>
-      </form>
-      <div style="padding: 1rem 1.5rem 1.5rem 1.5rem;">
-        ${this.generatePopupHTML(content)}
-      </div>
-    `;
+    const modalHTML = `${this.generatePopupHTML(content)}`;
 
     // Set modal content
     this.modalElement.innerHTML = modalHTML;
@@ -304,14 +303,6 @@ export class FeaturePopupHandler {
     // Remove old backdrop listener if exists
     if (this.backdropClickHandler) {
       this.modalElement.removeEventListener("click", this.backdropClickHandler);
-    }
-
-    // Add event listener for close button
-    const closeButton = this.modalElement.querySelector("button");
-    if (closeButton) {
-      closeButton.addEventListener("click", () => this.closePopup(), {
-        once: true,
-      });
     }
 
     // Close modal when clicking on backdrop
@@ -384,6 +375,10 @@ export class FeaturePopupHandler {
       // DEBUGGING: Log map size and extent
       console.log("=== ZOOM DEBUG (Haupt-Map) ===");
       const mapSize = this.map.getSize();
+      if (!mapSize) {
+        console.warn("[FeaturePopup] Map size is undefined, cannot zoom");
+        return;
+      }
       console.log("Map container size:", mapSize);
       console.log("Extent to fit:", extent);
 
@@ -509,7 +504,17 @@ export class FeaturePopupHandler {
   public closePopup(): void {
     if (!this.modalElement) return;
 
-    this.modalElement.close();
+    // Closing-Animation triggern
+    this.modalElement.setAttribute("closing", "");
+
+    // Warte auf Animation Ende
+    setTimeout(() => {
+      if (this.modalElement) {
+        this.modalElement.close();
+        this.modalElement.removeAttribute("closing");
+      }
+    }, 150); // 150ms = fadeOut-Dauer
+
     console.log("[FeaturePopup] Modal popup closed");
   }
 
