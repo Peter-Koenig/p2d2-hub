@@ -1,4 +1,4 @@
 ---
-name: GitLab
-url: https://gitlab.com/
+name: GitHub
+url: https://github.com/Peter-Koenig/p2d2-hub.git
 ---
