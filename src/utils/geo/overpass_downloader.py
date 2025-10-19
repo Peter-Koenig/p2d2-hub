@@ -6,8 +6,11 @@ import time
 from typing import Dict, List
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
+
 
 class OverpassDownloader:
     """Simple Overpass API client with load balancing"""
@@ -19,7 +22,7 @@ class OverpassDownloader:
         "https://overpass.openstreetmap.ru/api/interpreter",
         "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
         "https://overpass.private.coffee/api/interpreter",
-        "https://z.overpass-api.de/api/interpreter"
+        "https://z.overpass-api.de/api/interpreter",
     ]
 
     def __init__(self, timeout=180):
@@ -28,11 +31,10 @@ class OverpassDownloader:
 
     def build_query(self, municipality_name: str, admin_level: int) -> str:
         """Build simple area-based Overpass query"""
-        return f'''[out:json][timeout:{self.timeout}];
-area[name="{municipality_name}"]->.searchArea;
-(
-  relation[boundary=administrative][admin_level={admin_level}](area.searchArea);
-);
+        # Korrigierte Overpass-Abfrage mit ordnungsgemäß gequotetem Namen
+        safe_name = municipality_name.replace('"', '\\"')
+        return f'''[out:json][timeout:{self.timeout}][maxsize:1073741824];
+relation["boundary"="administrative"]["admin_level"={admin_level}]["name"="{safe_name}"];
 out geom;'''
 
     def query_overpass(self, query: str) -> Dict:
@@ -47,13 +49,13 @@ out geom;'''
                 response = requests.post(
                     endpoint,
                     data=query,
-                    headers={'Content-Type': 'text/plain'},
-                    timeout=self.timeout
+                    headers={"Content-Type": "text/plain"},
+                    timeout=self.timeout,
                 )
 
                 if response.status_code == 200:
                     data = response.json()
-                    element_count = len(data.get('elements', []))
+                    element_count = len(data.get("elements", []))
                     logger.info(f"Successfully fetched {element_count} elements")
                     return data
                 else:
@@ -62,7 +64,7 @@ out geom;'''
             except Exception as e:
                 logger.warning(f"Request failed: {e}")
                 if attempt < 2:  # Don't sleep on last attempt
-                    time.sleep(2 ** attempt)  # Exponential backoff
+                    time.sleep(2**attempt)  # Exponential backoff
 
         raise Exception("All Overpass endpoints failed")
 
