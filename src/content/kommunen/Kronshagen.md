@@ -11,4 +11,4 @@ map:
 order: 95
 ---
 
-Kronshagen ist kein Stadtteil von Kiel, sondern eine eigenständige Gemeinde
+Kronshagen ist kein Stadtteil von Kiel, sondern eine eigenständige Gemeinde ;-)

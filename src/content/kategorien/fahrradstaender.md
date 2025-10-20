@@ -2,6 +2,6 @@
 title: Fahrradständer
 icon: fahrradstaender
 order: 5
-description: Wo stehen Fahrradständer in Köln?
+description: Wo stehen Fahrradständer in der Kommune?
 containerType: "administrative"
 ---

@@ -2,6 +2,6 @@
 title: Friedhöfe
 icon: friedhof
 order: 1
-description: Digitalisierung der Friedhöfe und Gräber
+description: Digitalisierung von Friedhöfen und Gräbern
 containerType: "cemetery"
 ---

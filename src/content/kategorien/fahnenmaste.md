@@ -2,6 +2,6 @@
 title: Fahnenmasten
 icon: fahnenmast
 order: 9
-description: Wo stehen Fahnenmasten in Köln?
+description: Haben wir Fahnenmasten in der Kommune? Wo stehen sie?
 containerType: "administrative"
 ---

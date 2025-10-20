@@ -2,6 +2,6 @@
 title: Blumenbeete
 icon: blumenbeete
 order: 3
-description: Wo stehen Blumenbeete in Köln?
+description: Blumenbeete, öffentlich bekannt und vollständig, bald in der OpenStreetMap?
 containerType: "administrative"
 ---
