@@ -3,12 +3,34 @@
 
 <svg
    width="10.41439mm"
-   height="7.1311665mm"
-   viewBox="0 0 10.41439 7.1311665"
+   height="7.7704272mm"
+   viewBox="0 0 10.41439 7.7704273"
    version="1.1"
    id="svg1"
+   sodipodi:docname="basemap_de.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#111111"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm">
+    <inkscape:page
+       x="0"
+       y="0"
+       width="10.41439"
+       height="7.7704272"
+       id="page2"
+       margin="0"
+       bleed="0" />
+  </sodipodi:namedview>
   <defs
      id="defs1">
     <filter
@@ -49,9 +71,17 @@
          id="feComposite5" />
     </filter>
   </defs>
+  <rect
+     style="opacity:0.3;fill:#ffffff;fill-rule:evenodd;stroke-width:0.765628"
+     id="rect1"
+     width="9.8492689"
+     height="7.7704272"
+     x="0.28256083"
+     y="-5.4537539e-09"
+     ry="0.60548782" />
   <g
      id="layer1"
-     transform="translate(0.12796534,-1.539417)">
+     transform="translate(0.12796534,-1.2197866)">
     <g
        id="text1476-7"
        transform="matrix(0.03970441,0,0,0.03970441,0.30371185,1.8855861)"
