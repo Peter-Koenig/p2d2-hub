@@ -1,7 +1,7 @@
 # p2d2 – Public-Public Data-DNA
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-Pre--MVP-orange)]()
+[![Status](https://img.shields.io/badge/status-MVP-orange)]()
 [![CI/CD](https://img.shields.io/badge/deployment-main→prod-green)]()
 
 ---
