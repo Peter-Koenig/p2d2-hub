@@ -366,6 +366,7 @@ const decodedName = decodeURIComponent(name);
     import Overlay from "ol/Overlay";
     import { ViewHistoryManager } from "../../utils/view-history-manager";
     import { calculateUtmResolutions } from "../../utils/utm-resolutions";
+    import { initFeatureEditorMap } from "../../utils/map-initializer";
     import {
         createLuftbildLayer,
         createBasemapLayer,
@@ -449,6 +450,9 @@ const decodedName = decodeURIComponent(name);
             try {
                 // Calculate resolutions using centralized utility
                 const resolutions = calculateUtmResolutions();
+
+                // Initialize the map
+                const map = initFeatureEditorMap("feature-editor-map");
 
                 // Create and add additional base layers
                 // Zusätzlich zur Standard-OSM-Karte werden Luftbild und basemap.de hinzugefügt
