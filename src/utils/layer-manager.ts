@@ -6,20 +6,11 @@
 import TileLayer from "ol/layer/Tile";
 import TileWMS from "ol/source/TileWMS";
 
+import { MAP_CONFIG } from "../config/map-config";
+
 // Layer Z-Index constants for consistent ordering
 // Hierarchie: Luftbild < OSM < basemap.de < Features < Labels < Controls
-export const LAYER_ZINDEX = {
-  LUFTBILD: 7, // Unterste Basis-Layer (Kölner Luftbild 2024)
-  BASE: 5, // OSM base map (Standard-Basiskarte)
-  CEMETERY_BG: 10, // Cemetery background polygon
-  GEOTIFF: 12, // Future: GeoTIFF layer
-  ORTHOPHOTO: 13, // Future: Orthophoto layer
-  BASEMAP: 15, // basemap.de Layer (amtliche Karte)
-  GRABFLUR: 20, // Grabflur polygons (editierbare Features)
-  GRAVES: 25, // Future: Individual graves
-  LABELS: 30, // Future: Text labels
-  CONTROLS: 40, // UI-Elemente/Overlays
-};
+export const LAYER_ZINDEX = MAP_CONFIG.Z_INDEX;
 
 // Global variables for layer management
 let luftbildLayer: TileLayer | null = null; // Kölner Luftbild WMS Layer
@@ -57,7 +48,7 @@ export function createLuftbildLayer(projection: string): TileLayer {
       projection: useProjection,
       crossOrigin: "anonymous",
     }),
-    zIndex: LAYER_ZINDEX.LUFTBILD,
+    zIndex: MAP_CONFIG.Z_INDEX.LUFTBILD,
     visible: false,
   });
 
@@ -85,7 +76,7 @@ export function createBasemapLayer(): TileLayer {
       projection: "EPSG:3857",
       crossOrigin: "anonymous",
     }),
-    zIndex: LAYER_ZINDEX.BASEMAP,
+    zIndex: MAP_CONFIG.Z_INDEX.BASEMAP,
     visible: false,
   });
 

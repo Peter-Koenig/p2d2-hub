@@ -3,6 +3,10 @@
  * Centralizes map creation with proper configuration
  */
 
+import { MAP_CONFIG } from "../config/map-config";
+
+import { logger } from "./logger";
+
 import { Map as OLMap, View } from "ol";
 import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";
@@ -17,53 +21,81 @@ import { calculateUtmResolutions } from "./utm-resolutions";
  * @returns Fully initialized OLMap instance
  */
 export function initFeatureEditorMap(targetId: string): OLMap {
-    // Register UTM projection if needed (for EPSG:25832 support)
-    try {
-        registerUtm("EPSG:25832");
-    } catch (error) {
-        console.warn("Failed to register UTM projection, using default:", error);
-    }
+  // Check if DOM element exists
+  const target = document.getElementById(targetId);
+  if (!target) {
+    logger.warn(`[MapInit] Map target element '${targetId}' not found`);
+    return null as unknown as OLMap;
+  }
 
-    // Calculate resolutions for UTM projection
-    const resolutions = calculateUtmResolutions();
+  // Register UTM projection if needed (for EPSG:25832 support)
+  try {
+    registerUtm(MAP_CONFIG.PROJECTION);
+  } catch (error) {
+    logger.warn(
+      "[MapInit] Failed to register UTM projection, using default:",
+      error,
+    );
+  }
 
-    // Create base OSM layer
-    const baseLayer = new TileLayer({
-        source: new OSM(),
-        zIndex: 5, // Base layer z-index
-    });
+  // Calculate resolutions for UTM projection
+  const resolutions = calculateUtmResolutions();
 
-    // Create map view with UTM configuration
-    const view = new View({
-        projection: "EPSG:25832", // Use UTM by default for better precision
-        center: [0, 0], // Will be set by feature extent
-        zoom: 0,
-        resolutions: resolutions,
-        maxZoom: resolutions.length - 1,
-        minZoom: 0,
-    });
+  // Create base OSM layer
+  const baseLayer = new TileLayer({
+    source: new OSM(),
+    zIndex: MAP_CONFIG.Z_INDEX.BASE,
+  });
 
-    // Create map with controls
-    const map = new OLMap({
-        target: targetId,
-        layers: [baseLayer],
-        view: view,
-        controls: defaults().extend([
-            new FullScreen({
-                className: "custom-fullscreen",
-                label: "⛶",
-                labelActive: "✕",
-                tipLabel: "Vollbildmodus",
-            }),
-        ]),
-    });
+  // Create map view with UTM configuration
+  const view = new View({
+    projection: MAP_CONFIG.PROJECTION,
+    center: MAP_CONFIG.INITIAL_CENTER,
+    zoom: MAP_CONFIG.INITIAL_ZOOM,
+    resolutions: resolutions,
+    maxZoom: resolutions.length - 1,
+    minZoom: 0,
+  });
 
-    // Log initialization for debugging
-    console.log("FeatureEditor map initialized", {
-        projection: view.getProjection().getCode(),
-        target: targetId,
-        resolutions: resolutions.length,
-    });
+  // Create map with controls
+  const map = new OLMap({
+    target: target,
+    layers: [baseLayer],
+    view: view,
+    controls: buildControls(),
+  });
 
-    return map;
+  // Fix container height issue if needed
+  if (target && target.clientHeight === 0) {
+    logger.warn("[MapInit] Map container had height 0 - forcing updateSize()");
+    target.style.minHeight = "400px";
+    setTimeout(() => map.updateSize(), 100);
+  }
+
+  // Log initialization for debugging
+  logger.info("[MapInit] FeatureEditor map initialized", {
+    projection: map.getView().getProjection().getCode(),
+    zoom: map.getView().getZoom(),
+    target: targetId,
+  });
+
+  return map;
+}
+
+/**
+ * Build map controls with optimized configuration
+ */
+function buildControls(): any[] {
+  return defaults({
+    zoom: MAP_CONFIG.CONTROLS.ZOOM,
+    rotate: MAP_CONFIG.CONTROLS.ROTATE,
+    attribution: MAP_CONFIG.CONTROLS.ATTRIBUTION,
+  }).extend([
+    new FullScreen({
+      className: MAP_CONFIG.FULLSCREEN.CLASS_NAME,
+      label: MAP_CONFIG.FULLSCREEN.LABEL,
+      labelActive: MAP_CONFIG.FULLSCREEN.LABEL_ACTIVE,
+      tipLabel: MAP_CONFIG.FULLSCREEN.TIP_LABEL,
+    }),
+  ]);
 }
