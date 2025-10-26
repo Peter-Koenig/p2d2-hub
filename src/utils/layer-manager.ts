@@ -152,11 +152,14 @@ export function toggleBaseLayer(layerName: string): void {
 export function initLayerControls(): void {
   // Add event listeners for layer toggle buttons
   document.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-layer-toggle]");
+    const target = event.target as HTMLElement;
+    const button = target.closest("[data-layer-toggle]");
     if (!button) return;
 
-    const layerName = button.dataset.layerToggle;
-    toggleBaseLayer(layerName);
+    const layerName = (button as HTMLElement).dataset.layerToggle;
+    if (layerName) {
+      toggleBaseLayer(layerName);
+    }
   });
 
   // Restore previous layer states from localStorage

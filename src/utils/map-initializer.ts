@@ -86,16 +86,25 @@ export function initFeatureEditorMap(targetId: string): OLMap {
  * Build map controls with optimized configuration
  */
 function buildControls(): any[] {
-  return defaults({
+  const defaultControls = defaults({
     zoom: MAP_CONFIG.CONTROLS.ZOOM,
     rotate: MAP_CONFIG.CONTROLS.ROTATE,
     attribution: MAP_CONFIG.CONTROLS.ATTRIBUTION,
-  }).extend([
+  });
+
+  const controlsArray = [];
+  defaultControls.forEach((control: any) => {
+    controlsArray.push(control);
+  });
+
+  controlsArray.push(
     new FullScreen({
       className: MAP_CONFIG.FULLSCREEN.CLASS_NAME,
       label: MAP_CONFIG.FULLSCREEN.LABEL,
       labelActive: MAP_CONFIG.FULLSCREEN.LABEL_ACTIVE,
       tipLabel: MAP_CONFIG.FULLSCREEN.TIP_LABEL,
     }),
-  ]);
+  );
+
+  return controlsArray;
 }

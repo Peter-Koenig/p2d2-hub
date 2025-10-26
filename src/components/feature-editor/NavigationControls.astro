@@ -1,0 +1,205 @@
+---
+interface Props {
+    // Props can be added later if needed for customization
+}
+---
+
+<div class="nav-controls">
+    <button id="nav-back" class="nav-btn" title="Zurück (Alt+←)" disabled>
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+        >
+            <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"></path>
+        </svg>
+    </button>
+    <button id="nav-forward" class="nav-btn" title="Vor (Alt+→)" disabled>
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+        >
+            <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"></path>
+        </svg>
+    </button>
+    <button id="nav-zoom-in" class="nav-btn" title="Vergrößern">
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+        >
+            <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"></path>
+        </svg>
+    </button>
+    <button id="nav-zoom-out" class="nav-btn" title="Verkleinern">
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+        >
+            <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M20 12H4"></path>
+        </svg>
+    </button>
+    <button id="nav-reset" class="nav-btn" title="Zur Ausgangsansicht">
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+        >
+            <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            ></path>
+        </svg>
+    </button>
+</div>
+
+<script type="module">
+    import {
+        goBack,
+        goForward,
+        zoomIn,
+        zoomOut,
+        resetView,
+        initNavigationControls,
+    } from "../../utils/map-navigation";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // Get the map from global scope
+        const map = window.featureEditorMap;
+        if (!map) {
+            console.warn(
+                "NavigationControls: featureEditorMap not found in window",
+            );
+            return;
+        }
+
+        // Initialize navigation controls
+        initNavigationControls(map);
+
+        // Add event listeners for navigation buttons
+        const backBtn = document.getElementById("nav-back");
+        const forwardBtn = document.getElementById("nav-forward");
+        const zoomInBtn = document.getElementById("nav-zoom-in");
+        const zoomOutBtn = document.getElementById("nav-zoom-out");
+        const resetBtn = document.getElementById("nav-reset");
+
+        if (backBtn) {
+            backBtn.addEventListener("click", () => goBack(map));
+        }
+
+        if (forwardBtn) {
+            forwardBtn.addEventListener("click", () => goForward(map));
+        }
+
+        if (zoomInBtn) {
+            zoomInBtn.addEventListener("click", () => zoomIn(map));
+        }
+
+        if (zoomOutBtn) {
+            zoomOutBtn.addEventListener("click", () => zoomOut(map));
+        }
+
+        if (resetBtn) {
+            resetBtn.addEventListener("click", () => resetView(map));
+        }
+    });
+</script>
+
+<style>
+    .nav-controls {
+        position: absolute;
+        top: 0.5rem;
+        left: 2.5rem;
+        display: flex;
+        gap: 0.5rem;
+        z-index: 1000;
+    }
+
+    .nav-btn {
+        width: 20px;
+        height: 20px;
+        background: white;
+        border: none;
+        border-radius: 0.25rem;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+        background: #dc2626;
+        color: white;
+        transform: scale(1.05);
+    }
+
+    .nav-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+
+    .nav-btn svg {
+        width: 10px;
+        height: 10px;
+    }
+
+    @media (max-width: 768px) {
+        .nav-controls {
+            top: 0.75rem;
+            left: 0.75rem;
+        }
+
+        .nav-btn {
+            width: 18px;
+            height: 18px;
+        }
+
+        .nav-btn svg {
+            width: 9px;
+            height: 9px;
+        }
+    }
+
+    @media (prefers-contrast: high) {
+        .nav-btn {
+            border: 1px solid #374151;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .nav-btn {
+            transition: none;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            transform: none;
+        }
+    }
+</style>

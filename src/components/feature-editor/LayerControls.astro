@@ -1,0 +1,124 @@
+---
+interface Props {
+    // Props can be added later if needed for customization
+}
+
+// No props needed for now, component handles its own state
+---
+
+<div class="layer-controls">
+    <button
+        id="toggle-luftbild"
+        class="layer-btn"
+        data-layer-toggle="luftbild"
+        title="Luftbild 2024 ein-/ausblenden"
+        aria-label="Luftbild 2024"
+    >
+        <img
+            src="/images/icons/flyingBird.svg"
+            alt="Luftbild"
+            class="layer-icon"
+        />
+        <span class="layer-label">Luftbild 2024</span>
+    </button>
+    <button
+        id="toggle-basemap"
+        class="layer-btn"
+        data-layer-toggle="basemap"
+        title="basemap.de ein-/ausblenden"
+        aria-label="basemap.de"
+    >
+        <img
+            src="/images/icons/basemap_de.svg"
+            alt="basemap.de"
+            class="layer-icon"
+        />
+        <span class="layer-label">basemap.de</span>
+    </button>
+</div>
+
+<script type="module">
+    import { initLayerControls } from "../../utils/layer-manager";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // Initialize layer controls using existing utility function
+        initLayerControls();
+    });
+</script>
+
+<style>
+    .layer-controls {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        z-index: 1000;
+    }
+
+    .layer-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .layer-btn:hover {
+        background: #f9fafb;
+        border-color: #9ca3af;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .layer-btn.highlighted {
+        background: #3b82f6;
+        border-color: #2563eb;
+        color: white;
+    }
+
+    .layer-btn.highlighted:hover {
+        background: #2563eb;
+        border-color: #1d4ed8;
+    }
+
+    .layer-icon {
+        width: 1.25rem;
+        height: 1.25rem;
+        object-fit: contain;
+    }
+
+    .layer-label {
+        white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+        .layer-controls {
+            top: 0.5rem;
+            right: 0.5rem;
+        }
+
+        .layer-btn {
+            padding: 0.375rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .layer-icon {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .layer-label {
+            display: none; /* Hide labels on mobile for compact layout */
+        }
+    }
+</style>
