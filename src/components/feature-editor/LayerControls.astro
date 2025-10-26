@@ -38,6 +38,8 @@ interface Props {
 </div>
 
 <script>
+    import { LayerInteractionManager } from "../../utils/layer-interaction.ts";
+
     /**
      * Toggle base layer visibility
      * Unabhängiges Umschalten: Beide Layer können gleichzeitig aktiv sein
@@ -45,6 +47,7 @@ interface Props {
      * Aktualisiert Button-Status mit 'highlighted' Klasse
      */
     function toggleBaseLayer(layerName) {
+        // WICHTIG: Diese Funktion bleibt UNVERÄNDERT für kurze Clicks
         if (layerName === "luftbild" && (window as any).luftbildLayer) {
             // Toggle Luftbild unabhängig
             const layer = (window as any).luftbildLayer;
@@ -113,12 +116,42 @@ interface Props {
         });
     }
 
+    // === LONG-PRESS FEATURE ===
+    let interactionManager: LayerInteractionManager | null = null;
+
+    function initLongPress() {
+        const luftbildLayer = (window as any).luftbildLayer;
+        const basemapLayer = (window as any).basemapLayer;
+
+        if (luftbildLayer && basemapLayer) {
+            interactionManager = new LayerInteractionManager();
+
+            // Register long-press handlers
+            interactionManager.registerLongPress(
+                "toggle-luftbild",
+                luftbildLayer,
+                "luftbild",
+            );
+            interactionManager.registerLongPress(
+                "toggle-basemap",
+                basemapLayer,
+                "basemap",
+            );
+
+            console.log("[LayerControls] Long-press handlers registered");
+        } else {
+            // Retry if layers not ready yet
+            setTimeout(initLongPress, 100);
+        }
+    }
+
     // Event-Listener nach DOMContentLoaded
     document.addEventListener("DOMContentLoaded", () => {
         // Add event listeners for layer toggle buttons
         document.addEventListener("click", (event) => {
             const target = event.target as HTMLElement;
             const button = target.closest("[data-layer-toggle]") as HTMLElement;
+
             if (button) {
                 const layerName = button.getAttribute("data-layer-toggle");
                 if (layerName) {
@@ -126,6 +159,9 @@ interface Props {
                 }
             }
         });
+
+        // Initialize long-press feature
+        initLongPress();
 
         // Restore previous layer states from localStorage
         try {
@@ -154,6 +190,13 @@ interface Props {
             );
         }
     });
+
+    // Cleanup on unmount
+    if (typeof window !== "undefined") {
+        window.addEventListener("beforeunload", () => {
+            interactionManager?.cleanup();
+        });
+    }
 </script>
 
 <style>
