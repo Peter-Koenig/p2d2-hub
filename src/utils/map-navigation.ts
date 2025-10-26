@@ -48,6 +48,11 @@ export function resetView(map: OLMap): void {
 export function goBack(map: OLMap): void {
   const viewHistory = getViewHistoryManager(map);
   if (viewHistory?.back()) {
+    // Mark as programmatic to prevent double-push
+    (map as any).isProgrammaticZoom = true;
+    setTimeout(() => {
+      (map as any).isProgrammaticZoom = false;
+    }, 400);
     updateNavButtons(map);
   }
 }
@@ -58,6 +63,11 @@ export function goBack(map: OLMap): void {
 export function goForward(map: OLMap): void {
   const viewHistory = getViewHistoryManager(map);
   if (viewHistory?.forward()) {
+    // Mark as programmatic to prevent double-push
+    (map as any).isProgrammaticZoom = true;
+    setTimeout(() => {
+      (map as any).isProgrammaticZoom = false;
+    }, 400);
     updateNavButtons(map);
   }
 }
@@ -95,6 +105,9 @@ export function initNavigationControls(map: OLMap): void {
   const viewHistory = new ViewHistoryManager(map.getView());
   viewHistoryManagers.set(map, viewHistory);
 
+  // Flag to prevent double-push during programmatic zooms
+  (map as any).isProgrammaticZoom = false;
+
   // Save initial view as first history state
   viewHistory.pushState();
 
@@ -105,6 +118,11 @@ export function initNavigationControls(map: OLMap): void {
   let changeTimeout: ReturnType<typeof setTimeout> | null = null;
 
   const handleViewChange = () => {
+    // Ignore if this is a programmatic zoom
+    if ((map as any).isProgrammaticZoom) {
+      return;
+    }
+
     // Debounce view changes to avoid too many history entries
     if (changeTimeout) {
       clearTimeout(changeTimeout);

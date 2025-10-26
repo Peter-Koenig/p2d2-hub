@@ -688,11 +688,19 @@ const decodedName = decodeURIComponent(name);
                                         targetZoom,
                                     );
 
+                                    // Mark as programmatic zoom
+                                    (map as any).isProgrammaticZoom = true;
+
                                     // Zoom mit Animation
                                     map.getView().animate({
                                         center: [centerX, centerY],
                                         zoom: targetZoom,
                                         duration: 300,
+                                        callback: () => {
+                                            // Reset flag after animation
+                                            (map as any).isProgrammaticZoom =
+                                                false;
+                                        },
                                     });
 
                                     // Log final zoom after animation
