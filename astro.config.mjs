@@ -5,6 +5,7 @@ import mdx from "@astrojs/mdx"; // Nur falls du MDX brauchst
 
 import vue from "@astrojs/vue";
 import { polygonSyncPlugin } from "./src/integrations/polygon-sync-plugin.mjs";
+import { fileURLToPath } from "url";
 
 export default defineConfig({
   // Performance: Telemetrie deaktivieren (spart ~560ms)
@@ -18,6 +19,11 @@ export default defineConfig({
   // integrations: [mdx()], // Nur falls du MDX brauchst
   vite: {
     plugins: [tailwindcss()],
+    resolve: {
+      alias: {
+        "@": fileURLToPath(new URL("./src", import.meta.url)),
+      },
+    },
     optimizeDeps: {
       include: ["ol", "proj4", "vue"], // Pre-bundle GIS-Dependencies
     },

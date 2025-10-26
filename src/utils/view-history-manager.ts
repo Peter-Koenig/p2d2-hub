@@ -1,4 +1,4 @@
-import type { View } from 'ol';
+import type { View } from "ol";
 
 interface ViewState {
   center: number[];
@@ -15,6 +15,8 @@ export class ViewHistoryManager {
   private currentIndex: number = -1;
   private view: View;
   private maxHistorySize: number = 20;
+  private lastPushTime: number = 0;
+  private readonly PUSH_DEBOUNCE = 500; // ms
 
   constructor(view: View, maxHistorySize: number = 20) {
     this.view = view;
@@ -26,6 +28,14 @@ export class ViewHistoryManager {
    * Called after significant zoom/pan actions
    */
   pushState(): void {
+    // Debounce: Ignore pushes within 500ms of last push
+    const now = Date.now();
+    if (now - this.lastPushTime < this.PUSH_DEBOUNCE) {
+      console.log("ViewHistory: Push debounced");
+      return;
+    }
+    this.lastPushTime = now;
+
     const center = this.view.getCenter();
     const zoom = this.view.getZoom();
 
@@ -42,7 +52,7 @@ export class ViewHistoryManager {
     this.history.push({
       center: [...center],
       zoom,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     // Limit history size
@@ -52,10 +62,10 @@ export class ViewHistoryManager {
       this.currentIndex++;
     }
 
-    console.log('ViewHistory: Pushed state', {
+    console.log("ViewHistory: Pushed state", {
       index: this.currentIndex,
       total: this.history.length,
-      zoom
+      zoom,
     });
   }
 
@@ -73,10 +83,10 @@ export class ViewHistoryManager {
     this.view.animate({
       center: state.center,
       zoom: state.zoom,
-      duration: 300
+      duration: 300,
     });
 
-    console.log('ViewHistory: Navigated back to index', this.currentIndex);
+    console.log("ViewHistory: Navigated back to index", this.currentIndex);
     return true;
   }
 
@@ -94,10 +104,10 @@ export class ViewHistoryManager {
     this.view.animate({
       center: state.center,
       zoom: state.zoom,
-      duration: 300
+      duration: 300,
     });
 
-    console.log('ViewHistory: Navigated forward to index', this.currentIndex);
+    console.log("ViewHistory: Navigated forward to index", this.currentIndex);
     return true;
   }
 
@@ -123,7 +133,7 @@ export class ViewHistoryManager {
       currentIndex: this.currentIndex,
       historyLength: this.history.length,
       canGoBack: this.canGoBack(),
-      canGoForward: this.canGoForward()
+      canGoForward: this.canGoForward(),
     };
   }
 

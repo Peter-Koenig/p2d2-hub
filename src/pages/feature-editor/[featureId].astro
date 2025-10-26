@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
 import "../../styles/feature-popup.css";
 import "../../styles/feature-editor.css";
 import FeatureEditorHeader from "../../components/feature-editor/FeatureEditorHeader.astro";
@@ -16,6 +17,34 @@ const extent = Astro.url.searchParams.get("extent");
 if (!wp_name || !container_type || !name || !extent) {
     throw new Error("Missing required URL parameters for feature editor");
 }
+
+// ✅ DYNAMISCH: Projektion aus Content-Collection laden
+let targetProjection = "EPSG:25832"; // Fallback für Köln
+
+if (wp_name) {
+    try {
+        const kommunen = await getCollection("kommunen");
+        const kommune = kommunen.find((k) => k.data.wpname === wp_name);
+
+        if (kommune?.data.map?.projection) {
+            targetProjection = kommune.data.map.projection;
+            console.log(
+                `Feature-Editor: Using projection ${targetProjection} for ${kommune.data.title}`,
+            );
+        } else {
+            console.warn(
+                `Feature-Editor: No projection found for ${wp_name}, using fallback ${targetProjection}`,
+            );
+        }
+    } catch (error) {
+        console.error(
+            "Feature-Editor: Failed to load kommune projection",
+            error,
+        );
+    }
+}
+
+console.log(`Feature-Editor: Target projection is ${targetProjection}`);
 
 // Decode feature name for display
 const decodedName = decodeURIComponent(name);
@@ -54,22 +83,16 @@ const decodedName = decodeURIComponent(name);
         import FullScreen from "ol/control/FullScreen";
         import TileWMS from "ol/source/TileWMS";
 
-        import { wfsAuthClient } from "../../utils/wfs-auth";
-        import { registerUtm } from "../../utils/crs";
+        import { wfsAuthClient } from "@/utils/wfs-auth.ts";
+        import { registerUtm } from "@/utils/crs.ts";
         import { fromExtent } from "ol/geom/Polygon";
         import { Feature } from "ol";
         import Overlay from "ol/Overlay";
-        import { ViewHistoryManager } from "../../utils/view-history-manager";
-        import { calculateUtmResolutions } from "../../utils/utm-resolutions";
-        import { initFeatureEditorMap } from "../../utils/map-initializer";
-        import { MAP_CONFIG } from "../../config/map-config";
-        import {
-            createLuftbildLayer,
-            createBasemapLayer,
-            initLayerControls,
-            getLuftbildLayer,
-            getBasemapLayer,
-        } from "../../utils/layer-manager";
+        import { ViewHistoryManager } from "@/utils/view-history-manager.ts";
+        import { calculateUtmResolutions } from "@/utils/utm-resolutions.ts";
+        import { initFeatureEditorMap } from "@/utils/map-initializer.ts";
+        import { MAP_CONFIG } from "@/config/map-config.ts";
+        import { getViewHistoryManager } from "@/utils/map-navigation.ts";
 
         // Initialize feature editor (wrapped in async IIFE to allow early returns)
         (async () => {
@@ -145,28 +168,57 @@ const decodedName = decodeURIComponent(name);
                     // Store map in global scope for components to access
                     window.featureEditorMap = map;
 
-                    // Create and add additional base layers
-                    // Zusätzlich zur Standard-OSM-Karte werden Luftbild und basemap.de hinzugefügt
-                    try {
-                        // Create Luftbild layer (Kölner Luftbild 2024)
-                        const luftbildLayer =
-                            createLuftbildLayer(targetProjection);
-                        map.addLayer(luftbildLayer);
-                        console.log("Luftbild layer added successfully");
+                    // ✅ KORREKT: Direktes WMS-Layer-Setup wie in alter Version
+                    // WICHTIG: targetProjection von Map-View übernehmen
+                    const mapProjection = map
+                        .getView()
+                        .getProjection()
+                        .getCode();
 
-                        // Create basemap.de layer (amtliche Karte)
-                        const basemapLayer = createBasemapLayer();
-                        map.addLayer(basemapLayer);
-                        console.log("basemap.de layer added successfully");
+                    // Luftbild Köln WMS Layer
+                    const luftbildLayer = new TileLayer({
+                        source: new TileWMS({
+                            url: "https://geoportal.stadt-koeln.de/wss/service/luftbilder_2024_wms/guest",
+                            params: {
+                                LAYERS: "luftbilder_2024_23",
+                                FORMAT: "image/png",
+                                TILED: true,
+                            },
+                            projection: mapProjection, // Dynamisch von Map übernommen
+                            crossOrigin: "anonymous",
+                            attributions:
+                                '<a href="https://www.offenedaten-koeln.de/dataset/luftbilder-koeln-2024" target="_blank">Luftbilder Köln 2024 © Stadt Köln</a>',
+                        }),
+                        visible: false,
+                        opacity: 1.0,
+                        zIndex: 10,
+                    });
+                    map.addLayer(luftbildLayer);
+                    window.luftbildLayer = luftbildLayer; // Für LayerControls
+                    console.log("Luftbild layer added successfully");
 
-                        // Initialize layer controls with toggle buttons
-                        initLayerControls();
-                    } catch (error) {
-                        console.error(
-                            "Error initializing additional base layers:",
-                            error,
-                        );
-                    }
+                    // basemap.de WMS Layer
+                    const basemapLayer = new TileLayer({
+                        source: new TileWMS({
+                            url: "https://sgx.geodatenzentrum.de/wms_basemapde",
+                            params: {
+                                LAYERS: "de_basemapde_web_raster_farbe",
+                                FORMAT: "image/png",
+                                TRANSPARENT: "true",
+                                TILED: true,
+                            },
+                            projection: "EPSG:3857",
+                            crossOrigin: "anonymous",
+                            attributions:
+                                '© GeoBasis-DE / <a href="https://basemap.de" target="_blank">BKG</a>',
+                        }),
+                        visible: false,
+                        opacity: 1.0,
+                        zIndex: 9,
+                    });
+                    map.addLayer(basemapLayer);
+                    window.basemapLayer = basemapLayer; // Für LayerControls
+                    console.log("basemap.de layer added successfully");
 
                     // DEBUGGING: Log map size and extent for initial fit
                     console.log("=== ZOOM DEBUG (Initial Fit) ===");
@@ -280,11 +332,11 @@ const decodedName = decodeURIComponent(name);
                         // Create cemetery background layer with orange-red color scheme
                         const CEMETERY_BG_STYLE = new Style({
                             stroke: new Stroke({
-                                color: "rgba(194, 65, 12, 0.1)", // 10% Deckkraft
+                                color: "rgba(194, 65, 12, 0.1)", // ✅ Orange-Rot
                                 width: 1,
                             }),
                             fill: new Fill({
-                                color: "rgba(234, 88, 12, 0.15)", // 15% Deckkraft
+                                color: "rgba(234, 88, 12, 0.15)", // ✅ Orange-Rot
                             }),
                         });
 
@@ -329,9 +381,14 @@ const decodedName = decodeURIComponent(name);
                 projection,
             ) {
                 try {
-                    const grabflurCqlFilter = `osm_admin_level=9 AND wp_name='${wpName}' AND container_type='${containerType}' AND name='${name}'`;
+                    // ✅ KORREKT: Admin-Level 10, LIKE-Pattern mit Wildcard
+                    // Grabflure sind Sub-Features des Hauptfriedhofs, daher höheres Admin-Level (10 statt 8/9)
+                    // LIKE-Pattern matcht alle Grabfluren wie "Rheinkassel-001", "Rheinkassel-002" etc.
+                    const namePattern = `${name}-%`; // z.B. "Rheinkassel-%"
+                    const grabflurCqlFilter = `osm_admin_level=10 AND wp_name='${wpName}' AND container_type='${containerType}' AND name LIKE '${namePattern}'`;
+
                     console.log(
-                        "Feature-Editor: Loading grabflur features with filter:",
+                        "Feature-Editor: Loading grabflur features with CORRECTED filter:",
                         grabflurCqlFilter,
                     );
 
@@ -368,43 +425,316 @@ const decodedName = decodeURIComponent(name);
                             },
                         );
 
-                        // Create grabflur layer with distinct styling
+                        // ✅ KORREKTUR: Separate Style-Konstanten definieren
+                        const GRABFLUR_STYLE = new Style({
+                            stroke: new Stroke({
+                                color: "#dc2626", // Rot
+                                width: 2,
+                            }),
+                            fill: new Fill({
+                                color: "rgba(234, 88, 12, 0.2)", // 20% Deckkraft
+                            }),
+                        });
+
+                        const GRABFLUR_HOVER_STYLE = new Style({
+                            stroke: new Stroke({
+                                color: "#dc2626", // Rot
+                                width: 3,
+                            }),
+                            fill: new Fill({
+                                color: "rgba(234, 88, 12, 0.4)", // 40% Deckkraft bei Hover
+                            }),
+                        });
+
+                        // Erstelle Label-Features für Grabflur-Nummern
+                        const labelFeatures = grabflurOlFeatures
+                            .map((feature) => {
+                                const name = feature.get("name") || "Unbenannt";
+                                const number = extractGrabflurNumber(name);
+                                const geometry = feature.getGeometry();
+
+                                if (
+                                    geometry &&
+                                    typeof geometry.getInteriorPoint ===
+                                        "function"
+                                ) {
+                                    const labelFeature = new Feature({
+                                        geometry: geometry.getInteriorPoint(),
+                                        label: number,
+                                    });
+
+                                    labelFeature.setStyle(
+                                        new Style({
+                                            text: new Text({
+                                                text: number,
+                                                font: "bold 16px Inter, sans-serif",
+                                                fill: new Fill({
+                                                    color: "#dc2626",
+                                                }),
+                                                stroke: new Stroke({
+                                                    color: "#ffffff",
+                                                    width: 3,
+                                                }),
+                                                textAlign: "center",
+                                                textBaseline: "middle",
+                                            }),
+                                        }),
+                                    );
+
+                                    return labelFeature;
+                                }
+                                return null;
+                            })
+                            .filter((f) => f !== null);
+
+                        // Label-Layer erstellen
+                        const labelLayer = new VectorLayer({
+                            source: new VectorSource({
+                                features: labelFeatures,
+                            }),
+                            zIndex: MAP_CONFIG.Z_INDEX.LABELS, // 30, über allen anderen
+                        });
+
+                        // VectorLayer erstellen mit Hover-Interaktion
                         const grabflurLayer = new VectorLayer({
                             source: new VectorSource({
                                 features: grabflurOlFeatures,
                             }),
-                            style: function (feature) {
-                                const name = feature.get("name");
-                                const grabflurNumber =
-                                    extractGrabflurNumber(name);
-
-                                return new Style({
-                                    stroke: new Stroke({
-                                        color: "rgba(59, 130, 246, 0.8)",
-                                        width: 2,
-                                    }),
-                                    fill: new Fill({
-                                        color: "rgba(59, 130, 246, 0.1)",
-                                    }),
-                                    text: new Text({
-                                        text: grabflurNumber || name,
-                                        font: "bold 12px sans-serif",
-                                        fill: new Fill({
-                                            color: "#1e40af",
-                                        }),
-                                        stroke: new Stroke({
-                                            color: "white",
-                                            width: 3,
-                                        }),
-                                        offsetY: -15,
-                                    }),
-                                });
-                            },
-                            zIndex: MAP_CONFIG.Z_INDEX.GRABFLUR,
+                            style: GRABFLUR_STYLE,
+                            zIndex: MAP_CONFIG.Z_INDEX.GRABFLUR, // 20, Über Cemetery-Background
                         });
 
+                        // Hover-Popup erstellen
+                        const popupElement = document.createElement("div");
+                        popupElement.className = "grabflur-hover-popup";
+                        document.body.appendChild(popupElement);
+
+                        const popup = new Overlay({
+                            element: popupElement,
+                            positioning: "bottom-center",
+                            offset: [0, -10],
+                            stopEvent: false,
+                        });
+                        map.addOverlay(popup);
+
+                        // Cleanup bei Fenster-Schließen (Memory Leak Prevention)
+                        window.addEventListener("beforeunload", () => {
+                            if (hoverTimeout) clearTimeout(hoverTimeout);
+                            map.setTarget(undefined); // OpenLayers Cleanup
+                        });
+
+                        // ✅ KORREKTUR: Layer-spezifische Hover-Detection mit Popup
+                        let hoverFeature = null;
+                        let hoverTimeout = null;
+
+                        map.on("pointermove", (evt) => {
+                            if (evt.dragging) {
+                                return;
+                            }
+
+                            // Nur Features vom Grabflur-Layer erkennen
+                            let feature = null;
+                            map.forEachFeatureAtPixel(evt.pixel, (f, layer) => {
+                                if (layer === grabflurLayer) {
+                                    feature = f;
+                                    return true; // Stop iteration
+                                }
+                            });
+
+                            // Style-Update nur bei Änderung
+                            if (feature !== hoverFeature) {
+                                // Clear existing timeout
+                                if (hoverTimeout) {
+                                    clearTimeout(hoverTimeout);
+                                    hoverTimeout = null;
+                                }
+
+                                if (hoverFeature) {
+                                    hoverFeature.setStyle(GRABFLUR_STYLE);
+                                }
+
+                                // Hide popup when leaving feature
+                                if (!feature) {
+                                    popup.setPosition(undefined);
+                                }
+
+                                hoverFeature = feature;
+
+                                if (feature) {
+                                    // Apply hover style immediately
+                                    feature.setStyle(GRABFLUR_HOVER_STYLE);
+
+                                    // Show popup after 600ms delay
+                                    hoverTimeout = setTimeout(() => {
+                                        const name =
+                                            feature.get("name") || "Unbenannt";
+                                        const number =
+                                            extractGrabflurNumber(name);
+
+                                        popupElement.innerHTML = `
+                                            <div style="font-weight: 600; color: #dc2626; margin-bottom: 4px;">
+                                                Grabflur ${number}
+                                            </div>
+                                            <div style="font-size: 12px; color: #6b7280;">
+                                                ${name}
+                                            </div>
+                                        `;
+
+                                        popup.setPosition(evt.coordinate);
+                                    }, 600);
+                                }
+                            }
+                        });
+
+                        // Layer zur Karte hinzufügen
                         map.addLayer(grabflurLayer);
-                        console.log("Grabflur layer added successfully");
+                        map.addLayer(labelLayer);
+
+                        console.log(
+                            "Feature-Editor: Grabflur layer added to map with hover interaction",
+                        );
+
+                        // Add click interaction for grabflur features on the map
+                        map.on("click", async (evt) => {
+                            let clickedFeature = null;
+
+                            // Find clicked feature (only from grabflur layer)
+                            map.forEachFeatureAtPixel(
+                                evt.pixel,
+                                (feature, layer) => {
+                                    if (layer === grabflurLayer) {
+                                        clickedFeature = feature;
+                                        return true; // Stop iteration
+                                    }
+                                },
+                            );
+
+                            if (clickedFeature) {
+                                const geometry = clickedFeature.getGeometry();
+                                if (geometry) {
+                                    const extent = geometry.getExtent();
+
+                                    // DEBUGGING: Log map size and extent
+                                    console.log(
+                                        "=== ZOOM DEBUG (Feature-Editor) ===",
+                                    );
+                                    const mapSize = map.getSize();
+                                    console.log("Map container size:", mapSize);
+                                    console.log("Extent to fit:", extent);
+
+                                    // Berechne Extent-Dimensionen
+                                    const extentWidth = extent[2] - extent[0];
+                                    const extentHeight = extent[3] - extent[1];
+                                    console.log(
+                                        "Extent size:",
+                                        extentWidth,
+                                        "x",
+                                        extentHeight,
+                                        "m",
+                                    );
+
+                                    // Berechne Zentrum der Extent
+                                    const centerX = (extent[0] + extent[2]) / 2;
+                                    const centerY = (extent[1] + extent[3]) / 2;
+
+                                    // Berechne benötigte Resolution für optimale Ausfüllung
+                                    // Resolution = Meter pro Pixel
+                                    const padding = 40; // 40px Padding
+                                    const resolutionX =
+                                        extentWidth /
+                                        (mapSize[0] - 2 * padding);
+                                    const resolutionY =
+                                        extentHeight /
+                                        (mapSize[1] - 2 * padding);
+                                    const targetResolution = Math.max(
+                                        resolutionX,
+                                        resolutionY,
+                                    );
+
+                                    console.log(
+                                        "Target resolution:",
+                                        targetResolution,
+                                        "m/px",
+                                    );
+
+                                    // Get actual maxResolution from View
+                                    const maxResolution = map
+                                        .getView()
+                                        .getMaxResolution();
+                                    console.log(
+                                        "View maxResolution:",
+                                        maxResolution,
+                                        "m/px",
+                                    );
+
+                                    const calculatedZoom = Math.log2(
+                                        maxResolution / targetResolution,
+                                    );
+
+                                    // Begrenze Zoom auf vernünftige Werte
+                                    const minZoom = 16;
+                                    const maxZoom = 21;
+                                    const targetZoom = Math.min(
+                                        maxZoom,
+                                        Math.max(minZoom, calculatedZoom),
+                                    );
+
+                                    console.log(
+                                        "Calculated zoom:",
+                                        calculatedZoom,
+                                    );
+                                    console.log(
+                                        "Target zoom (clamped):",
+                                        targetZoom,
+                                    );
+
+                                    // Zoom mit Animation
+                                    map.getView().animate({
+                                        center: [centerX, centerY],
+                                        zoom: targetZoom,
+                                        duration: 300,
+                                    });
+
+                                    // Log final zoom after animation
+                                    setTimeout(() => {
+                                        console.log(
+                                            "Final zoom level:",
+                                            map.getView().getZoom(),
+                                        );
+                                    }, 350);
+
+                                    // Reset previous hover feature
+                                    if (hoverFeature) {
+                                        hoverFeature.setStyle(GRABFLUR_STYLE);
+                                    }
+
+                                    // Apply hover style to clicked feature
+                                    clickedFeature.setStyle(
+                                        GRABFLUR_HOVER_STYLE,
+                                    );
+                                    hoverFeature = clickedFeature;
+
+                                    // Save view state after zoom for back navigation
+                                    setTimeout(() => {
+                                        const viewHistory =
+                                            getViewHistoryManager(map);
+                                        if (viewHistory) {
+                                            viewHistory.pushState();
+                                            updateNavButtons(map);
+                                        }
+                                    }, 400); // After zoom animation
+                                }
+                            }
+                        });
+
+                        // Set names for hover popup display
+                        grabflurOlFeatures.forEach((olFeature, index) => {
+                            const properties =
+                                grabflurFeatures[index]?.properties || {};
+                            const featureName =
+                                properties.name || `Grabflur ${index + 1}`;
+                            olFeature.set("name", featureName);
+                        });
 
                         // Update feature count display
                         const featureCount =
@@ -437,9 +767,9 @@ const decodedName = decodeURIComponent(name);
              */
             function extractGrabflurNumber(name) {
                 if (!name) return null;
-                // Look for patterns like "Grabflur 1", "Grabflur A", etc.
-                const match = name.match(/Grabflur\s+([A-Z0-9]+)/i);
-                return match ? match[1] : null;
+                // Look for patterns like "Rheinkassel-007" → "007"
+                const match = name.match(/-(\d+)$/);
+                return match ? match[1] : name;
             }
 
             /**
@@ -470,6 +800,23 @@ const decodedName = decodeURIComponent(name);
                         });
                     }
                 }
+            }
+
+            /**
+             * Update navigation button states based on history
+             */
+            function updateNavButtons(map) {
+                const backBtn = document.getElementById("nav-back");
+                const fwdBtn = document.getElementById("nav-forward");
+
+                if (!backBtn || !fwdBtn) return;
+
+                const viewHistory = getViewHistoryManager(map);
+                if (!viewHistory) return;
+
+                const state = viewHistory.getState();
+                backBtn.disabled = !state.canGoBack;
+                fwdBtn.disabled = !state.canGoForward;
             }
         })();
     </script>

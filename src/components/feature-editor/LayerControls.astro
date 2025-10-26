@@ -37,12 +37,122 @@ interface Props {
     </button>
 </div>
 
-<script type="module">
-    import { initLayerControls } from "../../utils/layer-manager";
+<script>
+    /**
+     * Toggle base layer visibility
+     * Unabhängiges Umschalten: Beide Layer können gleichzeitig aktiv sein
+     * Persistiert beide States separat in localStorage
+     * Aktualisiert Button-Status mit 'highlighted' Klasse
+     */
+    function toggleBaseLayer(layerName) {
+        if (layerName === "luftbild" && (window as any).luftbildLayer) {
+            // Toggle Luftbild unabhängig
+            const layer = (window as any).luftbildLayer;
+            const newVisibility = !layer.getVisible();
+            layer.setVisible(newVisibility);
 
+            // Update nur den Luftbild-Button
+            const luftbildBtn = document.querySelector(
+                '[data-layer-toggle="luftbild"]',
+            );
+            if (luftbildBtn) {
+                if (newVisibility) {
+                    luftbildBtn.classList.add("highlighted");
+                } else {
+                    luftbildBtn.classList.remove("highlighted");
+                }
+            }
+        } else if (layerName === "basemap" && (window as any).basemapLayer) {
+            // Toggle basemap.de unabhängig
+            const layer = (window as any).basemapLayer;
+            const newVisibility = !layer.getVisible();
+            layer.setVisible(newVisibility);
+
+            // Update nur den basemap-Button
+            const basemapBtn = document.querySelector(
+                '[data-layer-toggle="basemap"]',
+            );
+            if (basemapBtn) {
+                if (newVisibility) {
+                    basemapBtn.classList.add("highlighted");
+                } else {
+                    basemapBtn.classList.remove("highlighted");
+                }
+            }
+        }
+
+        // Persistiere beide States separat in localStorage
+        try {
+            localStorage.setItem(
+                "luftbildVisible",
+                String(
+                    (window as any).luftbildLayer
+                        ? (window as any).luftbildLayer.getVisible()
+                        : false,
+                ),
+            );
+            localStorage.setItem(
+                "basemapVisible",
+                String(
+                    (window as any).basemapLayer
+                        ? (window as any).basemapLayer.getVisible()
+                        : false,
+                ),
+            );
+        } catch (error) {
+            console.warn("Could not persist layer states", error);
+        }
+
+        console.log("Layer toggle:", {
+            luftbild: (window as any).luftbildLayer
+                ? (window as any).luftbildLayer.getVisible()
+                : false,
+            basemap: (window as any).basemapLayer
+                ? (window as any).basemapLayer.getVisible()
+                : false,
+        });
+    }
+
+    // Event-Listener nach DOMContentLoaded
     document.addEventListener("DOMContentLoaded", () => {
-        // Initialize layer controls using existing utility function
-        initLayerControls();
+        // Add event listeners for layer toggle buttons
+        document.addEventListener("click", (event) => {
+            const target = event.target as HTMLElement;
+            const button = target.closest("[data-layer-toggle]") as HTMLElement;
+            if (button) {
+                const layerName = button.getAttribute("data-layer-toggle");
+                if (layerName) {
+                    toggleBaseLayer(layerName);
+                }
+            }
+        });
+
+        // Restore previous layer states from localStorage
+        try {
+            const luftbildVisible =
+                localStorage.getItem("luftbildVisible") === "true";
+            const basemapVisible =
+                localStorage.getItem("basemapVisible") === "true";
+
+            if (luftbildVisible) {
+                const luftbildBtn = document.querySelector(
+                    '[data-layer-toggle="luftbild"]',
+                );
+                if (luftbildBtn) luftbildBtn.classList.add("highlighted");
+            }
+
+            if (basemapVisible) {
+                const basemapBtn = document.querySelector(
+                    '[data-layer-toggle="basemap"]',
+                );
+                if (basemapBtn) basemapBtn.classList.add("highlighted");
+            }
+        } catch (error) {
+            console.warn(
+                "Could not restore layer states from localStorage",
+                error,
+            );
+        }
     });
 </script>
 
@@ -81,14 +191,14 @@ interface Props {
     }
 
     .layer-btn.highlighted {
-        background: #3b82f6;
-        border-color: #2563eb;
+        background: #dc2626;
+        border-color: #b91c1c;
         color: white;
     }
 
     .layer-btn.highlighted:hover {
-        background: #2563eb;
-        border-color: #1d4ed8;
+        background: #b91c1c;
+        border-color: #991b1b;
     }
 
     .layer-icon {
