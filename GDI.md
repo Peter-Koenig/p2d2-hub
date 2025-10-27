@@ -1,6 +1,5 @@
 Hier ist die vollständige GDI-Dokumentation als ein zusammenhängendes Markdown-Dokument im Codeblock:
 
-```markdown
 # Geodateninfrastruktur (GDI) - p2d2 Architektur
 
 ## Überblick
@@ -345,7 +344,6 @@ PostGIS
 **Version:** 1.0.0 (Oktober 2025)
 **Maintainer:** p2d2 Team
 **Lizenz:** MIT (Code), ODbL (Daten)
-```
 
 Diese vollständige Dokumentation kann direkt als `docs/GDI-ARCHITEKTUR.md` im Repository gespeichert werden und enthält alle URLs als Inline-Links statt Fußnoten.
 
