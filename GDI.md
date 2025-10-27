@@ -326,8 +326,8 @@ PostGIS
 
 ## Konformität & Standards
 
-- ✅ **GDI-DE-konform:** Interoperabilität mit deutschen GDI-Systemen
-- ✅ **INSPIRE-kompatibel:** Metadaten nach ISO 19115
+- ✅ **GDI-DE-konform:** Interoperabilität mit deutschen GDI-Systemen (angestrebt)
+- ✅ **INSPIRE-kompatibel:** Metadaten nach ISO 19115 (angestrebt)
 - ✅ **OGC-Standards:** WMS, WFS, WMTS, SLD
 - ✅ **Open Source:** Alle Komponenten unter OSI-approved Lizenzen
 
