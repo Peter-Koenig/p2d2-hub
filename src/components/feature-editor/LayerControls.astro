@@ -282,67 +282,32 @@ interface Props {
 
         // Import OpenLayers modules
         Promise.all([
-            import("ol/layer/Tile").then((m) => m.default),
-            import("ol/source/WMTS").then((m) => m.default),
-            import("ol/tilegrid/WMTS").then((m) => m.default),
-        ]).then(([TileLayer, WMTS, WMTSTileGrid]) => {
-            const resolutions = [
-                4891.96981025128, 2931.581886150768, 1759.0349316904608,
-                1055.421758814276, 633.2530552885657, 379.95183317313944,
-                228.0311798838836, 136.8187078903302, 82.09122473419814,
-                49.254734840518884, 29.552840904311334, 17.731704542586802,
-                10.639022725552082, 6.383413635331249, 3.830048181198749,
-                2.2980289087192497, 1.3788173452315498, 0.8272904071389299,
-                0.49637424428335794, 0.29782454657001476,
-            ];
-
-            const matrixIds = [
-                "00",
-                "01",
-                "02",
-                "03",
-                "04",
-                "05",
-                "06",
-                "07",
-                "08",
-                "09",
-                "10",
-                "11",
-                "12",
-                "13",
-                "14",
-                "15",
-                "16",
-                "17",
-                "18",
-                "19",
-            ];
-
-            const friedhofsplanSource = new WMTS({
-                url: "https://ows.data-dna.eu/wmts",
-                layer: "friedhofsplan_rheinkassel",
-                matrixSet: "nrw_grid",
-                format: "image/png",
+            import("ol/layer/Image").then((m) => m.default),
+            import("ol/source/ImageWMS").then((m) => m.default),
+        ]).then(([ImageLayer, ImageWMS]) => {
+            const friedhofsplanSource = new ImageWMS({
+                url: "https://ows.data-dna.eu/service",
+                params: {
+                    LAYERS: "friedhofsplan_rheinkassel",
+                    FORMAT: "image/png",
+                    TRANSPARENT: true,
+                    VERSION: "1.1.1",
+                },
                 projection: "EPSG:25832",
-                tileGrid: new WMTSTileGrid({
-                    origin: [277000, 5820000], // NW-Ecke des NRW Grids
-                    resolutions: resolutions,
-                    matrixIds: matrixIds,
-                }),
-                style: "",
-                wrapX: false,
+                serverType: "geoserver",
+                ratio: 1.0,
             });
 
-            const friedhofsplanLayer = new TileLayer({
+            const friedhofsplanLayer = new ImageLayer({
                 source: friedhofsplanSource,
+                extent: [355079.917, 5656115.018, 355310.314, 5656324.347],
                 zIndex: 5,
                 opacity: 0.7,
                 visible: true,
                 properties: {
                     id: "friedhofsplan",
                     title: "Friedhofsplan",
-                    layerType: "wmts",
+                    layerType: "wms",
                 },
             });
 
@@ -350,13 +315,10 @@ interface Props {
             map.addLayer(friedhofsplanLayer);
             (window as any).friedhofsplanLayer = friedhofsplanLayer;
 
-            // Check cemetery_id and set visibility
-            const featureProps =
-                (window as any).currentFeature?.properties || {};
-            const hasCemetery = !!featureProps.cemetery_id;
-            friedhofsplanLayer.setVisible(hasCemetery);
+            // Layer initial sichtbar (Cemetery-Check später implementieren)
+            friedhofsplanLayer.setVisible(true);
 
-            console.log("[Friedhofsplan] WMTS Layer created successfully");
+            console.log("[Friedhofsplan] WMS Layer created successfully");
 
             // Lade gespeicherte Opacity
             const savedOpacity = localStorage.getItem("friedhofsplan_opacity");
