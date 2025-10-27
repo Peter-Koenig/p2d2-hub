@@ -1,5 +1,3 @@
-Hier ist die vollständige GDI-Dokumentation als ein zusammenhängendes Markdown-Dokument im Codeblock:
-
 # Geodateninfrastruktur (GDI) - p2d2 Architektur
 
 ## Überblick
@@ -21,7 +19,6 @@ Nach dem Geodatenzugangsgesetz (GeoZG) ist eine Geodateninfrastruktur:
 - **Technologie:** PostgreSQL 15+ mit PostGIS 3.4+ Extension
 - **Datenmodell:** Container-Konzept (einheitliches Schema für Cemetery, Grabflur, Verwaltungsgrenzen)
 - **Koordinatensysteme:** EPSG:25832 (primär), EPSG:3857, EPSG:4326
-- **Standort:** `db.data-dna.eu:5432`
 
 **GeoTIFF-Rasterdaten**
 - **Zweck:** Georeferenzierte Friedhofspläne als Hintergrundkarten
@@ -41,7 +38,7 @@ Nach dem Geodatenzugangsgesetz (GeoZG) ist eine Geodateninfrastruktur:
   - WFS-T (Transactional) - Live-Editing (in Entwicklung)
 - **Projections:** On-the-fly Reprojection zwischen EPSG:25832, 3857, 4326
 - **Styling:** SLD 1.0 (Styled Layer Descriptor) für Transparenz und Symbolisierung
-- **Endpoint:** `http://192.168.122.112:8080/geoserver/`
+- **Endpoint:** `http://192.168.xxx.yyy:8080/geoserver/`
 - **Workspaces:**
   - `Verwaltungsdaten` (WFS-Features: Friedhöfe, Gräber)
   - `friedhofsplaene` (WMS-Raster: GeoTIFF-Layer)
@@ -75,7 +72,7 @@ MapProxy dient als Proxy/Cache-Layer für einen lokalen OSM-Tileserver, um langf
 **Aktueller Zustand:**
 - **Upstream:** OSM-Community-Tiles (`tile.openstreetmap.org`) via MapProxy-Durchleitung
 - **Lokaler Tileserver:** Aufgebaut (mod_tile + Mapnik + OSM-Datenbank), aber nicht aktiviert
-- **Endpoint:** `http://192.168.122.114:8080/tile/%(z)s/%(x)s/%(y)s.png` (intern)
+- **Endpoint:** `http://192.168.xxx.yyy:8080/tile/%(z)s/%(x)s/%(y)s.png` (intern)
 
 **MapProxy-Konfiguration (aktuell):**
 ```
@@ -83,7 +80,7 @@ sources:
   osm_source:
     type: tile
     grid: osm_grid
-    url: http://192.168.122.114:8080/tile/%(z)s/%(x)s/%(y)s.png  # Lokaler Tileserver (vorbereitet)
+    url: http://192.168.xxx.yyy:8080/tile/%(z)s/%(x)s/%(y)s.png  # Lokaler Tileserver (vorbereitet)
     # url: http://a.tile.openstreetmap.org/%(z)s/%(x)s/%(y)s.png  # Fallback zu OSM
     http:
       headers:
@@ -127,7 +124,7 @@ sources:
   friedhofsplan_rheinkassel_wms:
     type: wms
     req:
-      url: http://192.168.122.112:8080/geoserver/wms
+      url: http://192.168.xxx.yyy:8080/geoserver/wms
       layers: friedhofsplaene:rheinkassel_friedhof
       styles: friedhofsplan_transparent
     coverage:
