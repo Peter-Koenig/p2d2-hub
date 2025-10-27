@@ -16,6 +16,7 @@ interface LayerInteractionState {
   animationFrameId: number | null;
   initialOpacity: number;
   currentOpacity: number;
+  wasLongPress: boolean;
 }
 
 export class LayerInteractionManager {
@@ -49,6 +50,7 @@ export class LayerInteractionManager {
       animationFrameId: null,
       initialOpacity: layer.getOpacity(),
       currentOpacity: layer.getOpacity(),
+      wasLongPress: false,
     };
     this.states.set(buttonId, state);
 
@@ -113,6 +115,7 @@ export class LayerInteractionManager {
     setTimeout(() => {
       if (state.isPressed) {
         // Still pressed after threshold → start animation
+        state.wasLongPress = true;
         this.startOpacityAnimation(buttonId, layer, state, layerId);
       }
     }, this.LONG_PRESS_THRESHOLD);
@@ -210,6 +213,11 @@ export class LayerInteractionManager {
     if (button) {
       button.style.opacity = "1";
     }
+
+    // Reset flag after short delay to prevent click event
+    setTimeout(() => {
+      state.wasLongPress = false;
+    }, 100);
 
     console.log(
       `[LayerInteraction] Saved opacity ${finalOpacity.toFixed(2)} for ${layerId}`,

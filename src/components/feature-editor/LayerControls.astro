@@ -138,6 +138,9 @@ interface Props {
                 "basemap",
             );
 
+            // Make manager accessible for click handler
+            (window as any).layerInteractionManager = interactionManager;
+
             console.log("[LayerControls] Long-press handlers registered");
         } else {
             // Retry if layers not ready yet
@@ -153,6 +156,19 @@ interface Props {
             const button = target.closest("[data-layer-toggle]") as HTMLElement;
 
             if (button) {
+                // Check if this was a long press
+                const buttonId = button.id;
+                const manager = (window as any).layerInteractionManager;
+                if (manager) {
+                    const state = manager.states?.get(buttonId);
+                    if (state?.wasLongPress) {
+                        console.log(
+                            "[LayerControls] Ignoring click after long press",
+                        );
+                        return;
+                    }
+                }
+
                 const layerName = button.getAttribute("data-layer-toggle");
                 if (layerName) {
                     toggleBaseLayer(layerName);
