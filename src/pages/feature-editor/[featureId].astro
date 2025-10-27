@@ -270,6 +270,16 @@ const decodedName = decodeURIComponent(name);
                         zoom: map.getView().getZoom(),
                     });
 
+                    // Assign map to window for global access
+                    (window as any).map = map;
+
+                    // Dispatch event for LayerControls
+                    window.dispatchEvent(
+                        new CustomEvent("map:initialized", {
+                            detail: { map },
+                        }),
+                    );
+
                     // DEBUG: Check View projection
                     const view = map.getView();
                     const projection = view.getProjection();

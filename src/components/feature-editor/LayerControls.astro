@@ -35,6 +35,16 @@ interface Props {
         />
         <span class="layer-label">basemap.de</span>
     </button>
+    <button
+        id="toggle-friedhofsplan"
+        class="layer-btn"
+        data-layer-toggle="friedhofsplan"
+        title="Friedhofsplan ein-/ausblenden"
+        aria-label="Friedhofsplan"
+    >
+        <span class="icon">📋</span>
+        <span class="layer-label">Friedhofsplan</span>
+    </button>
 </div>
 
 <script>
@@ -82,6 +92,26 @@ interface Props {
                     basemapBtn.classList.remove("highlighted");
                 }
             }
+        } else if (
+            layerName === "friedhofsplan" &&
+            (window as any).friedhofsplanLayer
+        ) {
+            // Toggle Friedhofsplan unabhängig
+            const layer = (window as any).friedhofsplanLayer;
+            const newVisibility = !layer.getVisible();
+            layer.setVisible(newVisibility);
+
+            // Update nur den Friedhofsplan-Button
+            const friedhofsplanBtn = document.querySelector(
+                '[data-layer-toggle="friedhofsplan"]',
+            );
+            if (friedhofsplanBtn) {
+                if (newVisibility) {
+                    friedhofsplanBtn.classList.add("highlighted");
+                } else {
+                    friedhofsplanBtn.classList.remove("highlighted");
+                }
+            }
         }
 
         // Persistiere beide States separat in localStorage
@@ -102,6 +132,14 @@ interface Props {
                         : false,
                 ),
             );
+            localStorage.setItem(
+                "friedhofsplanVisible",
+                String(
+                    (window as any).friedhofsplanLayer
+                        ? (window as any).friedhofsplanLayer.getVisible()
+                        : false,
+                ),
+            );
         } catch (error) {
             console.warn("Could not persist layer states", error);
         }
@@ -113,6 +151,9 @@ interface Props {
             basemap: (window as any).basemapLayer
                 ? (window as any).basemapLayer.getVisible()
                 : false,
+            friedhofsplan: (window as any).friedhofsplanLayer
+                ? (window as any).friedhofsplanLayer.getVisible()
+                : false,
         });
     }
 
@@ -122,8 +163,9 @@ interface Props {
     function initLongPress() {
         const luftbildLayer = (window as any).luftbildLayer;
         const basemapLayer = (window as any).basemapLayer;
+        const friedhofsplanLayer = (window as any).friedhofsplanLayer;
 
-        if (luftbildLayer && basemapLayer) {
+        if (luftbildLayer && basemapLayer && friedhofsplanLayer) {
             interactionManager = new LayerInteractionManager();
 
             // Register long-press handlers
@@ -136,6 +178,11 @@ interface Props {
                 "toggle-basemap",
                 basemapLayer,
                 "basemap",
+            );
+            interactionManager.registerLongPress(
+                "toggle-friedhofsplan",
+                friedhofsplanLayer,
+                "friedhofsplan",
             );
 
             // Make manager accessible for click handler
@@ -185,6 +232,8 @@ interface Props {
                 localStorage.getItem("luftbildVisible") === "true";
             const basemapVisible =
                 localStorage.getItem("basemapVisible") === "true";
+            const friedhofsplanVisible =
+                localStorage.getItem("friedhofsplanVisible") === "true";
 
             if (luftbildVisible) {
                 const luftbildBtn = document.querySelector(
@@ -198,6 +247,14 @@ interface Props {
                     '[data-layer-toggle="basemap"]',
                 );
                 if (basemapBtn) basemapBtn.classList.add("highlighted");
+            }
+
+            if (friedhofsplanVisible) {
+                const friedhofsplanBtn = document.querySelector(
+                    '[data-layer-toggle="friedhofsplan"]',
+                );
+                if (friedhofsplanBtn)
+                    friedhofsplanBtn.classList.add("highlighted");
             }
         } catch (error) {
             console.warn(
@@ -213,6 +270,101 @@ interface Props {
             interactionManager?.cleanup();
         });
     }
+
+    // Friedhofsplan Layer Creation
+    function createFriedhofsplanLayer() {
+        const map = (window as any).map || (window as any).mapInstance;
+        if (!map) {
+            console.warn("[Friedhofsplan] Map instance not available yet");
+            setTimeout(createFriedhofsplanLayer, 100);
+            return;
+        }
+
+        // Import OpenLayers modules
+        Promise.all([
+            import("ol/layer/Tile").then((m) => m.default),
+            import("ol/source/TileWMS").then((m) => m.default),
+        ]).then(([TileLayer, TileWMS]) => {
+            // Create Friedhofsplan WMS Layer
+            const friedhofsplanLayer = new TileLayer({
+                source: new TileWMS({
+                    url: "http://192.168.122.112:8080/geoserver/wms",
+                    params: {
+                        LAYERS: "friedhofsplaene:rheinkassel_friedhof",
+                        TILED: true,
+                        VERSION: "1.1.1",
+                        FORMAT: "image/png",
+                        TRANSPARENT: true,
+                    },
+                    serverType: "geoserver",
+                    projection: "EPSG:25832",
+                }),
+                extent: [355079.917, 5656115.018, 355310.314, 5656324.347],
+                zIndex: 5, // Zwischen WFS (10) und Befliegung (2)
+                opacity: 0.7,
+                visible: true, // Start visible for testing
+                properties: {
+                    id: "friedhofsplan",
+                    title: "Friedhofsplan",
+                    layerType: "wms",
+                },
+            });
+
+            // Add layer to map
+            map.addLayer(friedhofsplanLayer);
+            (window as any).friedhofsplanLayer = friedhofsplanLayer;
+
+            // Check cemetery_id and set visibility
+            const featureProps =
+                (window as any).currentFeature?.properties || {};
+            const hasCemetery = !!featureProps.cemetery_id;
+            friedhofsplanLayer.setVisible(hasCemetery);
+
+            console.log("[Friedhofsplan] Layer created and added to map", {
+                hasCemetery: hasCemetery,
+                cemetery_id: featureProps.cemetery_id,
+            });
+
+            // Initialize long-press for Friedhofsplan
+            if ((window as any).layerInteractionManager) {
+                (window as any).layerInteractionManager.registerLongPress(
+                    "toggle-friedhofsplan",
+                    friedhofsplanLayer,
+                    "friedhofsplan",
+                );
+            } else {
+                // Retry long-press initialization
+                setTimeout(() => {
+                    if ((window as any).layerInteractionManager) {
+                        (
+                            window as any
+                        ).layerInteractionManager.registerLongPress(
+                            "toggle-friedhofsplan",
+                            friedhofsplanLayer,
+                            "friedhofsplan",
+                        );
+                    }
+                }, 500);
+            }
+        });
+    }
+
+    // Wait for map initialization
+    window.addEventListener("map:initialized", () => {
+        console.log("[Friedhofsplan] Map initialized event received");
+        createFriedhofsplanLayer();
+    });
+
+    // Fallback initialization
+    setTimeout(() => {
+        if (
+            ((window as any).map || (window as any).mapInstance) &&
+            !(window as any).friedhofsplanLayer
+        ) {
+            console.log("[Friedhofsplan] Fallback initialization");
+            createFriedhofsplanLayer();
+        }
+    }, 2000);
 </script>
 
 <style>
@@ -270,6 +422,15 @@ interface Props {
         white-space: nowrap;
     }
 
+    .icon {
+        font-size: 1.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
     @media (max-width: 768px) {
         .layer-controls {
             top: 0.5rem;
@@ -282,6 +443,12 @@ interface Props {
         }
 
         .layer-icon {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .icon {
+            font-size: 1rem;
             width: 1rem;
             height: 1rem;
         }
