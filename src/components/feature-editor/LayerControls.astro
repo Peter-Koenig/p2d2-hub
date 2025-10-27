@@ -283,30 +283,66 @@ interface Props {
         // Import OpenLayers modules
         Promise.all([
             import("ol/layer/Tile").then((m) => m.default),
-            import("ol/source/TileWMS").then((m) => m.default),
-        ]).then(([TileLayer, TileWMS]) => {
-            // Create Friedhofsplan WMS Layer
-            const friedhofsplanLayer = new TileLayer({
-                source: new TileWMS({
-                    url: "http://192.168.122.112:8080/geoserver/wms",
-                    params: {
-                        LAYERS: "friedhofsplaene:rheinkassel_friedhof",
-                        TILED: true,
-                        VERSION: "1.1.1",
-                        FORMAT: "image/png",
-                        TRANSPARENT: true,
-                    },
-                    serverType: "geoserver",
-                    projection: "EPSG:25832",
+            import("ol/source/WMTS").then((m) => m.default),
+            import("ol/tilegrid/WMTS").then((m) => m.default),
+        ]).then(([TileLayer, WMTS, WMTSTileGrid]) => {
+            const resolutions = [
+                4891.96981025128, 2931.581886150768, 1759.0349316904608,
+                1055.421758814276, 633.2530552885657, 379.95183317313944,
+                228.0311798838836, 136.8187078903302, 82.09122473419814,
+                49.254734840518884, 29.552840904311334, 17.731704542586802,
+                10.639022725552082, 6.383413635331249, 3.830048181198749,
+                2.2980289087192497, 1.3788173452315498, 0.8272904071389299,
+                0.49637424428335794, 0.29782454657001476,
+            ];
+
+            const matrixIds = [
+                "00",
+                "01",
+                "02",
+                "03",
+                "04",
+                "05",
+                "06",
+                "07",
+                "08",
+                "09",
+                "10",
+                "11",
+                "12",
+                "13",
+                "14",
+                "15",
+                "16",
+                "17",
+                "18",
+                "19",
+            ];
+
+            const friedhofsplanSource = new WMTS({
+                url: "https://ows.data-dna.eu/wmts",
+                layer: "friedhofsplan_rheinkassel",
+                matrixSet: "nrw_grid",
+                format: "image/png",
+                projection: "EPSG:25832",
+                tileGrid: new WMTSTileGrid({
+                    origin: [277000, 5820000], // NW-Ecke des NRW Grids
+                    resolutions: resolutions,
+                    matrixIds: matrixIds,
                 }),
-                extent: [355079.917, 5656115.018, 355310.314, 5656324.347],
-                zIndex: 5, // Zwischen WFS (10) und Befliegung (2)
+                style: "",
+                wrapX: false,
+            });
+
+            const friedhofsplanLayer = new TileLayer({
+                source: friedhofsplanSource,
+                zIndex: 5,
                 opacity: 0.7,
-                visible: true, // Start visible for testing
+                visible: true,
                 properties: {
                     id: "friedhofsplan",
                     title: "Friedhofsplan",
-                    layerType: "wms",
+                    layerType: "wmts",
                 },
             });
 
@@ -320,10 +356,13 @@ interface Props {
             const hasCemetery = !!featureProps.cemetery_id;
             friedhofsplanLayer.setVisible(hasCemetery);
 
-            console.log("[Friedhofsplan] Layer created and added to map", {
-                hasCemetery: hasCemetery,
-                cemetery_id: featureProps.cemetery_id,
-            });
+            console.log("[Friedhofsplan] WMTS Layer created successfully");
+
+            // Lade gespeicherte Opacity
+            const savedOpacity = localStorage.getItem("friedhofsplan_opacity");
+            if (savedOpacity) {
+                friedhofsplanLayer.setOpacity(parseFloat(savedOpacity));
+            }
 
             // Initialize long-press for Friedhofsplan
             if ((window as any).layerInteractionManager) {
