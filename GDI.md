@@ -3,7 +3,7 @@
 Stand: 27.10.2025
 - WiP
 - Prototypische Entwicklung
-+ aktuell am Beispiel [Friedhof Rheinkassel](https://osm.org/go/0GDpvHY26--?m=)
+- aktuell am Beispiel [Friedhof Rheinkassel](https://osm.org/go/0GDpvHY26--?m=)
 
 ## Überblick
 
