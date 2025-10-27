@@ -1,5 +1,10 @@
 # Geodateninfrastruktur (GDI) - p2d2 Architektur
 
+Stand: 27.10.2025
+- WiP
+- Prototypische Entwicklung
++ aktuell am Beispiel [Friedhof Rheinkassel](https://osm.org/go/0GDpvHY26--?m=)
+
 ## Überblick
 
 Die p2d2-Geodateninfrastruktur ist eine standardkonforme, skalierbare GDI-Lösung für die Erfassung, Verwaltung und Bereitstellung von Friedhofsdaten in Kommunen. Die Architektur folgt den Prinzipien der [GDI-DE (Geodateninfrastruktur Deutschland)](https://www.gdi-de.org/) und setzt auf offene Standards des [Open Geospatial Consortium (OGC)](https://www.ogc.org/standards).
