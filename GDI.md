@@ -316,7 +316,7 @@ PostGIS
 ### URLs
 - **Production:** `https://www.data-dna.eu`
 - **Development:** `https://dev.data-dna.eu`
-- **Operations:** `https://ops.data-dna.eu` (Feature-Editor)
+- **Operations:** `https://opn.data-dna.eu` (Feature-Editor)
 - **OWS-Endpoint:** `https://ows.data-dna.eu`
 
 ### Backup-Strategie
