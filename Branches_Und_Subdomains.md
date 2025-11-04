@@ -1,16 +1,5 @@
 # p2d2 Multi-Repo Deployment – Komplette Dokumentation
 
-<<<<<<< HEAD
-## TECHNICAL DOCUMENTATION
-
-# p2d2 Multi-Branch Deployment – Technische Dokumentation
-
-**Status:** Produktiv  
-**Deployment-Modell:** Multi-Branch mit automatischen Webhooks  
-=======
-**Status:** Production Ready  
-**Multi-Repo Support:** GitHub + GitLab  
->>>>>>> develop
 **Gültig ab:** November 2025
 
 ---
@@ -42,9 +31,9 @@
 └─────────┘  │ ├─ team-de2       │
              │ └─ team-fv        │
              └───────────────────┘
-             
+
                 ↓
-             
+
 ┌──────────────────────────────────┐
 │  systemd Services                │
 │  ├─ astro-main (Port 3000)       │
@@ -53,9 +42,9 @@
 │  ├─ astro-feature-team-de2 (3003)│
 │  └─ astro-feature-team-fv (3004) │
 └──────────────────────────────────┘
-             
+
                 ↓
-             
+
 ┌──────────────────────────────────┐
 │  Caddy Reverse Proxy (OPNSense)  │
 │  ├─ www.data-dna.eu → :3000      │
@@ -155,7 +144,7 @@ const branchConfig = {
     secret: process.env.SECRET_MAIN,
     provider: 'gitlab'
   },
-  
+
   'develop': {
     domain: 'dev.data-dna.eu',
     deployPath: '/var/www/astro/deployments/develop',
@@ -164,7 +153,7 @@ const branchConfig = {
     secret: process.env.SECRET_DEVELOP,
     provider: 'gitlab'
   },
-  
+
   'feature/team-de1': {
     domain: 'f-de1.data-dna.eu',
     deployPath: '/var/www/astro/deployments/feature-de1',
@@ -174,7 +163,7 @@ const branchConfig = {
     provider: 'github',
     matchPattern: /^feature\/team-de1\/.+/
   },
-  
+
   'feature/team-de2': {
     domain: 'f-de2.data-dna.eu',
     deployPath: '/var/www/astro/deployments/feature-de2',
@@ -184,7 +173,7 @@ const branchConfig = {
     provider: 'github',
     matchPattern: /^feature\/team-de2\/.+/
   },
-  
+
   'feature/team-fv': {
     domain: 'f-fv.data-dna.eu',
     deployPath: '/var/www/astro/deployments/feature-fv',
@@ -512,13 +501,6 @@ sudo systemctl status astro-*
 
 ## 10. Zusammenfassung
 
-<<<<<<< HEAD
-- **GitLab Issues:** p2d2 Repository
-- **Logs:** `journalctl` oder `/var/www/astro/deployments/*/logs/`
-- **Admin-Zugriff:** Frontend-VM root
-```
-=======
-```
 ┌─────────────────────────────────────────────┐
 │  Workflow Summary                           │
 ├─────────────────────────────────────────────┤
@@ -544,6 +526,3 @@ sudo systemctl status astro-*
 │  LIVE in Produktion ✅                     │
 │                                             │
 └─────────────────────────────────────────────┘
-
->>>>>>> develop
-
