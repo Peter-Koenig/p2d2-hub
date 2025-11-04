@@ -506,25 +506,25 @@ sudo systemctl status astro-*
 │  Workflow Summary                           │
 ├─────────────────────────────────────────────┤
 │                                             │
-│  Team entwickelt in ihrem GitHub-Repo      │
-│  └─ feature/team-de1/*                     │
+│  Team entwickelt in ihrem GitHub-Repo       │
+│  └─ feature/team-de1/*                      │
 │                                             │
-│  Push triggert Webhook                     │
-│  └─ Server validiert Secret + Branch      │
+│  Push triggert Webhook                      │
+│  └─ Server validiert Secret + Branch        │
 │                                             │
-│  Deploy-Script wird aufgerufen             │
-│  └─ Git clone + npm build                 │
+│  Deploy-Script wird aufgerufen              │
+│  └─ Git clone + npm build                   │
 │                                             │
-│  Service wird neu gestartet                │
-│  └─ f-de1.data-dna.eu LIVE                │
+│  Service wird neu gestartet                 │
+│  └─ f-de1.data-dna.eu LIVE                  │
 │                                             │
-│  Team testet auf Feature-Domain            │
-│  └─ Nach Approval: PR zu develop           │
+│  Team testet auf Feature-Domain             │
+│  └─ Nach Approval: PR zu develop            │
 │                                             │
-│  Du mergst develop → main                  │
-│  └─ Automatisches Deployment zu www        │
+│  Du mergst develop → main                   │
+│  └─ Automatisches Deployment zu www         │
 │                                             │
-│  LIVE in Produktion ✅                     │
+│  LIVE in Produktion ✅                      │
 │                                             │
 └─────────────────────────────────────────────┘
 ```
