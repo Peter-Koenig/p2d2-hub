@@ -501,6 +501,7 @@ sudo systemctl status astro-*
 
 ## 10. Zusammenfassung
 
+```
 ┌─────────────────────────────────────────────┐
 │  Workflow Summary                           │
 ├─────────────────────────────────────────────┤
@@ -526,3 +527,4 @@ sudo systemctl status astro-*
 │  LIVE in Produktion ✅                     │
 │                                             │
 └─────────────────────────────────────────────┘
+```
