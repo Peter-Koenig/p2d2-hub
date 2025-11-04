@@ -1,174 +1,390 @@
-Hier ist die **technische Dokumentation** und das **Setup-Guide**:[11]
+# p2d2 Multi-Repo Deployment – Komplette Dokumentation
 
+<<<<<<< HEAD
 ## TECHNICAL DOCUMENTATION
 
 # p2d2 Multi-Branch Deployment – Technische Dokumentation
 
 **Status:** Produktiv  
 **Deployment-Modell:** Multi-Branch mit automatischen Webhooks  
+=======
+**Status:** Production Ready  
+**Multi-Repo Support:** GitHub + GitLab  
+>>>>>>> develop
 **Gültig ab:** November 2025
 
 ---
 
-## 1. Architektur-Übersicht
+## 1. System-Architektur
 
-### 1.1 Multi-Branch-System
-
-Das p2d2-Projekt nutzt ein Multi-Branch-Deployment-System mit 5 gleichzeitig aktiven Umgebungen:
-
-| Branch | Domain | Port | Service | Speicher | Zweck |
-|--------|--------|------|---------|----------|-------|
-| `main` | `www.data-dna.eu` | 3000 | `astro-main` | 10.2M | Produktion |
-| `develop` | `dev.data-dna.eu` | 3001 | `astro-develop` | 9.3M | Test/Integration |
-| `feature/team-de1/setup` | `f-de1.data-dna.eu` | 3002 | `astro-feature-team-de1` | 22.0M | Team DE1 |
-| `feature/team-de2/setup` | `f-de2.data-dna.eu` | 3003 | `astro-feature-team-de2` | 24.8M | Team DE2 |
-| `feature/team-fv/setup` | `f-fv.data-dna.eu` | 3004 | `astro-feature-team-fv` | 24.6M | Team FV |
-
-**Gesamt RAM:** ~91MB (von 64GB verfügbar)
-
-### 1.2 Infrastructure Stack
+### 1.1 Übersicht
 
 ```
-GitLab Repository
-    ↓ (Push)
-GitLab Webhook
+┌──────────────────────────┐
+│  GitLab (opencode.de)    │
+│  ├─ main                 │
+│  └─ develop              │
+└────────┬─────────────────┘
+         │ GitLab Webhook
+         ↓
+┌────────────────────────────────┐
+│  Frontend VM (9321)            │
+│  Webhook-Server                │
+│  ├─ Secret-Validierung         │
+│  ├─ Repo-Router                │
+│  └─ Deploy-Trigger             │
+└────┬──────────────┬────────────┘
+     │              │
+     ↓              ↓
+┌─────────┐  ┌───────────────────┐
+│ GitLab  │  │ GitHub (3x Team)  │
+│ Repos   │  │ ├─ team-de1       │
+└─────────┘  │ ├─ team-de2       │
+             │ └─ team-fv        │
+             └───────────────────┘
+             
+                ↓
+             
+┌──────────────────────────────────┐
+│  systemd Services                │
+│  ├─ astro-main (Port 3000)       │
+│  ├─ astro-develop (Port 3001)    │
+│  ├─ astro-feature-team-de1 (3002)│
+│  ├─ astro-feature-team-de2 (3003)│
+│  └─ astro-feature-team-fv (3004) │
+└──────────────────────────────────┘
+             
+                ↓
+             
+┌──────────────────────────────────┐
+│  Caddy Reverse Proxy (OPNSense)  │
+│  ├─ www.data-dna.eu → :3000      │
+│  ├─ dev.data-dna.eu → :3001      │
+│  ├─ f-de1.data-dna.eu → :3002    │
+│  ├─ f-de2.data-dna.eu → :3003    │
+│  └─ f-fv.data-dna.eu → :3004     │
+└──────────────────────────────────┘
+```
+
+### 1.2 Deployment-Flows
+
+#### Flow 1: Main/Develop (dein Repo, GitLab)
+
+```
+Du: git push origin develop
     ↓
-Webhook-Server (Port 9321)
+GitLab Webhook → POST http://server:9321/webhook
     ↓
-deploy-branch.sh
-    ├─ Git Clone Branch
-    ├─ Komunnen-Collection Symlink
-    ├─ npm ci + build
-    ├─ Service Stop/Start
-    └─ Cleanup alte Deployments
+Webhook-Server:
+├─ Liest x-gitlab-token Header
+├─ Validiert gegen SECRET_DEVELOP
+├─ Findet: https://gitlab.opencode.de/.../p2d2.git
+├─ Branch: develop
+└─ Ruft auf: deploy-branch.sh develop ... https://gitlab...
     ↓
-systemd Services (astro-*)
-    ├─ astro-main (Port 3000)
-    ├─ astro-develop (Port 3001)
-    ├─ astro-feature-team-de1 (Port 3002)
-    ├─ astro-feature-team-de2 (Port 3003)
-    └─ astro-feature-team-fv (Port 3004)
+Deploy-Script:
+├─ git clone --branch develop
+├─ npm ci + npm run build
+├─ sudo systemctl restart astro-develop
+└─ Live unter dev.data-dna.eu
+```
+
+#### Flow 2: Feature Branches (Team-Repos, GitHub)
+
+```
+Team: git push origin feature/team-de1/meine-funktion
     ↓
-Caddy Reverse Proxy (OPNSense)
-    ├─ www.data-dna.eu → localhost:3000
-    ├─ dev.data-dna.eu → localhost:3001
-    ├─ f-de1.data-dna.eu → localhost:3002
-    ├─ f-de2.data-dna.eu → localhost:3003
-    └─ f-fv.data-dna.eu → localhost:3004
+GitHub Webhook → POST http://server:9321/webhook
     ↓
-HTTPS (Let's Encrypt via Caddy)
+Webhook-Server:
+├─ Liest x-hub-signature-256 Header
+├─ Kalkuliert HMAC-SHA256 mit SECRET_TEAM_DE1
+├─ Validiert Signature
+├─ Branch-Pattern Match: /^feature\/team-de1\/.+/ ✓
+├─ Findet: https://github.com/team-de1/p2d2-feature.git
+└─ Ruft auf: deploy-branch.sh feature/team-de1/meine-funktion ... https://github.com/team-de1/...
+    ↓
+Deploy-Script:
+├─ git clone --branch feature/team-de1/meine-funktion
+├─ npm ci + npm run build
+├─ sudo systemctl restart astro-feature-team-de1
+└─ Live unter f-de1.data-dna.eu
 ```
 
 ---
 
-## 2. Komponenten
+## 2. Webhook-Server Konfiguration
 
-### 2.1 Webhook-Server (`/home/astro/webhook-server/index.js`)
-
-- **Port:** 9321
-- **Funktion:** Empfängt GitLab-Push-Events und triggert Deployments
-- **Konfiguration:** Branch → Deploy-Path & Port Mapping
-- **Logs:** `journalctl -u webhook-server -f`
+### 2.1 Secrets Management
 
 ```
+# /home/astro/webhook-server/.env
+
+# GitLab Secrets (dein Repo)
+SECRET_MAIN=dein_secret_main_hier
+SECRET_DEVELOP=dein_secret_develop_hier
+
+# GitHub Shared Secrets (Team-Repos)
+SECRET_TEAM_DE1=team_de1_secret_hier
+SECRET_TEAM_DE2=team_de2_secret_hier
+SECRET_TEAM_FV=team_fv_secret_hier
+```
+
+**Generieren:**
+```
+openssl rand -hex 32
+```
+
+**Berechtigungen:**
+```
+sudo chown astro:astro /home/astro/webhook-server/.env
+sudo chmod 600 /home/astro/webhook-server/.env
+```
+
+### 2.2 Branch-Konfiguration
+
+```
+// /home/astro/webhook-server/index.js (Auszug)
+
 const branchConfig = {
-  'main': { deployPath: '/var/www/astro/deployments/main', port: 3000 },
-  'develop': { deployPath: '/var/www/astro/deployments/develop', port: 3001 },
-  // ... etc
-}
+  'main': {
+    domain: 'www.data-dna.eu',
+    deployPath: '/var/www/astro/deployments/main',
+    port: 3000,
+    repo: 'https://gitlab.opencode.de/OC000028072444/p2d2.git',
+    secret: process.env.SECRET_MAIN,
+    provider: 'gitlab'
+  },
+  
+  'develop': {
+    domain: 'dev.data-dna.eu',
+    deployPath: '/var/www/astro/deployments/develop',
+    port: 3001,
+    repo: 'https://gitlab.opencode.de/OC000028072444/p2d2.git',
+    secret: process.env.SECRET_DEVELOP,
+    provider: 'gitlab'
+  },
+  
+  'feature/team-de1': {
+    domain: 'f-de1.data-dna.eu',
+    deployPath: '/var/www/astro/deployments/feature-de1',
+    port: 3002,
+    repo: 'https://github.com/team-de1/p2d2-feature.git',
+    secret: process.env.SECRET_TEAM_DE1,
+    provider: 'github',
+    matchPattern: /^feature\/team-de1\/.+/
+  },
+  
+  'feature/team-de2': {
+    domain: 'f-de2.data-dna.eu',
+    deployPath: '/var/www/astro/deployments/feature-de2',
+    port: 3003,
+    repo: 'https://github.com/team-de2/p2d2-feature.git',
+    secret: process.env.SECRET_TEAM_DE2,
+    provider: 'github',
+    matchPattern: /^feature\/team-de2\/.+/
+  },
+  
+  'feature/team-fv': {
+    domain: 'f-fv.data-dna.eu',
+    deployPath: '/var/www/astro/deployments/feature-fv',
+    port: 3004,
+    repo: 'https://github.com/team-fv/p2d2-feature.git',
+    secret: process.env.SECRET_TEAM_FV,
+    provider: 'github',
+    matchPattern: /^feature\/team-fv\/.+/
+  }
+};
 ```
-
-### 2.2 Deploy-Skript (`/var/www/astro/scripts/deploy-branch.sh`)
-
-**Ablauf:**
-1. Verzeichnis anlegen
-2. Git Clone Branch
-3. Kommunen-Collection als Symlink → `/var/www/astro/shared/src/content/kommunen`
-4. `.env.production` verlinken + PORT überschreiben
-5. `npm ci --omit=dev` + `npm run build`
-6. Service Stop/Restart
-7. Live-Symlink umschalten
-8. Alte Deployments aufräumen (nur 5 neueste behalten)
-
-**Aufrufe:**
-```
-sudo -u astro /var/www/astro/scripts/deploy-branch.sh main /var/www/astro/deployments/main 3000
-sudo -u astro /var/www/astro/scripts/deploy-branch.sh develop /var/www/astro/deployments/develop 3001
-sudo -u astro /var/www/astro/scripts/deploy-branch.sh feature/team-de1/setup /var/www/astro/deployments/feature-de1 3002
-```
-
-### 2.3 Systemd Services
-
-Lokation: `/etc/systemd/system/astro-*.service`
-
-**Beispiel astro-main.service:**
-```
-[Unit]
-Description=Astro p2d2 - main branch
-After=network.target
-
-[Service]
-Type=simple
-User=astro
-Group=astro
-WorkingDirectory=/var/www/astro/deployments/main/live
-Environment="PORT=3000"
-ExecStart=/usr/bin/node /var/www/astro/deployments/main/live/dist/server/entry.mjs
-Restart=on-failure
-RestartSec=10
-```
-
-### 2.4 Caddy Reverse Proxy (OPNSense)
-
-**Konfiguration in OPNSense → Dienste → Caddy → Reverse Proxy:**
-
-| Domain | Handler | Upstream |
-|--------|---------|----------|
-| `https://www.data-dna.eu` | Reverse Proxy | `http://192.168.122.120:3000` |
-| `https://dev.data-dna.eu` | Reverse Proxy | `http://192.168.122.120:3001` |
-| `https://f-de1.data-dna.eu` | Reverse Proxy | `http://192.168.122.120:3002` |
-| `https://f-de2.data-dna.eu` | Reverse Proxy | `http://192.168.122.120:3003` |
-| `https://f-fv.data-dna.eu` | Reverse Proxy | `http://192.168.122.120:3004` |
-| `https://opn.data-dna.eu` | redir | `https://www.data-dna.eu{uri}` (301) |
 
 ---
 
-## 3. Externe Ressourcen
+## 3. Team Onboarding
 
-### 3.1 Kommunen-Collection
+### 3.1 Schritt 1: Team-Repo erstellen
 
-**Zentrale Quelle:** `/var/www/astro/shared/src/content/kommunen/`
-
-**Verwendung:** Jedes Deployment linkt hierher (Symlink)
+**Team macht das:**
 
 ```
-/var/www/astro/deployments/main/live/src/content/kommunen → /var/www/astro/shared/src/content/kommunen
-/var/www/astro/deployments/develop/live/src/content/kommunen → /var/www/astro/shared/src/content/kommunen
-// ... etc
+# Option A: Neues Repo
+# GitHub.com → New Repository → p2d2-feature
+# Clone & Feature-Branch erstellen
+git clone https://github.com/team-de1/p2d2-feature.git
+cd p2d2-feature
+git checkout -b feature/team-de1/setup
+
+# Option B: Fork des Main-Repos
+# GitHub.com → fork Peter-Koenig/p2d2-hub
+# Clone & Feature-Branch erstellen
+git clone https://github.com/team-de1/p2d2-feature.git
+cd p2d2-feature
+git checkout -b feature/team-de1/meine-funktion
 ```
 
-**Vorteil:** Content-Updates ohne Deployment möglich!
+### 3.2 Schritt 2: Secret generieren & verteilen
+
+**Du machst das:**
+
+```
+# Secret generieren
+openssl rand -hex 32
+# Ausgabe: a1b2c3d4e5f6g7h8...
+
+# Mit Team teilen (verschlüsselt!)
+# Signal, PGP, oder sicherer Kanal
+
+# In .env eintragen
+echo "SECRET_TEAM_DE1=a1b2c3d4e5f6g7h8..." >> /home/astro/webhook-server/.env
+
+# Webhook-Server neu starten
+sudo systemctl restart webhook-server
+```
+
+### 3.3 Schritt 3: GitHub Webhook konfigurieren
+
+**Team macht das:**
+
+1. GitHub → Repository → Settings → Webhooks → Add webhook
+2. **Payload URL:** `http://<deine-ip>:9321/webhook`
+3. **Content type:** `application/json`
+4. **Secret:** Den Secret von dir
+5. **Which events:** `Just the push event`
+6. **Active:** ✅
+7. **Add webhook**
+
+**Test:**
+- Recent Deliveries → Klick auf Eintrag → "Redeliver"
+- Oder: Team macht Test-Push zu `feature/team-de1/test`
 
 ---
 
-## 4. Deployment-Verzeichnisstruktur
+## 4. Development Workflow
+
+### 4.1 Feature entwickeln (Team)
+
+```
+# Team entwickelt lokal
+git checkout feature/team-de1/neue-funktion
+# ... Code ändern ...
+git add .
+git commit -m "Feature: Neue Funktion"
+git push origin feature/team-de1/neue-funktion
+```
+
+**Was passiert automatisch:**
+
+```
+Push → GitHub Webhook
+     → Server validiert Secret
+     → Deploy-Script triggert
+     → f-de1.data-dna.eu updated
+     → LIVE in ~2 Minuten
+```
+
+### 4.2 Feature testen
+
+Team kann ihre Änderungen live anschauen:
+
+```
+# Team testet unter
+https://f-de1.data-dna.eu/
+
+# Bei Änderungen: Einfach neuen Push
+git add .
+git commit -m "Bugfix: xyz"
+git push origin feature/team-de1/neue-funktion
+# → Automatisch deployed
+```
+
+---
+
+## 5. Integration in Main/Develop
+
+### 5.1 Feature Ready → Pull Request
+
+**Team erstellt Pull Request** (in ihrem Repo oder zu deinem):
+
+```
+# GitHub: team-de1/p2d2-feature
+# PR: feature/team-de1/neue-funktion → develop
+
+# Oder: Zu deinem Main-Repo
+# PR: OC000028072444/p2d2
+# feature/team-de1/neue-funktion → develop
+```
+
+### 5.2 Du reviewst & merged
+
+```
+# Du auf deinem Repo
+git checkout develop
+git pull origin develop
+
+# Feature-Branch mergen
+git merge feature/team-de1/neue-funktion
+git push origin develop
+```
+
+**Was passiert:**
+
+```
+Git Push zu develop
+     ↓
+GitLab Webhook
+     ↓
+Server deployed zu dev.data-dna.eu
+     ↓
+Team + du können testen auf Staging
+```
+
+### 5.3 Release → Main
+
+```
+# Nach Test/Approval
+git checkout main
+git pull origin main
+git merge develop
+git push origin main
+```
+
+**Was passiert:**
+
+```
+Git Push zu main
+     ↓
+GitLab Webhook
+     ↓
+Server deployed zu www.data-dna.eu
+     ↓
+LIVE in Produktion!
+```
+
+---
+
+## 6. Deployment-Verzeichnisstruktur
 
 ```
 /var/www/astro/
 ├── deployments/
 │   ├── main/
 │   │   ├── deploys/
-│   │   │   ├── 20251104003111/  ← Clone + Build
+│   │   │   ├── 20251104003111/  ← Latest
 │   │   │   ├── 20251104002000/
 │   │   │   └── ...
-│   │   └── live → deploys/20251104003111/  ← Active
+│   │   ├── live → deploys/20251104003111/  ← Active
+│   │   └── logs/
 │   ├── develop/
 │   │   ├── deploys/
-│   │   └── live → ...
+│   │   ├── live → ...
+│   │   └── logs/
 │   ├── feature-de1/
+│   │   ├── deploys/
+│   │   ├── live → ...
+│   │   └── logs/
 │   ├── feature-de2/
 │   ├── feature-fv/
-│   └── logs/  ← Build-Logs
+│   └── scripts/
+│       └── deploy-branch.sh
 └── shared/
     └── src/
         └── content/
@@ -177,679 +393,157 @@ RestartSec=10
 
 ---
 
-## 5. Workflow: Push → Deployment
-
-1. **Developer pusht zu GitLab Branch**
-   ```
-   git push origin develop
-   ```
-
-2. **GitLab triggert Webhook**
-   ```
-   POST http://192.168.122.120:9321/webhook
-   Header: x-gitlab-token: <SECRET>
-   Payload: { "ref": "refs/heads/develop", ... }
-   ```
-
-3. **Webhook-Server**
-   - Extrahiert Branch-Name: `develop`
-   - Schlägt `branchConfig` nach → findet `astro-develop` Service
-   - Triggert: `deploy-branch.sh develop /var/www/astro/deployments/develop 3001`
-
-4. **Deploy-Skript**
-   - Erstellt Verzeichnis `20251104HHMMSS`
-   - Klont `develop`-Branch
-   - Linkt Kommunen-Collection
-   - Buildet Astro-App
-   - Stoppt `astro-develop` Service
-   - Switcht Symlink
-   - Startet `astro-develop` Service
-
-5. **Service startet neuen Build**
-   - Node.js lädt neue Version
-   - App läuft auf Port 3001
-
-6. **Caddy routet Traffic**
-   - `dev.data-dna.eu` → `localhost:3001`
-   - Neue Version live!
-
----
-
-## 6. Sicherheit
-
-### 6.1 Webhook-Token
-
-```
-# Token in .env.production
-cat /home/astro/.env.production | grep SECRET_TOKEN
-```
-
-- Muss zwischen GitLab und Server identisch sein
-- Sollte regelmäßig rotiert werden
-
-### 6.2 Sudo-Berechtigungen
-
-**sudoers Konfiguration** (`/etc/sudoers.d/astro-systemctl`):
-```
-astro ALL=(ALL) NOPASSWD: /usr/bin/systemctl start astro-*
-astro ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop astro-*
-astro ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart astro-*
-```
-
-### 6.3 SSL/TLS
-
-- **Automatisch via Let's Encrypt** durch Caddy
-- Wildcard-Zertifikat für `*.data-dna.eu` (wird automatisch aktualisiert)
-
----
-
 ## 7. Monitoring & Troubleshooting
 
-### 7.1 Service-Status
+### 7.1 Logs prüfen
 
 ```
-# Alle Services
-sudo systemctl status astro-*
+# Webhook-Server
+sudo journalctl -u webhook-server -f
 
-# Einzeln
-sudo systemctl status astro-main
-sudo systemctl status astro-develop
-```
-
-### 7.2 Logs
-
-```
-# Service-Logs
-sudo journalctl -u astro-main -f          # main branch
-sudo journalctl -u astro-develop -f       # develop branch
-sudo journalctl -u webhook-server -f      # Webhook
+# Deployment-Service
+sudo journalctl -u astro-develop -f
 
 # Build-Logs
-cat /var/www/astro/deployments/develop/logs/npm-build-*.log
-cat /var/www/astro/deployments/develop/logs/clone-*.log
-```
-
-### 7.3 Build-Status prüfen
-
-```
-# Letzter Build
-ls -lt /var/www/astro/deployments/develop/deploys/ | head -1
-
-# Symlink überprüfen
-ls -la /var/www/astro/deployments/develop/live
-
-# App antwortet?
-curl -I http://localhost:3001
-```
-
-### 7.4 Häufige Probleme
-
-**Problem:** Service geht down nach Deployment
-```
-# Logs schauen
-sudo journalctl -u astro-main -n 50
-
-# Working Directory existiert?
-ls -la /var/www/astro/deployments/main/live/dist/server/
-
-# Port kann gebunden werden?
-sudo lsof -i :3000
-```
-
-**Problem:** Webhook triggert nicht
-```
-# Webhook-Server läuft?
-sudo systemctl status webhook-server
-
-# Port antwortet?
-curl http://localhost:9321
-
-# Token korrekt?
-cat /home/astro/.env.production | grep SECRET_TOKEN
-```
-
----
-
-## 8. Speicherverwaltung
-
-- **VM-Disk:** 25GB
-- **Pro Deployment:** ~500MB
-- **Aufbewahrung:** 5 neueste pro Branch
-- **Berechnet:** 5 Branches × 5 Deployments × 500MB = 12.5GB (OK mit Reserve)
-
-### Cleanup manuell
-
-```
-# Alte Deployments für develop
-cd /var/www/astro/deployments/develop/deploys
-ls -dt */ | tail -n +4 | xargs rm -rf
-
-# Für alle Branches
-for branch in main develop feature-de1 feature-de2 feature-fv; do
-  cd /var/www/astro/deployments/$branch/deploys
-  ls -dt */ | tail -n +4 | xargs rm -rf 2>/dev/null
-done
-
-# Diskplatz prüfen
-df -h /
-```
-
----
-
-## 9. Wartung & Updates
-
-### 9.1 Regelmäßig
-
-- [ ] Logs archivieren (wöchentlich)
-- [ ] Alte Deployments aufräumen
-- [ ] Webhook-Token rotieren (vierteljährlich)
-- [ ] Zertifikate überprüfen
-
-### 9.2 Bei Problemen
-
-1. Logs überprüfen
-2. Service neustarten
-3. Manuelles Deployment testen
-4. System-Ressourcen prüfen (RAM, Disk)
-
----
-
-## 10. Referenzen
-
-- **AstroJS:** https://docs.astro.build/en/guides/deploy/
-- **Caddy:** https://caddyserver.com/docs/quick-start
-- **GitLab Webhooks:** https://docs.gitlab.com/user/project/integrations/webhooks/
-- **systemd:** https://www.freedesktop.org/software/systemd/man/systemd.service.html
-```
-
-***
-
-## SETUP GUIDE FOR CONTRIBUTORS
-
-```markdown
-# p2d2 Multi-Branch Deployment – Setup-Anleitung für Partner & Contributor:innen
-
-**Zielgruppe:** Frontend-VM Administratoren, DevOps, Contributors  
-**Dauer:** ~30 Minuten für komplettes Setup  
-**Voraussetzungen:** SSH-Zugriff, sudo-Rechte, Git-Kenntnisse
-
----
-
-## 1. Schnellstart (für Testing)
-
-Falls du schnell einen Branch deployen möchtest:
-
-```
-# SSH in Frontend-VM
-ssh root@192.168.122.120
-
-# Manuelles Deployment (z.B. develop)
-sudo -u astro /var/www/astro/scripts/deploy-branch.sh develop \
-  /var/www/astro/deployments/develop 3001
-
-# Service starten
-sudo systemctl start astro-develop
-
-# Status überprüfen
-sudo systemctl status astro-develop
-```
-
-Das wars! Der Branch läuft jetzt auf Port 3001.
-
----
-
-## 2. Setup von Grund auf (neuer Server)
-
-### 2.1 Voraussetzungen prüfen
-
-```
-# Benötigte Software
-which git
-which node
-which npm
-which systemctl
-
-# Versionen
-node --version    # sollte ≥ 18 sein
-npm --version     # sollte ≥ 9 sein
-```
-
-Falls fehlt: Installation nötig (siehe Abschnitt 9)
-
-### 2.2 Benutzer erstellen
-
-```
-sudo useradd -m -s /bin/bash astro
-sudo passwd astro
-# Passwort setzen (oder SSH-Key)
-```
-
-### 2.3 Verzeichnisstruktur anlegen
-
-```
-# Phase 1: Infrastruktur
-sudo mkdir -p /var/www/astro/deployments/{main,develop,feature-de1,feature-de2,feature-fv}/{deploys,logs}
-sudo mkdir -p /var/www/astro/scripts
-sudo mkdir -p /var/www/astro/shared/src/content/kommunen
-sudo chown -R astro:astro /var/www/astro
-sudo chmod -R 755 /var/www/astro
-```
-
-### 2.4 Webhook-Server Setup
-
-```
-# Phase 2: Webhook vorbereiten
-sudo mkdir -p /home/astro/webhook-server
-cd /home/astro/webhook-server
-
-# Node.js Projekt initialisieren
-npm init -y
-npm install express dotenv body-parser
-
-# .env Datei mit Secret
-echo "SECRET_TOKEN=dein_super_geheimes_token_hier" > .env
-sudo chown astro:astro .env
-sudo chmod 600 .env
-
-# index.js (siehe Technische Doku oder kopieren)
-# ... Code einfügen ...
-
-# Service für Webhook
-sudo tee /etc/systemd/system/webhook-server.service > /dev/null << 'EOF'
-[Unit]
-Description=p2d2 Webhook Server
-After=network.target
-
-[Service]
-Type=simple
-User=astro
-WorkingDirectory=/home/astro/webhook-server
-ExecStart=/usr/bin/node /home/astro/webhook-server/index.js
-Restart=on-failure
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-sudo systemctl daemon-reload
-sudo systemctl enable webhook-server
-sudo systemctl start webhook-server
-```
-
-### 2.5 Deploy-Skript
-
-```
-# Phase 3: Deploy-Skript
-sudo tee /var/www/astro/scripts/deploy-branch.sh > /dev/null << 'EOF'
-#!/bin/bash
-set -e
-# ... Deploy-Skript Code (siehe Technische Doku)
-EOF
-
-sudo chown astro:astro /var/www/astro/scripts/deploy-branch.sh
-sudo chmod 755 /var/www/astro/scripts/deploy-branch.sh
-```
-
-### 2.6 Systemd Services
-
-```
-# Phase 4: Services für alle Branches
-for service in main develop feature-team-de1 feature-team-de2 feature-team-fv; do
-  case $service in
-    main) port=3000 dir=main ;;
-    develop) port=3001 dir=develop ;;
-    feature-team-de1) port=3002 dir=feature-de1 ;;
-    feature-team-de2) port=3003 dir=feature-de2 ;;
-    feature-team-fv) port=3004 dir=feature-fv ;;
-  esac
-  
-  sudo tee /etc/systemd/system/astro-$service.service > /dev/null << EOF
-[Unit]
-Description=Astro p2d2 - $service branch
-After=network.target
-
-[Service]
-Type=simple
-User=astro
-Group=astro
-WorkingDirectory=/var/www/astro/deployments/$dir/live
-Environment="PORT=$port"
-Environment="HOST=0.0.0.0"
-Environment="NODE_ENV=production"
-ExecStart=/usr/bin/node /var/www/astro/deployments/$dir/live/dist/server/entry.mjs
-Restart=on-failure
-RestartSec=10
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-EOF
-done
-
-sudo systemctl daemon-reload
-sudo systemctl enable astro-{main,develop,feature-team-de1,feature-team-de2,feature-team-fv}
-```
-
-### 2.7 Sudo-Berechtigungen
-
-```
-# astro darf systemctl starten/stoppen ohne Passwort
-sudo tee /etc/sudoers.d/astro-systemctl > /dev/null << 'EOF'
-astro ALL=(ALL) NOPASSWD: /usr/bin/systemctl start astro-*
-astro ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop astro-*
-astro ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart astro-*
-astro ALL=(ALL) NOPASSWD: /usr/bin/systemctl status astro-*
-astro ALL=(ALL) NOPASSWD: /usr/bin/systemctl reload astro-*
-EOF
-
-sudo chmod 0440 /etc/sudoers.d/astro-systemctl
-```
-
-### 2.8 Caddy Reverse Proxy (OPNSense)
-
-In der OPNSense WebGUI:
-1. **Dienste → Caddy → Reverse Proxy**
-2. Für jeden Branch einen Handler hinzufügen:
-
-| Domain | Handler-Typ | Upstream |
-|--------|-------------|----------|
-| `https://www.data-dna.eu` | Reverse Proxy | `http://192.168.122.120:3000` |
-| `https://dev.data-dna.eu` | Reverse Proxy | `http://192.168.122.120:3001` |
-| ... | ... | ... |
-
-3. **Speichern → Caddy neustarten**
-
----
-
-## 3. Erstes Deployment
-
-### 3.1 Manuell testen (develop)
-
-```
-ssh root@192.168.122.120
-
-# Deploy
-sudo -u astro /var/www/astro/scripts/deploy-branch.sh develop \
-  /var/www/astro/deployments/develop 3001
-
-# Service starten
-sudo systemctl start astro-develop
-
-# Status
-sudo systemctl status astro-develop
-
-# Test
-curl -I http://localhost:3001
-# Sollte: HTTP/1.1 200 OK
-```
-
-### 3.2 Webhook testen
-
-```
-# Token holen
-cat /home/astro/.env.production | grep SECRET_TOKEN
-
-# Webhook manuell triggern
-curl -X POST http://localhost:9321/webhook \
-  -H "x-gitlab-token: <DEIN_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "ref": "refs/heads/develop",
-    "project": { "name": "p2d2" }
-  }'
-
-# Logs anschauen
-sudo journalctl -u webhook-server -f
-```
-
-### 3.3 Im Browser testen
-
-```
-# dev.data-dna.eu sollte jetzt funktionieren
-curl -I https://dev.data-dna.eu/
-# HTTP/2 200
-```
-
----
-
-## 4. GitLab Webhook konfigurieren
-
-1. **GitLab → Repository → Settings → Integrations → Webhooks**
-2. **URL:** `http://192.168.122.120:9321/webhook`
-3. **Secret Token:** Derselbe Token aus `/home/astro/.env.production`
-4. **Trigger:** ✅ Push events
-5. **Branch filter:** (leer – alle Branches)
-6. **SSL verification:** Nach Bedarf
-
----
-
-## 5. Branches deployen
-
-### 5.1 Alle Branches initial deployen
-
-```
-ssh root@192.168.122.120
-
-# main
-sudo -u astro /var/www/astro/scripts/deploy-branch.sh main \
-  /var/www/astro/deployments/main 3000
-
-# develop (bereits oben)
-sudo -u astro /var/www/astro/scripts/deploy-branch.sh develop \
-  /var/www/astro/deployments/develop 3001
-
-# feature/team-de1/setup
-sudo -u astro /var/www/astro/scripts/deploy-branch.sh feature/team-de1/setup \
-  /var/www/astro/deployments/feature-de1 3002
-
-# feature/team-de2/setup
-sudo -u astro /var/www/astro/scripts/deploy-branch.sh feature/team-de2/setup \
-  /var/www/astro/deployments/feature-de2 3003
-
-# feature/team-fv/setup (wenn Branch umbenennt, sonst feature/team-fv1/setup)
-sudo -u astro /var/www/astro/scripts/deploy-branch.sh feature/team-fv/setup \
-  /var/www/astro/deployments/feature-fv 3004
-```
-
-### 5.2 Services starten
-
-```
-sudo systemctl start astro-{main,develop,feature-team-de1,feature-team-de2,feature-team-fv}
-
-# Status überprüfen
-sudo systemctl status astro-*
-```
-
----
-
-## 6. Externe Ressourcen nutzen
-
-### 6.1 Kommunen-Collection aktualisieren
-
-Die Kommunen-Collection ist **extern verwaltbar**, ohne Deployment!
-
-```
-# SSH ins System
-ssh root@192.168.122.120
-
-# Kommunen-Verzeichnis
-cd /var/www/astro/shared/src/content/kommunen
-
-# Neue .md-Datei hinzufügen
-cat > neuestadt.md << 'EOF'
-***
-name: "Neue Stadt"
-***
-
-Beschreibung...
-EOF
-
-# Alle Deployments nutzen sofort diese Collection!
-# Kein Deployment nötig!
-```
-
----
-
-## 7. Tägliche Wartung
-
-### 7.1 Logs überprüfen
-
-```
-# Fehler in letzter Stunde?
-sudo journalctl -u astro-main --since "1 hour ago" | grep -i error
-
-# Webhook-Probleme?
-sudo journalctl -u webhook-server --since "1 hour ago"
-```
-
-### 7.2 Speicher aufräumen (monatlich)
-
-```
-# Alte Deployments löschen
-for branch in main develop feature-de1 feature-de2 feature-fv; do
-  cd /var/www/astro/deployments/$branch/deploys
-  ls -dt */ | tail -n +4 | xargs rm -rf 2>/dev/null
-done
-
-# Diskplatz anschauen
-df -h /
-```
-
-### 7.3 Services neustarten (bei Problemen)
-
-```
-# Einzeln
-sudo systemctl restart astro-main
-
-# Alle
-sudo systemctl restart astro-*
-```
-
----
-
-## 8. Troubleshooting
-
-### Problem: Deploy-Skript fragt nach Passwort
-
-**Symptom:**
-```
-[sudo] password for astro:
-```
-
-**Lösung:** Sudo-Berechtigungen überprüfen
-```
-sudo visudo
-# Überprüfen: astro ALL=(ALL) NOPASSWD: /usr/bin/systemctl ...
-```
-
-### Problem: Service läuft nicht
-
-**Diagnose:**
-```
-sudo systemctl status astro-main
-sudo journalctl -u astro-main -n 50
-```
-
-**Häufige Gründe:**
-- Working Directory existiert nicht → Manuelles Deployment durchführen
-- Node.js nicht gefunden → `which node` überprüfen
-- Port gebunden → `sudo lsof -i :3000`
-
-### Problem: Webhook triggert nicht
-
-**Testen:**
-```
-# Server läuft?
-sudo systemctl status webhook-server
-
-# Port antwortet?
-telnet localhost 9321
-
-# Token korrekt?
-grep SECRET_TOKEN /home/astro/.env.production
-```
-
-### Problem: Build schlägt fehl
-
-**Logs anschauen:**
-```
 tail -f /var/www/astro/deployments/develop/logs/npm-build-*.log
 ```
 
+### 7.2 Häufige Probleme
+
+**Problem: Webhook triggert nicht**
+```
+# 1. Webhook-Server läuft?
+sudo systemctl status webhook-server
+
+# 2. Secret korrekt?
+grep SECRET_TEAM_DE1 /home/astro/webhook-server/.env
+
+# 3. Logs anschauen
+sudo journalctl -u webhook-server -n 50
+```
+
+**Problem: Build schlägt fehl**
+```
+# Deploy-Logs
+tail -100 /var/www/astro/deployments/feature-de1/logs/npm-build-*.log
+
+# Service-Logs
+sudo journalctl -u astro-feature-team-de1 -n 30
+```
+
+**Problem: Service startet nicht**
+```
+# Verzeichnis existiert?
+ls -la /var/www/astro/deployments/feature-de1/live/
+
+# Port gebunden?
+sudo lsof -i :3002
+
+# Service neu starten
+sudo systemctl restart astro-feature-team-de1
+```
+
 ---
 
-## 9. Zusätzliche Installation (falls nötig)
+## 8. Sicherheit
 
-### Node.js installieren
+### 8.1 Secret-Verwaltung
+
+- ✅ Jedem Team eigener Secret
+- ✅ Secrets in `.env` (nicht im Code)
+- ✅ Datei-Berechtigungen: `600` (nur astro)
+- ✅ GitHub HMAC-SHA256 Validierung
+- ✅ GitLab Token Validierung
+- ⚠️ Secrets regelmäßig rotieren
+
+### 8.2 Branch-Schutz
+
+**Server-seitig: Branch-Pattern-Matching**
 
 ```
-# Arch Linux
-sudo pacman -S nodejs npm
-
-# Debian/Ubuntu
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
+// Team DE1 kann NICHT zu feature/team-de2 deployen
+// Server validiert Pattern: /^feature\/team-de1\/.+/
+// Unbekannte Branches: 404 (ignoriert)
 ```
 
-### Git installieren
+**GitHub: Branch-Protection-Rules (optional)**
 
 ```
-# Arch
-sudo pacman -S git
-
-# Debian
-sudo apt install git
+Settings → Branches → Add rule
+├─ Pattern: main
+├─ Require pull request reviews
+└─ Require status checks to pass
 ```
 
 ---
 
-## 10. Quick Commands
+## 9. Quick Reference
 
+### Secrets generieren
 ```
-# Status aller Services
+openssl rand -hex 32
+```
+
+### Webhook-Server Logs
+```
+sudo journalctl -u webhook-server -f
+```
+
+### Service neu starten
+```
+sudo systemctl restart astro-develop
+```
+
+### Deployment manuell
+```
+sudo -u astro /var/www/astro/scripts/deploy-branch.sh \
+  feature/team-de1/setup \
+  /var/www/astro/deployments/feature-de1 \
+  3002 \
+  https://github.com/team-de1/p2d2-feature.git
+```
+
+### Status aller Services
+```
 sudo systemctl status astro-*
-
-# Logs live
-sudo journalctl -u astro-main -f
-
-# Disk-Platz
-df -h /
-
-# Services neustarten
-sudo systemctl restart astro-*
-
-# Webhook testen
-curl -X POST http://localhost:9321/webhook \
-  -H "x-gitlab-token: $(grep SECRET_TOKEN /home/astro/.env.production | cut -d= -f2)" \
-  -H "Content-Type: application/json" \
-  -d '{"ref":"refs/heads/develop","project":{"name":"p2d2"}}'
-
-# Einzelnes Deployment
-sudo -u astro /var/www/astro/scripts/deploy-branch.sh develop /var/www/astro/deployments/develop 3001
-
-# Service starten/stoppen
-sudo systemctl start/stop astro-main
 ```
 
 ---
 
-## 11. Support & Kontakt
+## 10. Zusammenfassung
 
+<<<<<<< HEAD
 - **GitLab Issues:** p2d2 Repository
 - **Logs:** `journalctl` oder `/var/www/astro/deployments/*/logs/`
 - **Admin-Zugriff:** Frontend-VM root
 ```
+=======
+```
+┌─────────────────────────────────────────────┐
+│  Workflow Summary                           │
+├─────────────────────────────────────────────┤
+│                                             │
+│  Team entwickelt in ihrem GitHub-Repo      │
+│  └─ feature/team-de1/*                     │
+│                                             │
+│  Push triggert Webhook                     │
+│  └─ Server validiert Secret + Branch      │
+│                                             │
+│  Deploy-Script wird aufgerufen             │
+│  └─ Git clone + npm build                 │
+│                                             │
+│  Service wird neu gestartet                │
+│  └─ f-de1.data-dna.eu LIVE                │
+│                                             │
+│  Team testet auf Feature-Domain            │
+│  └─ Nach Approval: PR zu develop           │
+│                                             │
+│  Du mergst develop → main                  │
+│  └─ Automatisches Deployment zu www        │
+│                                             │
+│  LIVE in Produktion ✅                     │
+│                                             │
+└─────────────────────────────────────────────┘
 
-[1](https://www.codecademy.com/resources/docs/markdown/code-blocks)
-[2](https://www.markdownguide.org/extended-syntax/)
-[3](https://markdown.land/markdown-code-block)
-[4](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-and-highlighting-code-blocks)
-[5](https://www.glukhov.org/post/2025/07/markdown-codeblocks/)
-[6](https://gitbook.gitbook.io/learn-markdown/code)
-[7](https://www.markdownguide.org/basic-syntax/)
-[8](https://learn.microsoft.com/en-us/azure/devops/project/wiki/markdown-guidance?view=azure-devops-2022)
-[9](https://github.com/adam-p/markdown-here/wiki/markdown-cheatsheet)
-[10](https://commonmark.org/help/tutorial/09-code.html)
-[11](https://opn.data-dna.eu)
+>>>>>>> develop
+
