@@ -16,20 +16,19 @@
 └────────────┬─────────────┘    │ └─ team-fv        │
              │                  └───────────────────┘
              │                        │
-             │    GitLab Webhook      │
+             │       Webhook          │
              ↓                        ↓
         ┌────────────────────────────────┐
         │  Frontend VM (Port 9321)       │
         │  Webhook-Server                │
         │  ├─ Secret-Validierung         │
         │  ├─ Repo-Router                │
+        │  ├─ git clone → staging-Server │
         │  └─ Deploy-Trigger             │
         └───────────────┬────────────────┘
                         │
-                        │
                         ↓
-
-        ┌──────────────────────────────────┐
+        ┌──────── staging server ──────────┐
         │  systemd Services                │
         │  ├─ astro-main (Port 3000)       │
         │  ├─ astro-develop (Port 3001)    │
@@ -38,9 +37,8 @@
         │  └─ astro-feature-team-fv (3004) │
         └───────────────┬──────────────────┘
                         │
-                        │
                         ↓
-        ┌──────────────────────────────────┐
+        ┌────────── Präsentation ──────────┐
         │  Caddy Reverse Proxy (OPNSense)  │
         │  ├─ www.data-dna.eu → :3000      │
         │  ├─ dev.data-dna.eu → :3001      │
@@ -57,7 +55,7 @@
 ```
 Du: git push origin develop
     ↓
-GitLab Webhook → POST http://server:9321/webhook
+GitLab Webhook → POST http://www.data-dna.eu:9321/webhook
     ↓
 Webhook-Server:
 ├─ Liest x-gitlab-token Header
@@ -78,7 +76,7 @@ Deploy-Script:
 ```
 Team: git push origin feature/team-de1/meine-funktion
     ↓
-GitHub Webhook → POST http://server:9321/webhook
+GitHub Webhook → POST http://www.data-dna.eu:9321/webhook
     ↓
 Webhook-Server:
 ├─ Liest x-hub-signature-256 Header
@@ -112,17 +110,6 @@ SECRET_DEVELOP=dein_secret_develop_hier
 SECRET_TEAM_DE1=team_de1_secret_hier
 SECRET_TEAM_DE2=team_de2_secret_hier
 SECRET_TEAM_FV=team_fv_secret_hier
-```
-
-**Generieren:**
-```
-openssl rand -hex 32
-```
-
-**Berechtigungen:**
-```
-sudo chown astro:astro /home/astro/webhook-server/.env
-sudo chmod 600 /home/astro/webhook-server/.env
 ```
 
 ### 2.2 Branch-Konfiguration
