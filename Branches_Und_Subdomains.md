@@ -2,7 +2,6 @@ Hier ist die **technische Dokumentation** und das **Setup-Guide**:[11]
 
 ## TECHNICAL DOCUMENTATION
 
-```markdown
 # p2d2 Multi-Branch Deployment – Technische Dokumentation
 
 **Status:** Produktiv  
@@ -841,7 +840,6 @@ sudo systemctl start/stop astro-main
 - **GitLab Issues:** p2d2 Repository
 - **Logs:** `journalctl` oder `/var/www/astro/deployments/*/logs/`
 - **Admin-Zugriff:** Frontend-VM root
-```
 ```
 
 [1](https://www.codecademy.com/resources/docs/markdown/code-blocks)
