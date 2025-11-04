@@ -120,11 +120,11 @@ RestartSec=10
 
 | Domain | Handler | Upstream |
 |--------|---------|----------|
-| `https://www.data-dna.eu` | Reverse Proxy | `http://192.168.122.120:3000` |
-| `https://dev.data-dna.eu` | Reverse Proxy | `http://192.168.122.120:3001` |
-| `https://f-de1.data-dna.eu` | Reverse Proxy | `http://192.168.122.120:3002` |
-| `https://f-de2.data-dna.eu` | Reverse Proxy | `http://192.168.122.120:3003` |
-| `https://f-fv.data-dna.eu` | Reverse Proxy | `http://192.168.122.120:3004` |
+| `https://www.data-dna.eu` | Reverse Proxy | `http://192.168.xxx.yyy:3000` |
+| `https://dev.data-dna.eu` | Reverse Proxy | `http://192.168.xxx.yyy:3001` |
+| `https://f-de1.data-dna.eu` | Reverse Proxy | `http://192.168.xxx.yyy:3002` |
+| `https://f-de2.data-dna.eu` | Reverse Proxy | `http://192.168.xxx.yyy:3003` |
+| `https://f-fv.data-dna.eu` | Reverse Proxy | `http://192.168.xxx.yyy:3004` |
 | `https://opn.data-dna.eu` | redir | `https://www.data-dna.eu{uri}` (301) |
 
 ---
@@ -182,7 +182,7 @@ RestartSec=10
 
 2. **GitLab triggert Webhook**
    ```
-   POST http://192.168.122.120:9321/webhook
+   POST http://192.168.xxx.yyy:9321/webhook
    Header: x-gitlab-token: <SECRET>
    Payload: { "ref": "refs/heads/develop", ... }
    ```
@@ -377,7 +377,7 @@ Falls du schnell einen Branch deployen möchtest:
 
 ```
 # SSH in Frontend-VM
-ssh root@192.168.122.120
+ssh root@192.168.xxx.yyy
 
 # Manuelles Deployment (z.B. develop)
 sudo -u astro /var/www/astro/scripts/deploy-branch.sh develop \
@@ -551,8 +551,8 @@ In der OPNSense WebGUI:
 
 | Domain | Handler-Typ | Upstream |
 |--------|-------------|----------|
-| `https://www.data-dna.eu` | Reverse Proxy | `http://192.168.122.120:3000` |
-| `https://dev.data-dna.eu` | Reverse Proxy | `http://192.168.122.120:3001` |
+| `https://www.data-dna.eu` | Reverse Proxy | `http://192.168.xxx.yyy:3000` |
+| `https://dev.data-dna.eu` | Reverse Proxy | `http://192.168.xxx.yyy:3001` |
 | ... | ... | ... |
 
 3. **Speichern → Caddy neustarten**
@@ -564,7 +564,7 @@ In der OPNSense WebGUI:
 ### 3.1 Manuell testen (develop)
 
 ```
-ssh root@192.168.122.120
+ssh root@192.168.xxx.yyy
 
 # Deploy
 sudo -u astro /var/www/astro/scripts/deploy-branch.sh develop \
@@ -613,7 +613,7 @@ curl -I https://dev.data-dna.eu/
 ## 4. GitLab Webhook konfigurieren
 
 1. **GitLab → Repository → Settings → Integrations → Webhooks**
-2. **URL:** `http://192.168.122.120:9321/webhook`
+2. **URL:** `http://192.168.xxx.yyy:9321/webhook`
 3. **Secret Token:** Derselbe Token aus `/home/astro/.env.production`
 4. **Trigger:** ✅ Push events
 5. **Branch filter:** (leer – alle Branches)
@@ -626,7 +626,7 @@ curl -I https://dev.data-dna.eu/
 ### 5.1 Alle Branches initial deployen
 
 ```
-ssh root@192.168.122.120
+ssh root@192.168.xxx.yyy
 
 # main
 sudo -u astro /var/www/astro/scripts/deploy-branch.sh main \
@@ -668,7 +668,7 @@ Die Kommunen-Collection ist **extern verwaltbar**, ohne Deployment!
 
 ```
 # SSH ins System
-ssh root@192.168.122.120
+ssh root@192.168.xxx.yyy
 
 # Kommunen-Verzeichnis
 cd /var/www/astro/shared/src/content/kommunen
