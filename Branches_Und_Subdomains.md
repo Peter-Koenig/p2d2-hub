@@ -9,50 +9,45 @@
 ### 1.1 Übersicht
 
 ```
-┌──────────────────────────┐
-│  GitLab (opencode.de)    │
-│  ├─ main                 │
-│  └─ develop              │
-└────────┬─────────────────┘
-         │ GitLab Webhook
-         ↓
-┌────────────────────────────────┐
-│  Frontend VM (9321)            │
-│  Webhook-Server                │
-│  ├─ Secret-Validierung         │
-│  ├─ Repo-Router                │
-│  └─ Deploy-Trigger             │
-└────┬──────────────┬────────────┘
-     │              │
-     ↓              ↓
-┌─────────┐  ┌───────────────────┐
-│ GitLab  │  │ GitHub (3x Team)  │
-│ Repos   │  │ ├─ team-de1       │
-└─────────┘  │ ├─ team-de2       │
-             │ └─ team-fv        │
-             └───────────────────┘
+┌────────── Push ──────────┐    ┌────── Push ───────┐
+│  GitLab (opencode.de)    │    │ GitHub (3x Team)  │
+│  ├─ main                 │    │ ├─ team-de1       │
+│  └─ develop              │    │ ├─ team-de2       │
+└────────────┬─────────────┘    │ └─ team-fv        │
+             │                  └───────────────────┘
+             │                        │
+             │    GitLab Webhook      │
+             ↓                        ↓
+        ┌────────────────────────────────┐
+        │  Frontend VM (Port 9321)       │
+        │  Webhook-Server                │
+        │  ├─ Secret-Validierung         │
+        │  ├─ Repo-Router                │
+        │  └─ Deploy-Trigger             │
+        └───────────────┬────────────────┘
+                        │
+                        │
+                        ↓
 
-                ↓
-
-┌──────────────────────────────────┐
-│  systemd Services                │
-│  ├─ astro-main (Port 3000)       │
-│  ├─ astro-develop (Port 3001)    │
-│  ├─ astro-feature-team-de1 (3002)│
-│  ├─ astro-feature-team-de2 (3003)│
-│  └─ astro-feature-team-fv (3004) │
-└──────────────────────────────────┘
-
-                ↓
-
-┌──────────────────────────────────┐
-│  Caddy Reverse Proxy (OPNSense)  │
-│  ├─ www.data-dna.eu → :3000      │
-│  ├─ dev.data-dna.eu → :3001      │
-│  ├─ f-de1.data-dna.eu → :3002    │
-│  ├─ f-de2.data-dna.eu → :3003    │
-│  └─ f-fv.data-dna.eu → :3004     │
-└──────────────────────────────────┘
+        ┌──────────────────────────────────┐
+        │  systemd Services                │
+        │  ├─ astro-main (Port 3000)       │
+        │  ├─ astro-develop (Port 3001)    │
+        │  ├─ astro-feature-team-de1 (3002)│
+        │  ├─ astro-feature-team-de2 (3003)│
+        │  └─ astro-feature-team-fv (3004) │
+        └───────────────┬──────────────────┘
+                        │
+                        │
+                        ↓
+        ┌──────────────────────────────────┐
+        │  Caddy Reverse Proxy (OPNSense)  │
+        │  ├─ www.data-dna.eu → :3000      │
+        │  ├─ dev.data-dna.eu → :3001      │
+        │  ├─ f-de1.data-dna.eu → :3002    │
+        │  ├─ f-de2.data-dna.eu → :3003    │
+        │  └─ f-fv.data-dna.eu → :3004     │
+        └──────────────────────────────────┘
 ```
 
 ### 1.2 Deployment-Flows
