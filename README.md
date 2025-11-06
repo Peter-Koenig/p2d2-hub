@@ -59,7 +59,7 @@ npm run dev
 
 # Live-Zugriff auf lokalen dev-Server
 
-firefox http://localhost:4321
+$ firefox http://localhost:4321 bzw. Aufruf im Brwoser [http://localhost:4321](http://localhost:4321)
 
 # Produktion bauen
 
