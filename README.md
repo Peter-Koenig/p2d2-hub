@@ -59,7 +59,7 @@ npm run dev
 
 # Live-Zugriff auf lokalen dev-Server
 
-$ firefox http://localhost:4321 bzw. Aufruf im Brwoser [http://localhost:4321](http://localhost:4321)
+$ firefox http://localhost:4321 ( bzw. Aufruf im Brwoser: http://localhost:4321 )
 
 # Produktion bauen
 
@@ -76,11 +76,12 @@ Es existieren 3 Feature-Branches
 2. feature/team-de2/setup
 2. feature/team-fv/setup
 
-die zum gemeinsamen Testen per Webhook hier automatisch deployed werden können:
+die aus verschiedenen Repos eingebunden und sich per Webhook automatisch deployen lassen:
 
-1. [f-de1.data-dna.eu/](https://f-de1.data-dna.eu/)
-2. [f-de2.data-dna.eu/](https://f-de2.data-dna.eu/)
-3. [f-fv.data-dna.eu/](https://f-fv.data-dna.eu/)
+1. https://f-de1.data-dna.eu
+2. https://f-de2.data-dna.eu
+3. https://f-fv.data-dna.eu
+
 
 ([Technische Details](https://gitlab.opencode.de/OC000028072444/p2d2/-/blob/main/MultiRepo-MultiStaging.md))
 ```
