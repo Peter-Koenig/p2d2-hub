@@ -91,8 +91,8 @@ main    -> https://www.data-dna.eu
 
 ([Technische Details zum MultiRepo-Multi-Staging](https://gitlab.opencode.de/OC000028072444/p2d2/-/blob/main/MultiRepo-MultiStaging.md))
 
-Die aktuelle Produktivinstanz (Branch `main`) wird unter
-👉 https://opn.data-dna.eu bereitgestellt.
+Die aktuelle Produktivinstanz (Branch `main`) wird also unter
+👉 https://www.data-dna.eu bereitgestellt.
 
 ---
 
