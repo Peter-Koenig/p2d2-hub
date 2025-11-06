@@ -87,8 +87,9 @@ Diese werden nach der QS in den develop- und danach main-Branch gemerged:
 develop -> https://dev.data-dna.eu
 main    -> https://www.data-dna.eu
 
-([Technische Details](https://gitlab.opencode.de/OC000028072444/p2d2/-/blob/main/MultiRepo-MultiStaging.md))
 ```
+
+([Technische Details zum MultiRepo-Multi-Staging](https://gitlab.opencode.de/OC000028072444/p2d2/-/blob/main/MultiRepo-MultiStaging.md))
 
 Die aktuelle Produktivinstanz (Branch `main`) wird unter
 👉 https://opn.data-dna.eu bereitgestellt.
