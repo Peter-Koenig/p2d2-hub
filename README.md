@@ -76,12 +76,16 @@ Es existieren 3 Feature-Branches
 2. feature/team-de2/setup
 2. feature/team-fv/setup
 
-die aus verschiedenen Repos eingebunden und sich per Webhook automatisch deployen lassen:
+die sich aus Team-Repos einbinden und per Webhook automatisch deployen lassen:
 
 1. https://f-de1.data-dna.eu
 2. https://f-de2.data-dna.eu
 3. https://f-fv.data-dna.eu
 
+Diese werden nach der QS in den develop- und danach main-Branch gemerged:
+
+develop -> https://dev.data-dna.eu
+main    -> https://www.data-dna.eu
 
 ([Technische Details](https://gitlab.opencode.de/OC000028072444/p2d2/-/blob/main/MultiRepo-MultiStaging.md))
 ```
