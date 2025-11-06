@@ -57,6 +57,10 @@ npm install
 
 npm run dev
 
+# Live-Zugriff auf lokalen dev-Server
+
+firefox http://localhost:4321
+
 # Produktion bauen
 
 npm run build
@@ -65,6 +69,20 @@ npm run build
 
 npm run preview
 
+# Kollaboration:
+Es existieren 3 Feature-Branches
+
+1. feature/team-de1/setup
+2. feature/team-de2/setup
+2. feature/team-fv/setup
+
+die zum gemeinsamen Testen per Webhook hier automatisch deployed werden können:
+
+1. [f-de1.data-dna.eu/](https://f-de1.data-dna.eu/)
+2. [f-de2.data-dna.eu/](https://f-de2.data-dna.eu/)
+3. [f-fv.data-dna.eu/](https://f-fv.data-dna.eu/)
+
+([Technische Details](https://gitlab.opencode.de/OC000028072444/p2d2/-/blob/main/MultiRepo-MultiStaging.md))
 ```
 
 Die aktuelle Produktivinstanz (Branch `main`) wird unter
