@@ -510,3 +510,520 @@ sudo systemctl status astro-*
 │                                             │
 └─────────────────────────────────────────────┘
 ```
+
+<a name="english-version"></a>
+
+## English Version
+
+**Valid as of November 2025**
+
+***
+
+### 1. System Architecture
+
+#### 1.1 Overview
+
+```
+Push          Push
+  ↓             ↓
+GitLab         GitHub
+(opencode.de)  (3x Team)
+  ↓             ↓
+main          team-de1
+develop       team-de2
+              team-fv
+  ↓             ↓
+Webhook (Frontend VM)
+Port 9321
+Webhook Server
+  ├─ Secret Validation
+  └─ Repo Router
+      ↓
+git clone
+staging Server
+  ↓
+Deploy Trigger
+  ↓
+staging server
+systemd Services
+  ├─ astro-main (Port 3000)
+  ├─ astro-develop (Port 3001)
+  ├─ astro-feature-team-de1 (3002)
+  ├─ astro-feature-team-de2 (3003)
+  └─ astro-feature-team-fv (3004)
+      ↓
+Presentation
+Caddy Reverse Proxy (OPNSense)
+  ├─ www.data-dna.eu → :3000
+  ├─ dev.data-dna.eu → :3001
+  ├─ f-de1.data-dna.eu → :3002
+  ├─ f-de2.data-dna.eu → :3003
+  └─ f-fv.data-dna.eu → :3004
+```
+
+
+#### 1.2 Deployment Flows
+
+**Flow 1: Main/Develop (your repo, GitLab)**
+
+```
+git push origin develop
+    ↓
+Webhook → POST http://www.data-dna.eu:9321/webhook
+    ↓
+Webhook Server
+  ├─ Reads x-gitlab-token Header
+  ├─ Validates against SECRET_DEVELOP
+  └─ Finds: https://gitlab.opencode.de/.../p2d2.git
+            Branch: develop
+    ↓
+Calls: deploy-branch.sh develop ... https://gitlab...
+    ↓
+Deploy Script
+  ├─ git clone --branch develop
+  ├─ npm ci
+  ├─ npm run build
+  └─ sudo systemctl restart astro-develop
+    ↓
+Live at: dev.data-dna.eu
+```
+
+**Flow 2: Feature Branches (Team Repos, GitHub)**
+
+```
+git push origin feature/team-de1/my-function
+    ↓
+Webhook → POST http://www.data-dna.eu:9321/webhook
+    ↓
+Webhook Server
+  ├─ Reads x-hub-signature-256 Header
+  ├─ Calculates HMAC-SHA256 with SECRET_TEAM_DE1
+  ├─ Validates Signature
+  ├─ Branch Pattern Match: feature/team-de1/*
+  └─ Finds: https://github.com/team-de1/p2d2-feature.git
+    ↓
+Calls: deploy-branch.sh feature/team-de1/my-function ... https://github.com/team-de1/...
+    ↓
+Deploy Script
+  ├─ git clone --branch feature/team-de1/my-function
+  ├─ npm ci
+  ├─ npm run build
+  └─ sudo systemctl restart astro-feature-team-de1
+    ↓
+Live at: f-de1.data-dna.eu
+```
+
+
+---
+
+### 2. Webhook Server Configuration
+
+#### 2.1 Secrets Management
+
+**`/home/astro/webhook-server/.env`**
+
+```
+# GitLab Secrets (your repo)
+SECRET_MAIN=<your-secret-main-here>
+SECRET_DEVELOP=<your-secret-develop-here>
+
+# GitHub Shared Secrets (Team Repos)
+SECRET_TEAM_DE1=<team-de1-secret-here>
+SECRET_TEAM_DE2=<team-de2-secret-here>
+SECRET_TEAM_FV=<team-fv-secret-here>
+```
+
+
+#### 2.2 Branch Configuration
+
+**`/home/astro/webhook-server/index.js`** (excerpt)
+
+```javascript
+branchConfig: {
+  main: {
+    domain: "www.data-dna.eu",
+    deployPath: "/var/www/astro/deployments/main",
+    port: 3000,
+    repo: "https://gitlab.opencode.de/OC000028072444/p2d2.git",
+    secret: process.env.SECRET_MAIN,
+    provider: "gitlab",
+  },
+  develop: {
+    domain: "dev.data-dna.eu",
+    deployPath: "/var/www/astro/deployments/develop",
+    port: 3001,
+    repo: "https://gitlab.opencode.de/OC000028072444/p2d2.git",
+    secret: process.env.SECRET_DEVELOP,
+    provider: "gitlab",
+  },
+  "feature/team-de1": {
+    domain: "f-de1.data-dna.eu",
+    deployPath: "/var/www/astro/deployments/feature-de1",
+    port: 3002,
+    repo: "https://github.com/team-de1/p2d2-feature.git",
+    secret: process.env.SECRET_TEAM_DE1,
+    provider: "github",
+    matchPattern: "feature/team-de1/*",
+  },
+  "feature/team-de2": {
+    domain: "f-de2.data-dna.eu",
+    deployPath: "/var/www/astro/deployments/feature-de2",
+    port: 3003,
+    repo: "https://github.com/team-de2/p2d2-feature.git",
+    secret: process.env.SECRET_TEAM_DE2,
+    provider: "github",
+    matchPattern: "feature/team-de2/*",
+  },
+  "feature/team-fv": {
+    domain: "f-fv.data-dna.eu",
+    deployPath: "/var/www/astro/deployments/feature-fv",
+    port: 3004,
+    repo: "https://github.com/team-fv/p2d2-feature.git",
+    secret: process.env.SECRET_TEAM_FV,
+    provider: "github",
+    matchPattern: "feature/team-fv/*",
+  }
+}
+```
+
+
+---
+
+### 3. Team Onboarding
+
+#### 3.1 Step 1: Team creates repo
+
+**Option A: New repo**
+
+```
+# GitHub.com
+New Repository → p2d2-feature
+
+# Clone
+git clone https://github.com/team-de1/p2d2-feature.git
+cd p2d2-feature
+
+# Create feature branch
+git checkout -b feature/team-de1/setup
+```
+
+**Option B: Fork main repo**
+
+```bash
+# GitHub.com
+fork Peter-Koenig/p2d2-hub
+
+# Clone
+git clone https://github.com/team-de1/p2d2-feature.git
+cd p2d2-feature
+
+# Create feature branch
+git checkout -b feature/team-de1/my-function
+```
+
+
+#### 3.2 Step 2: Generate \& distribute secret (you do this)
+
+```
+# Generate secret
+openssl rand -hex 32
+
+# Output:
+a1b2c3d4e5f6g7h8...
+
+# Share with team (encrypted! Signal, PGP, or secure channel)
+
+# Add to .env
+SECRET_TEAM_DE1=a1b2c3d4e5f6g7h8...
+# /home/astro/webhook-server/.env
+
+# Restart webhook server
+systemctl restart webhook-server
+```
+
+
+#### 3.3 Step 3: Configure GitHub webhook (team does this)
+
+1. GitHub Repository → Settings → Webhooks → Add webhook
+2. Payload URL: `http://<your-ip>:9321/webhook`
+3. Content type: `application/json`
+4. Secret: The secret from you
+5. Which events: Just the push event
+6. Active: ✓
+7. Add webhook
+
+**Test:**
+
+- Recent Deliveries → Click on entry → Redeliver
+- Or team makes test push to `feature/team-de1/test`
+
+***
+
+### 4. Development Workflow
+
+#### 4.1 Develop feature (team)
+
+Team develops locally:
+
+```bash
+git checkout feature/team-de1/new-function
+
+# ... change code ...
+
+git add .
+git commit -m "Feature: New function"
+git push origin feature/team-de1/new-function
+```
+
+What happens automatically:
+
+- GitHub → Webhook → Server validates secret
+- Deploy script triggers
+- **f-de1.data-dna.eu** updates → LIVE in ~2 minutes
+
+
+#### 4.2 Test feature
+
+Team can view their changes live:
+
+- Team tests at **f-de1.data-dna.eu**
+
+For changes:
+
+```
+# Simply new push
+git add .
+git commit -m "Bugfix: xyz"
+git push origin feature/team-de1/new-function
+# → Automatically deployed
+```
+
+
+***
+
+### 5. Integration into Main/Develop
+
+#### 5.1 Feature Ready → Pull Request
+
+Team creates pull request:
+
+```bash
+# Pull request in their repo
+GitHub: team-de1/p2d2-feature
+PR: feature/team-de1/new-function → develop
+
+# Or: To your main repo
+PR: OC000028072444/p2d2
+feature/team-de1/new-function → develop
+```
+
+
+#### 5.2 You review \& merge
+
+You on your repo:
+
+```
+git checkout develop
+git pull origin develop
+
+# Merge feature branch
+git merge feature/team-de1/new-function
+git push origin develop
+```
+
+What happens:
+
+- Push to `develop` → Webhook deploys to **dev.data-dna.eu**
+- You can test on staging
+
+
+#### 5.3 Release → Main
+
+After test/approval:
+
+```bash
+git checkout main
+git pull origin main
+git merge develop
+git push origin main
+```
+
+What happens:
+
+- Push to `main` → Webhook deploys to **www.data-dna.eu**
+- LIVE in production!
+
+---
+
+### 6. Deployment Directory Structure
+
+```
+/var/www/astro
+├── deployments
+│   ├── main
+│   │   ├── deploys
+│   │   │   ├── 20251104003111   ← Latest
+│   │   │   ├── 20251104002000
+│   │   │   └── ...
+│   │   └── live → deploys/20251104003111   ← Active
+│   ├── develop
+│   │   ├── deploys
+│   │   └── live → ...
+│   │   └── logs
+│   ├── feature-de1
+│   │   ├── deploys
+│   │   └── live → ...
+│   │   └── logs
+│   ├── feature-de2
+│   └── feature-fv
+├── scripts
+│   └── deploy-branch.sh
+└── shared
+    └── src
+        └── content
+            └── kommunen   ← External Collection
+```
+
+
+***
+
+### 7. Monitoring \& Troubleshooting
+
+#### 7.1 Check logs
+
+```bash
+# Webhook server
+journalctl -u webhook-server -f
+
+# Deployment service
+journalctl -u astro-develop -f
+
+# Build logs
+tail -f /var/www/astro/deployments/develop/logs/npm-build-*.log
+```
+
+
+#### 7.2 Common problems
+
+**Webhook not triggering:**
+
+1. Webhook server running?
+
+```
+systemctl status webhook-server
+```   ```
+
+```
+
+2. Secret correct?
+
+```bash
+# SECRET_TEAM_DE1
+/home/astro/webhook-server/.env
+```
+
+3. Check logs:
+
+```
+journalctl -u webhook-server -n 50
+```   ```
+
+```
+
+
+**Build fails:**
+
+```bash
+# Deploy logs
+tail -100 /var/www/astro/deployments/feature-de1/logs/npm-build-*.log
+
+# Service logs
+journalctl -u astro-feature-team-de1 -n 30
+```
+
+**Service doesn't start:**
+
+```
+# Directory exists?
+ls -la /var/www/astro/deployments/feature-de1/live
+
+# Port bound?
+lsof -i :3002
+
+# Restart service
+systemctl restart astro-feature-team-de1
+```
+
+
+***
+
+### 8. Security
+
+#### 8.1 Secret Management
+
+- Each team has own secret
+- Secrets in `.env`, not in code
+- File permissions: `600` (only astro)
+- GitHub: HMAC-SHA256 validation
+- GitLab: Token validation
+- Rotate secrets regularly
+
+
+#### 8.2 Branch Protection
+
+**Server-side: Branch Pattern Matching**
+
+- Team DE1 CANNOT deploy to `feature/team-de2`
+- Server validates pattern `feature/team-de1/*`
+- Unknown branches → 404 (ignored)
+
+**Branch Protection Rules (optional):**
+
+```
+# Branches → Add rule
+Pattern: main
+✓ Require pull request reviews
+✓ Require status checks to pass
+```
+
+
+---
+
+### 9. Quick Reference
+
+```
+# Generate secrets
+openssl rand -hex 32
+
+# Webhook server logs
+journalctl -u webhook-server -f
+
+# Restart service
+systemctl restart astro-develop
+
+# Manual deployment
+sudo -u astro /var/www/astro/scripts/deploy-branch.sh feature/team-de1/setup /var/www/astro/deployments/feature-de1 3002 https://github.com/team-de1/p2d2-feature.git
+
+# Status of all services
+systemctl status astro-*
+```
+
+
+***
+
+### 10. Summary: Workflow Overview
+
+1. **Team develops** in their GitHub repo (`feature/team-de1`)
+2. **Push** triggers webhook
+3. **Server** validates secret + branch
+4. **Deploy script** is called:
+    - Git clone
+    - npm build
+    - Service is restarted
+5. **f-de1.data-dna.eu** → LIVE
+6. **Team tests** on feature domain
+7. After approval → **PR to develop**
+8. **You merge** → `develop` → `main`
+9. **Automatic deployment** to **www** → LIVE in production
+```
+
