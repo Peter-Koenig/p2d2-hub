@@ -13,13 +13,13 @@
     "test-polygon-sync": "cross-env NODE_ENV=development tsx src/scripts/test-polygon-sync.ts"
   },
   "dependencies": {
-    "@astrojs/mdx": "^4.2.6",
-    "@astrojs/node": "^9.2.1",
-    "@astrojs/vue": "^5.0.13",
+    "@astrojs/mdx": "^4.3.10",
+    "@astrojs/node": "^9.5.0",
+    "@astrojs/vue": "^5.1.3",
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.1.7",
     "@turf/turf": "^7.2.0",
-    "astro": "^5.7.13",
+    "astro": "^5.15.6",
     "axios": "^1.12.0",
     "chokidar": "^3.6.0",
     "gray-matter": "^4.0.3",
