@@ -91,9 +91,9 @@ Die aktuelle Produktivinstanz (Branch `main`) wird also unter **https://www.data
 
 Es existieren drei synchron gehaltene Repositories:
 
-- **origin** auf OpenCode.de: Zentrales Repo, CI/CD
-- **mirror** auf OpenCode.de: Spiegel für Versionsverwaltung
-- **hub** auf GitHub: Internationale Zusammenarbeit
+- **[origin](https://gitlab.opencode.de/OC000028072444/p2d2.git)** auf OpenCode.de: Zentrales Repo, CI/CD - 
+- **[mirror](https://gitlab.opencode.de/unbox-cologne/p2d2/p2d2-mirror.git)** auf OpenCode.de: Spiegel für Versionsverwaltung
+- **[hub](https://github.com/Peter-Koenig/p2d2-hub.git)** auf GitHub: Internationale Zusammenarbeit
 
 Folgende Branches wurden angelegt, Webseiten und Prozessimplementierung stehen aus (Stand 3.9.2025):
 
@@ -120,8 +120,9 @@ Siehe `CONTRIBUTING.md`.
 
 ---
 
-### Dokumentation
+### Dokumentation (Doku-Server im Aufbau)
 
+- [Zentrale Dokumentation](https://doc.data-dna.eu): doc.data-dna.eu
 - Deployment-Regeln: `.github/DEPLOYMENTRULES.md`
 - Code Reviews: `.github/CODEREVIEWGUIDE.md`
 - Branch-Merge-Policy: `.github/MERGEPOLICY.md`
@@ -229,9 +230,9 @@ The current production instance (branch `main`) is available at **https://www.da
 
 There are three synchronized repositories:
 
-- **origin** on OpenCode.de: Central repo, CI/CD
-- **mirror** on OpenCode.de: Mirror for version control
-- **hub** on GitHub: International collaboration
+- **origin** on OpenCode.de: Central repo, CI/CD - https://gitlab.opencode.de/OC000028072444/p2d2.git
+- **mirror** on OpenCode.de: Mirror for version control - https://gitlab.opencode.de/unbox-cologne/p2d2/p2d2-mirror.git
+- **hub** on GitHub: International collaboration - https://github.com/Peter-Koenig/p2d2-hub.git
 
 The following branches were created, websites and process implementation are pending (as of 3.9.2025):
 
@@ -258,6 +259,7 @@ See `CONTRIBUTING.md`.
 
 ### Documentation
 
+- Central documentation: https://doc.data-dna.eu
 - Deployment rules: `.github/DEPLOYMENTRULES.md`
 - Code reviews: `.github/CODEREVIEWGUIDE.md`
 - Branch merge policy: `.github/MERGEPOLICY.md`
@@ -277,4 +279,3 @@ This project is licensed under the **General Public License Version 3 (GPLv3)** 
 - More channels see footer on the website
 
 ```
-
