@@ -54,3 +54,5 @@ src_feature.txt
 src/utils/geo/__pycache__/*
 src_temp.txt
 .directory
+sourcetree.json.txt
+src-p2d2.txt
