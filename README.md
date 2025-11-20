@@ -29,6 +29,14 @@ Beide sollen gleichwertig, transparent und souverän miteinander interagieren. D
 
 ***
 
+### Wichtige Live-Adressen:
+
+- [Webseite: https://www.data-dna.eu](https://www.data-dna.eu)
+- [Entwicklungsseite zum testen: https://dev.data-dna.eu](https://dev.data-dna.eu)
+- [Dokumentations-Webseite: https://doc.data-dna.eu](https://doc.data-dna.eu)
+
+***
+
 ### Installation & Nutzung
 
 #### Voraussetzungen
@@ -157,6 +165,15 @@ The **p2d2 (Public-Public Data-DNA)** project aims to interlink open data from p
 Both should interact equally, transparently, and sovereignly. This promotes participation, trust, innovation, and cooperation in the digital infrastructure of cities and municipalities.
 
 ---
+
+### Important live addresses:
+
+- [Web Site: https://www.data-dna.eu](https://www.data-dna.eu)
+- [Develeopment-Version of the web site for testing: https://dev.data-dna.eu](https://dev.data-dna.eu)
+- [Documentation Web Site: https://doc.data-dna.eu](https://doc.data-dna.eu)
+
+---
+
 
 ### Features
 
