@@ -1,0 +1,145 @@
+# This repository adheres to the publiccode.yml standard by including this 
+# metadata file that makes public software easily discoverable.
+# More info at https://github.com/italia/publiccode.yml
+
+publiccodeYmlVersion: '0.2'
+name: p2d2
+applicationSuite: Public-Public Data-DNA
+url: 'https://github.com/Peter-Koenig/p2d2-hub.git'
+landingURL: 'https://www.data-dna.eu'
+developmentStatus: beta
+softwareType: standalone/web
+platforms:
+  - web
+  - linux
+categories:
+  - data-collection
+  - data-analytics
+  - geographic-information-systems
+usedBy:
+  - Öffentliche Verwaltungen (geplant)
+dependsOn:
+  open:
+    - name: AstroJS
+      versionMin: '4.0'
+    - name: OpenLayers
+      versionMin: '9.0'
+    - name: PostgreSQL
+      versionMin: '15.0'
+    - name: PostGIS
+      versionMin: '3.3'
+releaseDate: '2025-12-01'
+softwareVersion: '0.1'
+maintenance:
+  type: internal
+  contacts:
+    - name: Peter König
+legal:
+  license: AGPL-3.0-or-later
+  mainCopyrightOwner: Peter König
+  repoOwner: Peter König
+localisation:
+  localisationReady: true
+  availableLanguages:
+    - de
+    - en
+description:
+  de:
+    localisedName: p2d2 - Public-Public Data-DNA
+    genericName: Geo- und Fachdaten-Synchronisierer
+    shortDescription: >-
+      Moderne Geodateninfrastruktur zur Verzahnung von Verwaltungsdaten mit
+      Bürgerdaten
+    longDescription: >
+      **p2d2** (Public-Public Data-DNA) ist eine moderne Geodateninfrastruktur
+      (GDI), 
+
+      die offene Verwaltungsdaten mit Bürgerdaten verzahnt. Das Projekt verfolgt
+      das Ziel, 
+
+      offene Verwaltungsdaten mit OpenStreetMap, WikiData und anderen
+      öffentlichen 
+
+      Datenplattformen zu synchronisieren.
+
+
+      Die Anwendung basiert auf AstroJS und integriert OpenLayers für die 
+
+      Kartenvisualisierung sowie PostGIS für die Geodatenverwaltung. Sie
+      ermöglicht 
+
+      die Erfassung, Qualitätssicherung und Bereitstellung von Geodaten durch
+      die 
+
+      Öffentlichkeit in Zusammenarbeit mit der Verwaltung.
+
+
+      Technische Basis:
+
+      - Frontend: AstroJS, TypeScript, OpenLayers
+
+      - Backend: PostgreSQL/PostGIS
+
+      - GDI-Komponenten: Mapserver, Mapproxy, Mapnik
+
+      - Deployment: Proxmox-basierte Infrastruktur
+    documentation: 'https://doc.data-dna.eu'
+    features:
+      - Verzahnung von Verwaltungsdaten mit OpenStreetMap und WikiData
+      - Geodatenerfassung durch Bürger
+      - Qualitätssicherung von Geodaten
+      - Moderne Weboberfläche mit interaktiven Karten
+      - Integration mit etablierten Geodateninfrastrukturen
+      - API für Datenaustausch
+    screenshots:
+      - >-
+        https://gitlab.opencode.de/OC000028072444/p2d2/-/blob/main/public/images/Screenshot_p2d2_a.jpg
+      - >-
+        https://gitlab.opencode.de/OC000028072444/p2d2/-/blob/main/public/images/Screenshot_p2d2_b.jpg
+  en:
+    localisedName: p2d2 - Public-Public Data-DNA
+    genericName: Spatial Data Infrastructure
+    shortDescription: >-
+      Modern spatial data infrastructure connecting administrative and citizen
+      data
+    longDescription: >
+      **p2d2** (Public-Public Data-DNA) is a modern spatial data infrastructure
+      (SDI) 
+
+      that connects open administrative data with citizen-contributed data. The
+      project 
+
+      aims to synchronize open government data with OpenStreetMap, WikiData, and
+      other 
+
+      public data platforms.
+
+
+      The application is built on AstroJS and integrates OpenLayers for map
+      visualization 
+
+      and PostGIS for geodata management. It enables the collection, quality
+      assurance, 
+
+      and provision of geodata by the public in collaboration with government
+      agencies.
+
+
+      Technical foundation:
+
+      - Frontend: AstroJS, TypeScript, OpenLayers
+
+      - Backend: PostgreSQL/PostGIS
+
+      - SDI components: Mapserver, Mapproxy, Mapnik
+
+      - Deployment: Proxmox-based infrastructure
+    documentation: 'https://doc.data-dna.eu'
+    features:
+      - Integration of administrative data with OpenStreetMap and WikiData
+      - Geodata collection by citizens
+      - Quality assurance of geodata
+      - Modern web interface with interactive maps
+      - Integration with established spatial data infrastructures
+      - API for data exchange
+logo: 'https://gitlab.opencode.de/OC000028072444/p2d2/-/blob/main/public/favicon.svg'
