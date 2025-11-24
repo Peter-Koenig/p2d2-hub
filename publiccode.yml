@@ -5,6 +5,7 @@
 publiccodeYmlVersion: '0.2'
 name: p2d2
 applicationSuite: Public-Public Data-DNA
+logo: p2d2_logo.svg
 url: 'https://github.com/Peter-Koenig/p2d2-hub.git'
 landingURL: 'https://www.data-dna.eu'
 developmentStatus: beta
@@ -140,4 +141,3 @@ description:
       - Modern web interface with interactive maps
       - Integration with established spatial data infrastructures
       - API for data exchange
-logo: p2d2_logo.svg
