@@ -92,8 +92,8 @@ description:
       - Integration mit etablierten Geodateninfrastrukturen
       - API für Datenaustausch
     screenshots:
-      - www.data-dna.eu/images/Screenshot_p2d2_a.jpg
-      - www.data-dna.eu/images/Screenshot_p2d2_b.jpg
+      - .opencode/screenshots/Screenshot_p2d2_a.jpg
+      - .opencode/screenshots/Screenshot_p2d2_b.jpg
   en:
     localisedName: p2d2 - Public-Public Data-DNA
     genericName: Spatial Data Infrastructure
