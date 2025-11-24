@@ -96,7 +96,7 @@ description:
       - .opencode/screenshots/Screenshot_p2d2_b.jpg
   en:
     localisedName: p2d2 - Public-Public Data-DNA
-    genericName: Spatial Data Infrastructure
+    genericName: Geo- und Verwaltungsdaten-Synchronisierer
     shortDescription: >-
       Modern spatial data infrastructure connecting administrative and citizen
       data
@@ -140,4 +140,4 @@ description:
       - Modern web interface with interactive maps
       - Integration with established spatial data infrastructures
       - API for data exchange
-logo: 'https://gitlab.opencode.de/OC000028072444/p2d2/-/blob/main/public/favicon.svg'
+logo: p2d2_logo.svg
