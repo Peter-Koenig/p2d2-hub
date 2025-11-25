@@ -1,0 +1,88 @@
+---
+import IconButton from "./IconButton.astro";
+---
+
+<div class="toolbar-controls">
+    <IconButton
+        id="tool-select"
+        icon="👆"
+        title="Auswählen"
+        tooltip="Objekte auswählen (Klick) oder zoomen (Klick auf Grabflur)"
+        class="tool-btn"
+        data-tool="select"
+    />
+    <IconButton
+        id="tool-move"
+        icon="↔️"
+        title="Verschieben"
+        tooltip="Ausgewählte Objekte verschieben"
+        class="tool-btn"
+        data-tool="move"
+    />
+    <IconButton
+        id="tool-draw"
+        icon="✏️"
+        title="Zeichnen"
+        tooltip="Neues Polygon zeichnen"
+        class="tool-btn"
+        data-tool="draw"
+    />
+    <IconButton
+        id="tool-delete"
+        icon="🗑️"
+        title="Löschen"
+        tooltip="Ausgewähltes Objekt löschen"
+        class="tool-btn"
+        data-tool="delete"
+        disabled={true}
+    />
+    
+    <div class="toolbar-divider"></div>
+
+    <IconButton
+        id="tool-save"
+        icon="💾"
+        title="Speichern"
+        tooltip="Änderungen speichern (WFS-T)"
+        class="tool-btn save-btn"
+        data-tool="save"
+    />
+</div>
+
+<style>
+    .toolbar-controls {
+        position: absolute;
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 0.5rem;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        backdrop-filter: blur(4px);
+    }
+
+    .tool-btn.highlighted {
+        background: #3b82f6;
+        border-color: #2563eb;
+        color: white;
+    }
+
+    .toolbar-divider {
+        width: 1px;
+        background: #e5e7eb;
+        margin: 0 0.25rem;
+    }
+
+    .save-btn {
+        background: #16a34a;
+        color: white;
+        border-color: #15803d;
+    }
+    .save-btn:hover:not(:disabled) {
+        background: #15803d;
+    }
+</style>
