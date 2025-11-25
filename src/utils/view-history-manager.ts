@@ -6,6 +6,13 @@ interface ViewState {
   timestamp: number;
 }
 
+// NEU: Callback-Typ definieren
+type HistoryState = {
+  canGoBack: boolean;
+  canGoForward: boolean;
+};
+type HistoryStateCallback = (state: HistoryState) => void;
+
 /**
  * Manages view history for back/forward navigation in Feature Editor
  * Use Case: Overview → Zoom to Grabflur → Back → Zoom to Grab → Back to Grabflur
@@ -18,9 +25,21 @@ export class ViewHistoryManager {
   private lastPushTime: number = 0;
   private readonly PUSH_DEBOUNCE = 500; // ms
 
+  // NEU: Listener-Set
+  private listeners: Set<HistoryStateCallback> = new Set();
+
   constructor(view: View, maxHistorySize: number = 20) {
     this.view = view;
     this.maxHistorySize = maxHistorySize;
+  }
+
+  // NEU: Private Methode zum Benachrichtigen
+  private notifyListeners(): void {
+    const state = {
+      canGoBack: this.canGoBack(),
+      canGoForward: this.canGoForward(),
+    };
+    this.listeners.forEach((callback) => callback(state));
   }
 
   /**
@@ -67,6 +86,9 @@ export class ViewHistoryManager {
       total: this.history.length,
       zoom,
     });
+
+    // NEU: Listener am Ende aufrufen
+    this.notifyListeners();
   }
 
   /**
@@ -87,6 +109,9 @@ export class ViewHistoryManager {
     });
 
     console.log("ViewHistory: Navigated back to index", this.currentIndex);
+
+    // NEU: Listener am Ende aufrufen
+    this.notifyListeners();
     return true;
   }
 
@@ -108,6 +133,9 @@ export class ViewHistoryManager {
     });
 
     console.log("ViewHistory: Navigated forward to index", this.currentIndex);
+
+    // NEU: Listener am Ende aufrufen
+    this.notifyListeners();
     return true;
   }
 
@@ -143,5 +171,20 @@ export class ViewHistoryManager {
   clear(): void {
     this.history = [];
     this.currentIndex = -1;
+
+    // NEU: Listener aufrufen
+    this.notifyListeners();
+  }
+
+  /**
+   * NEU: subscribe-Methode
+   */
+  public subscribe(callback: HistoryStateCallback): () => void {
+    this.listeners.add(callback);
+
+    // Unsubscribe-Funktion zurückgeben
+    return () => {
+      this.listeners.delete(callback);
+    };
   }
 }
