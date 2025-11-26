@@ -1,110 +1,100 @@
 ---
 interface Props {
-  title: string;
-  commune: string;
-  wpName: string;
-  containerType: string;
+    title: string;
+    commune: string;
+    wpName: string;
+    containerType: string;
 }
 
 const { title, commune, wpName, containerType } = Astro.props;
 ---
 
 <header class="editor-header">
-  <div class="header-content">
-    <h1 class="editor-title">{title}</h1>
-    <div class="header-info">
-      <span class="info-item">
-        <strong>Typ:</strong>
-        {containerType}
-      </span>
-      <span class="info-item">
-        <strong>Wikipedia:</strong>
-        {wpName}
-      </span>
-      {commune && (
-        <span class="info-item">
-          <strong>Gemeinde:</strong>
-          {commune}
-        </span>
-      )}
+    <div class="header-content">
+        <h1 class="editor-title">{title}</h1>
+        <div class="header-info">
+            {
+                commune && (
+                    <span class="info-item">
+                        <strong>Gemeinde:</strong>
+                        {commune}
+                    </span>
+                )
+            }
+        </div>
     </div>
-  </div>
-  <button
-    id="close-editor"
-    class="close-button"
-    onclick="window.close()"
-  >
-    Schließen
-  </button>
+    <button id="close-editor" class="close-button" onclick="window.close()">
+        Schließen
+    </button>
 </header>
 
 <style>
-  .editor-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 1rem 1.5rem;
-    background: white;
-    border-bottom: 1px solid #e5e7eb;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-
-  .header-content {
-    flex: 1;
-  }
-
-  .editor-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1f2937;
-    margin: 0 0 0.5rem 0;
-  }
-
-  .header-info {
-    display: flex;
-    gap: 1.5rem;
-    flex-wrap: wrap;
-  }
-
-  .info-item {
-    font-size: 0.875rem;
-    color: #6b7280;
-  }
-
-  .info-item strong {
-    color: #374151;
-    margin-right: 0.25rem;
-  }
-
-  .close-button {
-    padding: 0.5rem 1rem;
-    background: #ef4444;
-    color: white;
-    border: none;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  .close-button:hover {
-    background: #dc2626;
-  }
-
-  @media (max-width: 768px) {
     .editor-header {
-      flex-direction: column;
-      gap: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 1rem 1.5rem;
+        background: white;
+        border-bottom: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-content {
+        flex: 1;
+    }
+
+    .editor-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0 0 0.5rem 0;
     }
 
     .header-info {
-      flex-direction: column;
-      gap: 0.5rem;
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .info-item {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .info-item strong {
+        color: #374151;
+        margin-right: 0.25rem;
     }
 
     .close-button {
-      align-self: flex-end;
+        padding: 0.5rem 1rem;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
     }
-  }
+
+    .close-button:hover {
+        background: #dc2626;
+    }
+
+    @media (max-width: 768px) {
+        .editor-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .header-info {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .close-button {
+            align-self: flex-end;
+        }
+    }
 </style>

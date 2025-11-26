@@ -15,6 +15,9 @@ export class EditorDataManager {
   private wfsClient: WFSAuthClient;
   private geojsonFormat: GeoJSON;
 
+  // HINZUFÜGEN: WFS-Request-Cache für bereits geladene Grabfluren
+  private loadedGrabflurIDs: Set<string | number> = new Set();
+
   constructor(
     state: EditorState,
     layerManager: EditorLayerManager,
@@ -31,14 +34,17 @@ export class EditorDataManager {
    * Gräber werden nicht mehr zentral geladen, sondern on-demand per BBOX.
    */
   async loadInitialFeatures() {
-    // 1. Lade Parent-Feature (Friedhof)
-    const parentFeature = await this.fetchParentFeature(); // <-- Gibt nur Feature zurück
+    console.log("[DataManager] Lade Features parallel...");
+
+    // ERSETZEN: Sequenzielle awaits durch parallele Anfragen
+    const [parentFeature, childFeatures] = await Promise.all([
+      this.fetchParentFeature(),
+      this.fetchChildFeatures(),
+    ]);
+
     if (!parentFeature) {
       throw new Error(`Haupt-Feature '${this.state.name}' nicht gefunden.`);
     }
-
-    // 2. Lade Child-Features (Grabflure)
-    const childFeatures = await this.fetchChildFeatures();
 
     // 3. Gräber (L12) NICHT MEHR LADEN
     // const graeberFeatures = await this.fetchGraeberFeatures(altName); // <-- ENTFERNT
@@ -121,12 +127,30 @@ export class EditorDataManager {
   // ENTFERNT: fetchGraeberFeatures (die "alle laden"-Methode)
 
   // NEU: Lädt Gräber bei Bedarf per BBOX-Filter (On-Demand)
-  async loadGraeberForExtent(extent: number[]) {
+  // ERSETZEN: Signatur von loadGraeberForExtent (benötigt jetzt das Feature für die ID)
+  async loadGraeberForExtent(grabflurFeature: Feature<Geometry>) {
     const graeberSource = this.layerManager.getGraeberSource();
     if (!graeberSource) {
       console.error("Gräber-Source nicht im LayerManager gefunden.");
       return;
     }
+
+    // HINZUFÜGEN: Cache-Prüfung
+    const grabflurId = grabflurFeature.getId();
+    if (grabflurId === undefined) {
+      console.error("Grabflur-Feature hat keine ID. Caching nicht möglich.");
+      // (Trotzdem laden, aber nicht cachen)
+    } else if (this.loadedGrabflurIDs.has(grabflurId)) {
+      console.log(
+        `[DataManager] ✓ Gräber für Flur ${grabflurId} bereits geladen (Cache).`,
+      );
+      return;
+    }
+
+    // ANPASSEN: extent aus dem Feature holen (statt als Parameter zu übergeben)
+    const geometry = grabflurFeature.getGeometry();
+    if (!geometry) return;
+    const extent = geometry.getExtent();
 
     // 1. Erstelle BBOX-Query
     // WFS 2.0.0 BBOX-Filter erwartet [minx,miny,maxx,maxy,crs]
@@ -183,6 +207,11 @@ export class EditorDataManager {
           addedCount++;
         }
       });
+
+      // HINZUFÜGEN: Nach Erfolg im Cache speichern
+      if (grabflurId !== undefined) {
+        this.loadedGrabflurIDs.add(grabflurId);
+      }
 
       console.log(
         `[DataManager] ${addedCount} neue Gräber zur Source hinzugefügt.`,

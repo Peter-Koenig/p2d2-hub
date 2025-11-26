@@ -17,7 +17,9 @@ const projection = Astro.url.searchParams.get("projection"); // Lokale Projektio
 
 // Validate required parameters
 if (!wp_name || !container_type || !name || !extent || !projection) {
-    throw new Error("Missing required URL parameters (wp_name, container_type, name, extent, projection)");
+    throw new Error(
+        "Missing required URL parameters (wp_name, container_type, name, extent, projection)",
+    );
 }
 
 // Decode feature name for display
@@ -28,7 +30,7 @@ const decodedName = decodeURIComponent(name);
 // da er direkt vom Client (map-state [cite: 100]) gesetzt wird. Wir vertrauen dem Parameter.
 ---
 
-<BaseLayout title={`Feature Editor: ${decodedName}`}>
+<BaseLayout title={`Feature Editor: ${decodedName}`} showFooter={false}>
     <div class="feature-editor-container">
         <FeatureEditorHeader
             title={decodedName}
@@ -42,7 +44,6 @@ const decodedName = decodeURIComponent(name);
                 <div
                     id="feature-editor-map"
                     class="w-full h-full"
-                    
                     data-wp-name={wp_name}
                     data-container-type={container_type}
                     data-name={name}
@@ -53,7 +54,8 @@ const decodedName = decodeURIComponent(name);
 
                 <NavigationControls />
                 <LayerControls />
-                <Toolbar /> </div>
+                <Toolbar />
+            </div>
         </div>
     </div>
 
@@ -65,12 +67,17 @@ const decodedName = decodeURIComponent(name);
 
             if (mapContainer) {
                 const editorApp = new EditorApp(mapContainer);
-                editorApp.init().catch(error => {
-                    console.error("Fehler beim Initialisieren des Editors:", error);
+                editorApp.init().catch((error) => {
+                    console.error(
+                        "Fehler beim Initialisieren des Editors:",
+                        error,
+                    );
                     // Hier könnte man dem Nutzer eine Fehlermeldung anzeigen
                 });
             } else {
-                console.error("Editor-Map-Container nicht gefunden. App kann nicht starten.");
+                console.error(
+                    "Editor-Map-Container nicht gefunden. App kann nicht starten.",
+                );
             }
         });
     </script>

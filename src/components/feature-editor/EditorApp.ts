@@ -212,8 +212,8 @@ export class EditorApp {
         bufferedExtent,
       );
 
-      // 3. DataManager mit dem erweiterten Extent aufrufen
-      await this.dataManager.loadGraeberForExtent(bufferedExtent);
+      // 3. DataManager mit dem Grabflur-Feature aufrufen (für Cache)
+      await this.dataManager.loadGraeberForExtent(grabflurFeature);
 
       console.log(`[EditorApp] Gräber für aktive Grabflur geladen.`);
     } catch (error) {

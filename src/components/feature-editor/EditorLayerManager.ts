@@ -7,6 +7,7 @@ import ImageWMS from "ol/source/ImageWMS";
 import VectorSource from "ol/source/Vector";
 import { Style, Stroke, Fill, Text } from "ol/style";
 import { Feature } from "ol";
+import { Point } from "ol/geom";
 import type { Geometry } from "ol/geom";
 import type { StyleLike } from "ol/style/Style";
 import { MAP_CONFIG } from "@/config/map-config";
@@ -25,11 +26,7 @@ export class EditorLayerManager {
   >;
 
   // NEU: Style-Cache für Performance
-  private styleCache: {
-    nav: Record<string, Style>;
-    active: Record<string, Style>;
-    inactive: Record<string, Style>;
-  } = { nav: {}, active: {}, inactive: {} };
+  private styleCache: Record<string, Style> = {};
 
   // --- Styles ---
   private readonly CEMETERY_BG_STYLE = new Style({
@@ -44,8 +41,8 @@ export class EditorLayerManager {
 
   // NEU: Styling für die 3 Zustände
   private readonly GRAEBER_STYLE_NAV = new Style({
-    stroke: new Stroke({ color: "#1f2937", width: 1 }),
-    fill: new Fill({ color: "rgba(31, 41, 55, 0.2)" }),
+    stroke: new Stroke({ color: "#FB7716", width: 1 }),
+    fill: new Fill({ color: "rgba(251, 119, 22, 0.2)" }), // 20% Opacity von #FB7716
   });
 
   private readonly GRAEBER_STYLE_EDIT_ACTIVE = new Style({
@@ -163,6 +160,8 @@ export class EditorLayerManager {
     const labelLayer = new VectorLayer({
       source: new VectorSource({ features: labelFeatures }),
       zIndex: MAP_CONFIG.Z_INDEX.LABELS,
+      declutter: true, // <-- HINZUFÜGEN
+      visible: false, // <-- HINZUGEFÜGT
     });
     this.addLayer("labels", labelLayer);
 
@@ -173,6 +172,9 @@ export class EditorLayerManager {
       // VERWENDE REAKTIVE STYLE-FUNKTION statt statischem Stil
       style: this.graeberStyleFunction.bind(this) as any,
       zIndex: MAP_CONFIG.Z_INDEX.GRAVES || 25,
+      // HINZUFÜGEN:
+      updateWhileAnimating: false,
+      updateWhileInteracting: false,
     });
     this.addLayer("graeber", graeberLayer);
   }
@@ -182,65 +184,56 @@ export class EditorLayerManager {
    */
   private graeberStyleFunction(feature: Feature<Geometry>): Style {
     const mode = this.state.getEditorMode();
+    const number = String(feature.get("grabnummer") || "?");
 
-    // KORREKTUR: Label aus 'grabnummer' holen
-    const number = String(feature.get("grabnummer") || "?"); // z.B. "39/40/40a"
-
+    // 1. Logik für Aktiv-Status (schnell ermitteln)
+    let isActiveGrabflur = false;
     let baseStyle: Style;
-    let cache: Record<string, Style>;
 
     if (mode === "navigate") {
       baseStyle = this.GRAEBER_STYLE_NAV;
-      cache = this.styleCache.nav;
     } else {
-      // Modus ist 'edit'
       const activeGrabflur = this.state.getActiveGrabflur();
+      const featureGrabflurName = feature.get("grabflur");
 
-      // KORREKTUR: Vergleiche 'grabflur'-Attribut (L12) mit der *extrahierten Nummer* (L10)
-      const featureGrabflurName = feature.get("grabflur"); // z.B. "010"
-
-      let isActiveGrabflur = false;
       if (activeGrabflur) {
-        const activeGrabflurName = activeGrabflur.get("name"); // z.B. "Rheinkassel-Friedhof-010"
+        const activeGrabflurName = activeGrabflur.get("name");
         const activeGrabflurNumber = this.extractGrabflurNumber(
           activeGrabflurName || "",
-        ); // z.B. "010"
-
+        );
         isActiveGrabflur =
           featureGrabflurName &&
           activeGrabflurNumber &&
           featureGrabflurName === activeGrabflurNumber;
       }
-
-      if (isActiveGrabflur) {
-        baseStyle = this.GRAEBER_STYLE_EDIT_ACTIVE; // Rot
-        cache = this.styleCache.active;
-      } else {
-        baseStyle = this.GRAEBER_STYLE_EDIT_INACTIVE; // Grau
-        cache = this.styleCache.inactive;
-      }
+      baseStyle = isActiveGrabflur
+        ? this.GRAEBER_STYLE_EDIT_ACTIVE
+        : this.GRAEBER_STYLE_EDIT_INACTIVE;
     }
 
-    // Style Caching (sehr wichtig für Labels)
-    if (cache[number]) {
-      return cache[number];
+    // 2. Eindeutigen Cache-Key erstellen
+    const cacheKey = `${mode}-${isActiveGrabflur}-${number}`;
+
+    // 3. Cache PRÜFEN (FRÜHZEITIG)
+    if (this.styleCache[cacheKey]) {
+      return this.styleCache[cacheKey];
     }
 
-    // Style neu erstellen
+    // 4. Style neu erstellen (nur wenn nicht im Cache)
     const newStyle = baseStyle.clone();
     newStyle.setText(
       new Text({
-        text: number, // KORREKTUR: 'grabnummer' verwenden
+        text: number,
         font: "bold 12px Inter, sans-serif",
         fill: new Fill({
           color: (baseStyle.getStroke()?.getColor() as string) || "#000000",
         }),
         stroke: new Stroke({ color: "#ffffff", width: 3 }),
-        overflow: true, // Label darf über Polygongrenze ragen
+        overflow: true,
       }),
     );
 
-    cache[number] = newStyle; // Im Cache speichern
+    this.styleCache[cacheKey] = newStyle; // Im Cache speichern
     return newStyle;
   }
 
@@ -253,9 +246,16 @@ export class EditorLayerManager {
         const number = this.extractGrabflurNumber(name || "");
         const geometry = feature.getGeometry() as any; // ol/geom/Polygon | MultiPolygon
 
-        if (geometry && typeof geometry.getInteriorPoint === "function") {
+        if (geometry && typeof geometry.getExtent === "function") {
+          // Schnelle Berechnung des Zentroids über den Extent
+          const extent = geometry.getExtent();
+          const center = [
+            (extent[0] + extent[2]) / 2,
+            (extent[1] + extent[3]) / 2,
+          ];
+
           const labelFeature = new Feature({
-            geometry: geometry.getInteriorPoint(),
+            geometry: new Point(center), // <-- ANPASSEN
             label: number,
           });
           labelFeature.setStyle(
