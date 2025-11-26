@@ -5,6 +5,15 @@ import { defaults } from "ol/control/defaults";
 import FullScreen from "ol/control/FullScreen";
 // KORREKTUR: 'get' importieren
 import { transformExtent, get as getProjection } from "ol/proj";
+
+// --- BUGFIX START ---
+// Explizite Registrierung von proj4, um Caching/HMR-Probleme zu beheben.
+// Diese Importe stellen sicher, dass proj4 VOR getProjection() bekannt ist.
+import proj4 from "proj4";
+import { register } from "ol/proj/proj4";
+register(proj4);
+// --- BUGFIX ENDE ---
+
 import { registerUtm } from "@/utils/crs";
 import { calculateUtmResolutions } from "@/utils/utm-resolutions";
 import { ViewHistoryManager } from "@/utils/view-history-manager";

@@ -50,8 +50,8 @@ interface Props {
 <style>
     .layer-controls {
         position: absolute;
-        top: 1rem;
-        right: 1rem;
+        top: 0.4rem; /* KORREKTUR: Erhöht (z.B. 1rem + 2.5rem für den OL-Button) */
+        right: 1.5 rem;
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
@@ -113,7 +113,7 @@ interface Props {
 
     @media (max-width: 768px) {
         .layer-controls {
-            top: 0.5rem;
+            top: 3rem; /* KORREKTUR: Erhöht (z.B. 0.5rem + 2.5rem) */
             right: 0.5rem;
         }
 

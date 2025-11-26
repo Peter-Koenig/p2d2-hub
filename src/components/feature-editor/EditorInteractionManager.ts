@@ -92,6 +92,19 @@ export class EditorInteractionManager {
     this.map.on("pointermove", (evt) => {
       if (evt.dragging) return;
 
+      // --- KORREKTUR START ---
+      // Popup nur im Navigationsmodus anzeigen.
+      if (this.state.getEditorMode() !== "navigate") {
+        // Sicherstellen, dass ein eventuell offenes Popup geschlossen wird
+        if (this.hoverFeature) {
+          this.hoverFeature.setStyle(undefined);
+          this.hoverFeature = null;
+        }
+        this.hoverPopup.setPosition(undefined);
+        return; // Bearbeitung hier abbrechen
+      }
+      // --- KORREKTUR ENDE ---
+
       const grabflurLayer = this.layerManager.getLayer("grabflur");
       let featureAtPixel: Feature | null = null;
 
@@ -407,6 +420,9 @@ export class EditorInteractionManager {
     // NEU: Caches leeren
     this.originalGeometries.clear();
     this.clearSelectionStyleCache();
+
+    // KORREKTUR: Setzt den Klick-Status zurück.
+    this.lastClickedGrabflur = null;
   }
 
   // NEU: Hilfsfunktion für Bug 2

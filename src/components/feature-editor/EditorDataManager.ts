@@ -4,7 +4,7 @@ import GeoJSON from "ol/format/GeoJSON";
 import { WFSAuthClient } from "@/utils/wfs-auth";
 import type { EditorState } from "./EditorState";
 import type { EditorLayerManager } from "./EditorLayerManager";
-import { transformExtent } from "ol/proj"; // <-- NEU IMPORTIEREN
+import { transformExtent } from "ol/proj";
 
 /**
  * Verwaltet das Laden von Features (WFS) und das Speichern (uMap/OSM-Export).
@@ -193,35 +193,50 @@ export class EditorDataManager {
   }
 
   /**
-   * TODO: Implementiere Speicher-Logik (z.B. uMap/OSM-Export)
-   * Baut GeoJSON aus den modifizierten Features und übergibt sie.
+   * Speichert geänderte Features für uMap als öffentliche GeoJSON-Datei.
    */
   async saveChanges(featuresToUpdate: Feature<Geometry>[]) {
-    console.log("Speichern von Änderungen...");
+    console.log("Speichern von Änderungen für uMap (Pre-Alpha)...");
 
-    // 1. Transformiere Geometrien zurück nach EPSG:4326
     const format = new GeoJSON();
 
-    if (featuresToUpdate.length > 0) {
-      const updatedGeoJSON = format.writeFeatures(featuresToUpdate, {
-        dataProjection: "EPSG:4326",
-        featureProjection: this.state.projection,
-      });
-
-      // 2. TODO: Logik für uMap-API oder OSM-Export implementieren
-      // (WFS-T wird hier NICHT verwendet)
-
-      console.log("Features zum Aktualisieren:", updatedGeoJSON);
-
-      // 3. Demo: GeoJSON in Datei speichern oder an API senden
-      // const blob = new Blob([updatedGeoJSON], { type: 'application/json' });
-      // const url = URL.createObjectURL(blob);
-      // const a = document.createElement('a');
-      // a.href = url;
-      // a.download = 'modified-features.geojson';
-      // a.click();
+    if (featuresToUpdate.length === 0) {
+      alert("Es gibt keine Änderungen zum Speichern.");
+      return;
     }
 
-    alert("Speichern-Funktion ist noch nicht implementiert (Ziel: uMap/OSM).");
+    // 1. Transformiere Geometrien zurück nach EPSG:4326 (WGS84)
+    // Diese Funktion exportiert standardmäßig ALLE Attribute (Properties).
+    const geoJsonString = format.writeFeatures(featuresToUpdate, {
+      dataProjection: "EPSG:4326",
+      featureProjection: this.state.projection,
+    });
+
+    try {
+      // 2. Sende den GeoJSON-String an den neuen API-Endpunkt
+      const response = await fetch("/api/save-for-umap", {
+        method: "POST",
+        headers: {
+          // KORREKTUR 2: Korrekter Header für einen GeoJSON-String
+          "Content-Type": "application/geo+json",
+        },
+        body: geoJsonString,
+      });
+
+      if (!response.ok) {
+        const errorResult = await response.json();
+        throw new Error(errorResult.error || "Server-Antwort war nicht OK");
+      }
+
+      const result = await response.json();
+      console.log("Speichern erfolgreich:", result.message);
+
+      alert(
+        `Speichern (Pre-Alpha) erfolgreich!\n\nDie Daten sind jetzt unter ${result.path} verfügbar und werden von uMap in Kürze geladen.`,
+      );
+    } catch (error) {
+      console.error("Fehler beim Senden der Daten an den API-Endpunkt:", error);
+      alert(`Fehler beim Speichern der Daten: ${(error as Error).message}`);
+    }
   }
 }
