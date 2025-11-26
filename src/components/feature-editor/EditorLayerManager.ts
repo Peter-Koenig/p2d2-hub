@@ -9,6 +9,7 @@ import { Style, Stroke, Fill, Text } from "ol/style";
 import { Feature } from "ol";
 import type { Geometry } from "ol/geom";
 import { MAP_CONFIG } from "@/config/map-config";
+import type { EditorState } from "./EditorState";
 
 /**
  * Verwaltet alle Layer (Basis-Layer und Feature-Layer) im Editor.
@@ -16,6 +17,7 @@ import { MAP_CONFIG } from "@/config/map-config";
  */
 export class EditorLayerManager {
   private map: OLMap;
+  private state: EditorState;
   private layers: Map<
     string,
     TileLayer<any> | VectorLayer<any> | ImageLayer<any>
@@ -32,8 +34,25 @@ export class EditorLayerManager {
     fill: new Fill({ color: "rgba(234, 88, 12, 0.2)" }),
   });
 
-  constructor(map: OLMap) {
+  // NEU: Styling für die 3 Zustände
+  private readonly GRAEBER_STYLE_NAV = new Style({
+    stroke: new Stroke({ color: "#1f2937", width: 1 }),
+    fill: new Fill({ color: "rgba(31, 41, 55, 0.2)" }),
+  });
+
+  private readonly GRAEBER_STYLE_EDIT_ACTIVE = new Style({
+    stroke: new Stroke({ color: "#dc2626", width: 2 }),
+    fill: new Fill({ color: "rgba(220, 38, 38, 0.3)" }),
+  });
+
+  private readonly GRAEBER_STYLE_EDIT_INACTIVE = new Style({
+    stroke: new Stroke({ color: "#9ca3af", width: 1 }),
+    fill: new Fill({ color: "rgba(156, 163, 175, 0.2)" }),
+  });
+
+  constructor(map: OLMap, state: EditorState) {
     this.map = map;
+    this.state = state;
     this.layers = new Map();
   }
 
@@ -108,11 +127,12 @@ export class EditorLayerManager {
   }
 
   /**
-   * Erstellt die Feature-Layer (Hintergrund, Grabflure, Labels)
+   * Erstellt die Feature-Layer (Hintergrund, Grabflure, Labels, Gräber)
    */
   createFeatureLayers(
     parentFeature: Feature<Geometry>,
     childFeatures: Feature<Geometry>[],
+    graeberFeatures: Feature<Geometry>[],
   ) {
     // 1. Friedhof-Hintergrund-Layer
     const cemeteryBgLayer = new VectorLayer({
@@ -138,6 +158,47 @@ export class EditorLayerManager {
       zIndex: MAP_CONFIG.Z_INDEX.LABELS,
     });
     this.addLayer("labels", labelLayer);
+
+    // 4. Gräber-Layer (ANPASSEN)
+    const graeberSource = new VectorSource({ features: graeberFeatures });
+    const graeberLayer = new VectorLayer({
+      source: graeberSource,
+      // VERWENDE REAKTIVE STYLE-FUNKTION statt statischem Stil
+      style: this.graeberStyleFunction.bind(this),
+      zIndex: MAP_CONFIG.Z_INDEX.GRAVES || 25,
+    });
+    this.addLayer("graeber", graeberLayer);
+  }
+
+  /**
+   * Die reaktive Style-Funktion für Gräber
+   */
+  private graeberStyleFunction(feature: Feature<Geometry>): Style {
+    const mode = this.state.getEditorMode();
+
+    if (mode === "navigate") {
+      return this.GRAEBER_STYLE_NAV; // Alle Schwarz
+    }
+
+    // Modus ist 'edit'
+    const activeGrabflur = this.state.getActiveGrabflur();
+    if (!activeGrabflur) {
+      return this.GRAEBER_STYLE_EDIT_INACTIVE; // Grau (Sicherheits-Fallback)
+    }
+
+    const activeGrabflurName = activeGrabflur.get("name");
+    const featureName = feature.get("name");
+
+    // Dieselbe Zuordnungslogik wie im InteractionManager
+    if (
+      featureName &&
+      activeGrabflurName &&
+      featureName.startsWith(activeGrabflurName)
+    ) {
+      return this.GRAEBER_STYLE_EDIT_ACTIVE; // Rot (Editierbar)
+    } else {
+      return this.GRAEBER_STYLE_EDIT_INACTIVE; // Grau (Nicht editierbar)
+    }
   }
 
   private createLabelFeatures(
@@ -196,6 +257,15 @@ export class EditorLayerManager {
   public getGrabflurSource(): VectorSource<Geometry> | undefined {
     const layer = this.getLayer("grabflur") as VectorLayer<any>;
     return layer?.getSource();
+  }
+
+  public getGraeberSource(): VectorSource<Geometry> | undefined {
+    const layer = this.getLayer("graeber") as VectorLayer<any>;
+    return layer?.getSource();
+  }
+
+  public getGraeberLayer(): VectorLayer<any> | undefined {
+    return this.getLayer("graeber") as VectorLayer<any>;
   }
 
   public setLayerVisible(name: string, visible: boolean) {

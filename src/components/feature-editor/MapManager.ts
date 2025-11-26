@@ -60,9 +60,6 @@ export class MapManager {
 
     // 5. View History Manager initialisieren
     this.viewHistory = new ViewHistoryManager(this.view);
-
-    // Globale Referenz für LayerControls (könnte man per Event-Bus lösen)
-    (window as any).featureEditorMap = this.map;
   }
 
   public getMap(): OLMap {

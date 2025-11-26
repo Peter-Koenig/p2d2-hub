@@ -3,50 +3,24 @@ import IconButton from "./IconButton.astro";
 ---
 
 <div class="toolbar-controls">
-    <IconButton
-        id="tool-select"
-        icon="👆"
-        title="Auswählen"
-        tooltip="Objekte auswählen (Klick) oder zoomen (Klick auf Grabflur)"
-        class="tool-btn"
-        data-tool="select"
-    />
-    <IconButton
-        id="tool-move"
-        icon="↔️"
-        title="Verschieben"
-        tooltip="Ausgewählte Objekte verschieben"
-        class="tool-btn"
-        data-tool="move"
-    />
-    <IconButton
-        id="tool-draw"
-        icon="✏️"
-        title="Zeichnen"
-        tooltip="Neues Polygon zeichnen"
-        class="tool-btn"
-        data-tool="draw"
-    />
-    <IconButton
-        id="tool-delete"
-        icon="🗑️"
-        title="Löschen"
-        tooltip="Ausgewähltes Objekt löschen"
-        class="tool-btn"
-        data-tool="delete"
-        disabled={true}
-    />
-    
-    <div class="toolbar-divider"></div>
-
-    <IconButton
-        id="tool-save"
-        icon="💾"
-        title="Speichern"
-        tooltip="Änderungen speichern (WFS-T)"
-        class="tool-btn save-btn"
-        data-tool="save"
-    />
+    <div id="edit-tools-container" class="edit-tools-hidden">
+        <IconButton
+            id="tool-save"
+            icon="💾"
+            title="Speichern"
+            tooltip="Änderungen für Export vormerken"
+            class="tool-btn save-btn"
+            data-tool="save"
+        />
+        <IconButton
+            id="tool-cancel"
+            icon="❌"
+            title="Abbrechen"
+            tooltip="Änderungen verwerfen und Grabflur schließen"
+            class="tool-btn cancel-btn"
+            data-tool="cancel"
+        />
+    </div>
 </div>
 
 <style>
@@ -65,16 +39,40 @@ import IconButton from "./IconButton.astro";
         backdrop-filter: blur(4px);
     }
 
+    .edit-tools-hidden {
+        display: none;
+    }
+
+    .edit-tools-visible {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .tool-btn {
+        width: 40px;
+        height: 40px;
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        font-size: 1.25rem;
+    }
+
+    .tool-btn:hover:not(:disabled) {
+        background: #f9fafb;
+        border-color: #9ca3af;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
     .tool-btn.highlighted {
         background: #3b82f6;
         border-color: #2563eb;
         color: white;
-    }
-
-    .toolbar-divider {
-        width: 1px;
-        background: #e5e7eb;
-        margin: 0 0.25rem;
     }
 
     .save-btn {
@@ -82,7 +80,31 @@ import IconButton from "./IconButton.astro";
         color: white;
         border-color: #15803d;
     }
+
     .save-btn:hover:not(:disabled) {
         background: #15803d;
+    }
+
+    .cancel-btn {
+        background: #dc2626;
+        color: white;
+        border-color: #b91c1c;
+    }
+
+    .cancel-btn:hover:not(:disabled) {
+        background: #b91c1c;
+    }
+
+    @media (max-width: 768px) {
+        .toolbar-controls {
+            bottom: 0.5rem;
+            padding: 0.375rem;
+        }
+
+        .tool-btn {
+            width: 36px;
+            height: 36px;
+            font-size: 1.125rem;
+        }
     }
 </style>

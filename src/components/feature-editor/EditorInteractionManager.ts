@@ -6,7 +6,6 @@ import { Style, Stroke, Fill } from "ol/style";
 import Select from "ol/interaction/Select";
 import Modify from "ol/interaction/Modify";
 import Translate from "ol/interaction/Translate";
-import Draw from "ol/interaction/Draw";
 import Snap from "ol/interaction/Snap";
 import { click } from "ol/events/condition";
 import type { EditorState } from "./EditorState";
@@ -31,7 +30,6 @@ export class EditorInteractionManager {
   private select: Select | null = null;
   private modify: Modify | null = null;
   private translate: Translate | null = null;
-  private draw: Draw | null = null;
   private snap: Snap | null = null;
 
   // --- Styles ---
@@ -52,7 +50,7 @@ export class EditorInteractionManager {
     this.viewHistory = viewHistory;
 
     this.initHoverPopup();
-    this.initClickZoom();
+    this.initPlotSelection();
 
     // Bearbeitungs-Werkzeuge werden später initialisiert, nachdem Layer geladen sind
   }
@@ -120,12 +118,11 @@ export class EditorInteractionManager {
   }
 
   /**
-   * Initialisiert das Klick-Verhalten zum Zoomen auf Grabflure.
+   * Initialisiert das Klick-Verhalten zum Auswählen von Grabfluren.
    */
-  private initClickZoom() {
+  private initPlotSelection() {
     this.map.on("click", (evt) => {
-      // Nur ausführen, wenn 'select'-Werkzeug aktiv ist
-      if (this.state.getTool() !== "select") return;
+      if (this.state.getEditorMode() !== "navigate") return;
 
       const grabflurLayer = this.layerManager.getLayer("grabflur");
       let clickedFeature: Feature | null = null;
@@ -138,7 +135,10 @@ export class EditorInteractionManager {
       });
 
       if (clickedFeature) {
-        this.state.setSelectedFeature(clickedFeature);
+        // Setzt State, EditorApp (Orchestrator) übernimmt
+        this.state.setActiveGrabflur(clickedFeature);
+        this.state.setEditorMode("edit");
+        // Zoom zum Feature
         this.zoomToFeature(clickedFeature);
       }
     });
@@ -169,22 +169,33 @@ export class EditorInteractionManager {
   }
 
   /**
-   * Initialisiert die Bearbeitungs-Interaktionen (Select, Modify, Translate, Draw).
+   * Initialisiert die Bearbeitungs-Interaktionen (Select, Modify, Translate, Snap).
    */
   private initModifyInteractions() {
-    const grabflurSource = this.layerManager.getGrabflurSource();
-    if (!grabflurSource) {
+    const graeberSource = this.layerManager.getGraeberSource();
+    if (!graeberSource) {
       console.error(
-        "Grabflur-Source nicht gefunden. Bearbeitungs-Interaktionen können nicht initialisiert werden.",
+        "Gräber-Source nicht gefunden. Bearbeitungs-Interaktionen können nicht initialisiert werden.",
       );
       return;
     }
 
     // Select (wird auch für Modify/Translate benötigt)
     this.select = new Select({
-      condition: click,
-      layers: [this.layerManager.getLayer("grabflur")!],
-      style: this.HOVER_STYLE, // Nutze Hover-Stil für Selektion
+      layers: [this.layerManager.getGraeberLayer()!],
+      style: this.HOVER_STYLE,
+
+      // NEU: Filtert die Auswahl auf die aktive Grabflur
+      filter: (feature, layer) => {
+        const activeGrabflur = this.state.getActiveGrabflur();
+        if (!activeGrabflur) return false;
+
+        const activeGrabflurName = activeGrabflur.get("name");
+        const featureName = feature.get("name");
+
+        // TODO: Dieselbe ANNAHME wie im LayerManager
+        return featureName && featureName.startsWith(activeGrabflurName);
+      },
     });
 
     this.select.on("select", (e) => {
@@ -202,15 +213,9 @@ export class EditorInteractionManager {
       features: this.select.getFeatures(),
     });
 
-    // Draw (Neue Features zeichnen)
-    this.draw = new Draw({
-      source: grabflurSource,
-      type: "Polygon",
-    });
-
     // Snap (An anderen Features einrasten)
     this.snap = new Snap({
-      source: grabflurSource,
+      source: graeberSource,
     });
   }
 
@@ -220,43 +225,27 @@ export class EditorInteractionManager {
   public initializeModifyTools() {
     this.initModifyInteractions();
 
-    // Standard-Werkzeug erst jetzt aktivieren
     if (this.select) {
-      this.setTool("select");
+      this.map.addInteraction(this.select);
+      this.map.addInteraction(this.modify!);
+      this.map.addInteraction(this.translate!);
+      this.map.addInteraction(this.snap!);
     }
   }
 
   /**
-   * Aktiviert das ausgewählte Werkzeug und deaktiviert die anderen.
+   * Deaktiviert alle Bearbeitungs-Interaktionen
    */
-  public setTool(toolName: "select" | "move" | "draw") {
-    this.state.setTool(toolName);
+  public deactivateModifyTools() {
+    if (this.select) this.map.removeInteraction(this.select);
+    if (this.modify) this.map.removeInteraction(this.modify);
+    if (this.translate) this.map.removeInteraction(this.translate);
+    if (this.snap) this.map.removeInteraction(this.snap);
 
-    // Alle Interaktionen entfernen
-    this.map.removeInteraction(this.select!);
-    this.map.removeInteraction(this.modify!);
-    this.map.removeInteraction(this.translate!);
-    this.map.removeInteraction(this.draw!);
-    this.map.removeInteraction(this.snap!);
-
-    // Gewünschte Interaktionen hinzufügen
-    switch (toolName) {
-      case "select":
-        this.map.addInteraction(this.select!);
-        break;
-
-      case "move":
-        this.map.addInteraction(this.select!);
-        this.map.addInteraction(this.translate!);
-        break;
-
-      case "draw":
-        this.map.addInteraction(this.draw!);
-        this.map.addInteraction(this.snap!);
-        break;
-
-      // TODO: 'modify' (Punkte bearbeiten)
-    }
+    this.select = null;
+    this.modify = null;
+    this.translate = null;
+    this.snap = null;
   }
 
   private extractGrabflurNumber(name: string): string {

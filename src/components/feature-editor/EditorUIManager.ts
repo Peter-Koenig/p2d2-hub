@@ -4,6 +4,8 @@ import type { EditorInteractionManager } from "./EditorInteractionManager";
 import { LayerInteractionManager } from "@/utils/layer-interaction";
 import type TileLayer from "ol/layer/Tile";
 import type ImageLayer from "ol/layer/Image";
+import type { EditorState } from "./EditorState";
+import type { EditorDataManager } from "./EditorDataManager";
 
 /**
  * Verbindet die Astro-UI-Komponenten (Buttons) mit der Editor-Logik.
@@ -14,16 +16,22 @@ export class EditorUIManager {
   private layerManager: EditorLayerManager;
   private interactionManager: EditorInteractionManager;
   private layerInteractionManager: LayerInteractionManager;
+  private state: EditorState;
+  private dataManager: EditorDataManager;
 
   constructor(
     viewHistory: ViewHistoryManager,
     layerManager: EditorLayerManager,
     interactionManager: EditorInteractionManager,
+    state: EditorState,
+    dataManager: EditorDataManager,
   ) {
     this.viewHistory = viewHistory;
     this.layerManager = layerManager;
     this.interactionManager = interactionManager;
     this.layerInteractionManager = new LayerInteractionManager();
+    this.state = state;
+    this.dataManager = dataManager;
   }
 
   /**
@@ -135,35 +143,57 @@ export class EditorUIManager {
     }
   }
 
+  /**
+   * Bindet die Save/Cancel Toolbar-Logik
+   */
   private bindToolbarControls() {
-    const toolButtons = document.querySelectorAll("[data-tool]");
+    const editToolsContainer = document.getElementById(
+      "edit-tools-container",
+    ) as HTMLDivElement | null;
+    const saveBtn = document.getElementById(
+      "tool-save",
+    ) as HTMLButtonElement | null;
+    const cancelBtn = document.getElementById(
+      "tool-cancel",
+    ) as HTMLButtonElement | null;
 
-    toolButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const toolName = (button as HTMLElement).dataset.tool;
+    if (!editToolsContainer || !saveBtn || !cancelBtn) {
+      console.error("Edit-Toolbar UI-Elemente nicht gefunden.");
+      return;
+    }
 
-        // Alle Buttons de-highlighten
-        toolButtons.forEach((btn) => btn.classList.remove("highlighted"));
-        // Aktuellen Button highlighten
-        button.classList.add("highlighted");
+    // 1. Listener für Speichern
+    saveBtn.addEventListener("click", () => {
+      // TODO: Logik zum Sammeln der geänderten Features
+      // (z.B. aus einer 'dirty' Liste, die 'Modify' pflegt)
+      const featuresToUpdate: any[] = [];
 
-        if (
-          toolName === "select" ||
-          toolName === "move" ||
-          toolName === "draw"
-        ) {
-          this.interactionManager.setTool(toolName);
-        } else if (toolName === "save") {
-          // TODO: Save-Logik im DataManager aufrufen
-          alert("Speichern (TODO: uMap/OSM-Export)...");
-          // this.dataManager.saveChanges(...)
-        }
-      });
+      this.dataManager.saveChanges(featuresToUpdate);
+      this.state.setEditorMode("navigate");
     });
 
-    // 'select' standardmäßig aktivieren
-    document
-      .querySelector("[data-tool='select']")
-      ?.classList.add("highlighted");
+    // 2. Listener für Abbrechen
+    cancelBtn.addEventListener("click", () => {
+      if (
+        confirm(
+          "Möchten Sie die Bearbeitung wirklich abbrechen? Nicht gespeicherte Änderungen gehen verloren.",
+        )
+      ) {
+        // TODO: Logik zum Zurücksetzen von Änderungen (z.B. Source neu laden)
+        alert("Änderungen verworfen.");
+        this.state.setEditorMode("navigate");
+      }
+    });
+
+    // 3. State-Subscription: Toolbar ein/ausblenden
+    this.state.subscribe((newState) => {
+      if (newState.editorMode === "edit") {
+        editToolsContainer.classList.remove("edit-tools-hidden");
+        editToolsContainer.classList.add("edit-tools-visible");
+      } else {
+        editToolsContainer.classList.add("edit-tools-hidden");
+        editToolsContainer.classList.remove("edit-tools-visible");
+      }
+    });
   }
 }
