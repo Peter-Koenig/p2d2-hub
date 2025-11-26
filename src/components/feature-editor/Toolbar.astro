@@ -1,0 +1,153 @@
+---
+import IconButton from "./IconButton.astro";
+---
+
+<div class="toolbar-controls">
+    <div id="edit-tools-container" class="edit-tools-hidden">
+        <IconButton
+            id="tool-select"
+            icon="👆"
+            title="Auswählen"
+            tooltip="Gräber auswählen"
+            class="tool-btn"
+            data-tool="select"
+        />
+        <IconButton
+            id="tool-move"
+            icon="↔️"
+            title="Verschieben"
+            tooltip="Ausgewählte Gräber verschieben"
+            class="tool-btn"
+            data-tool="move"
+        />
+
+        <IconButton
+            id="tool-rotate"
+            icon="↻"
+            title="Drehen"
+            tooltip="Ausgewähltes Objekt rotieren"
+            class="tool-btn"
+            data-tool="rotate"
+        />
+        <IconButton
+            id="tool-modify"
+            icon="✍️"
+            title="Punkte bearbeiten"
+            tooltip="Punkte eines Polygons bearbeiten"
+            class="tool-btn"
+            data-tool="modify"
+        />
+
+        <div class="toolbar-divider"></div>
+
+        <IconButton
+            id="tool-save"
+            icon="💾"
+            title="Speichern"
+            tooltip="Änderungen für Export vormerken"
+            class="tool-btn save-btn"
+            data-tool="save"
+        />
+        <IconButton
+            id="tool-cancel"
+            icon="❌"
+            title="Abbrechen"
+            tooltip="Änderungen verwerfen und Grabflur schließen"
+            class="tool-btn cancel-btn"
+            data-tool="cancel"
+        />
+    </div>
+</div>
+
+<style>
+    .toolbar-controls {
+        position: absolute;
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 0.5rem;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        backdrop-filter: blur(4px);
+    }
+
+    .edit-tools-hidden {
+        display: none;
+    }
+
+    .edit-tools-visible {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .tool-btn {
+        width: 40px;
+        height: 40px;
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        font-size: 1.25rem;
+    }
+
+    .tool-btn:hover:not(:disabled) {
+        background: #f9fafb;
+        border-color: #9ca3af;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .tool-btn.highlighted {
+        background: #3b82f6;
+        border-color: #2563eb;
+        color: white;
+    }
+
+    /* NEU: Styling für den Divider */
+    .toolbar-divider {
+        width: 1px;
+        background: #e5e7eb;
+        margin: 0 0.25rem;
+    }
+
+    .save-btn {
+        background: #16a34a;
+        color: white;
+        border-color: #15803d;
+    }
+
+    .save-btn:hover:not(:disabled) {
+        background: #15803d;
+    }
+
+    .cancel-btn {
+        background: #dc2626;
+        color: white;
+        border-color: #b91c1c;
+    }
+
+    .cancel-btn:hover:not(:disabled) {
+        background: #b91c1c;
+    }
+
+    @media (max-width: 768px) {
+        .toolbar-controls {
+            bottom: 0.5rem;
+            padding: 0.375rem;
+        }
+
+        .tool-btn {
+            width: 36px;
+            height: 36px;
+            font-size: 1.125rem;
+        }
+    }
+</style>
