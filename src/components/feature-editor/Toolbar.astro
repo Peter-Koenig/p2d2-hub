@@ -5,6 +5,33 @@ import IconButton from "./IconButton.astro";
 <div class="toolbar-controls">
     <div id="edit-tools-container" class="edit-tools-hidden">
         <IconButton
+            id="tool-select"
+            icon="👆"
+            title="Auswählen"
+            tooltip="Gräber auswählen"
+            class="tool-btn"
+            data-tool="select"
+        />
+        <IconButton
+            id="tool-move"
+            icon="↔️"
+            title="Verschieben"
+            tooltip="Ausgewählte Gräber verschieben"
+            class="tool-btn"
+            data-tool="move"
+        />
+        <IconButton
+            id="tool-modify"
+            icon="✍️"
+            title="Punkte bearbeiten"
+            tooltip="Punkte eines Polygons bearbeiten"
+            class="tool-btn"
+            data-tool="modify"
+        />
+
+        <div class="toolbar-divider"></div>
+
+        <IconButton
             id="tool-save"
             icon="💾"
             title="Speichern"
@@ -73,6 +100,13 @@ import IconButton from "./IconButton.astro";
         background: #3b82f6;
         border-color: #2563eb;
         color: white;
+    }
+
+    /* NEU: Styling für den Divider */
+    .toolbar-divider {
+        width: 1px;
+        background: #e5e7eb;
+        margin: 0 0.25rem;
     }
 
     .save-btn {

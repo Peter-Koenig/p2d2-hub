@@ -22,7 +22,7 @@ export class EditorInteractionManager {
   private layerManager: EditorLayerManager;
   private viewHistory: ViewHistoryManager;
 
-  private hoverPopup: Overlay;
+  private hoverPopup!: Overlay;
   private hoverFeature: Feature | null = null;
   private hoverTimeout: number | null = null;
 
@@ -101,7 +101,7 @@ export class EditorInteractionManager {
         this.hoverFeature = featureAtPixel;
 
         if (featureAtPixel) {
-          featureAtPixel.setStyle(this.HOVER_STYLE);
+          (featureAtPixel as Feature<Geometry>).setStyle(this.HOVER_STYLE);
 
           this.hoverTimeout = window.setTimeout(() => {
             const name = featureAtPixel!.get("name") || "Unbenannt";
@@ -185,16 +185,20 @@ export class EditorInteractionManager {
       layers: [this.layerManager.getGraeberLayer()!],
       style: this.HOVER_STYLE,
 
-      // NEU: Filtert die Auswahl auf die aktive Grabflur
+      // KORREKTUR: Filtert die Auswahl auf die aktive Grabflur
       filter: (feature, layer) => {
         const activeGrabflur = this.state.getActiveGrabflur();
         if (!activeGrabflur) return false;
 
+        // KORREKTUR: Vergleiche 'grabflur'-Attribut des Grabes mit 'name' der Grabflur
         const activeGrabflurName = activeGrabflur.get("name");
-        const featureName = feature.get("name");
+        const featureGrabflurName = feature.get("grabflur");
 
-        // TODO: Dieselbe ANNAHME wie im LayerManager
-        return featureName && featureName.startsWith(activeGrabflurName);
+        return (
+          featureGrabflurName &&
+          activeGrabflurName &&
+          featureGrabflurName === activeGrabflurName
+        );
       },
     });
 
@@ -215,7 +219,7 @@ export class EditorInteractionManager {
 
     // Snap (An anderen Features einrasten)
     this.snap = new Snap({
-      source: graeberSource,
+      source: graeberSource as any,
     });
   }
 
@@ -252,5 +256,33 @@ export class EditorInteractionManager {
     if (!name) return "?";
     const match = name.match(/-(\d+)$/);
     return match ? match[1] : name;
+  }
+
+  // SICHERSTELLEN, DASS setTool EXISTIERT
+  public setTool(toolName: "select" | "move" | "modify") {
+    if (this.state.getEditorMode() !== "edit") return;
+    this.state.setTool(toolName);
+
+    // Interaktionen entfernen
+    if (this.select) this.map.removeInteraction(this.select);
+    if (this.modify) this.map.removeInteraction(this.modify);
+    if (this.translate) this.map.removeInteraction(this.translate);
+    if (this.snap) this.map.removeInteraction(this.snap);
+
+    // Gewünschte Interaktionen hinzufügen
+    switch (toolName) {
+      case "select":
+        if (this.select) this.map.addInteraction(this.select);
+        break;
+      case "move":
+        if (this.select) this.map.addInteraction(this.select);
+        if (this.translate) this.map.addInteraction(this.translate);
+        break;
+      case "modify":
+        if (this.select) this.map.addInteraction(this.select);
+        if (this.modify) this.map.addInteraction(this.modify);
+        if (this.snap) this.map.addInteraction(this.snap);
+        break;
+    }
   }
 }

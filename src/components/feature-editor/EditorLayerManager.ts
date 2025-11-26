@@ -8,6 +8,7 @@ import VectorSource from "ol/source/Vector";
 import { Style, Stroke, Fill, Text } from "ol/style";
 import { Feature } from "ol";
 import type { Geometry } from "ol/geom";
+import type { StyleLike } from "ol/style/Style";
 import { MAP_CONFIG } from "@/config/map-config";
 import type { EditorState } from "./EditorState";
 
@@ -22,6 +23,13 @@ export class EditorLayerManager {
     string,
     TileLayer<any> | VectorLayer<any> | ImageLayer<any>
   >;
+
+  // NEU: Style-Cache für Performance
+  private styleCache: {
+    nav: Record<string, Style>;
+    active: Record<string, Style>;
+    inactive: Record<string, Style>;
+  } = { nav: {}, active: {}, inactive: {} };
 
   // --- Styles ---
   private readonly CEMETERY_BG_STYLE = new Style({
@@ -118,7 +126,7 @@ export class EditorLayerManager {
     const friedhofsplanLayer = new ImageLayer({
       source: friedhofsplanSource,
       extent: [355079.917, 5656115.018, 355310.314, 5656324.347],
-      zIndex: MAP_CONFIG.Z_INDEX.FRIEDHOFS_PLAN || 10,
+      zIndex: MAP_CONFIG.Z_INDEX.GRAVES || 10,
       opacity: 0.7,
       visible: true,
     });
@@ -164,7 +172,7 @@ export class EditorLayerManager {
     const graeberLayer = new VectorLayer({
       source: graeberSource,
       // VERWENDE REAKTIVE STYLE-FUNKTION statt statischem Stil
-      style: this.graeberStyleFunction.bind(this),
+      style: this.graeberStyleFunction.bind(this) as any,
       zIndex: MAP_CONFIG.Z_INDEX.GRAVES || 25,
     });
     this.addLayer("graeber", graeberLayer);
@@ -176,29 +184,57 @@ export class EditorLayerManager {
   private graeberStyleFunction(feature: Feature<Geometry>): Style {
     const mode = this.state.getEditorMode();
 
+    // KORREKTUR: Label aus 'grabnummer' holen
+    const number = String(feature.get("grabnummer") || "?"); // z.B. "39/40/40a"
+
+    let baseStyle: Style;
+    let cache: Record<string, Style>;
+
     if (mode === "navigate") {
-      return this.GRAEBER_STYLE_NAV; // Alle Schwarz
-    }
-
-    // Modus ist 'edit'
-    const activeGrabflur = this.state.getActiveGrabflur();
-    if (!activeGrabflur) {
-      return this.GRAEBER_STYLE_EDIT_INACTIVE; // Grau (Sicherheits-Fallback)
-    }
-
-    const activeGrabflurName = activeGrabflur.get("name");
-    const featureName = feature.get("name");
-
-    // Dieselbe Zuordnungslogik wie im InteractionManager
-    if (
-      featureName &&
-      activeGrabflurName &&
-      featureName.startsWith(activeGrabflurName)
-    ) {
-      return this.GRAEBER_STYLE_EDIT_ACTIVE; // Rot (Editierbar)
+      baseStyle = this.GRAEBER_STYLE_NAV;
+      cache = this.styleCache.nav;
     } else {
-      return this.GRAEBER_STYLE_EDIT_INACTIVE; // Grau (Nicht editierbar)
+      // Modus ist 'edit'
+      const activeGrabflur = this.state.getActiveGrabflur();
+
+      // KORREKTUR: Vergleiche 'grabflur'-Attribut des Grabes mit 'name'-Attribut der Grabflur
+      const featureGrabflurName = feature.get("grabflur");
+      const activeGrabflurName = activeGrabflur?.get("name");
+
+      if (
+        activeGrabflurName &&
+        featureGrabflurName &&
+        featureGrabflurName === activeGrabflurName
+      ) {
+        baseStyle = this.GRAEBER_STYLE_EDIT_ACTIVE; // Rot
+        cache = this.styleCache.active;
+      } else {
+        baseStyle = this.GRAEBER_STYLE_EDIT_INACTIVE; // Grau
+        cache = this.styleCache.inactive;
+      }
     }
+
+    // Style Caching (sehr wichtig für Labels)
+    if (cache[number]) {
+      return cache[number];
+    }
+
+    // Style neu erstellen
+    const newStyle = baseStyle.clone();
+    newStyle.setText(
+      new Text({
+        text: number, // KORREKTUR: 'grabnummer' verwenden
+        font: "bold 12px Inter, sans-serif",
+        fill: new Fill({
+          color: (baseStyle.getStroke()?.getColor() as string) || "#000000",
+        }),
+        stroke: new Stroke({ color: "#ffffff", width: 3 }),
+        overflow: true, // Label darf über Polygongrenze ragen
+      }),
+    );
+
+    cache[number] = newStyle; // Im Cache speichern
+    return newStyle;
   }
 
   private createLabelFeatures(
@@ -207,7 +243,7 @@ export class EditorLayerManager {
     return grabflurFeatures
       .map((feature) => {
         const name = feature.get("name") || "Unbenannt";
-        const number = this.extractGrabflurNumber(name);
+        const number = this.extractGrabflurNumber(name || "");
         const geometry = feature.getGeometry() as any; // ol/geom/Polygon | MultiPolygon
 
         if (geometry && typeof geometry.getInteriorPoint === "function") {
@@ -254,12 +290,12 @@ export class EditorLayerManager {
     return this.layers.get(name);
   }
 
-  public getGrabflurSource(): VectorSource<Geometry> | undefined {
+  public getGrabflurSource(): VectorSource<any> | undefined {
     const layer = this.getLayer("grabflur") as VectorLayer<any>;
     return layer?.getSource();
   }
 
-  public getGraeberSource(): VectorSource<Geometry> | undefined {
+  public getGraeberSource(): VectorSource<any> | undefined {
     const layer = this.getLayer("graeber") as VectorLayer<any>;
     return layer?.getSource();
   }

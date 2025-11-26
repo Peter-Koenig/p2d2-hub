@@ -150,46 +150,68 @@ export class EditorUIManager {
     const editToolsContainer = document.getElementById(
       "edit-tools-container",
     ) as HTMLDivElement | null;
-    const saveBtn = document.getElementById(
-      "tool-save",
-    ) as HTMLButtonElement | null;
-    const cancelBtn = document.getElementById(
-      "tool-cancel",
-    ) as HTMLButtonElement | null;
 
-    if (!editToolsContainer || !saveBtn || !cancelBtn) {
+    const allButtons =
+      editToolsContainer?.querySelectorAll<HTMLButtonElement>("[data-tool]");
+
+    if (!editToolsContainer || !allButtons) {
       console.error("Edit-Toolbar UI-Elemente nicht gefunden.");
       return;
     }
 
-    // 1. Listener für Speichern
-    saveBtn.addEventListener("click", () => {
-      // TODO: Logik zum Sammeln der geänderten Features
-      // (z.B. aus einer 'dirty' Liste, die 'Modify' pflegt)
-      const featuresToUpdate: any[] = [];
+    // 1. Listener für ALLE Buttons
+    allButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const toolName = button.dataset.tool;
 
-      this.dataManager.saveChanges(featuresToUpdate);
-      this.state.setEditorMode("navigate");
+        if (
+          toolName === "select" ||
+          toolName === "move" ||
+          toolName === "modify"
+        ) {
+          // Logik für Werkzeug-Auswahl
+
+          // Alle Werkzeuge de-highlighten
+          allButtons.forEach((btn) => {
+            if (btn.dataset.tool !== "save" && btn.dataset.tool !== "cancel") {
+              btn.classList.remove("highlighted");
+            }
+          });
+          button.classList.add("highlighted");
+
+          this.interactionManager.setTool(
+            toolName as "select" | "move" | "modify",
+          );
+        } else if (toolName === "save") {
+          // Logik für Speichern
+          const featuresToUpdate: any[] = [];
+          // TODO: 'dirty' Features sammeln
+          this.dataManager.saveChanges(featuresToUpdate);
+          this.state.setEditorMode("navigate");
+        } else if (toolName === "cancel") {
+          // Logik für Abbrechen
+          if (
+            confirm(
+              "Möchten Sie die Bearbeitung wirklich abbrechen? Nicht gespeicherte Änderungen gehen verloren.",
+            )
+          ) {
+            alert("Änderungen verworfen.");
+            this.state.setEditorMode("navigate");
+          }
+        }
+      });
     });
 
-    // 2. Listener für Abbrechen
-    cancelBtn.addEventListener("click", () => {
-      if (
-        confirm(
-          "Möchten Sie die Bearbeitung wirklich abbrechen? Nicht gespeicherte Änderungen gehen verloren.",
-        )
-      ) {
-        // TODO: Logik zum Zurücksetzen von Änderungen (z.B. Source neu laden)
-        alert("Änderungen verworfen.");
-        this.state.setEditorMode("navigate");
-      }
-    });
-
-    // 3. State-Subscription: Toolbar ein/ausblenden
+    // 2. State-Subscription: Toolbar ein/ausblenden
     this.state.subscribe((newState) => {
       if (newState.editorMode === "edit") {
         editToolsContainer.classList.remove("edit-tools-hidden");
         editToolsContainer.classList.add("edit-tools-visible");
+
+        // 'select' als Standard-Werkzeug aktivieren
+        document
+          .querySelector<HTMLButtonElement>("[data-tool='select']")
+          ?.click();
       } else {
         editToolsContainer.classList.add("edit-tools-hidden");
         editToolsContainer.classList.remove("edit-tools-visible");

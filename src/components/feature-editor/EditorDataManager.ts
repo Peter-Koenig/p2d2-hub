@@ -132,7 +132,7 @@ export class EditorDataManager {
       featureProjection: this.state.projection,
     });
 
-    (geoJson.features || []).forEach((rawFeature, index) => {
+    (geoJson.features || []).forEach((rawFeature: any, index: number) => {
       if (features[index]) {
         features[index].set("name", rawFeature.properties?.name || "Unbenannt");
       }
@@ -171,12 +171,19 @@ export class EditorDataManager {
     });
 
     // WICHTIG: Setze die Attribute, die wir zum Filtern brauchen
-    (geoJson.features || []).forEach((rawFeature, index) => {
+    (geoJson.features || []).forEach((rawFeature: any, index: number) => {
       if (features[index]) {
         features[index].set("name", rawFeature.properties?.name || "Grab");
-        // TODO: Falls der Link zur Grabflur ein anderes Attribut ist (z.B. 'parent_name'),
-        // stelle sicher, dass es hier gesetzt wird:
-        // features[index].set("parent_name", rawFeature.properties?.parent_name || null);
+
+        // KORREKTUR: Korrekte Attribute für Link & Label setzen
+        features[index].set(
+          "grabflur", // Das ist der Link zur Grabflur
+          rawFeature.properties?.grabflur || null,
+        );
+        features[index].set(
+          "grabnummer", // Das ist das Label
+          rawFeature.properties?.grabnummer || null,
+        );
       }
     });
 

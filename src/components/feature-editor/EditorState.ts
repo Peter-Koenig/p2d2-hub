@@ -80,6 +80,7 @@ export class EditorState {
     graeber: Feature<Geometry>[],
     altName: string,
   ) {
+    // (Für komplexe Objekte lassen wir den Guard hier weg, da flacher Vergleich teuer ist)
     this.parentFeature = parent;
     this.childFeatures = children;
     this.allGraeberFeatures = graeber;
@@ -104,6 +105,7 @@ export class EditorState {
   }
 
   setActiveGrabflur(feature: Feature<Geometry> | null) {
+    if (this.activeGrabflur === feature) return; // <-- GUARD HINZUGEFÜGT
     this.activeGrabflur = feature;
     this.notifyListeners();
   }
@@ -113,6 +115,7 @@ export class EditorState {
   }
 
   setSelectedFeature(feature: Feature<Geometry> | null) {
+    if (this.selectedFeature === feature) return; // <-- GUARD HINZUGEFÜGT
     this.selectedFeature = feature;
     this.notifyListeners();
   }
@@ -122,6 +125,7 @@ export class EditorState {
   }
 
   setTool(tool: string) {
+    if (this.currentTool === tool) return; // <-- GUARD HINZUGEFÜGT
     this.currentTool = tool;
     this.notifyListeners();
   }
@@ -131,6 +135,7 @@ export class EditorState {
   }
 
   setEditorMode(mode: "navigate" | "edit") {
+    if (this.editorMode === mode) return; // <-- GUARD HINZUGEFÜGT
     this.editorMode = mode;
     this.notifyListeners();
   }
