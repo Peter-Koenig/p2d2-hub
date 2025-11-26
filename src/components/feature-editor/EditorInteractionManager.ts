@@ -7,6 +7,7 @@ import Select from "ol/interaction/Select";
 import Modify from "ol/interaction/Modify";
 import Translate from "ol/interaction/Translate";
 import Snap from "ol/interaction/Snap";
+// @ts-ignore - ol-rotate-feature hat keine Type-Definitionen
 import RotateFeatureInteraction from "ol-rotate-feature"; // <-- HINZUFÜGEN
 import { click } from "ol/events/condition";
 import { DragPan } from "ol/interaction";
