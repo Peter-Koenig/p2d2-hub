@@ -265,7 +265,25 @@ export class EditorUIManager {
       if (newState.editorMode === "edit") {
         editToolsContainer.classList.remove("edit-tools-hidden");
         editToolsContainer.classList.add("edit-tools-visible");
-        document.querySelector<HTMLElement>("[data-tool='select']")?.click();
+        // --- ERSETZEN START ---
+        // Standardmäßig 'move' highlighten
+        const moveBtn =
+          document.querySelector<HTMLElement>('[data-tool="move"]');
+        if (moveBtn) {
+          // Alle anderen de-highlighten
+          document
+            .querySelectorAll<HTMLElement>("[data-tool]")
+            .forEach((btn) => {
+              if (
+                btn.dataset.tool !== "save" &&
+                btn.dataset.tool !== "cancel"
+              ) {
+                btn.classList.remove("highlighted");
+              }
+            });
+          moveBtn.classList.add("highlighted");
+        }
+        // --- ERSETZEN ENDE ---
       } else {
         editToolsContainer.classList.add("edit-tools-hidden");
         editToolsContainer.classList.remove("edit-tools-visible");

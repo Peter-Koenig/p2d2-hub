@@ -329,6 +329,11 @@ export class EditorInteractionManager {
       this.map.addInteraction(this.translate!);
       this.map.addInteraction(this.snap!);
 
+      // --- HIER HINZUFÜGEN START ---
+      // Standardmäßig 'move' aktivieren
+      this.setTool("move");
+      // --- HIER HINZUFÜGEN ENDE ---
+
       // Dirty-Tracking Listener
       this.modify!.on("modifyend", (e) => this.markFeaturesAsDirty(e.features));
       this.translate!.on("translateend", (e) =>
@@ -456,6 +461,20 @@ export class EditorInteractionManager {
   // SICHERSTELLEN, DASS setTool EXISTIERT
   public setTool(toolName: "select" | "move" | "modify") {
     if (this.state.getEditorMode() !== "edit") return;
+
+    // --- HIER HINZUFÜGEN START ---
+    // GUARD: Wenn Tool bereits aktiv, nichts tun
+    if (this.state.getTool() === toolName) {
+      console.log(
+        `[InteractionManager] ℹ️ Tool "${toolName}" ist bereits aktiv.`,
+      );
+      return;
+    }
+    // --- HIER HINZUFÜGEN ENDE ---
+
+    console.log(
+      `[InteractionManager] 🔧 Wechsle Tool: ${this.state.getTool()} → ${toolName}`,
+    );
     this.state.setTool(toolName);
 
     // Interaktionen entfernen
