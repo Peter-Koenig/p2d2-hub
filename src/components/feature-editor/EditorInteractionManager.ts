@@ -7,6 +7,7 @@ import Select from "ol/interaction/Select";
 import Modify from "ol/interaction/Modify";
 import Translate from "ol/interaction/Translate";
 import Snap from "ol/interaction/Snap";
+import RotateFeatureInteraction from "ol-rotate-feature"; // <-- HINZUFÜGEN
 import { click } from "ol/events/condition";
 import { DragPan } from "ol/interaction";
 import type { EditorState } from "./EditorState";
@@ -33,6 +34,7 @@ export class EditorInteractionManager {
   private select: Select | null = null;
   private modify: Modify | null = null;
   private translate: Translate | null = null;
+  private rotate: RotateFeatureInteraction | null = null; // <-- HINZUFÜGEN
   private snap: Snap | null = null;
 
   // NEU: Letzte angeklickte Grabflur für 1-Klick/2-Klick-Logik
@@ -304,6 +306,27 @@ export class EditorInteractionManager {
     });
 
     // Snap (An anderen Features einrasten)
+    // --- HINZUFÜGEN START ---
+    this.rotate = new RotateFeatureInteraction({
+      features: this.select.getFeatures(),
+      anchor: undefined, // Nutzt das Zentrum des Features
+      angle: 0,
+    });
+
+    this.rotate.on("rotatestart", (e: any) => {
+      console.log("[InteractionManager] 🔄 Rotation gestartet");
+      // Speichere Original-Geometrie beim Start
+      this.storeOriginalGeometries(e.features);
+    });
+
+    this.rotate.on("rotateend", (e: any) => {
+      console.log("[InteractionManager] ✅ Rotation beendet");
+      // Markiere Features als "dirty" am Ende
+      this.markFeaturesAsDirty(e.features);
+    });
+    // --- HINZUFÜGEN ENDE ---
+
+    // Snap (wie bisher)
     this.snap = new Snap({
       source: graeberSource as any,
     });
@@ -317,37 +340,43 @@ export class EditorInteractionManager {
       "%c[InteractionManager] 🛠️ Werkzeuge werden initialisiert...",
       "color: green;",
     );
-    // Deaktiviere Map-Drag (Bug 2)
     this.setMapDragPan(false);
-    this.originalGeometries.clear(); // Sicherstellen, dass Map leer ist
+    this.originalGeometries.clear();
 
+    // 1. Interaktionen nur initialisieren (NICHT zur Karte hinzufügen)
     this.initModifyInteractions();
 
-    if (this.select) {
-      this.map.addInteraction(this.select);
-      this.map.addInteraction(this.modify!);
-      this.map.addInteraction(this.translate!);
-      this.map.addInteraction(this.snap!);
-
-      // --- HIER HINZUFÜGEN START ---
-      // Standardmäßig 'move' aktivieren
-      this.setTool("move");
-      // --- HIER HINZUFÜGEN ENDE ---
-
-      // Dirty-Tracking Listener
-      this.modify!.on("modifyend", (e) => this.markFeaturesAsDirty(e.features));
-      this.translate!.on("translateend", (e) =>
+    // 2. Event-Listener für Dirty-Tracking an die (noch inaktiven) Interaktionen binden
+    if (this.modify) {
+      this.modify.on("modifyend", (e: ModifyEvent) =>
         this.markFeaturesAsDirty(e.features),
       );
-
-      // NEU: Listener zum Speichern der Original-Geometrie
-      this.modify!.on("modifystart", (e) =>
-        this.storeOriginalGeometries(e.features),
-      );
-      this.translate!.on("translatestart", (e) =>
+      this.modify.on("modifystart", (e: ModifyEvent) =>
         this.storeOriginalGeometries(e.features),
       );
     }
+    if (this.translate) {
+      this.translate.on("translateend", (e: TranslateEvent) =>
+        this.markFeaturesAsDirty(e.features),
+      );
+      this.translate.on("translatestart", (e: TranslateEvent) =>
+        this.storeOriginalGeometries(e.features),
+      );
+    }
+    if (this.rotate) {
+      this.rotate.on("rotatestart", (e: any) => {
+        console.log("[InteractionManager] 🔄 Rotation gestartet");
+        this.storeOriginalGeometries(e.features);
+      });
+      this.rotate.on("rotateend", (e: any) => {
+        console.log("[InteractionManager] ✅ Rotation beendet");
+        this.markFeaturesAsDirty(e.features);
+      });
+    }
+
+    // 3. Standard-Werkzeug 'move' aktivieren.
+    // setTool() kümmert sich um das Hinzufügen der korrekten Interaktionen.
+    this.setTool("move");
   }
 
   // NEU: Hilfsfunktion für "modifystart" / "translatestart"
@@ -459,7 +488,7 @@ export class EditorInteractionManager {
   }
 
   // SICHERSTELLEN, DASS setTool EXISTIERT
-  public setTool(toolName: "select" | "move" | "modify") {
+  public setTool(toolName: "select" | "move" | "modify" | "rotate") {
     if (this.state.getEditorMode() !== "edit") return;
 
     // --- HIER HINZUFÜGEN START ---
@@ -477,10 +506,11 @@ export class EditorInteractionManager {
     );
     this.state.setTool(toolName);
 
-    // Interaktionen entfernen
+    // Alle Interaktionen entfernen
     if (this.select) this.map.removeInteraction(this.select);
     if (this.modify) this.map.removeInteraction(this.modify);
     if (this.translate) this.map.removeInteraction(this.translate);
+    if (this.rotate) this.map.removeInteraction(this.rotate); // <-- HINZUFÜGEN
     if (this.snap) this.map.removeInteraction(this.snap);
 
     // Gewünschte Interaktionen hinzufügen
@@ -492,6 +522,14 @@ export class EditorInteractionManager {
         if (this.select) this.map.addInteraction(this.select);
         if (this.translate) this.map.addInteraction(this.translate);
         break;
+
+      // --- HIER NEUEN CASE HINZUFÜGEN ---
+      case "rotate":
+        if (this.select) this.map.addInteraction(this.select);
+        if (this.rotate) this.map.addInteraction(this.rotate);
+        break;
+      // --- ENDE ---
+
       case "modify":
         if (this.select) this.map.addInteraction(this.select);
         if (this.modify) this.map.addInteraction(this.modify);

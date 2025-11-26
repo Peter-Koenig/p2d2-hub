@@ -200,7 +200,8 @@ export class EditorUIManager {
       if (
         toolName === "select" ||
         toolName === "move" ||
-        toolName === "modify"
+        toolName === "modify" ||
+        toolName === "rotate" // <-- HINZUFÜGEN
       ) {
         if (!allButtons) return;
         // Logik für Werkzeug-Auswahl
@@ -211,7 +212,7 @@ export class EditorUIManager {
         });
         button.classList.add("highlighted");
         this.interactionManager.setTool(
-          toolName as "select" | "move" | "modify",
+          toolName as "select" | "move" | "modify" | "rotate", // <-- ERWEITERN
         );
       } else if (toolName === "save") {
         console.log("[UIManager] 💾 'Speichern' Aktion gestartet...");
