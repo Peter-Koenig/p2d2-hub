@@ -5,12 +5,11 @@ import type { Geometry } from "ol/geom";
 export interface ReactiveEditorState {
   parentFeature: Feature<Geometry> | null;
   childFeatures: Feature<Geometry>[];
-  allGraeberFeatures: Feature<Geometry>[];
   activeGrabflur: Feature<Geometry> | null;
   selectedFeature: Feature<Geometry> | null;
   currentTool: string;
   editorMode: "navigate" | "edit";
-  altName: string | null;
+  hasDirtyFeatures: boolean; // <-- NEU
 }
 
 type EditorStateCallback = (state: ReactiveEditorState) => void;
@@ -30,12 +29,13 @@ export class EditorState {
   // --- Laufzeit-State ---
   private parentFeature: Feature<Geometry> | null = null;
   private childFeatures: Feature<Geometry>[] = [];
-  private allGraeberFeatures: Feature<Geometry>[] = [];
   private activeGrabflur: Feature<Geometry> | null = null;
   private selectedFeature: Feature<Geometry> | null = null;
   private currentTool: string = "select";
   private editorMode: "navigate" | "edit" = "navigate";
-  private altName: string | null = null;
+
+  // NEU: Dirty-Tracking
+  private dirtyFeatures: Set<string | number> = new Set();
 
   // NEU: Listener-Set
   private listeners: Set<EditorStateCallback> = new Set();
@@ -74,17 +74,11 @@ export class EditorState {
 
   // --- Getter / Setter für Laufzeit-State ---
 
-  setFeatures(
-    parent: Feature<Geometry>,
-    children: Feature<Geometry>[],
-    graeber: Feature<Geometry>[],
-    altName: string,
-  ) {
+  // ANPASSEN: setFeatures
+  setFeatures(parent: Feature<Geometry>, children: Feature<Geometry>[]) {
     // (Für komplexe Objekte lassen wir den Guard hier weg, da flacher Vergleich teuer ist)
     this.parentFeature = parent;
     this.childFeatures = children;
-    this.allGraeberFeatures = graeber;
-    this.altName = altName;
     this.notifyListeners();
   }
 
@@ -94,14 +88,6 @@ export class EditorState {
 
   getChildFeatures(): Feature<Geometry>[] {
     return this.childFeatures;
-  }
-
-  getAllGraeberFeatures(): Feature<Geometry>[] {
-    return this.allGraeberFeatures;
-  }
-
-  getAltName(): string | null {
-    return this.altName;
   }
 
   setActiveGrabflur(feature: Feature<Geometry> | null) {
@@ -144,17 +130,39 @@ export class EditorState {
     return this.editorMode;
   }
 
-  // NEU: Helper-Methode für den reaktiven State
+  // --- NEUE Dirty-Tracking Methoden ---
+
+  public markAsDirty(featureId: string | number) {
+    if (this.dirtyFeatures.has(featureId)) return;
+    this.dirtyFeatures.add(featureId);
+    // Notify, damit UI (z.B. Save-Button) reagieren kann
+    this.notifyListeners();
+  }
+
+  public clearDirtyFlags() {
+    if (this.dirtyFeatures.size === 0) return;
+    this.dirtyFeatures.clear();
+    this.notifyListeners();
+  }
+
+  public hasDirtyFeatures(): boolean {
+    return this.dirtyFeatures.size > 0;
+  }
+
+  public getDirtyFeatureIds(): Set<string | number> {
+    return this.dirtyFeatures;
+  }
+
+  // ANPASSEN: getReactiveState
   getReactiveState(): ReactiveEditorState {
     return {
       parentFeature: this.parentFeature,
       childFeatures: this.childFeatures,
-      allGraeberFeatures: this.allGraeberFeatures,
       activeGrabflur: this.activeGrabflur,
       selectedFeature: this.selectedFeature,
       currentTool: this.currentTool,
       editorMode: this.editorMode,
-      altName: this.altName,
+      hasDirtyFeatures: this.hasDirtyFeatures(), // <-- NEU
     };
   }
 }

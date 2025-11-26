@@ -4,6 +4,7 @@ import GeoJSON from "ol/format/GeoJSON";
 import { WFSAuthClient } from "@/utils/wfs-auth";
 import type { EditorState } from "./EditorState";
 import type { EditorLayerManager } from "./EditorLayerManager";
+import { transformExtent } from "ol/proj"; // <-- NEU IMPORTIEREN
 
 /**
  * Verwaltet das Laden von Features (WFS) und das Speichern (uMap/OSM-Export).
@@ -26,53 +27,38 @@ export class EditorDataManager {
   }
 
   /**
-   * Lädt das Parent-Feature (Friedhof), Child-Features (Grabflure) und alle Gräber.
+   * Lädt das Parent-Feature (Friedhof) und Child-Features (Grabflure).
+   * Gräber werden nicht mehr zentral geladen, sondern on-demand per BBOX.
    */
   async loadInitialFeatures() {
     // 1. Lade Parent-Feature (Friedhof)
-    const parentData = await this.fetchParentFeature();
-    if (!parentData) {
+    const parentFeature = await this.fetchParentFeature(); // <-- Gibt nur Feature zurück
+    if (!parentFeature) {
       throw new Error(`Haupt-Feature '${this.state.name}' nicht gefunden.`);
     }
-
-    const { feature: parentFeature, altName } = parentData;
 
     // 2. Lade Child-Features (Grabflure)
     const childFeatures = await this.fetchChildFeatures();
 
-    // 3. NEU: Lade Gräber (ALLE)
-    const graeberFeatures = await this.fetchGraeberFeatures(altName);
+    // 3. Gräber (L12) NICHT MEHR LADEN
+    // const graeberFeatures = await this.fetchGraeberFeatures(altName); // <-- ENTFERNT
 
-    // 4. Features im State speichern (mit altName)
-    this.state.setFeatures(
-      parentFeature,
-      childFeatures,
-      graeberFeatures,
-      altName,
-    );
+    // 4. Features im State speichern (Signatur geändert)
+    this.state.setFeatures(parentFeature, childFeatures);
 
-    // 5. LayerManager anweisen
-    this.layerManager.createFeatureLayers(
-      parentFeature,
-      childFeatures,
-      graeberFeatures,
-    );
+    // 5. LayerManager anweisen (Signatur geändert)
+    this.layerManager.createFeatureLayers(parentFeature, childFeatures);
   }
 
   /**
-   * Lädt das Parent-Feature (Friedhof) und extrahiert den alt_name
+   * Lädt das Parent-Feature (Friedhof)
    */
-  private async fetchParentFeature(): Promise<{
-    feature: Feature<Geometry>;
-    altName: string;
-  } | null> {
+  private async fetchParentFeature(): Promise<Feature<Geometry> | null> {
     const cqlFilter = `osm_admin_level=8 AND wp_name='${this.state.wpName}' AND container_type='${this.state.containerType}' AND name='${this.state.name}'`;
 
-    // NEU: Fordere das 'alt_name' Feld explizit an
+    // 'propertyName' wird entfernt, da 'alt_name' nicht mehr benötigt wird
     const wfsUrl = this.wfsClient.buildAuthorizedWFSURL("p2d2_containers", {
       CQL_FILTER: cqlFilter,
-      propertyName:
-        "geometry,name,container_type,wp_name,osm_admin_level,alt_name",
     });
 
     const response = await this.wfsClient.fetchWithAuth(wfsUrl);
@@ -92,18 +78,9 @@ export class EditorDataManager {
 
     if (features.length === 0) return null;
 
-    // Extrahiere 'alt_name' aus den rohen Properties
-    const rawProps = geoJson.features[0]?.properties;
-    const altName = rawProps?.alt_name;
+    // 'altName' Extraktion entfernt
 
-    if (!altName) {
-      console.error("Parent feature properties:", rawProps);
-      throw new Error(
-        `Haupt-Feature '${this.state.name}' hat kein 'alt_name' Attribut. Filterung der Gräber nicht möglich.`,
-      );
-    }
-
-    return { feature: features[0], altName };
+    return features[0];
   }
 
   /**
@@ -141,56 +118,78 @@ export class EditorDataManager {
     return features;
   }
 
-  /**
-   * Lädt alle Gräber für den Friedhof basierend auf alt_name
-   */
-  private async fetchGraeberFeatures(
-    friedhofAltName: string,
-  ): Promise<Feature<Geometry>[]> {
-    // Verwende den 'alt_name' (z.B. "30 - Friedhof Rheinkassel") für die Query
-    const cqlFilter = `fried_name = '${friedhofAltName}'`;
+  // ENTFERNT: fetchGraeberFeatures (die "alle laden"-Methode)
 
-    const wfsUrl = this.wfsClient.buildAuthorizedWFSURL("p2d2_graeber", {
-      CQL_FILTER: cqlFilter,
-    });
-
-    console.log(`[DataManager] Fetching graves with CQL: ${cqlFilter}`);
-
-    const response = await this.wfsClient.fetchWithAuth(wfsUrl);
-    if (!response.ok) {
-      console.error(
-        `WFS-Anfrage für Gräber fehlgeschlagen: ${response.statusText}`,
-      );
-      return [];
+  // NEU: Lädt Gräber bei Bedarf per BBOX-Filter (On-Demand)
+  async loadGraeberForExtent(extent: number[]) {
+    const graeberSource = this.layerManager.getGraeberSource();
+    if (!graeberSource) {
+      console.error("Gräber-Source nicht im LayerManager gefunden.");
+      return;
     }
 
-    const geoJson = await response.json();
-    const features = this.geojsonFormat.readFeatures(geoJson, {
-      dataProjection: "EPSG:4326",
-      featureProjection: this.state.projection,
+    // 1. Erstelle BBOX-Query
+    // WFS 2.0.0 BBOX-Filter erwartet [minx,miny,maxx,maxy,crs]
+    const currentProjection = this.state.projection;
+    const wgs84Extent = transformExtent(extent, currentProjection, "EPSG:4326");
+
+    const wfsUrl = this.wfsClient.buildAuthorizedWFSURL("p2d2_graeber", {
+      bbox: `${wgs84Extent.join(",")},EPSG:4326`,
     });
 
-    // WICHTIG: Setze die Attribute, die wir zum Filtern brauchen
-    (geoJson.features || []).forEach((rawFeature: any, index: number) => {
-      if (features[index]) {
-        features[index].set("name", rawFeature.properties?.name || "Grab");
+    console.log(`[DataManager] Lade Gräber für BBOX: ${wgs84Extent.join(",")}`);
 
-        // KORREKTUR: Korrekte Attribute für Link & Label setzen
-        features[index].set(
-          "grabflur", // Das ist der Link zur Grabflur
-          rawFeature.properties?.grabflur || null,
-        );
-        features[index].set(
-          "grabnummer", // Das ist das Label
-          rawFeature.properties?.grabnummer || null,
+    try {
+      const response = await this.wfsClient.fetchWithAuth(wfsUrl);
+      if (!response.ok) {
+        throw new Error(
+          `WFS-Anfrage für Gräber (BBOX) fehlgeschlagen: ${response.statusText}`,
         );
       }
-    });
 
-    console.log(
-      `[DataManager] ${features.length} Gräber geladen für Friedhof: ${friedhofAltName}`,
-    );
-    return features;
+      const geoJson = await response.json();
+      const newFeatures = this.geojsonFormat.readFeatures(geoJson, {
+        dataProjection: "EPSG:4326",
+        featureProjection: currentProjection,
+      });
+
+      // 2. Attribute übertragen und EINDEUTIGE ID setzen (wichtig für Deduplizierung)
+      (geoJson.features || []).forEach((rawFeature: any, index: number) => {
+        if (newFeatures[index]) {
+          const props = rawFeature.properties;
+          newFeatures[index].set("grabflur", props?.grabflur || null);
+          newFeatures[index].set("grabnummer", props?.grabnummer || null);
+
+          // KORREKTUR: Eindeutige ID aus 'id'-Attribut (z.B. 162368) setzen.
+          const id = props?.id; // <-- KORREKTUR
+          if (id !== undefined) {
+            // Prüfe auf undefined, da ID '0' sein könnte
+            newFeatures[index].setId(id);
+          } else {
+            console.warn(
+              "Grab-Feature ohne 'id'-Attribut als ID gefunden.",
+              props,
+            );
+          }
+        }
+      });
+
+      // 3. Deduplizierung (nur Features hinzufügen, die noch nicht in der Source sind)
+      let addedCount = 0;
+      newFeatures.forEach((feature) => {
+        const id = feature.getId();
+        if (id && !graeberSource.getFeatureById(id)) {
+          graeberSource.addFeature(feature);
+          addedCount++;
+        }
+      });
+
+      console.log(
+        `[DataManager] ${addedCount} neue Gräber zur Source hinzugefügt.`,
+      );
+    } catch (error) {
+      console.error("[DataManager] Fehler bei loadGraeberForExtent:", error);
+    }
   }
 
   /**

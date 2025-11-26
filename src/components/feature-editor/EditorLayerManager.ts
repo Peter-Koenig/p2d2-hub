@@ -140,7 +140,6 @@ export class EditorLayerManager {
   createFeatureLayers(
     parentFeature: Feature<Geometry>,
     childFeatures: Feature<Geometry>[],
-    graeberFeatures: Feature<Geometry>[],
   ) {
     // 1. Friedhof-Hintergrund-Layer
     const cemeteryBgLayer = new VectorLayer({
@@ -167,8 +166,8 @@ export class EditorLayerManager {
     });
     this.addLayer("labels", labelLayer);
 
-    // 4. Gräber-Layer (ANPASSEN)
-    const graeberSource = new VectorSource({ features: graeberFeatures });
+    // 4. Gräber-Layer (ANPASSEN: Wird leer initialisiert)
+    const graeberSource = new VectorSource({ features: [] }); // <-- LEER!
     const graeberLayer = new VectorLayer({
       source: graeberSource,
       // VERWENDE REAKTIVE STYLE-FUNKTION statt statischem Stil
@@ -197,15 +196,23 @@ export class EditorLayerManager {
       // Modus ist 'edit'
       const activeGrabflur = this.state.getActiveGrabflur();
 
-      // KORREKTUR: Vergleiche 'grabflur'-Attribut des Grabes mit 'name'-Attribut der Grabflur
-      const featureGrabflurName = feature.get("grabflur");
-      const activeGrabflurName = activeGrabflur?.get("name");
+      // KORREKTUR: Vergleiche 'grabflur'-Attribut (L12) mit der *extrahierten Nummer* (L10)
+      const featureGrabflurName = feature.get("grabflur"); // z.B. "010"
 
-      if (
-        activeGrabflurName &&
-        featureGrabflurName &&
-        featureGrabflurName === activeGrabflurName
-      ) {
+      let isActiveGrabflur = false;
+      if (activeGrabflur) {
+        const activeGrabflurName = activeGrabflur.get("name"); // z.B. "Rheinkassel-Friedhof-010"
+        const activeGrabflurNumber = this.extractGrabflurNumber(
+          activeGrabflurName || "",
+        ); // z.B. "010"
+
+        isActiveGrabflur =
+          featureGrabflurName &&
+          activeGrabflurNumber &&
+          featureGrabflurName === activeGrabflurNumber;
+      }
+
+      if (isActiveGrabflur) {
         baseStyle = this.GRAEBER_STYLE_EDIT_ACTIVE; // Rot
         cache = this.styleCache.active;
       } else {

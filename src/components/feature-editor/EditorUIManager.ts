@@ -6,6 +6,8 @@ import type TileLayer from "ol/layer/Tile";
 import type ImageLayer from "ol/layer/Image";
 import type { EditorState } from "./EditorState";
 import type { EditorDataManager } from "./EditorDataManager";
+import type { Feature } from "ol"; // <-- NEU IMPORTIEREN
+import type { Geometry } from "ol/geom"; // <-- NEU IMPORTIEREN
 
 /**
  * Verbindet die Astro-UI-Komponenten (Buttons) mit der Editor-Logik.
@@ -183,19 +185,41 @@ export class EditorUIManager {
             toolName as "select" | "move" | "modify",
           );
         } else if (toolName === "save") {
-          // Logik für Speichern
-          const featuresToUpdate: any[] = [];
-          // TODO: 'dirty' Features sammeln
+          // --- KORREKTUR: "Save"-Logik ---
+          const dirtyIds = this.state.getDirtyFeatureIds();
+          const graeberSource = this.layerManager.getGraeberSource();
+
+          const featuresToUpdate: Feature<Geometry>[] = [];
+          if (graeberSource && dirtyIds.size > 0) {
+            dirtyIds.forEach((id) => {
+              const feature = graeberSource.getFeatureById(id);
+              if (feature) {
+                featuresToUpdate.push(feature as Feature<Geometry>);
+              }
+            });
+          }
+
+          console.log(
+            `[UIManager] Speichere ${featuresToUpdate.length} geänderte Features...`,
+          );
           this.dataManager.saveChanges(featuresToUpdate);
+          this.state.clearDirtyFlags();
           this.state.setEditorMode("navigate");
         } else if (toolName === "cancel") {
-          // Logik für Abbrechen
-          if (
-            confirm(
+          // --- KORREKTUR: "Cancel"-Logik ---
+          let confirmed = true;
+          if (this.state.hasDirtyFeatures()) {
+            confirmed = confirm(
               "Möchten Sie die Bearbeitung wirklich abbrechen? Nicht gespeicherte Änderungen gehen verloren.",
-            )
-          ) {
+            );
+          }
+
+          if (confirmed) {
             alert("Änderungen verworfen.");
+            // TODO: Hier muss eine "revertChanges()"-Logik aufgerufen werden,
+            // die die 'dirty' Features auf ihren Originalzustand zurücksetzt.
+            // Fürs Erste löschen wir nur die Flags.
+            this.state.clearDirtyFlags();
             this.state.setEditorMode("navigate");
           }
         }
@@ -215,6 +239,14 @@ export class EditorUIManager {
       } else {
         editToolsContainer.classList.add("edit-tools-hidden");
         editToolsContainer.classList.remove("edit-tools-visible");
+      }
+
+      // NEU: 'Save'-Button nur aktivieren, wenn es Änderungen gibt
+      const saveBtn = document.getElementById(
+        "tool-save",
+      ) as HTMLButtonElement | null;
+      if (saveBtn) {
+        saveBtn.disabled = !newState.hasDirtyFeatures;
       }
     });
   }
