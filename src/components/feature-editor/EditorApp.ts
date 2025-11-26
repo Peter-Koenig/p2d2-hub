@@ -6,7 +6,7 @@ import { EditorDataManager } from "./EditorDataManager";
 import { EditorInteractionManager } from "./EditorInteractionManager";
 import { EditorUIManager } from "./EditorUIManager";
 import { wfsAuthClient } from "@/utils/wfs-auth";
-import { buffer } from "ol/extent"; // <-- NEU IMPORTIEREN
+import { buffer } from "ol/extent";
 
 /**
  * Haupt-App-Klasse für den Feature Editor.
@@ -93,27 +93,50 @@ export class EditorApp {
   private setupStateOrchestration() {
     let lastMode = this.state.getEditorMode();
     let lastActiveGrabflur = this.state.getActiveGrabflur();
-
-    // ANPASSUNG: Übergebe den 'oldState' (den die notifyListeners noch nicht haben),
-    // indem wir den reaktiven State hier klonen.
-    let oldReactiveState = this.state.getReactiveState();
+    // NEU: Letzten Dirty-Status mitschreiben
+    let lastDirtyState = this.state.hasDirtyFeatures;
 
     this.state.subscribe((newReactiveState) => {
       const newMode = newReactiveState.editorMode;
       const newActiveGrabflur = newReactiveState.activeGrabflur;
+      const newDirtyState = newReactiveState.hasDirtyFeatures;
 
-      // (Der Guard in setEditorMode  verhindert bereits die meisten Rekursionen,
-      // aber wir verwenden `lastMode` weiterhin zur klaren Trennung der Logik)
-      if (newMode === lastMode && newActiveGrabflur === lastActiveGrabflur) {
-        oldReactiveState = newReactiveState; // State aktualisieren
+      // --- DEBUGGING ---
+      console.log(
+        `%c[Orchestrator] 🔔 State-Update empfangen:
+          Mode: ${lastMode} -> ${newMode}
+          Grabflur: ${lastActiveGrabflur?.get("name") || "null"} -> ${newActiveGrabflur?.get("name") || "null"}
+          Dirty: ${lastDirtyState} -> ${newDirtyState}`,
+        "color: blue; font-weight: bold;",
+      );
+      // --- END DEBUGGING ---
+
+      // --- KORREKTUR (BUG 3): "Hanging" UI Fix ---
+      // Der Guard muss auf die 'last'-Variablen prüfen,
+      // nicht auf den 'oldReactiveState', damit State-Updates
+      // (wie clearDirtyFlags) die Kette nicht unterbrechen.
+      // --- KORREKTUR (Fix 3): "Hanging" UI Fix ---
+      // Der Guard wird gelockert und prüft nun auch 'hasDirtyFeatures'.
+      // Er bricht nur ab, wenn sich *gar nichts* Relevantes geändert hat.
+      if (
+        newMode === lastMode &&
+        newActiveGrabflur === lastActiveGrabflur &&
+        newDirtyState === lastDirtyState
+      ) {
+        console.log(
+          "[Orchestrator] 🚫 Guard: Keine relevanten Änderungen. Abbruch.",
+        );
         return;
       }
+      // --- ENDE KORREKTUR ---
+      // --- ENDE KORREKTUR ---
 
-      // FALL 1: Neue aktive Grabflur (1. Klick) - On-Demand-Laden
+      // FALL 1: Neue aktive Grabflur (1. Klick)
       if (newActiveGrabflur && newActiveGrabflur !== lastActiveGrabflur) {
         console.log(
-          "Orchestrator: Neue aktive Grabflur - lade Gräber on-demand.",
+          "[Orchestrator] ➡️ Fall 1: Neue Grabflur erkannt. Lade Gräber...",
         );
+        // KORREKTUR: Rufe die Ladefunktion MIT dem Feature selbst auf
         this.loadGraeberForActiveGrabflur(newActiveGrabflur);
       }
 
@@ -122,7 +145,9 @@ export class EditorApp {
         if (!newReactiveState.activeGrabflur) return;
 
         const grabflurName = newReactiveState.activeGrabflur.get("name");
-        console.log("Orchestrator: Edit-Modus für Grabflur:", grabflurName);
+        console.log(
+          "[Orchestrator] ➡️ Fall 2: Edit-Modus aktiviert. Initialisiere Werkzeuge...",
+        );
 
         // 1. Editier-Werkzeuge initialisieren
         this.interactionManager.initializeModifyTools();
@@ -130,19 +155,25 @@ export class EditorApp {
 
       // FALL 3: Rückkehr in den Navigate-Modus
       if (newMode === "navigate" && newMode !== lastMode) {
-        console.log("Orchestrator: Wechsle in Navigate-Modus.");
+        console.log(
+          "[Orchestrator] ➡️ Fall 3: Navigate-Modus aktiviert. Deaktiviere Werkzeuge...",
+        );
 
         // 1. Interaktionen deaktivieren
         this.interactionManager.deactivateModifyTools();
 
-        // KORREKTUR: Setze State nur, wenn es nötig ist, um Schleifen zu vermeiden.
-
         // 2. Aktive Grabflur zurücksetzen
         if (newReactiveState.activeGrabflur !== null) {
+          console.log(
+            "[Orchestrator] 🧹 Cleanup: Setze aktive Grabflur zurück.",
+          );
           this.state.setActiveGrabflur(null);
         }
         // 3. Auswahl zurücksetzen
         if (newReactiveState.selectedFeature !== null) {
+          console.log(
+            "[Orchestrator] 🧹 Cleanup: Setze ausgewähltes Feature zurück.",
+          );
           this.state.setSelectedFeature(null);
         }
       }
@@ -150,9 +181,10 @@ export class EditorApp {
       // NEU: Gräber-Layer zum Neuzeichnen zwingen
       this.layerManager.getGraeberLayer()?.changed();
 
+      // WICHTIG: 'last' Variablen am Ende aktualisieren
       lastMode = newMode;
       lastActiveGrabflur = newActiveGrabflur;
-      oldReactiveState = newReactiveState; // State für nächsten Durchlauf speichern
+      lastDirtyState = newDirtyState; // <-- NEU
     });
   }
 

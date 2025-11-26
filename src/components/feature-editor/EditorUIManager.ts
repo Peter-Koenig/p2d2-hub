@@ -6,8 +6,8 @@ import type TileLayer from "ol/layer/Tile";
 import type ImageLayer from "ol/layer/Image";
 import type { EditorState } from "./EditorState";
 import type { EditorDataManager } from "./EditorDataManager";
-import type { Feature } from "ol"; // <-- NEU IMPORTIEREN
-import type { Geometry } from "ol/geom"; // <-- NEU IMPORTIEREN
+import type { Feature } from "ol";
+import type { Geometry } from "ol/geom";
 
 /**
  * Verbindet die Astro-UI-Komponenten (Buttons) mit der Editor-Logik.
@@ -146,107 +146,141 @@ export class EditorUIManager {
   }
 
   /**
-   * Bindet die Save/Cancel Toolbar-Logik
+   * Bindet die Save/Cancel Toolbar-Logik mit Event Delegation am stabilen Parent
    */
   private bindToolbarControls() {
-    const editToolsContainer = document.getElementById(
-      "edit-tools-container",
-    ) as HTMLDivElement | null;
+    // KORREKTUR: Wir binden den Listener an den STABILEN 'map-container',
+    // der die Toolbar und die Map enthält und nicht von Astro HMR zerstört wird.
+    const mapContainer =
+      document.getElementById("feature-editor-map")?.parentElement;
 
-    const allButtons =
-      editToolsContainer?.querySelectorAll<HTMLButtonElement>("[data-tool]");
-
-    if (!editToolsContainer || !allButtons) {
-      console.error("Edit-Toolbar UI-Elemente nicht gefunden.");
+    if (!mapContainer) {
+      console.error(
+        "Stabiler 'map-container' für Event Delegation nicht gefunden.",
+      );
       return;
     }
 
-    // 1. Listener für ALLE Buttons
-    allButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const toolName = button.dataset.tool;
+    // 1. Hänge EINEN Listener an den STABILEN Container
+    mapContainer.addEventListener("click", (event) => {
+      // --- DEBUGGING ---
+      console.log(
+        "%c[UIManager] Global Click on mapContainer",
+        "color: purple; font-weight: bold;",
+        event.target,
+      );
 
-        if (
-          toolName === "select" ||
-          toolName === "move" ||
-          toolName === "modify"
-        ) {
-          // Logik für Werkzeug-Auswahl
+      // KORREKTUR: Verwende HTMLElement statt HTMLButtonElement für IconButton-Komponenten
+      const button = (event.target as HTMLElement).closest<HTMLElement>(
+        "[data-tool]",
+      );
 
-          // Alle Werkzeuge de-highlighten
-          allButtons.forEach((btn) => {
-            if (btn.dataset.tool !== "save" && btn.dataset.tool !== "cancel") {
-              btn.classList.remove("highlighted");
+      console.log("%c[UIManager] closest button:", "color: purple;", button);
+      // --- ENDE DEBUGGING ---
+
+      // Wenn der Klick nicht auf einem Button war, ignoriere ihn.
+      if (!button) return;
+
+      // Finde den (potenziell neu gerenderten) Container für Highlighting
+      const editToolsContainer = document.getElementById(
+        "edit-tools-container",
+      );
+
+      // KORREKTUR: Verwende HTMLElement statt HTMLButtonElement
+      const allButtons =
+        editToolsContainer?.querySelectorAll<HTMLElement>("[data-tool]");
+
+      const toolName = button.dataset.tool;
+      console.log(
+        `%c[UIManager] 🔘 Button Klick: ${toolName}`,
+        "color: #b91c1c;",
+      );
+
+      // --- Logik von vorher (bleibt identisch) ---
+      if (
+        toolName === "select" ||
+        toolName === "move" ||
+        toolName === "modify"
+      ) {
+        if (!allButtons) return;
+        // Logik für Werkzeug-Auswahl
+        allButtons.forEach((btn) => {
+          if (btn.dataset.tool !== "save" && btn.dataset.tool !== "cancel") {
+            btn.classList.remove("highlighted");
+          }
+        });
+        button.classList.add("highlighted");
+        this.interactionManager.setTool(
+          toolName as "select" | "move" | "modify",
+        );
+      } else if (toolName === "save") {
+        console.log("[UIManager] 💾 'Speichern' Aktion gestartet...");
+        // ... (Logik zum Sammeln der Features bleibt gleich)
+        const featuresToUpdate: Feature<Geometry>[] = [];
+        const dirtyIds = this.state.getDirtyFeatureIds();
+        const graeberSource = this.layerManager.getGraeberSource();
+        if (graeberSource && dirtyIds.size > 0) {
+          dirtyIds.forEach((id) => {
+            const feature = graeberSource.getFeatureById(id);
+            if (feature) {
+              featuresToUpdate.push(feature as Feature<Geometry>);
             }
           });
-          button.classList.add("highlighted");
-
-          this.interactionManager.setTool(
-            toolName as "select" | "move" | "modify",
-          );
-        } else if (toolName === "save") {
-          // --- KORREKTUR: "Save"-Logik ---
-          const dirtyIds = this.state.getDirtyFeatureIds();
-          const graeberSource = this.layerManager.getGraeberSource();
-
-          const featuresToUpdate: Feature<Geometry>[] = [];
-          if (graeberSource && dirtyIds.size > 0) {
-            dirtyIds.forEach((id) => {
-              const feature = graeberSource.getFeatureById(id);
-              if (feature) {
-                featuresToUpdate.push(feature as Feature<Geometry>);
-              }
-            });
-          }
-
-          console.log(
-            `[UIManager] Speichere ${featuresToUpdate.length} geänderte Features...`,
-          );
-          this.dataManager.saveChanges(featuresToUpdate);
-          this.state.clearDirtyFlags();
-          this.state.setEditorMode("navigate");
-        } else if (toolName === "cancel") {
-          // --- KORREKTUR: "Cancel"-Logik ---
-          let confirmed = true;
-          if (this.state.hasDirtyFeatures()) {
-            confirmed = confirm(
-              "Möchten Sie die Bearbeitung wirklich abbrechen? Nicht gespeicherte Änderungen gehen verloren.",
-            );
-          }
-
-          if (confirmed) {
-            alert("Änderungen verworfen.");
-            // TODO: Hier muss eine "revertChanges()"-Logik aufgerufen werden,
-            // die die 'dirty' Features auf ihren Originalzustand zurücksetzt.
-            // Fürs Erste löschen wir nur die Flags.
-            this.state.clearDirtyFlags();
-            this.state.setEditorMode("navigate");
-          }
         }
-      });
+
+        this.dataManager.saveChanges(featuresToUpdate);
+        console.log("[UIManager] 💾 -> setEditorMode('navigate')");
+        this.state.setEditorMode("navigate");
+        console.log("[UIManager] 💾 -> clearDirtyFlags()");
+        this.state.clearDirtyFlags();
+      } else if (toolName === "cancel") {
+        console.log("[UIManager] ❌ 'Abbrechen' Aktion gestartet...");
+        let confirmed = true;
+        if (this.state.hasDirtyFeatures) {
+          console.log("[UIManager] ❌ Änderungen gefunden, zeige Bestätigung.");
+          confirmed = confirm(
+            "Möchten Sie die Bearbeitung wirklich abbrechen? Nicht gespeicherte Änderungen gehen verloren.",
+          );
+        }
+
+        if (confirmed) {
+          console.log("[UIManager] ❌ Bestätigt. Rufe revertChanges() auf...");
+          this.interactionManager.revertChanges();
+          console.log("[UIManager] ❌ -> setEditorMode('navigate')");
+          this.state.setEditorMode("navigate");
+        } else {
+          console.log("[UIManager] ❌ Abgebrochen durch User.");
+        }
+      }
     });
 
-    // 2. State-Subscription: Toolbar ein/ausblenden
+    // 2. State-Subscription (Diese Logik ist jetzt sicher)
     this.state.subscribe((newState) => {
+      // Finde den Container JEDES MAL neu (falls er neu gerendert wurde)
+      const editToolsContainer = document.getElementById(
+        "edit-tools-container",
+      );
+      if (!editToolsContainer) return;
+
       if (newState.editorMode === "edit") {
         editToolsContainer.classList.remove("edit-tools-hidden");
         editToolsContainer.classList.add("edit-tools-visible");
-
-        // 'select' als Standard-Werkzeug aktivieren
-        document
-          .querySelector<HTMLButtonElement>("[data-tool='select']")
-          ?.click();
+        document.querySelector<HTMLElement>("[data-tool='select']")?.click();
       } else {
         editToolsContainer.classList.add("edit-tools-hidden");
         editToolsContainer.classList.remove("edit-tools-visible");
       }
 
-      // NEU: 'Save'-Button nur aktivieren, wenn es Änderungen gibt
-      const saveBtn = document.getElementById(
-        "tool-save",
-      ) as HTMLButtonElement | null;
+      // Save-Button-Logik
+      // KORREKTUR: Verwende HTMLElement statt HTMLButtonElement
+      const saveBtn = document.querySelector<HTMLElement>("[data-tool='save']");
       if (saveBtn) {
-        saveBtn.disabled = !newState.hasDirtyFeatures;
+        if (saveBtn.hasAttribute("disabled") === newState.hasDirtyFeatures) {
+          console.log(
+            `[UIManager] 💾 Save-Button Status: ${newState.hasDirtyFeatures ? "aktiviert" : "deaktiviert"}`,
+          );
+        }
+        saveBtn.toggleAttribute("disabled", !newState.hasDirtyFeatures);
       }
     });
   }

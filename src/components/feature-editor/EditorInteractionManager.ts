@@ -2,17 +2,19 @@ import type { Map as OLMap } from "ol";
 import type { Feature } from "ol";
 import type { Geometry } from "ol/geom";
 import Overlay from "ol/Overlay";
-import { Style, Stroke, Fill } from "ol/style";
+import { Style, Stroke, Fill, Text } from "ol/style";
 import Select from "ol/interaction/Select";
 import Modify from "ol/interaction/Modify";
 import Translate from "ol/interaction/Translate";
 import Snap from "ol/interaction/Snap";
 import { click } from "ol/events/condition";
-import { DragPan } from "ol/interaction"; // <-- NEU IMPORTIEREN
+import { DragPan } from "ol/interaction";
 import type { EditorState } from "./EditorState";
 import type { EditorLayerManager } from "./EditorLayerManager";
 import type { ViewHistoryManager } from "@/utils/view-history-manager";
 import { MAP_CONFIG } from "@/config/map-config";
+import type { ModifyEvent } from "ol/interaction/Modify";
+import type { TranslateEvent } from "ol/interaction/Translate";
 
 /**
  * Verwaltet alle Karten-Interaktionen (Hover, Klick, Bearbeitungswerkzeuge).
@@ -36,10 +38,22 @@ export class EditorInteractionManager {
   // NEU: Letzte angeklickte Grabflur für 1-Klick/2-Klick-Logik
   private lastClickedGrabflur: Feature | null = null;
 
+  // NEU: Speicher für Original-Geometrien
+  private originalGeometries: Map<string | number, Geometry> = new Map();
+
+  // NEU: Style-Cache für *Auswahl*
+  private selectionStyleCache: Record<string, Style> = {};
+
   // --- Styles ---
   private readonly HOVER_STYLE = new Style({
     stroke: new Stroke({ color: "#dc2626", width: 3 }),
     fill: new Fill({ color: "rgba(234, 88, 12, 0.4)" }),
+  });
+
+  // NEU: Basis-Stil für *Auswahl* (z.B. Blau, um sich von Rot/Grau abzusetzen)
+  private readonly SELECTED_STYLE_BASE = new Style({
+    stroke: new Stroke({ color: "#2563eb", width: 3 }),
+    fill: new Fill({ color: "rgba(59, 130, 246, 0.4)" }),
   });
 
   constructor(
@@ -213,7 +227,33 @@ export class EditorInteractionManager {
     // Select (wird auch für Modify/Translate benötigt)
     this.select = new Select({
       layers: [this.layerManager.getGraeberLayer()!],
-      style: this.HOVER_STYLE,
+
+      // KORREKTUR: Ersetze statisches HOVER_STYLE durch eine Style-Funktion (Bug 1)
+      style: (feature) => {
+        const number = String(feature.get("grabnummer") || "?");
+
+        // Style Caching
+        if (this.selectionStyleCache[number]) {
+          return this.selectionStyleCache[number];
+        }
+
+        // Style neu erstellen
+        const newStyle = this.SELECTED_STYLE_BASE.clone();
+        newStyle.setText(
+          new Text({
+            text: number,
+            font: "bold 13px Inter, sans-serif",
+            fill: new Fill({
+              color: this.SELECTED_STYLE_BASE.getStroke()!.getColor() as string,
+            }),
+            stroke: new Stroke({ color: "#ffffff", width: 3 }),
+            overflow: true,
+          }),
+        );
+
+        this.selectionStyleCache[number] = newStyle;
+        return newStyle;
+      },
 
       // KORREKTUR: Filtert die Auswahl auf die aktive Grabflur
       filter: (feature, layer) => {
@@ -260,8 +300,13 @@ export class EditorInteractionManager {
    * Wird von EditorApp aufgerufen, NACHDEM die Daten und Layer geladen sind.
    */
   public initializeModifyTools() {
+    console.log(
+      "%c[InteractionManager] 🛠️ Werkzeuge werden initialisiert...",
+      "color: green;",
+    );
     // Deaktiviere Map-Drag (Bug 2)
     this.setMapDragPan(false);
+    this.originalGeometries.clear(); // Sicherstellen, dass Map leer ist
 
     this.initModifyInteractions();
 
@@ -271,29 +316,81 @@ export class EditorInteractionManager {
       this.map.addInteraction(this.translate!);
       this.map.addInteraction(this.snap!);
 
-      // NEU: Dirty-Tracking Listener
-      this.modify!.on("modifyend", (e) => {
-        e.features.getArray().forEach((f) => {
-          if (f.getId() !== undefined) {
-            this.state.markAsDirty(f.getId()!);
-          }
-        });
-      });
+      // Dirty-Tracking Listener
+      this.modify!.on("modifyend", (e) => this.markFeaturesAsDirty(e.features));
+      this.translate!.on("translateend", (e) =>
+        this.markFeaturesAsDirty(e.features),
+      );
 
-      this.translate!.on("translateend", (e) => {
-        e.features.getArray().forEach((f) => {
-          if (f.getId() !== undefined) {
-            this.state.markAsDirty(f.getId()!);
-          }
-        });
-      });
+      // NEU: Listener zum Speichern der Original-Geometrie
+      this.modify!.on("modifystart", (e) =>
+        this.storeOriginalGeometries(e.features),
+      );
+      this.translate!.on("translatestart", (e) =>
+        this.storeOriginalGeometries(e.features),
+      );
     }
+  }
+
+  // NEU: Hilfsfunktion für "modifystart" / "translatestart"
+  private storeOriginalGeometries(features: any /* Collection<Feature> */) {
+    features.getArray().forEach((f: Feature) => {
+      const id = f.getId();
+      if (id !== undefined && !this.originalGeometries.has(id)) {
+        // Speichere einen Klon der Geometrie, *bevor* sie geändert wird
+        this.originalGeometries.set(id, f.getGeometry()!.clone());
+      }
+    });
+  }
+
+  // NEU: Hilfsfunktion für "modifyend" / "translateend"
+  private markFeaturesAsDirty(features: any /* Collection<Feature> */) {
+    features.getArray().forEach((f: Feature) => {
+      if (f.getId() !== undefined) {
+        console.log(
+          `%c[InteractionManager] ✏️ Feature ${f.getId()} als 'dirty' markiert.`,
+          "color: orange;",
+        );
+        this.state.markAsDirty(f.getId()!);
+      }
+    });
+  }
+
+  // NEU: Öffentliche Revert-Funktion
+  public revertChanges() {
+    const dirtyIds = this.state.getDirtyFeatureIds();
+    const graeberSource = this.layerManager.getGraeberSource();
+    console.log(
+      `%c[InteractionManager] ⏪ Reverting ${dirtyIds.size} features...`,
+      "color: red; font-weight: bold;",
+    );
+    if (!graeberSource) return;
+
+    console.log(`[InteractionManager] Reverting ${dirtyIds.size} features...`);
+
+    dirtyIds.forEach((id) => {
+      const originalGeom = this.originalGeometries.get(id);
+      const feature = graeberSource.getFeatureById(id);
+
+      if (feature && originalGeom) {
+        // Setze Geometrie auf den gespeicherten Originalzustand zurück
+        feature.setGeometry(originalGeom);
+      }
+    });
+
+    // Aufräumen
+    this.originalGeometries.clear();
+    this.state.clearDirtyFlags();
   }
 
   /**
    * Deaktiviert alle Bearbeitungs-Interaktionen
    */
   public deactivateModifyTools() {
+    console.log(
+      "%c[InteractionManager] 🛑 Werkzeuge werden deaktiviert...",
+      "color: green;",
+    );
     // Aktiviere Map-Drag (Bug 2)
     this.setMapDragPan(true);
 
@@ -306,6 +403,10 @@ export class EditorInteractionManager {
     this.modify = null;
     this.translate = null;
     this.snap = null;
+
+    // NEU: Caches leeren
+    this.originalGeometries.clear();
+    this.clearSelectionStyleCache();
   }
 
   // NEU: Hilfsfunktion für Bug 2
@@ -316,10 +417,18 @@ export class EditorInteractionManager {
       .find((i) => i instanceof DragPan);
 
     if (dragPan) {
+      console.log(
+        `[InteractionManager] 🖐️ Map DragPan ${active ? "AKTIVIERT" : "DEAKTIVIERT"}.`,
+      );
       dragPan.setActive(active);
     } else {
       console.warn("[InteractionManager] DragPan-Interaktion nicht gefunden.");
     }
+  }
+
+  // NEU: Hilfsfunktion zum Leeren des Style-Cache
+  private clearSelectionStyleCache() {
+    this.selectionStyleCache = {};
   }
 
   private extractGrabflurNumber(name: string): string {

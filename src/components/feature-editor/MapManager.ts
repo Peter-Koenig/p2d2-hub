@@ -3,7 +3,8 @@ import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";
 import { defaults } from "ol/control/defaults";
 import FullScreen from "ol/control/FullScreen";
-import { transformExtent } from "ol/proj";
+// KORREKTUR: 'get' importieren
+import { transformExtent, get as getProjection } from "ol/proj";
 import { registerUtm } from "@/utils/crs";
 import { calculateUtmResolutions } from "@/utils/utm-resolutions";
 import { ViewHistoryManager } from "@/utils/view-history-manager";
@@ -31,9 +32,19 @@ export class MapManager {
     // 2. Auflösungen berechnen
     const resolutions = calculateUtmResolutions();
 
+    // --- KORREKTUR: Projektions-Objekt explizit abrufen ---
+    const projectionObject = getProjection(projection);
+    if (!projectionObject) {
+      // Dieser Fehler ist klarer als der OpenLayers-Fehler
+      throw new Error(
+        `[MapManager] Projektion '${projection}' konnte nicht von OpenLayers gefunden werden. (Registrierung fehlgeschlagen?)`,
+      );
+    }
+    // --- ENDE KORREKTUR ---
+
     // 3. View erstellen
     this.view = new View({
-      projection: projection,
+      projection: projectionObject, // <-- KORREKTUR: Objekt statt String
       center: MAP_CONFIG.INITIAL_CENTER, // Wird sofort überschrieben
       zoom: MAP_CONFIG.INITIAL_ZOOM,
       resolutions: resolutions,
@@ -55,7 +66,7 @@ export class MapManager {
         zoom: MAP_CONFIG.CONTROLS.ZOOM,
         rotate: MAP_CONFIG.CONTROLS.ROTATE,
         attribution: MAP_CONFIG.CONTROLS.ATTRIBUTION,
-      }).extend([new FullScreen(MAP_CONFIG.FULLSCREEN)]),
+      }).extend([new FullScreen()]),
     });
 
     // 5. View History Manager initialisieren

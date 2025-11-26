@@ -145,7 +145,8 @@ export class EditorState {
     this.notifyListeners();
   }
 
-  public hasDirtyFeatures(): boolean {
+  // KORREKTUR: In einen Getter umgewandelt (Fix 1)
+  public get hasDirtyFeatures(): boolean {
     return this.dirtyFeatures.size > 0;
   }
 
@@ -162,7 +163,9 @@ export class EditorState {
       selectedFeature: this.selectedFeature,
       currentTool: this.currentTool,
       editorMode: this.editorMode,
-      hasDirtyFeatures: this.hasDirtyFeatures(), // <-- NEU
+      // KORREKTUR: Fehlendes Property hinzugefügt (Fix 2)
+      // Verwendet jetzt den neuen Getter (ohne Klammern)
+      hasDirtyFeatures: this.hasDirtyFeatures,
     };
   }
 }
