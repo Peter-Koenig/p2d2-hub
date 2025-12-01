@@ -1,0 +1,442 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+    title="MeetUp Nr. 6: Community-Testing p2d2"
+    description="Teste p2d2 mit der User-Journey von Olaf Rochko, der vom Sofa aus Gräber digitalisiert."
+>
+    <main class="flex flex-col items-center w-full">
+        <!-- Hero-Bereich mit Datum und Titel -->
+        <section
+            class="w-full bg-gradient-to-r from-primary-600 to-green-500 text-white py-16 px-6 text-center"
+        >
+            <div class="max-w-4xl mx-auto">
+                <div
+                    class="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-semibold mb-4"
+                >
+                    1. Dezember 2025 • MeetUp Nr. 6
+                </div>
+                <h1
+                    class="font-poppins font-bold text-4xl md:text-5xl mb-6"
+                >
+                    Community-Testing: Friedhof Rheinkassel
+                </h1>
+                <p class="text-xl leading-relaxed max-w-3xl mx-auto">
+                    Begleite Olaf Rochko auf seiner digitalen Mapping-Reise vom
+                    Sofa aus und lerne dabei, wie einfach du selbst Geodaten für
+                    OpenStreetMap erfassen kannst.
+                </p>
+            </div>
+        </section>
+
+        <!-- Einleitung mit farbigem Kasten -->
+        <section class="w-full max-w-5xl mx-auto px-6 py-12">
+            <div
+                class="bg-primary-50 border-l-4 border-primary-500 p-8 rounded-xl mb-12"
+            >
+                <h2 class="font-poppins font-bold text-2xl text-gray-900 mb-4">
+                    Die Story: Mapping trotz Fußverletzung
+                </h2>
+                <p class="text-gray-700 leading-relaxed mb-4">
+                    Es ist Sonntag, 1. Dezember 2025. Olaf Rochko sitzt mit einer
+                    Fußverletzung auf dem Sofa und möchte trotzdem etwas für die
+                    OpenStreetMap-Community beitragen. Er hat gehört, dass man mit
+                    p2d2 Geodaten erfassen kann, ohne vor Ort sein zu müssen.
+                </p>
+                <p class="text-gray-700 leading-relaxed">
+                    Seine Mission: Die Gräber auf dem Friedhof Rheinkassel in Köln
+                    digital erfassen – bequem vom heimischen Sofa aus, mit nichts
+                    weiter als seinem Laptop und der p2d2-Plattform.
+                </p>
+            </div>
+
+            <!-- Timeline der User Journey -->
+            <div class="space-y-12">
+                <!-- Schritt 1: Website besuchen -->
+                <div class="timeline-item mb-16 bg-gray-50 rounded-2xl p-8">
+                    <div class="flex items-start gap-6">
+                        <div
+                            class="flex-shrink-0 w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
+                        >
+                            1
+                        </div>
+                        <div class="flex-1">
+                            <h3
+                                class="font-poppins font-bold text-xl text-gray-900 mb-3"
+                            >
+                                p2d2-Website besuchen
+                            </h3>
+                            <p class="text-gray-700 leading-relaxed mb-4">
+                                Olaf öffnet seinen Browser und gibt
+                                <strong>www.data-dna.eu</strong> ein. Die Startseite
+                                lädt – er sieht die interaktive Karte und ein Grid mit
+                                Kommunen. Er sucht nach Informationen, wie er selbst
+                                Geodaten erfassen kann.
+                            </p>
+                            <img
+                                src="/images/testseite/www-data-dna-eu.jpg"
+                                alt="Screenshot der p2d2-Startseite"
+                                class="rounded-xl shadow-lg border-2 border-gray-200"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schritt 2: Kommune und Kategorie wählen -->
+                <div class="timeline-item mb-16 bg-gray-50 rounded-2xl p-8">
+                    <div class="flex items-start gap-6">
+                        <div
+                            class="flex-shrink-0 w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
+                        >
+                            2
+                        </div>
+                        <div class="flex-1">
+                            <h3
+                                class="font-poppins font-bold text-xl text-gray-900 mb-3"
+                            >
+                                Kommune und Kategorie auswählen
+                            </h3>
+                            <p class="text-gray-700 leading-relaxed mb-4">
+                                Auf der Hauptkarte wählt Olaf <strong>Köln</strong> als
+                                Kommune. Die Karte zoomt automatisch auf das Kölner
+                                Stadtgebiet. Dann wechselt er zum Tab
+                                <strong>Kategorien</strong> und klickt auf das Icon
+                                <strong>⚰️ Friedhöfe</strong>. Die Karte zeigt nun alle
+                                Friedhöfe in Köln als orange Polygone.
+                            </p>
+                            <img
+                                src="/images/testseite/www-data-dna-eu.jpg"
+                                alt="Kommune Köln und Kategorie Friedhöfe"
+                                class="rounded-xl shadow-lg border-2 border-gray-200"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schritt 3: Friedhof auswählen -->
+                <div class="timeline-item mb-16 bg-gray-50 rounded-2xl p-8">
+                    <div class="flex items-start gap-6">
+                        <div
+                            class="flex-shrink-0 w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
+                        >
+                            3
+                        </div>
+                        <div class="flex-1">
+                            <h3
+                                class="font-poppins font-bold text-xl text-gray-900 mb-3"
+                            >
+                                Friedhof Rheinkassel auswählen
+                            </h3>
+                            <p class="text-gray-700 leading-relaxed mb-4">
+                                Olaf klickt auf den <strong>Friedhof Rheinkassel</strong
+                                >. Ein Popup erscheint mit dem Namen und einem Button
+                                <strong>„Grenze bearbeiten"</strong>. Die Karte zoomt
+                                automatisch auf den Friedhof.
+                            </p>
+                            <img
+                                src="/images/testseite/www-data-dna-eu.jpg"
+                                alt="Friedhof Rheinkassel ausgewählt"
+                                class="rounded-xl shadow-lg border-2 border-gray-200"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schritt 4: Editor öffnen -->
+                <div class="timeline-item mb-16 bg-gray-50 rounded-2xl p-8">
+                    <div class="flex items-start gap-6">
+                        <div
+                            class="flex-shrink-0 w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
+                        >
+                            4
+                        </div>
+                        <div class="flex-1">
+                            <h3
+                                class="font-poppins font-bold text-xl text-gray-900 mb-3"
+                            >
+                                Feature-Editor öffnen
+                            </h3>
+                            <p class="text-gray-700 leading-relaxed mb-4">
+                                Er klickt auf den Button <strong
+                                    >„Grenze bearbeiten"</strong
+                                >. Eine neue Seite lädt den <strong
+                                    >Feature-Editor</strong
+                                >. Olaf sieht:
+                            </p>
+                            <ul class="space-y-2 mb-4">
+                                <li class="flex items-start">
+                                    <span class="text-primary-600 mr-3 mt-1">•</span>
+                                    <span class="text-gray-700"
+                                        ><strong>Navigation-Controls:</strong> Buttons für
+                                        „Zurück" und „Vorwärts" (um durch die Zoom-History
+                                        zu navigieren).</span
+                                    >
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-primary-600 mr-3 mt-1">•</span>
+                                    <span class="text-gray-700"
+                                        ><strong>Layer-Controls:</strong> Buttons zum Ein-
+                                        und Ausschalten verschiedener Kartenebenen.</span
+                                    >
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-primary-600 mr-3 mt-1">•</span>
+                                    <span class="text-gray-700"
+                                        ><strong>Toolbar:</strong> Werkzeuge zum Auswählen,
+                                        Verschieben, Zeichnen und Speichern.</span
+                                    >
+                                </li>
+                            </ul>
+                            <p class="text-gray-700 leading-relaxed mb-4">
+                                Die Karte zeigt den Friedhof Rheinkassel mit allen
+                                Grabfluren (rot umrandet und nummeriert).
+                            </p>
+                            <img
+                                src="/images/testseite/www-data-dna-eu.jpg"
+                                alt="Feature-Editor mit Grabfluren"
+                                class="rounded-xl shadow-lg border-2 border-gray-200"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schritt 5: Transparenz anpassen -->
+                <div class="timeline-item mb-16 bg-gray-50 rounded-2xl p-8">
+                    <div class="flex items-start gap-6">
+                        <div
+                            class="flex-shrink-0 w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
+                        >
+                            5
+                        </div>
+                        <div class="flex-1">
+                            <h3
+                                class="font-poppins font-bold text-xl text-gray-900 mb-3"
+                            >
+                                Layer-Transparenz anpassen
+                            </h3>
+                            <p class="text-gray-700 leading-relaxed mb-4">
+                                Olaf sieht rechts oben die <strong
+                                    >Layer-Controls</strong
+                                >:
+                            </p>
+                            <ul class="space-y-2 mb-4">
+                                <li class="flex items-start">
+                                    <span class="text-primary-600 mr-3 mt-1">•</span>
+                                    <span class="text-gray-700"
+                                        ><strong>Luftbild:</strong> Eine Ebene mit aktuellen
+                                        Befliegungsdaten, die ein- und ausgeschaltet werden
+                                        kann.</span
+                                    >
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-primary-600 mr-3 mt-1">•</span>
+                                    <span class="text-gray-700"
+                                        ><strong>basemap.de:</strong> Die freie offizielle
+                                        Karte von Deutschland.</span
+                                    >
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-primary-600 mr-3 mt-1">•</span>
+                                    <span class="text-gray-700"
+                                        ><strong>Alter Friedhofsplan:</strong> Historische
+                                        Pläne zur Orientierung.</span
+                                    >
+                                </li>
+                            </ul>
+                            <img
+                                src="/images/testseite/www-data-dna-eu.jpg"
+                                alt="Layer-Buttons für Luftbild, basemap.de und Friedhofsplan"
+                                class="rounded-xl shadow-lg border-2 border-gray-200"
+                            />
+                            <p class="text-gray-700 leading-relaxed mt-4">
+                                Er drückt auf einen Button <strong>lang</strong> (mehr
+                                als 500 ms) – die Transparenz des Layers ändert sich
+                                sinusförmig zwischen 20% und 100%. Er lässt bei 40% los.
+                                So kann er Luftbild, Friedhofsplan und OSM-Karte
+                                gleichzeitig überblenden – perfekt zur Orientierung!
+                            </p>
+                            <img
+                                src="/images/testseite/www-data-dna-eu.jpg"
+                                alt="Transparenz-Steuerung der Kartenebenen"
+                                class="rounded-xl shadow-lg border-2 border-gray-200"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schritt 6: Grabflur auswählen -->
+                <div class="timeline-item mb-16 bg-gray-50 rounded-2xl p-8">
+                    <div class="flex items-start gap-6">
+                        <div
+                            class="flex-shrink-0 w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
+                        >
+                            6
+                        </div>
+                        <div class="flex-1">
+                            <h3
+                                class="font-poppins font-bold text-xl text-gray-900 mb-3"
+                            >
+                                Grabflur 006 auswählen
+                            </h3>
+                            <p class="text-gray-700 leading-relaxed mb-4">
+                                Olaf klickt auf die Grabflur <strong>006</strong>. Die
+                                Karte zoomt automatisch auf diese Fläche und zentriert
+                                sie im Bildschirm.
+                            </p>
+                            <img
+                                src="/images/testseite/www-data-dna-eu.jpg"
+                                alt="Grabflur 006 ausgewählt und gezoomt"
+                                class="rounded-xl shadow-lg border-2 border-gray-200"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schritt 7: Editor aktivieren -->
+                <div class="timeline-item mb-16 bg-gray-50 rounded-2xl p-8">
+                    <div class="flex items-start gap-6">
+                        <div
+                            class="flex-shrink-0 w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
+                        >
+                            7
+                        </div>
+                        <div class="flex-1">
+                            <h3
+                                class="font-poppins font-bold text-xl text-gray-900 mb-3"
+                            >
+                                „Editor"-Werkzeug aktivieren
+                            </h3>
+                            <p class="text-gray-700 leading-relaxed mb-4">
+                                In der <strong>Toolbar</strong> unten mittig klickt Olaf
+                                auf den Button <strong>„✏️ Editor"</strong>. Der Button
+                                wird hervorgehoben. Nun lädt die Karte alle
+                                <strong>Gräber</strong> der Grabflur 006. Die Gräber
+                                werden als orange Polygone dargestellt, mit ihrer
+                                Grabnummer in der Mitte.
+                            </p>
+                            <img
+                                src="/images/testseite/www-data-dna-eu.jpg"
+                                alt="Editor-Modus aktiviert, Gräber werden geladen"
+                                class="rounded-xl shadow-lg border-2 border-gray-200"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schritt 8: Gräber bearbeiten -->
+                <div class="timeline-item mb-16 bg-gray-50 rounded-2xl p-8">
+                    <div class="flex items-start gap-6">
+                        <div
+                            class="flex-shrink-0 w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
+                        >
+                            8
+                        </div>
+                        <div class="flex-1">
+                            <h3
+                                class="font-poppins font-bold text-xl text-gray-900 mb-3"
+                            >
+                                Gräber verschieben, rotieren, editieren
+                            </h3>
+                            <p class="text-gray-700 leading-relaxed mb-4">
+                                Olaf wählt ein Grab aus (z. B. <strong
+                                    >Grab 12/13</strong
+                                >). Es wird rot hervorgehoben. Die anderen Gräber werden
+                                grau und inaktiv dargestellt. Je nach aktiviertem Button
+                                kann er die Gräber:
+                            </p>
+                            <ul class="space-y-2 mb-4">
+                                <li class="flex items-start">
+                                    <span class="text-green-600 mr-3 mt-1">✓</span>
+                                    <span class="text-gray-700"
+                                        ><strong>Verschieben:</strong> Position anpassen</span
+                                    >
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-green-600 mr-3 mt-1">✓</span>
+                                    <span class="text-gray-700"
+                                        ><strong>Rotieren:</strong> Ausrichtung korrigieren</span
+                                    >
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-green-600 mr-3 mt-1">✓</span>
+                                    <span class="text-gray-700"
+                                        ><strong>Stützpunkte editieren:</strong> Form anpassen</span
+                                    >
+                                </li>
+                            </ul>
+                            <p class="text-gray-600 text-sm italic mb-4">
+                                (Olaf hatte gehört, dass der Editor gerade frisch
+                                entwickelt wurde und noch etwas hakelig in der Bedienung
+                                sei – aber es funktioniert!)
+                            </p>
+                            <img
+                                src="/images/testseite/www-data-dna-eu.jpg"
+                                alt="Gräber werden bearbeitet: verschieben, rotieren, editieren"
+                                class="rounded-xl shadow-lg border-2 border-gray-200"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schritt 9: Änderungen speichern -->
+                <div class="timeline-item mb-16 bg-green-50 rounded-2xl p-8">
+                    <div class="flex items-start gap-6">
+                        <div
+                            class="flex-shrink-0 w-16 h-16 bg-green-600 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
+                        >
+                            9
+                        </div>
+                        <div class="flex-1">
+                            <h3
+                                class="font-poppins font-bold text-xl text-gray-900 mb-3"
+                            >
+                                Änderungen speichern
+                            </h3>
+                            <p class="text-gray-700 leading-relaxed mb-4">
+                                Nachdem Olaf alle Gräber der Grabflur 006 digitalisiert
+                                hat, klickt er auf den Button <strong
+                                    >„💾 Speichern"</strong
+                                > in der Toolbar. Die Änderungen werden über <strong
+                                    >WFS-T (Web Feature Service - Transactional)</strong
+                                > an den GeoServer übertragen und in der PostGIS-Datenbank
+                                gespeichert.
+                            </p>
+                            <p class="text-gray-700 leading-relaxed">
+                                Eine Erfolgsmeldung erscheint: <strong
+                                    >„Daten erfolgreich gespeichert!"</strong
+                                >
+                            </p>
+                            <img
+                                src="/images/testseite/www-data-dna-eu.jpg"
+                                alt="Speichern-Dialog mit Erfolgsmeldung"
+                                class="rounded-xl shadow-lg border-2 border-gray-200"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Call-to-Action -->
+        <section class="w-full bg-gray-50 py-16 px-6 text-center">
+            <div class="max-w-3xl mx-auto">
+                <h2 class="font-poppins font-bold text-3xl text-gray-900 mb-6">
+                    Probiere es selbst aus!
+                </h2>
+                <p class="text-lg text-gray-700 mb-8">
+                    Du kannst die gleiche Reise wie Olaf machen – ganz einfach
+                    vom Sofa aus. Besuche <strong>www.data-dna.eu</strong> und
+                    starte deine eigene Mapping-Session.
+                </p>
+                <a
+                    href="/"
+                    class="inline-block bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-4 rounded-lg shadow-lg transition"
+                >
+                    Zur p2d2-Startseite
+                </a>
+            </div>
+        </section>
+    </main>
+</BaseLayout>
+
