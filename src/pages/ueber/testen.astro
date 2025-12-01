@@ -17,9 +17,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                 >
                     1. Dezember 2025 • MeetUp Nr. 6
                 </div>
-                <h1
-                    class="font-poppins font-bold text-4xl md:text-5xl mb-6"
-                >
+                <h1 class="font-poppins font-bold text-4xl md:text-5xl mb-6">
                     Community-Testing: Friedhof Rheinkassel
                 </h1>
                 <p class="text-xl leading-relaxed max-w-3xl mx-auto">
@@ -39,15 +37,16 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                     Die Story: Mapping trotz Fußverletzung
                 </h2>
                 <p class="text-gray-700 leading-relaxed mb-4">
-                    Es ist Sonntag, 1. Dezember 2025. Olaf Rochko sitzt mit einer
-                    Fußverletzung auf dem Sofa und möchte trotzdem etwas für die
-                    OpenStreetMap-Community beitragen. Er hat gehört, dass man mit
-                    p2d2 Geodaten erfassen kann, ohne vor Ort sein zu müssen.
+                    Es ist Sonntag, 1. Dezember 2025. Olaf Rochko sitzt mit
+                    einer Fußverletzung auf dem Sofa und möchte trotzdem etwas
+                    für die OpenStreetMap-Community beitragen. Er hat gehört,
+                    dass man mit p2d2 Geodaten erfassen kann, ohne vor Ort sein
+                    zu müssen.
                 </p>
                 <p class="text-gray-700 leading-relaxed">
-                    Seine Mission: Die Gräber auf dem Friedhof Rheinkassel in Köln
-                    digital erfassen – bequem vom heimischen Sofa aus, mit nichts
-                    weiter als seinem Laptop und der p2d2-Plattform.
+                    Seine Mission: Die Gräber auf dem Friedhof Rheinkassel in
+                    Köln digital erfassen – bequem vom heimischen Sofa aus, mit
+                    nichts weiter als seinem Laptop und der p2d2-Plattform.
                 </p>
             </div>
 
@@ -70,9 +69,9 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                             <p class="text-gray-700 leading-relaxed mb-4">
                                 Olaf öffnet seinen Browser und gibt
                                 <strong>www.data-dna.eu</strong> ein. Die Startseite
-                                lädt – er sieht die interaktive Karte und ein Grid mit
-                                Kommunen. Er sucht nach Informationen, wie er selbst
-                                Geodaten erfassen kann.
+                                lädt – er sieht die interaktive Karte und ein Grid
+                                mit Kommunen. Er sucht nach Informationen, wie er
+                                selbst Geodaten erfassen kann.
                             </p>
                             <img
                                 src="/images/testseite/www-data-dna-eu.jpg"
@@ -82,6 +81,8 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                         </div>
                     </div>
                 </div>
+
+                <!-- Schritt 2: Kommune und Kategorie wählen -->
 
                 <!-- Schritt 2: Kommune und Kategorie wählen -->
                 <div class="timeline-item mb-16 bg-gray-50 rounded-2xl p-8">
@@ -98,18 +99,30 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                                 Kommune und Kategorie auswählen
                             </h3>
                             <p class="text-gray-700 leading-relaxed mb-4">
-                                Auf der Hauptkarte wählt Olaf <strong>Köln</strong> als
-                                Kommune. Die Karte zoomt automatisch auf das Kölner
-                                Stadtgebiet. Dann wechselt er zum Tab
-                                <strong>Kategorien</strong> und klickt auf das Icon
-                                <strong>⚰️ Friedhöfe</strong>. Die Karte zeigt nun alle
-                                Friedhöfe in Köln als orange Polygone.
+                                Auf der Hauptkarte wählt Olaf <strong
+                                    >Köln</strong
+                                > als Kommune. Die Karte zoomt automatisch auf das
+                                Kölner Stadtgebiet. Dann wechselt er zum Tab <strong
+                                    >Kategorien</strong
+                                > und klickt auf das Icon <strong
+                                    >🪦 Friedhöfe</strong
+                                >. Die Karte zeigt nun alle Friedhöfe in Köln
+                                als orange Polygone.
                             </p>
-                            <img
-                                src="/images/testseite/www-data-dna-eu.jpg"
-                                alt="Kommune Köln und Kategorie Friedhöfe"
-                                class="rounded-xl shadow-lg border-2 border-gray-200"
-                            />
+
+                            <!-- Zwei Grafiken nebeneinander -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <img
+                                    src="/images/testseite/p2d2-testen_Auswahl_Kommune.jpg"
+                                    alt="Kommune Köln ausgewählt"
+                                    class="rounded-xl shadow-lg border-2 border-gray-200"
+                                />
+                                <img
+                                    src="/images/testseite/p2d2-testen_Auswahl_Kategorie.jpg"
+                                    alt="Kategorie Friedhöfe ausgewählt"
+                                    class="rounded-xl shadow-lg border-2 border-gray-200"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -129,13 +142,15 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                                 Friedhof Rheinkassel auswählen
                             </h3>
                             <p class="text-gray-700 leading-relaxed mb-4">
-                                Olaf klickt auf den <strong>Friedhof Rheinkassel</strong
-                                >. Ein Popup erscheint mit dem Namen und einem Button
-                                <strong>„Grenze bearbeiten"</strong>. Die Karte zoomt
-                                automatisch auf den Friedhof.
+                                Olaf klickt auf den <strong
+                                    >Friedhof Rheinkassel</strong
+                                >. Ein Popup erscheint mit dem Namen und einem
+                                Button
+                                <strong>„Grenze bearbeiten"</strong>. Die Karte
+                                zoomt automatisch auf den Friedhof.
                             </p>
                             <img
-                                src="/images/testseite/www-data-dna-eu.jpg"
+                                src="/images/testseite/p2d2-testen_Editor_geoefnet.jpg"
                                 alt="Friedhof Rheinkassel ausgewählt"
                                 class="rounded-xl shadow-lg border-2 border-gray-200"
                             />
@@ -143,7 +158,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                     </div>
                 </div>
 
-                <!-- Schritt 4: Editor öffnen -->
+                <!-- Schritt 4: Grabflur auswählen -->
                 <div class="timeline-item mb-16 bg-gray-50 rounded-2xl p-8">
                     <div class="flex items-start gap-6">
                         <div
@@ -155,45 +170,85 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                             <h3
                                 class="font-poppins font-bold text-xl text-gray-900 mb-3"
                             >
+                                Grabflur 006 auswählen
+                            </h3>
+                            <p class="text-gray-700 leading-relaxed mb-4">
+                                Olaf klickt auf die Grabflur <strong>006</strong
+                                >. Die Karte zoomt automatisch auf diese Fläche
+                                und zentriert sie im Bildschirm.
+                            </p>
+                            <p class="text-gray-700 leading-relaxed mb-4">
+                                Olaf erkennt den <strong
+                                    >"virtuellen Grab-Stapel"</strong
+                                >.
+                            </p>
+                            <img
+                                src="/images/testseite/p2d2-testen_Editor_Grabflur006_Klick1.jpg"
+                                alt="Grabflur 006 ausgewählt und gezoomt"
+                                class="rounded-xl shadow-lg border-2 border-gray-200"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schritt 5: Editor öffnen -->
+                <div class="timeline-item mb-16 bg-gray-50 rounded-2xl p-8">
+                    <div class="flex items-start gap-6">
+                        <div
+                            class="flex-shrink-0 w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
+                        >
+                            5
+                        </div>
+                        <div class="flex-1">
+                            <h3
+                                class="font-poppins font-bold text-xl text-gray-900 mb-3"
+                            >
                                 Feature-Editor öffnen
                             </h3>
                             <p class="text-gray-700 leading-relaxed mb-4">
-                                Er klickt auf den Button <strong
-                                    >„Grenze bearbeiten"</strong
-                                >. Eine neue Seite lädt den <strong
-                                    >Feature-Editor</strong
-                                >. Olaf sieht:
+                                Er klickt <strong
+                                    >ein zweites Mal in die Grabflur</strong
+                                >. Der <strong>Feature-Editor</strong> wird sichtbar:
                             </p>
                             <ul class="space-y-2 mb-4">
                                 <li class="flex items-start">
-                                    <span class="text-primary-600 mr-3 mt-1">•</span>
+                                    <span class="text-primary-600 mr-3 mt-1"
+                                        >•</span
+                                    >
                                     <span class="text-gray-700"
-                                        ><strong>Navigation-Controls:</strong> Buttons für
-                                        „Zurück" und „Vorwärts" (um durch die Zoom-History
-                                        zu navigieren).</span
+                                        ><strong>Navigation-Controls:</strong> Buttons
+                                        für „Zurück" und „Vorwärts" (um durch die
+                                        Zoom-History zu navigieren).</span
                                     >
                                 </li>
                                 <li class="flex items-start">
-                                    <span class="text-primary-600 mr-3 mt-1">•</span>
+                                    <span class="text-primary-600 mr-3 mt-1"
+                                        >•</span
+                                    >
                                     <span class="text-gray-700"
-                                        ><strong>Layer-Controls:</strong> Buttons zum Ein-
-                                        und Ausschalten verschiedener Kartenebenen.</span
+                                        ><strong>Layer-Controls:</strong> Buttons
+                                        zum Ein- und Ausschalten verschiedener Kartenebenen.</span
                                     >
                                 </li>
                                 <li class="flex items-start">
-                                    <span class="text-primary-600 mr-3 mt-1">•</span>
+                                    <span class="text-primary-600 mr-3 mt-1"
+                                        >•</span
+                                    >
                                     <span class="text-gray-700"
-                                        ><strong>Toolbar:</strong> Werkzeuge zum Auswählen,
-                                        Verschieben, Zeichnen und Speichern.</span
+                                        ><strong
+                                            >Erneutes Klicken in die Grabflur</strong
+                                        > macht die Toolbar mit den Werkzeuge zum
+                                        Auswählen, Verschieben, Zeichnen und Speichern
+                                        sichtbar.</span
                                     >
                                 </li>
                             </ul>
                             <p class="text-gray-700 leading-relaxed mb-4">
-                                Die Karte zeigt den Friedhof Rheinkassel mit allen
-                                Grabfluren (rot umrandet und nummeriert).
+                                Die Karte zeigt den Friedhof Rheinkassel mit
+                                allen Grabfluren (rot umrandet und nummeriert).
                             </p>
                             <img
-                                src="/images/testseite/www-data-dna-eu.jpg"
+                                src="/images/testseite/p2d2-testen_Editor_Grabflur006_Klick2.jpg"
                                 alt="Feature-Editor mit Grabfluren"
                                 class="rounded-xl shadow-lg border-2 border-gray-200"
                             />
@@ -201,13 +256,13 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                     </div>
                 </div>
 
-                <!-- Schritt 5: Transparenz anpassen -->
+                <!-- Schritt 6: Transparenz anpassen -->
                 <div class="timeline-item mb-16 bg-gray-50 rounded-2xl p-8">
                     <div class="flex items-start gap-6">
                         <div
                             class="flex-shrink-0 w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
                         >
-                            5
+                            6
                         </div>
                         <div class="flex-1">
                             <h3
@@ -222,22 +277,28 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                             </p>
                             <ul class="space-y-2 mb-4">
                                 <li class="flex items-start">
-                                    <span class="text-primary-600 mr-3 mt-1">•</span>
+                                    <span class="text-primary-600 mr-3 mt-1"
+                                        >•</span
+                                    >
                                     <span class="text-gray-700"
-                                        ><strong>Luftbild:</strong> Eine Ebene mit aktuellen
-                                        Befliegungsdaten, die ein- und ausgeschaltet werden
-                                        kann.</span
+                                        ><strong>Luftbild:</strong> Eine Ebene mit
+                                        aktuellen Befliegungsdaten, die ein- und ausgeschaltet
+                                        werden kann.</span
                                     >
                                 </li>
                                 <li class="flex items-start">
-                                    <span class="text-primary-600 mr-3 mt-1">•</span>
+                                    <span class="text-primary-600 mr-3 mt-1"
+                                        >•</span
+                                    >
                                     <span class="text-gray-700"
                                         ><strong>basemap.de:</strong> Die freie offizielle
                                         Karte von Deutschland.</span
                                     >
                                 </li>
                                 <li class="flex items-start">
-                                    <span class="text-primary-600 mr-3 mt-1">•</span>
+                                    <span class="text-primary-600 mr-3 mt-1"
+                                        >•</span
+                                    >
                                     <span class="text-gray-700"
                                         ><strong>Alter Friedhofsplan:</strong> Historische
                                         Pläne zur Orientierung.</span
@@ -245,19 +306,23 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                                 </li>
                             </ul>
                             <img
-                                src="/images/testseite/www-data-dna-eu.jpg"
+                                src="/images/testseite/p2d2-testen_Editor_Grabflur006_Klick2.jpg"
                                 alt="Layer-Buttons für Luftbild, basemap.de und Friedhofsplan"
                                 class="rounded-xl shadow-lg border-2 border-gray-200"
                             />
                             <p class="text-gray-700 leading-relaxed mt-4">
                                 Er drückt auf einen Button <strong>lang</strong> (mehr
                                 als 500 ms) – die Transparenz des Layers ändert sich
-                                sinusförmig zwischen 20% und 100%. Er lässt bei 40% los.
-                                So kann er Luftbild, Friedhofsplan und OSM-Karte
+                                sinusförmig zwischen 20% und 100%. Er lässt bei 40%
+                                los. So kann er Luftbild, Friedhofsplan und OSM-Karte
                                 gleichzeitig überblenden – perfekt zur Orientierung!
                             </p>
+                            <p class="text-gray-700 leading-relaxed mt-4">
+                                Olaf hat bereits ein Grab markiert (ein Klick)
+                                und konnte es danach verschieben:
+                            </p>
                             <img
-                                src="/images/testseite/www-data-dna-eu.jpg"
+                                src="/images/testseite/p2d2-testen_Editor_Grabflur006_Grab_Verschoben.jpg"
                                 alt="Transparenz-Steuerung der Kartenebenen"
                                 class="rounded-xl shadow-lg border-2 border-gray-200"
                             />
@@ -265,35 +330,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                     </div>
                 </div>
 
-                <!-- Schritt 6: Grabflur auswählen -->
-                <div class="timeline-item mb-16 bg-gray-50 rounded-2xl p-8">
-                    <div class="flex items-start gap-6">
-                        <div
-                            class="flex-shrink-0 w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
-                        >
-                            6
-                        </div>
-                        <div class="flex-1">
-                            <h3
-                                class="font-poppins font-bold text-xl text-gray-900 mb-3"
-                            >
-                                Grabflur 006 auswählen
-                            </h3>
-                            <p class="text-gray-700 leading-relaxed mb-4">
-                                Olaf klickt auf die Grabflur <strong>006</strong>. Die
-                                Karte zoomt automatisch auf diese Fläche und zentriert
-                                sie im Bildschirm.
-                            </p>
-                            <img
-                                src="/images/testseite/www-data-dna-eu.jpg"
-                                alt="Grabflur 006 ausgewählt und gezoomt"
-                                class="rounded-xl shadow-lg border-2 border-gray-200"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Schritt 7: Editor aktivieren -->
+                <!-- Schritt 7: Objekte drehen, Stürtzpunkte verschieben -->
                 <div class="timeline-item mb-16 bg-gray-50 rounded-2xl p-8">
                     <div class="flex items-start gap-6">
                         <div
@@ -305,18 +342,31 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                             <h3
                                 class="font-poppins font-bold text-xl text-gray-900 mb-3"
                             >
-                                „Editor"-Werkzeug aktivieren
+                                Objekte drehen, Stürtzpunkte verschieben
                             </h3>
                             <p class="text-gray-700 leading-relaxed mb-4">
-                                In der <strong>Toolbar</strong> unten mittig klickt Olaf
-                                auf den Button <strong>„✏️ Editor"</strong>. Der Button
-                                wird hervorgehoben. Nun lädt die Karte alle
-                                <strong>Gräber</strong> der Grabflur 006. Die Gräber
-                                werden als orange Polygone dargestellt, mit ihrer
-                                Grabnummer in der Mitte.
+                                Olaf hat ein Objekt verschoben und möchte es nun
+                                so drehen, dass es in die Anordnung des
+                                Friedhofsplans passt. Dazu markiert er es und
+                                klickt auf den <strong>"Rotieren"-Button</strong
+                                > in der Toolbar. Daraufhin erscheint ein <strong
+                                    >Rotationsanker</strong
+                                >, den Olaf auf dem Objekt platziert. Um den
+                                Rotationsaker zu verschieben hält Olaf die
+                                Strg-Taste fest und zieht den Anker auf das
+                                Grab, das er drehen möchte.
+                            </p>
+                            <p class="text-gray-700 leading-relaxed mb-4">
+                                Danach kann Olaf das Grab in die richtige Lage
+                                drehen und es ggf. auch nochmal verschieben.
+                            </p>
+                            <p class="text-gray-600 text-sm italic mb-4">
+                                (Olaf hatte gehört, dass der Editor gerade
+                                frisch entwickelt wurde und noch etwas hakelig
+                                in der Bedienung sei – aber es funktioniert!)
                             </p>
                             <img
-                                src="/images/testseite/www-data-dna-eu.jpg"
+                                src="/images/testseite/p2d2-testen_Editor_Grabflur006_Grab_VerschGedreht.jpg"
                                 alt="Editor-Modus aktiviert, Gräber werden geladen"
                                 class="rounded-xl shadow-lg border-2 border-gray-200"
                             />
@@ -324,7 +374,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                     </div>
                 </div>
 
-                <!-- Schritt 8: Gräber bearbeiten -->
+                <!-- Schritt 8: Speichern -->
                 <div class="timeline-item mb-16 bg-gray-50 rounded-2xl p-8">
                     <div class="flex items-start gap-6">
                         <div
@@ -336,50 +386,41 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                             <h3
                                 class="font-poppins font-bold text-xl text-gray-900 mb-3"
                             >
-                                Gräber verschieben, rotieren, editieren
+                                Fräber in OpenStreetMap uMap sepichern
                             </h3>
                             <p class="text-gray-700 leading-relaxed mb-4">
-                                Olaf wählt ein Grab aus (z. B. <strong
-                                    >Grab 12/13</strong
-                                >). Es wird rot hervorgehoben. Die anderen Gräber werden
-                                grau und inaktiv dargestellt. Je nach aktiviertem Button
-                                kann er die Gräber:
+                                Olaf überlegt, das Ergebnis kurz in der UserMap
+                                von OpenStreetMap abzuspeichern. Die UserMap
+                                ermöglicht es allen Menschen, eigene Daten in
+                                einer eigenen Karte abzuspeichern und diese für
+                                individuelle Zweche zu nutzen.
                             </p>
-                            <ul class="space-y-2 mb-4">
-                                <li class="flex items-start">
-                                    <span class="text-green-600 mr-3 mt-1">✓</span>
-                                    <span class="text-gray-700"
-                                        ><strong>Verschieben:</strong> Position anpassen</span
-                                    >
-                                </li>
-                                <li class="flex items-start">
-                                    <span class="text-green-600 mr-3 mt-1">✓</span>
-                                    <span class="text-gray-700"
-                                        ><strong>Rotieren:</strong> Ausrichtung korrigieren</span
-                                    >
-                                </li>
-                                <li class="flex items-start">
-                                    <span class="text-green-600 mr-3 mt-1">✓</span>
-                                    <span class="text-gray-700"
-                                        ><strong>Stützpunkte editieren:</strong> Form anpassen</span
-                                    >
-                                </li>
-                            </ul>
-                            <p class="text-gray-600 text-sm italic mb-4">
-                                (Olaf hatte gehört, dass der Editor gerade frisch
-                                entwickelt wurde und noch etwas hakelig in der Bedienung
-                                sei – aber es funktioniert!)
+                            <p class="text-gray-700 leadinyyg-relaxed mb-4">
+                                Das <a
+                                    href="https://umap.openstreetmap.de/de/map/public-public-data-dna_115354#19/51.03944/6.93393"
+                                    class="text-primary-600 hover:text-primary-700 font-medium"
+                                >
+                                    p2d2-Projekt nutzt die UserMap</a
+                                > zur Qualitätssicherung, damit sich OSM-Community
+                                vor einem Import großer Datenmengen über die Daten
+                                schauen kann, können sie zunächst in der UserMap sehen,
+                                welche Daten zum Import in die OSM vorgesehen sind
+                                und ggf. ein Veto einlegen.
+                            </p>
+                            <p class="text-gray-700 leadinyyg-relaxed mb-4">
+                                Mit dem Speichern werden die Daten in die OSM
+                                uMap übertragen.
                             </p>
                             <img
-                                src="/images/testseite/www-data-dna-eu.jpg"
-                                alt="Gräber werden bearbeitet: verschieben, rotieren, editieren"
+                                src="/images/testseite/p2d2-testen_Editor_Gespeichert.jpg"
+                                alt="Gräber werden gespeichert"
                                 class="rounded-xl shadow-lg border-2 border-gray-200"
                             />
                         </div>
                     </div>
                 </div>
 
-                <!-- Schritt 9: Änderungen speichern -->
+                <!-- Schritt 9: Änderungen gespeichert -->
                 <div class="timeline-item mb-16 bg-green-50 rounded-2xl p-8">
                     <div class="flex items-start gap-6">
                         <div
@@ -391,16 +432,13 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                             <h3
                                 class="font-poppins font-bold text-xl text-gray-900 mb-3"
                             >
-                                Änderungen speichern
+                                Änderungen gespeichert
                             </h3>
                             <p class="text-gray-700 leading-relaxed mb-4">
-                                Nachdem Olaf alle Gräber der Grabflur 006 digitalisiert
-                                hat, klickt er auf den Button <strong
-                                    >„💾 Speichern"</strong
-                                > in der Toolbar. Die Änderungen werden über <strong
-                                    >WFS-T (Web Feature Service - Transactional)</strong
-                                > an den GeoServer übertragen und in der PostGIS-Datenbank
-                                gespeichert.
+                                Nun schaut Olaf in der uMap nach und sieht, dass
+                                die neuen Positionen der Gräner in der uMap
+                                gespeichert wurden und potenziell zum Import in
+                                die OpenStreetMap vorhanden sind.
                             </p>
                             <p class="text-gray-700 leading-relaxed">
                                 Eine Erfolgsmeldung erscheint: <strong
@@ -408,8 +446,40 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                                 >
                             </p>
                             <img
-                                src="/images/testseite/www-data-dna-eu.jpg"
-                                alt="Speichern-Dialog mit Erfolgsmeldung"
+                                src="/images/testseite/p2d2-testen_Editor_uMap_Geodata.jpg"
+                                alt="Gespeicherte Daten in der OSM UserMap"
+                                class="rounded-xl shadow-lg border-2 border-gray-200"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schritt 10: Attributive Daten -->
+                <div class="timeline-item mb-16 bg-green-50 rounded-2xl p-8">
+                    <div class="flex items-start gap-6">
+                        <div
+                            class="flex-shrink-0 w-16 h-16 bg-green-600 text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"
+                        >
+                            10
+                        </div>
+                        <div class="flex-1">
+                            <h3
+                                class="font-poppins font-bold text-xl text-gray-900 mb-3"
+                            >
+                                Metadaten der Gräber
+                            </h3>
+                            <p class="text-gray-700 leading-relaxed mb-4">
+                                Zuletzt schaut Olav noch in den - <strong
+                                    >eigentlich attributiven Daten</strong
+                                > - der Gräber. Dort kann er erkennen, er hier beerdigt
+                                wurde, wann er oder sie geboren nd gestorben ist sowie,
+                                welche internen Infromationen mit dem Grab verbunden
+                                sind, z.B. eine Grab-ID, damit es sich zukünftig mit
+                                den Daten der Stadtverwaltung synchronisieren lässt.
+                            </p>
+                            <img
+                                src="/images/testseite/p2d2-testen_Editor_uMap_Metadata.jpg"
+                                alt="Gespeicherte Daten in der OSM UserMap"
                                 class="rounded-xl shadow-lg border-2 border-gray-200"
                             />
                         </div>
@@ -426,8 +496,8 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                 </h2>
                 <p class="text-lg text-gray-700 mb-8">
                     Du kannst die gleiche Reise wie Olaf machen – ganz einfach
-                    vom Sofa aus. Besuche <strong>www.data-dna.eu</strong> und
-                    starte deine eigene Mapping-Session.
+                    vom Sofa aus. Besuche <strong>www.data-dna.eu</strong> und starte
+                    deine eigene Mapping-Session.
                 </p>
                 <a
                     href="/"
@@ -439,4 +509,3 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         </section>
     </main>
 </BaseLayout>
-
