@@ -10,6 +10,9 @@ export interface ReactiveEditorState {
   currentTool: string;
   editorMode: "navigate" | "edit";
   hasDirtyFeatures: boolean; // <-- NEU
+  // NEU: Multi-Selection Felder
+  selectedFeatures: ReadonlySet<Feature<Geometry>>;
+  selectionMode: "single" | "multi";
 }
 
 type EditorStateCallback = (state: ReactiveEditorState) => void;
@@ -36,6 +39,10 @@ export class EditorState {
 
   // NEU: Dirty-Tracking
   private dirtyFeatures: Set<string | number> = new Set();
+
+  // NEU: Multi-Selection State
+  private selectedFeatures: Set<Feature<Geometry>> = new Set();
+  private selectionMode: "single" | "multi" = "single";
 
   // NEU: Listener-Set
   private listeners: Set<EditorStateCallback> = new Set();
@@ -154,6 +161,77 @@ export class EditorState {
     return this.dirtyFeatures;
   }
 
+  // --- NEUE Multi-Selection Methoden ---
+
+  /**
+   * Togglet zwischen 'single' und 'multi' Auswahlmodus.
+   * Beim Wechsel zu 'single' wird selectedFeatures geleert.
+   */
+  public toggleSelectionMode(): void {
+    const newMode = this.selectionMode === "single" ? "multi" : "single";
+    if (this.selectionMode === newMode) return; // Guard gegen redundante Updates
+
+    this.selectionMode = newMode;
+
+    if (newMode === "single") {
+      // Beim Wechsel zu Single-Modus die Multi-Selektion leeren
+      this.selectedFeatures.clear();
+    }
+
+    this.notifyListeners();
+  }
+
+  /**
+   * Fügt ein Feature zur Multi-Selektion hinzu.
+   * Nur wirksam im 'multi' Modus.
+   */
+  public addToSelection(feature: Feature<Geometry>): void {
+    // Nur im Multi-Modus erlauben
+    if (this.selectionMode !== "multi") return;
+
+    // Guard: Wenn Feature bereits in Set, return (redundantes Add vermeiden)
+    if (this.selectedFeatures.has(feature)) return;
+
+    this.selectedFeatures.add(feature);
+    this.notifyListeners();
+  }
+
+  /**
+   * Entfernt ein Feature aus der Multi-Selektion.
+   */
+  public removeFromSelection(feature: Feature<Geometry>): void {
+    // Guard: Wenn Feature nicht in Set, return
+    if (!this.selectedFeatures.has(feature)) return;
+
+    this.selectedFeatures.delete(feature);
+    this.notifyListeners();
+  }
+
+  /**
+   * Leert die gesamte Multi-Selektion.
+   */
+  public clearSelection(): void {
+    // Guard: Wenn bereits leer, return
+    if (this.selectedFeatures.size === 0) return;
+
+    this.selectedFeatures.clear();
+    this.notifyListeners();
+  }
+
+  /**
+   * Gibt die aktuell selektierten Features zurück (read-only).
+   */
+  public getSelectedFeatures(): ReadonlySet<Feature<Geometry>> {
+    return this.selectedFeatures;
+  }
+
+  /**
+   * Gibt den aktuellen Selektionsmodus zurück.
+   */
+  public getSelectionMode(): "single" | "multi" {
+    return this.selectionMode;
+  }
+
   // ANPASSEN: getReactiveState
   getReactiveState(): ReactiveEditorState {
     return {
@@ -166,6 +244,9 @@ export class EditorState {
       // KORREKTUR: Fehlendes Property hinzugefügt (Fix 2)
       // Verwendet jetzt den neuen Getter (ohne Klammern)
       hasDirtyFeatures: this.hasDirtyFeatures,
+      // NEU: Multi-Selection Felder
+      selectedFeatures: this.selectedFeatures,
+      selectionMode: this.selectionMode,
     };
   }
 }

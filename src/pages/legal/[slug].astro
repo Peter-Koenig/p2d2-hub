@@ -1,14 +1,11 @@
 ---
-import Prose from "/src/components/Prose.astro";
-import styled from "styled-components";
-
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getCollection } from "astro:content";
 
 const { slug } = Astro.params;
 const legalEntries = await getCollection("legal");
 
-// Slug-Mapping: z.B. /legal/datenschutz → datenschutz.md
+// Slug-Mapping: z.B.
 const entry = legalEntries.find((item) => item.slug === slug);
 
 if (!entry) {
