@@ -16,6 +16,8 @@ import { getAllKategorien } from "../utils/kategorie-utils";
 // Lade Kategorien für data-category-map
 const kategorien = await getAllKategorien();
 
+import { initializeCrossWindowBridge } from "../utils/cross-window-events";
+
 // Erstelle Mapping: slug -> containerType
 const categoryMap: Record<string, { containerType?: string }> = {};
 for (const kategorie of kategorien) {
@@ -67,6 +69,7 @@ for (const kategorie of kategorien) {
             setPersistedTab,
         } from "../utils/tab-persistence";
         import { EventConsole } from "../components/EventConsole";
+        import { initializeCrossWindowBridge } from "../utils/cross-window-events";
 
         // Tab-Umschaltung
         const tabButtons = document.querySelectorAll(".tab-button");
@@ -194,6 +197,12 @@ for (const kategorie of kategorien) {
                         );
                         window.__P2D2_EVENT_CONSOLE__ = new EventConsole();
                         window.__P2D2_EVENT_CONSOLE__.show();
+                    }
+                    if (typeof window !== "undefined") {
+                        initializeCrossWindowBridge();
+                        console.log(
+                            "[index] Cross-window bridge initialized (main window)",
+                        );
                     }
                 }
             } catch (error) {

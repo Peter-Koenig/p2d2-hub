@@ -1,5 +1,10 @@
 import type { Feature } from "ol";
 import type { Geometry } from "ol/geom";
+import {
+  dispatchCrossWindowEvent,
+  getWindowId,
+} from "../../utils/cross-window-events";
+import { P2D2EventType } from "../../utils/events";
 
 // NEU: Typen für den reaktiven State definieren
 export interface ReactiveEditorState {
@@ -109,8 +114,21 @@ export class EditorState {
 
   setSelectedFeature(feature: Feature<Geometry> | null) {
     if (this.selectedFeature === feature) return; // <-- GUARD HINZUGEFÜGT
+
     this.selectedFeature = feature;
     this.notifyListeners();
+
+    // NEU: Event dispatchen
+    if (feature) {
+      console.log("[EditorState] Feature selected:", feature.getId());
+      dispatchCrossWindowEvent(P2D2EventType.EDITOR_FEATURE_SELECTED, {
+        featureId: feature.getId() as string,
+        geometry: (feature.getGeometry() as any)?.getCoordinates?.() ?? null, // Optional
+        properties: feature.getProperties(),
+        windowId: getWindowId(),
+        timestamp: Date.now(),
+      });
+    }
   }
 
   getSelectedFeature(): Feature<Geometry> | null {
@@ -119,8 +137,19 @@ export class EditorState {
 
   setTool(tool: string) {
     if (this.currentTool === tool) return; // <-- GUARD HINZUGEFÜGT
+
+    const previousTool = this.currentTool;
     this.currentTool = tool;
     this.notifyListeners();
+
+    // NEU: Event dispatchen
+    console.log("[EditorState] Tool switched:", previousTool, "->", tool);
+    dispatchCrossWindowEvent(P2D2EventType.EDITOR_TOOL_SWITCH, {
+      tool,
+      previousTool,
+      windowId: getWindowId(),
+      timestamp: Date.now(),
+    });
   }
 
   getTool(): string {
@@ -129,8 +158,19 @@ export class EditorState {
 
   setEditorMode(mode: "navigate" | "edit") {
     if (this.editorMode === mode) return; // <-- GUARD HINZUGEFÜGT
+
+    const previousMode = this.editorMode;
     this.editorMode = mode;
     this.notifyListeners();
+
+    // NEU: Event dispatchen
+    console.log("[EditorState] Mode changed:", previousMode, "->", mode);
+    dispatchCrossWindowEvent(P2D2EventType.EDITOR_MODE_CHANGE, {
+      mode,
+      previousMode,
+      windowId: getWindowId(),
+      timestamp: Date.now(),
+    });
   }
 
   getEditorMode(): "navigate" | "edit" {

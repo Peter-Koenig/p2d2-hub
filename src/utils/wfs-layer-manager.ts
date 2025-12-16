@@ -9,6 +9,8 @@ import VectorSource from "ol/source/Vector";
 import { Style, Stroke, Fill } from "ol/style";
 import GeoJSON from "ol/format/GeoJSON";
 import { wfsAuthClient } from "./wfs-auth";
+import { dispatchCrossWindowEvent } from "./cross-window-events";
+import { P2D2EventType } from "./events";
 
 // Type definitions
 interface WFSLayerConfig {
@@ -65,6 +67,14 @@ export class WFSLayerManager {
     categorySlug: string,
   ): Promise<void> {
     try {
+      // NEU: Event dispatchen
+      dispatchCrossWindowEvent(P2D2EventType.WFS_LOAD_START, {
+        layerName: `${kommune.wp_name}-${categorySlug}`,
+        kommuneSlug: kommune.slug,
+        categorySlug,
+        timestamp: Date.now(),
+      });
+
       // Hide existing layer but keep cached
       if (this.activeLayer) {
         this.activeLayer.setVisible(false);
@@ -91,6 +101,16 @@ export class WFSLayerManager {
       // Show layer
       this.activeLayer.setVisible(true);
 
+      // NEU: Event dispatchen
+      dispatchCrossWindowEvent(P2D2EventType.WFS_LOAD_COMPLETE, {
+        layerName: `${kommune.wp_name}-${categorySlug}`,
+        kommuneSlug: kommune.slug,
+        categorySlug,
+        featureCount: 0, // TODO: actual feature count
+        timestamp: Date.now(),
+        success: true,
+      });
+
       // Update state
       this.currentState = { kommune, categorySlug };
 
@@ -99,6 +119,14 @@ export class WFSLayerManager {
       );
     } catch (error) {
       console.error("[WFS] Failed to display layer:", error);
+      // NEU: Event dispatchen
+      dispatchCrossWindowEvent(P2D2EventType.WFS_LOAD_ERROR, {
+        layerName: `${kommune.wp_name}-${categorySlug}`,
+        kommuneSlug: kommune.slug,
+        categorySlug,
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: Date.now(),
+      });
     }
   }
 

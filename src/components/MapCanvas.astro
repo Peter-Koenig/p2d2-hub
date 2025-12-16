@@ -90,6 +90,7 @@ import "../styles/feature-popup.css";
         addP2D2EventListener,
         dispatchP2D2Event,
     } from "../utils/events";
+    import { dispatchCrossWindowEvent } from "../utils/cross-window-events";
 
     // Import existing CRS utilities
     import {
@@ -144,6 +145,14 @@ import "../styles/feature-popup.css";
             constrainResolution: false,
         }),
         controls: defaults().extend([new FullScreen()]),
+    });
+
+    // NEU: Event dispatchen
+    dispatchCrossWindowEvent(P2D2EventType.MAP_READY, {
+        projection: map.getView().getProjection().getCode(),
+        center: map.getView().getCenter(),
+        zoom: map.getView().getZoom(),
+        timestamp: Date.now(),
     });
 
     // Nach Map-Initialisierung Canvas-Elemente stylen

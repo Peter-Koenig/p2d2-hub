@@ -17,6 +17,11 @@ import type { ViewHistoryManager } from "@/utils/view-history-manager";
 import { MAP_CONFIG } from "@/config/map-config";
 import type { ModifyEvent } from "ol/interaction/Modify";
 import type { TranslateEvent } from "ol/interaction/Translate";
+import {
+  dispatchCrossWindowEvent,
+  getWindowId,
+} from "../../utils/cross-window-events";
+import { P2D2EventType } from "../../utils/events";
 
 /**
  * Verwaltet alle Karten-Interaktionen (Hover, Klick, Bearbeitungswerkzeuge).
@@ -323,7 +328,7 @@ export class EditorInteractionManager {
     this.rotate.on("rotateend", (e: any) => {
       console.log("[InteractionManager] ✅ Rotation beendet");
       // Markiere Features als "dirty" am Ende
-      this.markFeaturesAsDirty(e.features);
+      this.markFeaturesAsDirty(e.features, "rotate");
     });
     // --- HINZUFÜGEN ENDE ---
 
@@ -350,7 +355,7 @@ export class EditorInteractionManager {
     // 2. Event-Listener für Dirty-Tracking an die (noch inaktiven) Interaktionen binden
     if (this.modify) {
       this.modify.on("modifyend", (e: ModifyEvent) =>
-        this.markFeaturesAsDirty(e.features),
+        this.markFeaturesAsDirty(e.features, "modify"),
       );
       this.modify.on("modifystart", (e: ModifyEvent) =>
         this.storeOriginalGeometries(e.features),
@@ -358,7 +363,7 @@ export class EditorInteractionManager {
     }
     if (this.translate) {
       this.translate.on("translateend", (e: TranslateEvent) =>
-        this.markFeaturesAsDirty(e.features),
+        this.markFeaturesAsDirty(e.features, "translate"),
       );
       this.translate.on("translatestart", (e: TranslateEvent) =>
         this.storeOriginalGeometries(e.features),
@@ -371,7 +376,7 @@ export class EditorInteractionManager {
       });
       this.rotate.on("rotateend", (e: any) => {
         console.log("[InteractionManager] ✅ Rotation beendet");
-        this.markFeaturesAsDirty(e.features);
+        this.markFeaturesAsDirty(e.features, "rotate");
       });
     }
 
@@ -392,14 +397,26 @@ export class EditorInteractionManager {
   }
 
   // NEU: Hilfsfunktion für "modifyend" / "translateend"
-  private markFeaturesAsDirty(features: any /* Collection<Feature> */) {
+  private markFeaturesAsDirty(
+    features: any /* Collection<Feature> */,
+    tool: "modify" | "rotate" | "translate" = "modify",
+  ) {
     features.getArray().forEach((f: Feature) => {
       if (f.getId() !== undefined) {
         console.log(
-          `%c[InteractionManager] ✏️ Feature ${f.getId()} als 'dirty' markiert.`,
+          `%c[InteractionManager] ✏️ Feature ${f.getId()} als 'dirty' markiert (Tool: ${tool}).`,
           "color: orange;",
         );
         this.state.markAsDirty(f.getId()!);
+
+        // NEU: Event dispatchen
+        dispatchCrossWindowEvent(P2D2EventType.EDITOR_FEATURE_MODIFIED, {
+          featureId: f.getId() as string,
+          tool: tool,
+          windowId: getWindowId(),
+          geometry: (f.getGeometry() as any)?.getCoordinates?.() ?? null,
+          timestamp: Date.now(),
+        });
       }
     });
   }

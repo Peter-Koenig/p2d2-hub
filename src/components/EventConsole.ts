@@ -22,10 +22,62 @@ export class EventConsole {
   private logs: LogEntry[] = [];
   private isVisible: boolean = false;
   private maxLogs: number = 50;
+  private filterTerm: string = "";
+  private readonly STORAGE_KEY = "p2d2:debug:events";
 
   constructor() {
     this.createOverlay();
+    this.initializeKeyboardShortcut();
+    this.restoreStateFromLocalStorage();
     this.hide(); // Start hidden by default
+  }
+
+  private initializeKeyboardShortcut(): void {
+    document.addEventListener("keydown", (e) => {
+      // Ctrl+Shift+E or Cmd+Shift+E
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "E") {
+        e.preventDefault();
+        this.toggle();
+      }
+    });
+  }
+
+  /**
+   * Speichert Console-Zustand in LocalStorage.
+   */
+  private saveStateToLocalStorage(): void {
+    try {
+      localStorage.setItem(
+        this.STORAGE_KEY,
+        JSON.stringify({
+          visible: this.isVisible,
+          timestamp: Date.now(),
+        }),
+      );
+    } catch (error) {
+      console.debug("[EventConsole] Could not save state", error);
+    }
+  }
+
+  /**
+   * Stellt Console-Zustand aus LocalStorage wieder her.
+   */
+  private restoreStateFromLocalStorage(): void {
+    try {
+      const saved = localStorage.getItem(this.STORAGE_KEY);
+      if (!saved) return;
+
+      const state = JSON.parse(saved);
+
+      // Nur wiederherstellen, wenn nicht zu alt (24h)
+      if (Date.now() - state.timestamp < 24 * 60 * 60 * 1000) {
+        if (state.visible) {
+          this.show();
+        }
+      }
+    } catch (error) {
+      console.debug("[EventConsole] Could not restore state", error);
+    }
   }
 
   private createOverlay(): void {
@@ -99,6 +151,28 @@ export class EventConsole {
     });
     clearButton.addEventListener("click", () => this.clear());
 
+    // Copy JSON button
+    const exportButton = document.createElement("button");
+    exportButton.textContent = "📋 Copy JSON";
+    exportButton.title = "Copy all logs as JSON";
+    exportButton.style.cssText = `
+      padding: 4px 10px;
+      background: rgba(100, 200, 255, 0.1);
+      border: 1px solid #60a5fa;
+      border-radius: 4px;
+      color: #60a5fa;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.2s;
+    `;
+    exportButton.addEventListener("mouseenter", () => {
+      exportButton.style.background = "rgba(100, 200, 255, 0.2)";
+    });
+    exportButton.addEventListener("mouseleave", () => {
+      exportButton.style.background = "rgba(100, 200, 255, 0.1)";
+    });
+    exportButton.addEventListener("click", () => this.exportLogsAsJSON());
+
     // Close button
     const closeButton = document.createElement("button");
     closeButton.textContent = "×";
@@ -164,6 +238,28 @@ export class EventConsole {
 
     // Assemble elements
     buttonContainer.appendChild(clearButton);
+    buttonContainer.appendChild(exportButton);
+
+    // Filter input
+    const filterInput = document.createElement("input");
+    filterInput.type = "text";
+    filterInput.placeholder = "Filter events...";
+    filterInput.style.cssText = `
+      padding: 4px 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid #555;
+      border-radius: 4px;
+      color: #f0f0f0;
+      font-size: 11px;
+      width: 150px;
+      margin-left: 8px;
+    `;
+    filterInput.addEventListener("input", (e) => {
+      this.filterTerm = (e.target as HTMLInputElement).value.toLowerCase();
+      this.renderFilteredLogs();
+    });
+
+    buttonContainer.appendChild(filterInput);
     buttonContainer.appendChild(closeButton);
     header.appendChild(title);
     header.appendChild(buttonContainer);
@@ -215,11 +311,26 @@ export class EventConsole {
       typeColor = "#fbbf24"; // yellow for throttled
     else if (entry.type.includes("focus")) typeColor = "#4ade80"; // green for focus events
 
+    // NEU: Source-Label mit Icon
+    const sourceIcon =
+      entry.meta?.source === "editor"
+        ? "🪟"
+        : entry.meta?.source === "main"
+          ? "🏠"
+          : "📡";
+
+    const sourceLabel = entry.meta?.crossWindow
+      ? `${sourceIcon} ${entry.meta.source} (cross-window)`
+      : "";
+
     // Create HTML content
     logElement.innerHTML = `
       <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
         <span style="color: ${typeColor}; font-weight: bold;">${entry.type}</span>
-        <span style="color: #9ca3af; font-size: 11px;">${timeStr}</span>
+        <div style="display: flex; gap: 8px;">
+          ${sourceLabel ? `<span style="color: #60a5fa; font-size: 10px;">${sourceLabel}</span>` : ""}
+          <span style="color: #9ca3af; font-size: 11px;">${timeStr}</span>
+        </div>
       </div>
       ${
         entry.meta
@@ -308,14 +419,8 @@ export class EventConsole {
 
     // Add to DOM if visible
     if (this.logList && this.isVisible) {
-      const logElement = this.createLogElement(entry);
-      this.logList.appendChild(logElement);
-
-      // Auto-scroll to bottom
-      this.logList.parentElement?.scrollTo({
-        top: this.logList.parentElement.scrollHeight,
-        behavior: "smooth",
-      });
+      this.renderFilteredLogs();
+      this.scrollToBottom();
     }
   }
 
@@ -348,19 +453,11 @@ export class EventConsole {
 
     // Re-populate logs if needed
     if (this.logList && this.logs.length > 0) {
-      this.logList.innerHTML = "";
-      this.logs.forEach((entry) => {
-        this.logList!.appendChild(this.createLogElement(entry));
-      });
-
-      // Scroll to bottom
-      setTimeout(() => {
-        if (this.logList?.parentElement) {
-          this.logList.parentElement.scrollTop =
-            this.logList.parentElement.scrollHeight;
-        }
-      }, 10);
+      this.renderFilteredLogs();
+      this.scrollToBottom();
     }
+
+    this.saveStateToLocalStorage();
   }
 
   /**
@@ -383,6 +480,8 @@ export class EventConsole {
     if (toggleBtn) {
       toggleBtn.style.display = "flex";
     }
+
+    this.saveStateToLocalStorage();
   }
 
   /**
@@ -393,6 +492,89 @@ export class EventConsole {
       this.hide();
     } else {
       this.show();
+    }
+  }
+
+  /**
+   * Exportiert alle Logs als JSON in die Zwischenablage.
+   */
+  private exportLogsAsJSON(): void {
+    const exportData = this.logs.map((entry) => ({
+      timestamp: entry.timestamp.toISOString(),
+      type: entry.type,
+      detail: entry.detail,
+      meta: entry.meta,
+    }));
+
+    const jsonString = JSON.stringify(exportData, null, 2);
+
+    // In Zwischenablage kopieren
+    navigator.clipboard
+      .writeText(jsonString)
+      .then(() => {
+        // Visual Feedback
+        const btn = document.querySelector(
+          '[title="Copy all logs as JSON"]',
+        ) as HTMLButtonElement;
+        if (btn) {
+          const originalText = btn.textContent;
+          btn.textContent = "✅ Copied!";
+          btn.style.background = "rgba(74, 222, 128, 0.2)";
+          btn.style.borderColor = "#4ade80";
+          btn.style.color = "#4ade80";
+
+          setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = "rgba(100, 200, 255, 0.1)";
+            btn.style.borderColor = "#60a5fa";
+            btn.style.color = "#60a5fa";
+          }, 2000);
+        }
+
+        console.info(
+          "[EventConsole] Exported",
+          exportData.length,
+          "logs to clipboard",
+        );
+      })
+      .catch((err) => {
+        console.error("[EventConsole] Failed to copy to clipboard:", err);
+        alert("Failed to copy logs. See console for data.");
+        console.log(jsonString);
+      });
+  }
+
+  /**
+   * Rendert gefilterte Logs basierend auf dem Filter-Term.
+   */
+  private renderFilteredLogs(): void {
+    if (!this.logList) return;
+
+    this.logList.innerHTML = "";
+
+    const filtered = this.filterTerm
+      ? this.logs.filter(
+          (entry) =>
+            entry.type.toLowerCase().includes(this.filterTerm) ||
+            JSON.stringify(entry.detail)
+              .toLowerCase()
+              .includes(this.filterTerm),
+        )
+      : this.logs;
+
+    filtered.forEach((entry) => {
+      const logElement = this.createLogElement(entry);
+      this.logList!.appendChild(logElement);
+    });
+  }
+
+  /**
+   * Scrollt zum unteren Ende der Log-Liste.
+   */
+  private scrollToBottom(): void {
+    if (this.logList?.parentElement) {
+      this.logList.parentElement.scrollTop =
+        this.logList.parentElement.scrollHeight;
     }
   }
 

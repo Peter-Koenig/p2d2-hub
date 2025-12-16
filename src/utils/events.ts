@@ -26,18 +26,56 @@ const THROTTLE_MS = 200; // Reduced for better responsiveness
 // Event type definitions
 export enum P2D2EventType {
   KOMMUNEN_FOCUS = "p2d2:kommunen:focus",
+  KOMMUNEN_SELECTED = "p2d2:kommunen:selected",
   MAP_READY = "p2d2:map:ready",
+  MAP_MOVEEND = "p2d2:map:moveend",
+  MAP_ZOOMEND = "p2d2:map:zoomend",
+  MAP_CLICK = "p2d2:map:click",
   LAYER_TOGGLE = "p2d2:layer:toggle",
+  LAYER_VISIBILITY_CHANGE = "p2d2:layer:visibility:change",
   WFS_LOAD_START = "p2d2:wfs:load:start",
   WFS_LOAD_COMPLETE = "p2d2:wfs:load:complete",
+  WFS_LOAD_ERROR = "p2d2:wfs:load:error",
+  WFS_FEATURE_CREATED = "p2d2:wfs:feature:created",
+  WFS_FEATURE_UPDATED = "p2d2:wfs:feature:updated",
+  WFS_FEATURE_DELETED = "p2d2:wfs:feature:deleted",
+  EDITOR_READY = "p2d2:editor:ready",
+  EDITOR_FEATURE_MODIFIED = "p2d2:editor:feature:modified",
+  EDITOR_TOOL_SWITCH = "p2d2:editor:tool:switch",
+  EDITOR_MODE_CHANGE = "p2d2:editor:mode:change",
+  EDITOR_FEATURE_SELECTED = "p2d2:editor:feature:selected",
+  EDITOR_SAVE_START = "p2d2:editor:save:start",
+  EDITOR_SAVE_COMPLETE = "p2d2:editor:save:complete",
+  EDITOR_SAVE_ERROR = "p2d2:editor:save:error",
+  CRS_CHANGE = "p2d2:crs:change",
+  UI_PANEL_TOGGLE = "p2d2:ui:panel:toggle",
 }
 
 export interface P2D2EventMap {
   [P2D2EventType.KOMMUNEN_FOCUS]: KommunenFocusDetail;
+  [P2D2EventType.KOMMUNEN_SELECTED]: KommunenSelectedDetail;
   [P2D2EventType.MAP_READY]: MapReadyDetail;
+  [P2D2EventType.MAP_MOVEEND]: MapMoveEndDetail;
+  [P2D2EventType.MAP_ZOOMEND]: MapZoomEndDetail;
+  [P2D2EventType.MAP_CLICK]: MapClickDetail;
   [P2D2EventType.LAYER_TOGGLE]: LayerToggleDetail;
+  [P2D2EventType.LAYER_VISIBILITY_CHANGE]: LayerVisibilityChangeDetail;
   [P2D2EventType.WFS_LOAD_START]: WFSLoadStartDetail;
   [P2D2EventType.WFS_LOAD_COMPLETE]: WFSLoadCompleteDetail;
+  [P2D2EventType.WFS_LOAD_ERROR]: WFSLoadErrorDetail;
+  [P2D2EventType.WFS_FEATURE_CREATED]: WFSFeatureCreatedDetail;
+  [P2D2EventType.WFS_FEATURE_UPDATED]: WFSFeatureUpdatedDetail;
+  [P2D2EventType.WFS_FEATURE_DELETED]: WFSFeatureDeletedDetail;
+  [P2D2EventType.EDITOR_READY]: EditorReadyDetail;
+  [P2D2EventType.EDITOR_FEATURE_MODIFIED]: EditorFeatureModifiedDetail;
+  [P2D2EventType.EDITOR_TOOL_SWITCH]: EditorToolSwitchDetail;
+  [P2D2EventType.EDITOR_MODE_CHANGE]: EditorModeChangeDetail;
+  [P2D2EventType.EDITOR_FEATURE_SELECTED]: EditorFeatureSelectedDetail;
+  [P2D2EventType.EDITOR_SAVE_START]: EditorSaveStartDetail;
+  [P2D2EventType.EDITOR_SAVE_COMPLETE]: EditorSaveCompleteDetail;
+  [P2D2EventType.EDITOR_SAVE_ERROR]: EditorSaveErrorDetail;
+  [P2D2EventType.CRS_CHANGE]: CRSChangeDetail;
+  [P2D2EventType.UI_PANEL_TOGGLE]: UIPanelToggleDetail;
 }
 
 export const EVENT_KOMMUNEN_FOCUS = P2D2EventType.KOMMUNEN_FOCUS;
@@ -45,7 +83,7 @@ export const EVENT_KOMMUNEN_FOCUS = P2D2EventType.KOMMUNEN_FOCUS;
 /**
  * Log event to EventConsole if available
  */
-function logToEventConsole(
+export function logToEventConsole(
   eventName: string,
   detail: any,
   meta?: {
@@ -106,6 +144,142 @@ export interface WFSLoadCompleteDetail {
   timestamp: number;
   success: boolean;
   error?: string;
+}
+
+export interface WFSLoadErrorDetail {
+  layerName: string;
+  kommuneSlug?: string;
+  categorySlug?: string;
+  error: string;
+  timestamp: number;
+}
+
+export interface KommunenSelectedDetail {
+  slug: string;
+  wpName: string;
+  osmAdminLevels?: number[];
+  timestamp: number;
+}
+
+export interface MapMoveEndDetail {
+  center: [number, number];
+  zoom: number;
+  extent: [number, number, number, number];
+  projection: string;
+  timestamp: number;
+}
+
+export interface MapZoomEndDetail {
+  zoom: number;
+  previousZoom: number;
+  center: [number, number];
+  timestamp: number;
+}
+
+export interface MapClickDetail {
+  coordinate: [number, number];
+  pixel: [number, number];
+  projection: string;
+  timestamp: number;
+}
+
+export interface LayerVisibilityChangeDetail {
+  layerName: string;
+  visible: boolean;
+  layerType: string;
+  timestamp: number;
+}
+
+export interface WFSFeatureCreatedDetail {
+  featureId: string;
+  layerName: string;
+  geometry: any;
+  properties: Record<string, any>;
+  timestamp: number;
+}
+
+export interface WFSFeatureUpdatedDetail {
+  featureId: string;
+  layerName: string;
+  geometry: any;
+  properties: Record<string, any>;
+  previousProperties?: Record<string, any>;
+  timestamp: number;
+}
+
+export interface WFSFeatureDeletedDetail {
+  featureId: string;
+  layerName: string;
+  timestamp: number;
+}
+
+export interface EditorReadyDetail {
+  windowId: string;
+  containerType: string;
+  wpName: string;
+  timestamp: number;
+}
+
+export interface EditorFeatureModifiedDetail {
+  featureId: string;
+  tool: "modify" | "rotate" | "translate";
+  windowId: string;
+  geometry: any;
+  timestamp: number;
+}
+
+export interface EditorToolSwitchDetail {
+  tool: string;
+  previousTool: string;
+  windowId: string;
+  timestamp: number;
+}
+
+export interface EditorModeChangeDetail {
+  mode: "navigate" | "edit";
+  previousMode: "navigate" | "edit";
+  windowId: string;
+  timestamp: number;
+}
+
+export interface EditorFeatureSelectedDetail {
+  featureId: string;
+  geometry: any;
+  properties: Record<string, any>;
+  windowId: string;
+  timestamp: number;
+}
+
+export interface EditorSaveStartDetail {
+  featureId: string;
+  windowId: string;
+  timestamp: number;
+}
+
+export interface EditorSaveCompleteDetail {
+  featureId: string;
+  windowId: string;
+  success: boolean;
+  timestamp: number;
+}
+
+export interface EditorSaveErrorDetail {
+  featureId: string;
+  windowId: string;
+  error: string;
+  timestamp: number;
+}
+
+export interface CRSChangeDetail {
+  previousCRS: string;
+  newCRS: string;
+  timestamp: number;
+}
+
+export interface UIPanelToggleDetail {
+  panelId: string;
+  visible: boolean;
+  timestamp: number;
 }
 
 /**
