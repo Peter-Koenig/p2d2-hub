@@ -66,6 +66,7 @@ for (const kategorie of kategorien) {
             getPersistedTab,
             setPersistedTab,
         } from "../utils/tab-persistence";
+        import { EventConsole } from "../components/EventConsole";
 
         // Tab-Umschaltung
         const tabButtons = document.querySelectorAll(".tab-button");
@@ -177,6 +178,23 @@ for (const kategorie of kategorien) {
                     setTimeout(() => {
                         // dispatchSelectCategory(category);
                     }, 100);
+                }
+
+                // Initialize EventConsole for debugging if debug=events parameter is present
+                const urlParams = new URLSearchParams(window.location.search);
+                if (
+                    urlParams.has("debug") &&
+                    urlParams.get("debug")?.includes("events")
+                ) {
+                    // EventConsole auto-initializes itself when imported
+                    // Ensure it's accessible via window for the events module
+                    if (!window.__P2D2_EVENT_CONSOLE__) {
+                        console.log(
+                            "[EventConsole] Manual initialization from index.astro",
+                        );
+                        window.__P2D2_EVENT_CONSOLE__ = new EventConsole();
+                        window.__P2D2_EVENT_CONSOLE__.show();
+                    }
                 }
             } catch (error) {
                 console.warn("[index] Could not restore tab state:", error);

@@ -24,16 +24,88 @@ const lastDispatchTimes = new Map<string, number>();
 const THROTTLE_MS = 200; // Reduced for better responsiveness
 
 // Event type definitions
-export const EVENT_KOMMUNEN_FOCUS = "kommunen:focus";
+export enum P2D2EventType {
+  KOMMUNEN_FOCUS = "p2d2:kommunen:focus",
+  MAP_READY = "p2d2:map:ready",
+  LAYER_TOGGLE = "p2d2:layer:toggle",
+  WFS_LOAD_START = "p2d2:wfs:load:start",
+  WFS_LOAD_COMPLETE = "p2d2:wfs:load:complete",
+}
+
+export interface P2D2EventMap {
+  [P2D2EventType.KOMMUNEN_FOCUS]: KommunenFocusDetail;
+  [P2D2EventType.MAP_READY]: MapReadyDetail;
+  [P2D2EventType.LAYER_TOGGLE]: LayerToggleDetail;
+  [P2D2EventType.WFS_LOAD_START]: WFSLoadStartDetail;
+  [P2D2EventType.WFS_LOAD_COMPLETE]: WFSLoadCompleteDetail;
+}
+
+export const EVENT_KOMMUNEN_FOCUS = P2D2EventType.KOMMUNEN_FOCUS;
+
+/**
+ * Log event to EventConsole if available
+ */
+function logToEventConsole(
+  eventName: string,
+  detail: any,
+  meta?: {
+    retryCount?: number;
+    throttled?: boolean;
+    success?: boolean;
+    error?: string;
+  },
+): void {
+  // Check if EventConsole is available
+  if (typeof window !== "undefined" && (window as any).__P2D2_EVENT_CONSOLE__) {
+    try {
+      (window as any).__P2D2_EVENT_CONSOLE__.logEvent(eventName, detail, meta);
+    } catch (error) {
+      // Silently fail - this is debug functionality only
+      console.debug("[events] Failed to log to EventConsole:", error);
+    }
+  }
+}
 
 // Interface für Kommunen Focus Event Detail
-interface KommunenFocusDetail {
+export interface KommunenFocusDetail {
   center?: [number, number];
   extent?: [number, number, number, number];
   zoom?: number;
   projection?: string;
   extra?: any;
   slug?: string;
+  wp_name?: string;
+  osmAdminLevels?: number[];
+}
+
+export interface MapReadyDetail {
+  mapId?: string;
+  view?: any;
+  projection?: string;
+  timestamp: number;
+}
+
+export interface LayerToggleDetail {
+  layerName: string;
+  visible: boolean;
+  layerType?: string;
+}
+
+export interface WFSLoadStartDetail {
+  layerName: string;
+  kommuneSlug?: string;
+  categorySlug?: string;
+  timestamp: number;
+}
+
+export interface WFSLoadCompleteDetail {
+  layerName: string;
+  kommuneSlug?: string;
+  categorySlug?: string;
+  featureCount: number;
+  timestamp: number;
+  success: boolean;
+  error?: string;
 }
 
 /**
@@ -108,6 +180,12 @@ function processEventQueue(): void {
         console.log(
           `[events] successfully dispatched ${queuedEvent.eventName} after ${queuedEvent.retryCount} retries`,
         );
+
+        // Log to EventConsole if available
+        logToEventConsole(queuedEvent.eventName, queuedEvent.detail, {
+          retryCount: queuedEvent.retryCount,
+          success: true,
+        });
       } else {
         // Event system not ready, requeue with retry
         if (queuedEvent.retryCount < queuedEvent.maxRetries) {
@@ -120,6 +198,13 @@ function processEventQueue(): void {
           console.warn(
             `[events] max retries exceeded for ${queuedEvent.eventName}`,
           );
+
+          // Log to EventConsole if available
+          logToEventConsole(queuedEvent.eventName, queuedEvent.detail, {
+            retryCount: queuedEvent.retryCount,
+            success: false,
+            error: "Max retries exceeded",
+          });
         }
       }
     } catch (error) {
@@ -127,6 +212,13 @@ function processEventQueue(): void {
         `[events] error dispatching ${queuedEvent.eventName}:`,
         error,
       );
+
+      // Log to EventConsole if available
+      logToEventConsole(queuedEvent.eventName, queuedEvent.detail, {
+        retryCount: queuedEvent.retryCount,
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
 
       // Requeue on error if retries remain
       if (queuedEvent.retryCount < queuedEvent.maxRetries) {
@@ -194,6 +286,11 @@ export function dispatchThrottledEvent(
 
   if (currentTime - lastDispatch < throttleMs) {
     console.log(`[events] throttling ${eventName} - too frequent`);
+
+    // Log throttled event to EventConsole if available
+    logToEventConsole(eventName, detail, {
+      throttled: true,
+    });
     return;
   }
 
@@ -222,9 +319,8 @@ export function dispatchKommunenFocus(detail: KommunenFocusDetail): void {
     return;
   }
 
-  // Use robust queuing system instead of simple timeout
-  queueEvent("kommunen:focus", detail, MAX_RETRIES);
-  console.log("[events] queued kommunen focus for reliable dispatch");
+  // Use type-safe event dispatching
+  dispatchP2D2Event(P2D2EventType.KOMMUNEN_FOCUS, detail);
 }
 
 function isValidWgs84Coordinate(coord: any): coord is [number, number] {
@@ -292,6 +388,29 @@ export function addEventListener(
   // Store handler reference and add listener
   (window as any)[handlerKey] = handler;
   window.addEventListener(eventName, handler, options);
+}
+
+/**
+ * Type-safe event dispatcher
+ */
+export function dispatchP2D2Event<T extends P2D2EventType>(
+  eventType: T,
+  detail: P2D2EventMap[T],
+  options?: { throttleMs?: number },
+): void {
+  const throttleMs = options?.throttleMs ?? THROTTLE_MS;
+  dispatchThrottledEvent(eventType, detail, throttleMs);
+}
+
+/**
+ * Type-safe event listener
+ */
+export function addP2D2EventListener<T extends P2D2EventType>(
+  eventType: T,
+  handler: (event: CustomEvent<P2D2EventMap[T]>) => void,
+  options?: AddEventListenerOptions,
+): void {
+  addEventListener(eventType, handler as (event: any) => void, options);
 }
 
 // Local storage keys
