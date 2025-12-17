@@ -556,6 +556,14 @@ export class EditorInteractionManager {
     this.selectionStyleCache = {};
   }
 
+  // NEU: Hilfsfunktion zum Leeren der Feature-Selection
+  public clearSelection() {
+    if (this.select) {
+      this.select.getFeatures().clear();
+      console.log("[InteractionManager] 🧹 Feature-Selection geleert");
+    }
+  }
+
   private extractGrabflurNumber(name: string): string {
     if (!name) return "?";
     const match = name.match(/-(\d+)$/);
@@ -580,6 +588,11 @@ export class EditorInteractionManager {
       `[InteractionManager] 🔧 Wechsle Tool: ${this.state.getTool()} → ${toolName}`,
     );
     this.state.setTool(toolName);
+
+    // Clear selection to remove visual overlays (rotation anchor, etc.)
+    if (this.select) {
+      this.select.getFeatures().clear();
+    }
 
     // Alle Interaktionen entfernen
     if (this.select) this.map.removeInteraction(this.select);

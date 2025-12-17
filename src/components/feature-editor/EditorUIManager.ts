@@ -43,6 +43,7 @@ export class EditorUIManager {
     this.bindNavigationControls();
     this.bindLayerControls();
     this.bindToolbarControls();
+    this.bindKeyboardShortcuts();
   }
 
   private bindNavigationControls() {
@@ -232,6 +233,8 @@ export class EditorUIManager {
         this.dataManager.saveChanges(featuresToUpdate);
         console.log("[UIManager] 💾 -> setEditorMode('navigate')");
         this.state.setEditorMode("navigate");
+        console.log("[UIManager] 💾 -> clearSelection()");
+        this.interactionManager.clearSelection();
         console.log("[UIManager] 💾 -> clearDirtyFlags()");
         this.state.clearDirtyFlags();
       } else if (toolName === "cancel") {
@@ -249,6 +252,8 @@ export class EditorUIManager {
           this.interactionManager.revertChanges();
           console.log("[UIManager] ❌ -> setEditorMode('navigate')");
           this.state.setEditorMode("navigate");
+          console.log("[UIManager] ❌ -> clearSelection()");
+          this.interactionManager.clearSelection();
         } else {
           console.log("[UIManager] ❌ Abgebrochen durch User.");
         }
@@ -302,5 +307,67 @@ export class EditorUIManager {
         saveBtn.toggleAttribute("disabled", !newState.hasDirtyFeatures);
       }
     });
+  }
+
+  /**
+   * Bindet Keyboard-Shortcuts für die Werkzeuge
+   */
+  private bindKeyboardShortcuts() {
+    document.addEventListener("keydown", (e: KeyboardEvent) => {
+      // Nur wenn kein Input-Feld fokussiert ist
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      switch (e.key.toLowerCase()) {
+        case "s":
+          e.preventDefault();
+          this.interactionManager.setTool("select");
+          this.highlightToolButton("select");
+          break;
+        case "m":
+          e.preventDefault();
+          this.interactionManager.setTool("move");
+          this.highlightToolButton("move");
+          break;
+        case "r":
+          e.preventDefault();
+          this.interactionManager.setTool("rotate");
+          this.highlightToolButton("rotate");
+          break;
+        case "escape":
+          // Deselect + zurück zu Select-Tool
+          this.interactionManager.setTool("select");
+          this.highlightToolButton("select");
+          this.state.setSelectedFeature(null);
+          break;
+      }
+    });
+  }
+
+  /**
+   * Highlightet den entsprechenden Tool-Button in der Toolbar
+   */
+  private highlightToolButton(toolName: string) {
+    const editToolsContainer = document.getElementById("edit-tools-container");
+    if (!editToolsContainer) return;
+
+    const allButtons =
+      editToolsContainer.querySelectorAll<HTMLElement>("[data-tool]");
+    allButtons.forEach((btn) => {
+      if (btn.dataset.tool !== "save" && btn.dataset.tool !== "cancel") {
+        btn.classList.remove("highlighted");
+      }
+    });
+
+    const targetButton = editToolsContainer.querySelector<HTMLElement>(
+      `[data-tool="${toolName}"]`,
+    );
+    if (targetButton) {
+      targetButton.classList.add("highlighted");
+    }
   }
 }
