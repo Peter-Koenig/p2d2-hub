@@ -1,5 +1,10 @@
 import type { Feature } from "ol";
 import type { Geometry } from "ol/geom";
+import {
+  dispatchCrossWindowEvent,
+  getWindowId,
+} from "../../utils/cross-window-events";
+import { P2D2EventType } from "../../utils/events";
 
 // NEU: Typen für den reaktiven State definieren
 export interface ReactiveEditorState {
@@ -10,6 +15,9 @@ export interface ReactiveEditorState {
   currentTool: string;
   editorMode: "navigate" | "edit";
   hasDirtyFeatures: boolean; // <-- NEU
+  // NEU: Multi-Selection Felder
+  selectedFeatures: ReadonlySet<Feature<Geometry>>;
+  selectionMode: "single" | "multi";
 }
 
 type EditorStateCallback = (state: ReactiveEditorState) => void;
@@ -36,6 +44,10 @@ export class EditorState {
 
   // NEU: Dirty-Tracking
   private dirtyFeatures: Set<string | number> = new Set();
+
+  // NEU: Multi-Selection State
+  private selectedFeatures: Set<Feature<Geometry>> = new Set();
+  private selectionMode: "single" | "multi" = "single";
 
   // NEU: Listener-Set
   private listeners: Set<EditorStateCallback> = new Set();
@@ -102,8 +114,21 @@ export class EditorState {
 
   setSelectedFeature(feature: Feature<Geometry> | null) {
     if (this.selectedFeature === feature) return; // <-- GUARD HINZUGEFÜGT
+
     this.selectedFeature = feature;
     this.notifyListeners();
+
+    // NEU: Event dispatchen
+    if (feature) {
+      console.log("[EditorState] Feature selected:", feature.getId());
+      dispatchCrossWindowEvent(P2D2EventType.EDITOR_FEATURE_SELECTED, {
+        featureId: feature.getId() as string,
+        geometry: (feature.getGeometry() as any)?.getCoordinates?.() ?? null, // Optional
+        properties: feature.getProperties(),
+        windowId: getWindowId(),
+        timestamp: Date.now(),
+      });
+    }
   }
 
   getSelectedFeature(): Feature<Geometry> | null {
@@ -112,8 +137,19 @@ export class EditorState {
 
   setTool(tool: string) {
     if (this.currentTool === tool) return; // <-- GUARD HINZUGEFÜGT
+
+    const previousTool = this.currentTool;
     this.currentTool = tool;
     this.notifyListeners();
+
+    // NEU: Event dispatchen
+    console.log("[EditorState] Tool switched:", previousTool, "->", tool);
+    dispatchCrossWindowEvent(P2D2EventType.EDITOR_TOOL_SWITCH, {
+      tool,
+      previousTool,
+      windowId: getWindowId(),
+      timestamp: Date.now(),
+    });
   }
 
   getTool(): string {
@@ -122,8 +158,19 @@ export class EditorState {
 
   setEditorMode(mode: "navigate" | "edit") {
     if (this.editorMode === mode) return; // <-- GUARD HINZUGEFÜGT
+
+    const previousMode = this.editorMode;
     this.editorMode = mode;
     this.notifyListeners();
+
+    // NEU: Event dispatchen
+    console.log("[EditorState] Mode changed:", previousMode, "->", mode);
+    dispatchCrossWindowEvent(P2D2EventType.EDITOR_MODE_CHANGE, {
+      mode,
+      previousMode,
+      windowId: getWindowId(),
+      timestamp: Date.now(),
+    });
   }
 
   getEditorMode(): "navigate" | "edit" {
@@ -154,6 +201,77 @@ export class EditorState {
     return this.dirtyFeatures;
   }
 
+  // --- NEUE Multi-Selection Methoden ---
+
+  /**
+   * Togglet zwischen 'single' und 'multi' Auswahlmodus.
+   * Beim Wechsel zu 'single' wird selectedFeatures geleert.
+   */
+  public toggleSelectionMode(): void {
+    const newMode = this.selectionMode === "single" ? "multi" : "single";
+    if (this.selectionMode === newMode) return; // Guard gegen redundante Updates
+
+    this.selectionMode = newMode;
+
+    if (newMode === "single") {
+      // Beim Wechsel zu Single-Modus die Multi-Selektion leeren
+      this.selectedFeatures.clear();
+    }
+
+    this.notifyListeners();
+  }
+
+  /**
+   * Fügt ein Feature zur Multi-Selektion hinzu.
+   * Nur wirksam im 'multi' Modus.
+   */
+  public addToSelection(feature: Feature<Geometry>): void {
+    // Nur im Multi-Modus erlauben
+    if (this.selectionMode !== "multi") return;
+
+    // Guard: Wenn Feature bereits in Set, return (redundantes Add vermeiden)
+    if (this.selectedFeatures.has(feature)) return;
+
+    this.selectedFeatures.add(feature);
+    this.notifyListeners();
+  }
+
+  /**
+   * Entfernt ein Feature aus der Multi-Selektion.
+   */
+  public removeFromSelection(feature: Feature<Geometry>): void {
+    // Guard: Wenn Feature nicht in Set, return
+    if (!this.selectedFeatures.has(feature)) return;
+
+    this.selectedFeatures.delete(feature);
+    this.notifyListeners();
+  }
+
+  /**
+   * Leert die gesamte Multi-Selektion.
+   */
+  public clearSelection(): void {
+    // Guard: Wenn bereits leer, return
+    if (this.selectedFeatures.size === 0) return;
+
+    this.selectedFeatures.clear();
+    this.notifyListeners();
+  }
+
+  /**
+   * Gibt die aktuell selektierten Features zurück (read-only).
+   */
+  public getSelectedFeatures(): ReadonlySet<Feature<Geometry>> {
+    return this.selectedFeatures;
+  }
+
+  /**
+   * Gibt den aktuellen Selektionsmodus zurück.
+   */
+  public getSelectionMode(): "single" | "multi" {
+    return this.selectionMode;
+  }
+
   // ANPASSEN: getReactiveState
   getReactiveState(): ReactiveEditorState {
     return {
@@ -166,6 +284,9 @@ export class EditorState {
       // KORREKTUR: Fehlendes Property hinzugefügt (Fix 2)
       // Verwendet jetzt den neuen Getter (ohne Klammern)
       hasDirtyFeatures: this.hasDirtyFeatures,
+      // NEU: Multi-Selection Felder
+      selectedFeatures: this.selectedFeatures,
+      selectionMode: this.selectionMode,
     };
   }
 }

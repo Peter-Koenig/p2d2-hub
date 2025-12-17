@@ -17,6 +17,11 @@ import type { ViewHistoryManager } from "@/utils/view-history-manager";
 import { MAP_CONFIG } from "@/config/map-config";
 import type { ModifyEvent } from "ol/interaction/Modify";
 import type { TranslateEvent } from "ol/interaction/Translate";
+import {
+  dispatchCrossWindowEvent,
+  getWindowId,
+} from "../../utils/cross-window-events";
+import { P2D2EventType } from "../../utils/events";
 
 /**
  * Verwaltet alle Karten-Interaktionen (Hover, Klick, Bearbeitungswerkzeuge).
@@ -46,6 +51,11 @@ export class EditorInteractionManager {
 
   // NEU: Style-Cache für *Auswahl*
   private selectionStyleCache: Record<string, Style> = {};
+
+  // NEU: Entdopplungs-Felder für EDITOR_FEATURE_MODIFIED Events (pro Feature)
+  private lastModifiedEventTimes: Map<string, number> = new Map();
+  private lastModifiedEventSignatures: Map<string, string> = new Map();
+  private readonly DEBOUNCE_MS: number = 30; // 30 ms Debounce-Zeit für robustere Entdoppelung
 
   // --- Styles ---
   private readonly HOVER_STYLE = new Style({
@@ -307,25 +317,12 @@ export class EditorInteractionManager {
     });
 
     // Snap (An anderen Features einrasten)
-    // --- HINZUFÜGEN START ---
+    // Rotate (Feature drehen)
     this.rotate = new RotateFeatureInteraction({
       features: this.select.getFeatures(),
       anchor: undefined, // Nutzt das Zentrum des Features
       angle: 0,
     });
-
-    this.rotate.on("rotatestart", (e: any) => {
-      console.log("[InteractionManager] 🔄 Rotation gestartet");
-      // Speichere Original-Geometrie beim Start
-      this.storeOriginalGeometries(e.features);
-    });
-
-    this.rotate.on("rotateend", (e: any) => {
-      console.log("[InteractionManager] ✅ Rotation beendet");
-      // Markiere Features als "dirty" am Ende
-      this.markFeaturesAsDirty(e.features);
-    });
-    // --- HINZUFÜGEN ENDE ---
 
     // Snap (wie bisher)
     this.snap = new Snap({
@@ -350,7 +347,7 @@ export class EditorInteractionManager {
     // 2. Event-Listener für Dirty-Tracking an die (noch inaktiven) Interaktionen binden
     if (this.modify) {
       this.modify.on("modifyend", (e: ModifyEvent) =>
-        this.markFeaturesAsDirty(e.features),
+        this.markFeaturesAsDirty(e.features, "modify"),
       );
       this.modify.on("modifystart", (e: ModifyEvent) =>
         this.storeOriginalGeometries(e.features),
@@ -358,7 +355,7 @@ export class EditorInteractionManager {
     }
     if (this.translate) {
       this.translate.on("translateend", (e: TranslateEvent) =>
-        this.markFeaturesAsDirty(e.features),
+        this.markFeaturesAsDirty(e.features, "translate"),
       );
       this.translate.on("translatestart", (e: TranslateEvent) =>
         this.storeOriginalGeometries(e.features),
@@ -371,7 +368,7 @@ export class EditorInteractionManager {
       });
       this.rotate.on("rotateend", (e: any) => {
         console.log("[InteractionManager] ✅ Rotation beendet");
-        this.markFeaturesAsDirty(e.features);
+        this.markFeaturesAsDirty(e.features, "rotate");
       });
     }
 
@@ -392,16 +389,93 @@ export class EditorInteractionManager {
   }
 
   // NEU: Hilfsfunktion für "modifyend" / "translateend"
-  private markFeaturesAsDirty(features: any /* Collection<Feature> */) {
+  private markFeaturesAsDirty(
+    features: any /* Collection<Feature> */,
+    tool: "modify" | "rotate" | "translate" = "modify",
+  ) {
     features.getArray().forEach((f: Feature) => {
       if (f.getId() !== undefined) {
         console.log(
-          `%c[InteractionManager] ✏️ Feature ${f.getId()} als 'dirty' markiert.`,
+          `%c[InteractionManager] ✏️ Feature ${f.getId()} als 'dirty' markiert (Tool: ${tool}).`,
           "color: orange;",
         );
         this.state.markAsDirty(f.getId()!);
+
+        // NEU: Event dispatchen mit Entdoppelung
+        this.dispatchFeatureModifiedEvent(f, tool);
       }
     });
+  }
+
+  // NEU: Entdoppelung für EDITOR_FEATURE_MODIFIED Events
+  private dispatchFeatureModifiedEvent(
+    feature: Feature,
+    tool: "modify" | "rotate" | "translate",
+  ) {
+    const rawId = feature.getId();
+    if (rawId === undefined || rawId === null) return;
+    const featureId = String(rawId); // Sicherstellen, dass ID als String behandelt wird
+
+    const geometry = (feature.getGeometry() as any)?.getCoordinates?.() ?? null;
+
+    // Normalisiere Geometrie-Koordinaten (Runde auf 6 Dezimalstellen, um Gleitkomma-Ungenauigkeiten zu ignorieren)
+    const normalizedGeometry = this.normalizeGeometryCoordinates(geometry);
+
+    // Erstelle eine Signatur für dieses Event
+    const signature = JSON.stringify({
+      featureId,
+      tool,
+      geometry: normalizedGeometry,
+    });
+
+    const now = Date.now();
+    const lastTime = this.lastModifiedEventTimes.get(featureId) || 0;
+    const lastSignature = this.lastModifiedEventSignatures.get(featureId) || "";
+
+    // Prüfe auf Duplikat innerhalb des Debounce-Zeitraums
+    if (now - lastTime < this.DEBOUNCE_MS && signature === lastSignature) {
+      console.log(
+        `%c[InteractionManager] ⏭️ EDITOR_FEATURE_MODIFIED für Feature ${featureId} entdoppelt (${now - lastTime} ms < ${this.DEBOUNCE_MS} ms)`,
+        "color: gray;",
+      );
+      return;
+    }
+
+    // Event dispatchen
+    dispatchCrossWindowEvent(P2D2EventType.EDITOR_FEATURE_MODIFIED, {
+      featureId,
+      tool,
+      windowId: getWindowId(),
+      geometry,
+      timestamp: now,
+    });
+
+    // Status aktualisieren
+    this.lastModifiedEventTimes.set(featureId, now);
+    this.lastModifiedEventSignatures.set(featureId, signature);
+
+    console.log(
+      `%c[InteractionManager] ✏️ EDITOR_FEATURE_MODIFIED für Feature ${featureId} gesendet (Tool: ${tool})`,
+      "color: orange;",
+    );
+  }
+
+  // NEU: Hilfsfunktion zur Normalisierung von Geometrie-Koordinaten
+  private normalizeGeometryCoordinates(geometry: any): any {
+    if (!geometry || !Array.isArray(geometry)) return geometry;
+
+    // Rekursive Funktion zum Runden von Zahlen in Arrays
+    const roundNumbers = (obj: any): any => {
+      if (Array.isArray(obj)) {
+        return obj.map((item) => roundNumbers(item));
+      } else if (typeof obj === "number") {
+        // Runde auf 6 Dezimalstellen (ca. 0.1 mm Genauigkeit)
+        return Math.round(obj * 1e6) / 1e6;
+      }
+      return obj;
+    };
+
+    return roundNumbers(geometry);
   }
 
   // NEU: Öffentliche Revert-Funktion
@@ -482,6 +556,14 @@ export class EditorInteractionManager {
     this.selectionStyleCache = {};
   }
 
+  // NEU: Hilfsfunktion zum Leeren der Feature-Selection
+  public clearSelection() {
+    if (this.select) {
+      this.select.getFeatures().clear();
+      console.log("[InteractionManager] 🧹 Feature-Selection geleert");
+    }
+  }
+
   private extractGrabflurNumber(name: string): string {
     if (!name) return "?";
     const match = name.match(/-(\d+)$/);
@@ -506,6 +588,11 @@ export class EditorInteractionManager {
       `[InteractionManager] 🔧 Wechsle Tool: ${this.state.getTool()} → ${toolName}`,
     );
     this.state.setTool(toolName);
+
+    // Clear selection to remove visual overlays (rotation anchor, etc.)
+    if (this.select) {
+      this.select.getFeatures().clear();
+    }
 
     // Alle Interaktionen entfernen
     if (this.select) this.map.removeInteraction(this.select);

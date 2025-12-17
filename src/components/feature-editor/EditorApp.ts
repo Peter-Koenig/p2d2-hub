@@ -7,6 +7,11 @@ import { EditorInteractionManager } from "./EditorInteractionManager";
 import { EditorUIManager } from "./EditorUIManager";
 import { wfsAuthClient } from "@/utils/wfs-auth";
 import { buffer } from "ol/extent";
+import {
+  dispatchCrossWindowEvent,
+  getWindowId,
+} from "../../utils/cross-window-events";
+import { P2D2EventType } from "../../utils/events";
 
 /**
  * Haupt-App-Klasse für den Feature Editor.
@@ -76,6 +81,12 @@ export class EditorApp {
       // 9. Auf Extent zoomen
       this.mapManager.fitToInitialExtent(this.state.initialExtentWGS84);
       console.log("EditorApp: Initialisierung abgeschlossen.");
+      dispatchCrossWindowEvent(P2D2EventType.EDITOR_READY, {
+        windowId: getWindowId(),
+        wpName: this.state.wpName,
+        containerType: this.state.containerType,
+        timestamp: Date.now(),
+      });
     } catch (error) {
       console.error("Fehler in EditorApp.init():", error);
       // Optional: Zeige eine Fehlermeldung im UI an

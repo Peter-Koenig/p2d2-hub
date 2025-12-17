@@ -8,6 +8,10 @@ import NavigationControls from "../../components/feature-editor/NavigationContro
 import LayerControls from "../../components/feature-editor/LayerControls.astro";
 import Toolbar from "../../components/feature-editor/Toolbar.astro"; // NEU
 
+import { initializeCrossWindowBridge } from "../../utils/cross-window-events";
+initializeCrossWindowBridge();
+console.log("[feature-editor] Cross-window bridge initialized (editor window)");
+
 const { featureId } = Astro.params;
 const wp_name = Astro.url.searchParams.get("wp_name");
 const container_type = Astro.url.searchParams.get("container_type");
@@ -61,8 +65,16 @@ const decodedName = decodeURIComponent(name);
 
     <script>
         import { EditorApp } from "../../components/feature-editor/EditorApp";
+        import { initializeCrossWindowBridge } from "../../utils/cross-window-events";
 
         document.addEventListener("DOMContentLoaded", () => {
+            if (typeof window !== "undefined") {
+                initializeCrossWindowBridge();
+                console.log(
+                    "[feature-editor] Cross-window bridge initialized (editor window)",
+                );
+            }
+
             const mapContainer = document.getElementById("feature-editor-map");
 
             if (mapContainer) {

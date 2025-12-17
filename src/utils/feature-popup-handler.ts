@@ -12,6 +12,7 @@ import VectorSource from "ol/source/Vector";
 import Overlay from "ol/Overlay";
 import { wfsAuthClient } from "./wfs-auth";
 import { mapState } from "./map-state";
+import { registerEditorWindow } from "./cross-window-events";
 
 // Type definitions for feature properties
 interface CemeteryFeatureProperties {
@@ -462,6 +463,11 @@ export class FeaturePopupHandler {
       `feature-editor-${encodeURIComponent(props.name)}`,
       "width=1200,height=800,resizable=yes,scrollbars=yes,location=yes",
     );
+
+    // NEU: Registriere Editor-Fenster für Cross-Window Events
+    if (editorWindow) {
+      registerEditorWindow(editorWindow);
+    }
 
     if (!editorWindow) {
       alert(
