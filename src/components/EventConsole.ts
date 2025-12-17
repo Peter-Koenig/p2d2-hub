@@ -24,13 +24,32 @@ export class EventConsole {
   private logList: HTMLElement | null = null;
   private logs: LogEntry[] = [];
   private isVisible: boolean = false;
+  private enabled: boolean = false;
   private maxLogs: number = 50;
   private filterTerm: string = "";
   private readonly STORAGE_KEY = "p2d2:debug:events";
 
   constructor() {
-    this.createOverlay();
+    // @ts-ignore
+    const isProduction = import.meta.env.PROD;
+    const urlParams = new URLSearchParams(window.location.search);
+    const debugEvents =
+      urlParams.has("debug") &&
+      (urlParams.get("debug") || "").includes("events");
+
+    this.enabled = !isProduction || debugEvents;
+
+    // Keyboard-Shortcut immer aktivieren (für Support-Mitarbeiter)
     this.initializeKeyboardShortcut();
+
+    if (!this.enabled) {
+      console.log(
+        "[EventConsole] Production mode: Use ?debug=events to enable",
+      );
+      return;
+    }
+
+    this.createOverlay();
     this.restoreStateFromLocalStorage();
     this.hide(); // Start hidden by default
   }
@@ -441,6 +460,8 @@ export class EventConsole {
    * Log an event to the console
    */
   public logEvent(type: string, detail: any, meta?: LogEntry["meta"]): void {
+    if (!this.enabled) return;
+
     const entry: LogEntry = {
       id: Date.now() + "-" + Math.random().toString(36).substr(2, 9),
       timestamp: new Date(),
@@ -530,6 +551,18 @@ export class EventConsole {
    * Toggle console visibility
    */
   public toggle(): void {
+    // If console is disabled (production mode), enable it on first toggle
+    if (!this.enabled) {
+      this.enabled = true;
+      console.log("[EventConsole] Enabled via keyboard shortcut");
+    }
+
+    // Create overlay if it doesn't exist yet
+    if (!this.container) {
+      this.createOverlay();
+      this.restoreStateFromLocalStorage();
+    }
+
     if (this.isVisible) {
       this.hide();
     } else {
