@@ -1,15 +1,10 @@
 // Kommunen Click Handler - Centralized handling of kommunen card click events
 
-interface KommunenDetail {
-  center?: [number, number];
-  extent?: [number, number, number, number];
-  zoom?: number;
-  projection?: string;
-  extra?: any;
-  slug?: string;
-  wp_name?: string; // KORRIGIERT: wp_name statt wpname
-  osmAdminLevels?: number[];
-}
+import {
+  P2D2EventType,
+  dispatchP2D2Event,
+  type KommunenFocusDetail,
+} from "./events";
 
 interface KommuneData {
   slug: string;
@@ -51,12 +46,14 @@ export default class KommunenClickHandler {
     );
   }
 
-  private extractDetailFromButton(button: HTMLElement): KommunenDetail | null {
+  private extractDetailFromButton(
+    button: HTMLElement,
+  ): KommunenFocusDetail | null {
     try {
       const detailStr = button.dataset?.detail;
       if (!detailStr) return null;
 
-      const detail: KommunenDetail = JSON.parse(detailStr);
+      const detail: KommunenFocusDetail = JSON.parse(detailStr);
       const slug = button.getAttribute("data-slug") || "";
 
       if (
@@ -123,7 +120,7 @@ export default class KommunenClickHandler {
       if (!mapDetail) return;
 
       // Combine map detail with kommune data
-      const detail: KommunenDetail = { ...mapDetail, ...kommuneData };
+      const detail: KommunenFocusDetail = { ...mapDetail, ...kommuneData };
 
       // Toggle-Logik: Wenn gleiche Kommune nochmal geklickt → deaktivieren
       const currentKommune = (window as any).mapState?.getSelectedKommune?.();
@@ -185,7 +182,7 @@ export default class KommunenClickHandler {
   }
 
   // NEW: Handle WFS layer switching on kommune change
-  private handleWFSLayerToggle(detail: KommunenDetail): void {
+  private handleWFSLayerToggle(detail: KommunenFocusDetail): void {
     if (!(window as any).wfsManager) return;
 
     const selectedCategory = (window as any).mapState?.getSelectedCategory?.();
@@ -202,24 +199,22 @@ export default class KommunenClickHandler {
     (window as any).wfsManager.displayLayer(detail, selectedCategory);
   }
 
-  private dispatchKommunenFocus(detail: KommunenDetail): void {
+  private dispatchKommunenFocus(detail: KommunenFocusDetail): void {
     try {
-      if (typeof (window as any).dispatchKommunenFocus === "function") {
-        (window as any).dispatchKommunenFocus(detail);
-      } else if (typeof window.dispatchEvent === "function") {
-        window.dispatchEvent(new CustomEvent("kommunen:focus", { detail }));
-      } else {
-        console.error("[kommunen-handler] No event dispatch method available");
-      }
+      // Use type-safe event dispatching
+      dispatchP2D2Event(P2D2EventType.KOMMUNEN_FOCUS, detail);
     } catch (error) {
       console.warn("[kommunen-handler] Dispatch failed, retrying...", error);
+      // Fallback to direct dispatch if the typed dispatcher fails
       setTimeout(() => {
-        window.dispatchEvent(new CustomEvent("kommunen:focus", { detail }));
+        window.dispatchEvent(
+          new CustomEvent(P2D2EventType.KOMMUNEN_FOCUS, { detail }),
+        );
       }, 100);
     }
   }
 
-  private persistSelection(detail: KommunenDetail): void {
+  private persistSelection(detail: KommunenFocusDetail): void {
     try {
       localStorage.setItem("p2d2_selected_kommune_slug", detail.slug || "");
       localStorage.setItem(
@@ -239,7 +234,7 @@ export default class KommunenClickHandler {
       );
 
       if (lastSlug && lastDetailStr) {
-        const detail: KommunenDetail = JSON.parse(lastDetailStr);
+        const detail: KommunenFocusDetail = JSON.parse(lastDetailStr);
         console.log("[kommunen-handler] Restoring last selection:", lastSlug);
 
         setTimeout(() => {

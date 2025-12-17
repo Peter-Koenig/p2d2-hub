@@ -85,6 +85,12 @@ import "../styles/feature-popup.css";
     import { mapState } from "../utils/map-state";
     import WFSLayerManager from "../utils/wfs-layer-manager";
     import FeaturePopupHandler from "../utils/feature-popup-handler";
+    import {
+        P2D2EventType,
+        addP2D2EventListener,
+        dispatchP2D2Event,
+    } from "../utils/events";
+    import { dispatchCrossWindowEvent } from "../utils/cross-window-events";
 
     // Import existing CRS utilities
     import {
@@ -139,6 +145,14 @@ import "../styles/feature-popup.css";
             constrainResolution: false,
         }),
         controls: defaults().extend([new FullScreen()]),
+    });
+
+    // NEU: Event dispatchen
+    dispatchCrossWindowEvent(P2D2EventType.MAP_READY, {
+        projection: map.getView().getProjection().getCode(),
+        center: map.getView().getCenter(),
+        zoom: map.getView().getZoom(),
+        timestamp: Date.now(),
     });
 
     // Nach Map-Initialisierung Canvas-Elemente stylen
@@ -262,8 +276,8 @@ import "../styles/feature-popup.css";
 
     // Event listener for kommunen focus
     if (typeof window !== "undefined") {
-        window.addEventListener(
-            "kommunen:focus",
+        addP2D2EventListener(
+            P2D2EventType.KOMMUNEN_FOCUS,
             (e) => {
                 const d = (e as CustomEvent)?.detail || {};
                 const view = map?.getView?.();
@@ -392,9 +406,7 @@ import "../styles/feature-popup.css";
 
                 // Dispatch focus event after map initialization
                 setTimeout(() => {
-                    window.dispatchEvent(
-                        new CustomEvent("kommunen:focus", { detail }),
-                    );
+                    dispatchP2D2Event(P2D2EventType.KOMMUNEN_FOCUS, detail);
                 }, 100);
             } else {
                 // Kein gespeicherter Zustand - initial auf Köln zentrieren

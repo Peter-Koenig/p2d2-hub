@@ -56,12 +56,4 @@ src_temp.txt
 .directory
 sourcetree.json.txt
 src-p2d2.txt
-
-.aider.chat.history.md
-.aider.conf.yml
-.aider.input.history
-.aider.model.metadata.json
-.aider.model.settings.yml
-.aiderignore
-.aider.tags.cache.v4/cache.db
-
+.aider*
