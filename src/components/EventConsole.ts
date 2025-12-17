@@ -13,6 +13,9 @@ interface LogEntry {
     throttled?: boolean;
     success?: boolean;
     error?: string;
+    source?: "main" | "editor" | string;
+    windowId?: string;
+    crossWindow?: boolean;
   };
 }
 
@@ -123,6 +126,26 @@ export class EventConsole {
       font-size: 13px;
       color: #4ade80;
     `;
+
+    // NEU: Legende hinzufügen
+    const legend = document.createElement("div");
+    legend.style.cssText = `
+      font-size: 9px;
+      color: #9ca3af;
+      margin-top: 2px;
+      display: flex;
+      gap: 8px;
+    `;
+    legend.innerHTML = `
+      <span style="color: #4ade80;">🏠 Main</span>
+      <span style="color: #a78bfa;">🪟 Editor</span>
+      <span style="color: #fbbf24;">⚡ Cross-Window</span>
+    `;
+
+    // Title + Legende zusammen in Container
+    const titleContainer = document.createElement("div");
+    titleContainer.appendChild(title);
+    titleContainer.appendChild(legend);
 
     const buttonContainer = document.createElement("div");
     buttonContainer.style.cssText = `
@@ -261,7 +284,7 @@ export class EventConsole {
 
     buttonContainer.appendChild(filterInput);
     buttonContainer.appendChild(closeButton);
-    header.appendChild(title);
+    header.appendChild(titleContainer); // Statt: header.appendChild(title);
     header.appendChild(buttonContainer);
     logContainer.appendChild(this.logList);
 
@@ -312,23 +335,42 @@ export class EventConsole {
     else if (entry.type.includes("focus")) typeColor = "#4ade80"; // green for focus events
 
     // NEU: Source-Label mit Icon
-    const sourceIcon =
-      entry.meta?.source === "editor"
-        ? "🪟"
-        : entry.meta?.source === "main"
-          ? "🏠"
-          : "📡";
+    let sourceIcon = "📡"; // Default: allgemein
+    let sourceText = "";
+    let sourceColor = "#60a5fa"; // Default: blau
 
-    const sourceLabel = entry.meta?.crossWindow
-      ? `${sourceIcon} ${entry.meta.source} (cross-window)`
+    if (entry.meta?.source) {
+      if (entry.meta.source === "editor") {
+        sourceIcon = "🪟";
+        sourceText = "Editor";
+        sourceColor = "#a78bfa"; // Lila für Editor
+      } else if (entry.meta.source === "main") {
+        sourceIcon = "🏠";
+        sourceText = "Main";
+        sourceColor = "#4ade80"; // Grün für Main
+      } else {
+        sourceIcon = "📡";
+        sourceText = entry.meta.source;
+        sourceColor = "#60a5fa"; // Blau für andere
+      }
+
+      // Falls Cross-Window Event, zusätzlich markieren
+      if (entry.meta.crossWindow) {
+        sourceText += " (cross-window)";
+        sourceColor = "#fbbf24"; // Gelb für Cross-Window
+      }
+    }
+
+    const sourceLabel = sourceText
+      ? `<span style="color: ${sourceColor}; font-size: 10px; font-weight: bold;">${sourceIcon} ${sourceText}</span>`
       : "";
 
     // Create HTML content
     logElement.innerHTML = `
-      <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
         <span style="color: ${typeColor}; font-weight: bold;">${entry.type}</span>
-        <div style="display: flex; gap: 8px;">
-          ${sourceLabel ? `<span style="color: #60a5fa; font-size: 10px;">${sourceLabel}</span>` : ""}
+        <div style="display: flex; gap: 8px; align-items: center;">
+          ${sourceLabel}  <!-- NEU: Source-Label hier einfügen -->
           <span style="color: #9ca3af; font-size: 11px;">${timeStr}</span>
         </div>
       </div>
@@ -558,7 +600,9 @@ export class EventConsole {
             entry.type.toLowerCase().includes(this.filterTerm) ||
             JSON.stringify(entry.detail)
               .toLowerCase()
-              .includes(this.filterTerm),
+              .includes(this.filterTerm) ||
+            (entry.meta?.source &&
+              entry.meta.source.toLowerCase().includes(this.filterTerm)),
         )
       : this.logs;
 
