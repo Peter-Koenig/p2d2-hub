@@ -64,7 +64,7 @@ const kommunen = defineCollection({
       .string()
       .min(3, "Wikipedia identifier must be at least 3 characters")
       .regex(/^[a-z]{2,3}-/, "Must start with language code and hyphen")
-      .refine((val) => {
+      .refine((val: string) => {
         const parts = val.split("-", 2);
         return parts.length === 2 && parts[1].length > 0;
       }, "Must contain exactly one hyphen separating language code and article name"),
