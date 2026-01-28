@@ -1,3 +1,27 @@
+@import "ol/ol.css";
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+    /* Primary Colors */
+    --color-primary-50: #eefff6;
+    --color-primary-100: #d7ffea;
+    --color-primary-200: #b2ffd6;
+    --color-primary-300: #79ffb9;
+    --color-primary-400: #3eff95;
+    --color-primary-500: #16f079;
+    --color-primary-600: #00cc5e;
+    --color-primary-700: #00a04d;
+    --color-primary-800: #007d40;
+    --color-primary-900: #006737;
+
+    /* Font Families */
+    --font-poppins: "Poppins", sans-serif;
+    --font-inter: "Inter", sans-serif;
+    --font-sans: "Inter", sans-serif;
+    --font-display: "Poppins", sans-serif;
+}
+
 html,
 body {
     height: 100%;
@@ -44,30 +68,6 @@ body {
 
 .kategorie-card > *:not(button) {
     pointer-events: none;
-}
-
-@import "ol/ol.css";
-@import "tailwindcss";
-@plugin "@tailwindcss/typography";
-
-@theme {
-    /* Primary Colors */
-    --color-primary-50: #eefff6;
-    --color-primary-100: #d7ffea;
-    --color-primary-200: #b2ffd6;
-    --color-primary-300: #79ffb9;
-    --color-primary-400: #3eff95;
-    --color-primary-500: #16f079;
-    --color-primary-600: #00cc5e;
-    --color-primary-700: #00a04d;
-    --color-primary-800: #007d40;
-    --color-primary-900: #006737;
-
-    /* Font Families */
-    --font-poppins: "Poppins", sans-serif;
-    --font-inter: "Inter", sans-serif;
-    --font-sans: "Inter", sans-serif;
-    --font-display: "Poppins", sans-serif;
 }
 
 /* src/styles/global.css */
