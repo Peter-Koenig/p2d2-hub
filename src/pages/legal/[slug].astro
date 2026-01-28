@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import Prose from "../../components/Prose.astro";
 import { getCollection } from "astro:content";
 
 const { slug } = Astro.params;
@@ -15,7 +16,9 @@ const { Content } = await entry.render();
 ---
 
 <BaseLayout>
-    <article class="prose prose-lg mx-auto my-8">
-        <Content />
+    <article class="mx-auto my-8">
+        <Prose>
+            <Content />
+        </Prose>
     </article>
 </BaseLayout>
