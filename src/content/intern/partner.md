@@ -1,6 +1,8 @@
 ---
 name: Partner
 url: /ueber/partner
+title: "Partner"
+description: "Die Partner von p2d2"
 ---
 # Unsere Partner
 

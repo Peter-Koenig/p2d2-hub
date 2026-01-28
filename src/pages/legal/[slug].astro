@@ -1,21 +1,27 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import { getCollection } from "astro:content";
+import Prose from "../../components/Prose.astro";
+import { getCollection, render } from "astro:content";
+import type { CollectionEntry } from "astro:content";
 
 const { slug } = Astro.params;
 const legalEntries = await getCollection("legal");
-
-// Slug-Mapping: z.B.
-const entry = legalEntries.find((item) => item.slug === slug);
+const entry = legalEntries.find(
+    (item): item is CollectionEntry<"legal"> => item.slug === slug,
+);
 
 if (!entry) {
     throw new Error("Legal-Eintrag nicht gefunden");
 }
-const { Content } = await entry.render();
+
+const { Content } = await render(entry);
+const pageTitle = entry.data.name ?? "p2d2";
 ---
 
-<BaseLayout>
-    <article class="prose prose-lg mx-auto my-8">
-        <Content />
-    </article>
+<BaseLayout title={pageTitle as string}>
+    <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
+        <Prose>
+            <Content />
+        </Prose>
+    </main>
 </BaseLayout>
