@@ -1,5 +1,6 @@
 @import "ol/ol.css";
 @import "tailwindcss";
+@source "../**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}";
 @plugin "@tailwindcss/typography";
 
 @theme {
