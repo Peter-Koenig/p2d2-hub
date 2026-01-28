@@ -16,7 +16,6 @@ export default defineConfig({
   output: "server",
   adapter: node({ mode: "standalone" }),
 
-  // integrations: [mdx()], // Nur falls du MDX brauchst
   vite: {
     plugins: [tailwindcss()],
     resolve: {
@@ -27,6 +26,8 @@ export default defineConfig({
     optimizeDeps: {
       include: ["ol", "proj4", "vue"], // Pre-bundle GIS-Dependencies
     },
+    css: { transformer: "lightningcss" },
+    build: { cssMinify: "lightningcss" },
     server: {
       hmr: {
         host: "localhost",
@@ -45,6 +46,7 @@ export default defineConfig({
   },
 
   integrations: [
+    mdx(),
     vue(),
     polygonSyncPlugin({
       watchDir: "src/content/kommunen",
