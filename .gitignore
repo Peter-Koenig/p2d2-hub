@@ -16,7 +16,11 @@ pnpm-debug.log*
 
 # environment variables
 .env
+.env_dev
+.env_prod
 .env.production
+.env.development
+.env.local
 
 # macOS-specific files
 .DS_Store
@@ -43,12 +47,8 @@ src_main.txt
 src_utm_working.txt
 public/videos/hero-bg-hires.mp4
 src_container.txt
-.env_dev
-.env_prod
 src_dev.txt
 src_feature_broken.txt
-.env.development
-.env.production
 src_develop.txt
 src_feature.txt
 src/utils/geo/__pycache__/*

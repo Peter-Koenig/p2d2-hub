@@ -257,6 +257,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                     </h2>
 
                     <form
+                        action="/api/contact-submit"
+                        method="POST"
                         class="space-y-6 bg-white p-8 rounded-xl border border-gray-200 shadow-lg"
                     >
                         <div>
@@ -336,6 +338,14 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                             ></textarea>
                         </div>
 
+                        <!-- ALTCHA Widget -->
+                        <div class="mb-6">
+                            <altcha-widget
+                                challengeurl="/api/altcha/challenge"
+                                auto="onsubmit"
+                                name="altcha"></altcha-widget>
+                        </div>
+
                         <button
                             type="submit"
                             class="w-full bg-primary-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
@@ -348,24 +358,70 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                             Datenschutzerklärung zu. Wir verwenden deine Daten
                             nur zur Bearbeitung deiner Anfrage.
                         </p>
+                        <p class="text-xs text-gray-500 text-center mt-4">
+                            Diese Seite nutzt ALTCHA – ein
+                            datenschutzfreundliches, DSGVO-konformes
+                            Anti-Spam-System ohne Tracking oder Cookies.
+                            <a
+                                href="https://altcha.org"
+                                target="_blank"
+                                rel="noopener"
+                                class="text-primary-600 hover:text-primary-700"
+                                >Mehr erfahren</a
+                            >
+                        </p>
                     </form>
                 </div>
             </div>
         </div>
     </main>
+    <script
+        type="module"
+        src="https://cdn.jsdelivr.net/npm/altcha@latest/dist/altcha-web-component.js"
+    ></script>
 </BaseLayout>
 
 <script>
-    // Einfache Formular-Behandlung (placeholder)
+    // Formular-Behandlung mit ALTCHA CAPTCHA
     document.addEventListener("DOMContentLoaded", () => {
         const form = document.querySelector("form");
         if (form) {
-            form.addEventListener("submit", (e) => {
+            form.addEventListener("submit", async (e) => {
                 e.preventDefault();
-                // Hier würdest du normalerweise das Formular an einen Server senden
-                alert(
-                    "Leider ist die Mail-Funktion noch nicht implementiert. Bitte nutze derzeit noch die Mail- oder Mastodon-Kontakte auf der Kontakt-Seite. Vielen Dank :-)",
-                );
+
+                // Sammle Formulardaten
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+
+                try {
+                    const response = await fetch("/api/contact-submit", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        // Erfolgsmeldung anzeigen und Formular leeren
+                        alert(
+                            "Nachricht erfolgreich gesendet! Vielen Dank für deine Kontaktaufnahme.",
+                        );
+                        form.reset();
+                    } else {
+                        // Fehlermeldung anzeigen
+                        alert(
+                            `Fehler beim Senden: ${result.error || "Unbekannter Fehler"}`,
+                        );
+                    }
+                } catch (error) {
+                    console.error("Fehler beim Senden des Formulars:", error);
+                    alert(
+                        "Ein Netzwerkfehler ist aufgetreten. Bitte versuche es später erneut.",
+                    );
+                }
             });
         }
     });
