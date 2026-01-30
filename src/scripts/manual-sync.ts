@@ -44,8 +44,13 @@ if (process.argv.length < 3) {
   console.error("Usage: npm run sync:manual <kommune-slug> [dry-run]");
   process.exit(1);
 }
-import { AdminPolygonSyncManager } from "../utils/admin-polygon-sync";
-import { KommuneWatcher } from "./kommune-watcher";
+import "dotenv/config";
+import {
+  AdminPolygonSyncManager,
+  type SyncAllResult,
+  type SyncStatus,
+} from "../utils/admin-polygon-sync.js";
+import { KommuneWatcher } from "./kommune-watcher.mjs";
 import { getAllKommunen, getKommuneBySlug } from "../utils/kommune-utils";
 
 interface CLIArgs {
@@ -128,14 +133,14 @@ async function handleSyncCommand(args: CLIArgs): Promise<void> {
     const results = await syncManager.syncAllKommunen();
 
     console.log("\n[manual-sync] Sync Summary:");
-    results.forEach((result) => {
+    results.forEach((result: SyncAllResult) => {
       const status = result.success ? "✓" : "✗";
       console.log(
         `  ${status} ${result.kommuneSlug}: ${result.polygonsFound} found, ${result.polygonsInserted} inserted${result.error ? ` - ERROR: ${result.error}` : ""}`,
       );
     });
 
-    const successCount = results.filter((r) => r.success).length;
+    const successCount = results.filter((r: SyncAllResult) => r.success).length;
     const totalCount = results.length;
     console.log(
       `\n[manual-sync] Completed: ${successCount}/${totalCount} kommunen successful`,
@@ -179,7 +184,7 @@ async function handleDeleteCommand(args: CLIArgs): Promise<void> {
     console.log(
       `[manual-sync] Deleting polygons for all kommunen${args.dryRun ? " (dry run)" : ""}`,
     );
-    const kommunen = await getAllKommunenFromFS();
+    const kommunen = await getAllKommunen();
 
     for (const kommune of kommunen) {
       if (args.dryRun) {
@@ -209,7 +214,9 @@ async function handleStatusCommand(args: CLIArgs): Promise<void> {
   const statuses = await syncManager.getSyncStatus();
 
   if (args.kommuneSlug) {
-    const status = statuses.find((s) => s.slug === args.kommuneSlug);
+    const status = statuses.find(
+      (s: SyncStatus) => s.slug === args.kommuneSlug,
+    );
     if (status) {
       console.log(`\nStatus for ${args.kommuneSlug}:`);
       console.log(JSON.stringify(status, null, 2));
@@ -219,7 +226,7 @@ async function handleStatusCommand(args: CLIArgs): Promise<void> {
     }
   } else {
     console.log("\nSync Status for all kommunen:");
-    statuses.forEach((status) => {
+    statuses.forEach((status: SyncStatus) => {
       const levels =
         status.adminLevels.length > 0
           ? `[${status.adminLevels.join(",")}]`
@@ -238,7 +245,7 @@ async function handleListCommand(): Promise<void> {
   console.log("\nAvailable kommunen:");
   kommunen.forEach((kommune) => {
     const levels =
-      kommune.osmAdminLevels?.length > 0
+      kommune.osmAdminLevels && kommune.osmAdminLevels.length > 0
         ? `[${kommune.osmAdminLevels.join(",")}]`
         : "[none]";
     const wpName = kommune.wp_name || "none";

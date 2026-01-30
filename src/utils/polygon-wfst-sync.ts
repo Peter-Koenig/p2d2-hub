@@ -27,7 +27,23 @@ interface PolygonRecord {
 export async function syncKommunePolygons(
   slug: string,
   categories: string[] = ["admin_boundary"],
+  wfstConfig?: {
+    endpoint: string;
+    username?: string;
+    password?: string;
+    namespace?: string;
+    workspace?: string;
+  },
 ): Promise<SyncResult> {
+  // Fallback to process.env if wfstConfig not provided
+  const effectiveConfig = wfstConfig || {
+    endpoint: process.env.WFST_ENDPOINT || "",
+    workspace: process.env.WFST_WORKSPACE || "Verwaltungsdaten",
+    namespace: process.env.WFST_NAMESPACE || "urn:data-dna:govdata",
+    username: process.env.WFST_USERNAME || "",
+    password: process.env.WFST_PASSWORD || "",
+  };
+
   const result: SyncResult = {
     success: true,
     processedLevels: [],
@@ -41,7 +57,7 @@ export async function syncKommunePolygons(
     const kommunen = await getCollection("kommunen");
     const kommune = kommunen.find((k) => k.slug === slug);
 
-    if (process.env.DEBUG) {
+    if (process.env.APP_DEBUG) {
       console.debug(`[DEBUG] Found kommune: ${slug}`, {
         hasOsmLevels: !!kommune?.data.osmAdminLevels,
         levels: kommune?.data.osmAdminLevels,
@@ -60,13 +76,17 @@ export async function syncKommunePolygons(
     if (categories.includes("admin_boundary") && kommune.data.osmAdminLevels) {
       for (const level of kommune.data.osmAdminLevels) {
         try {
-          if (process.env.DEBUG) {
+          if (process.env.APP_DEBUG) {
             console.debug(
               `[DEBUG] Processing admin level ${level} for ${municipalityName}`,
             );
           }
           const geoJsonData = await fetchAdminPolygons(municipalityName, level);
-          await persistGMLViaWFST(geoJsonData.gmlContent, kommune.data);
+          await persistGMLViaWFST(
+            geoJsonData.gmlContent,
+            kommune.data,
+            effectiveConfig,
+          );
           result.processedLevels.push(level);
           result.insertedPolygons += 1; // Count as one transaction for GML
         } catch (error) {
@@ -80,7 +100,11 @@ export async function syncKommunePolygons(
     if (categories.includes("cemetery")) {
       try {
         const geoJsonData = await fetchCemeteries(municipalityName);
-        await persistGMLViaWFST(geoJsonData.gmlContent, kommune.data);
+        await persistGMLViaWFST(
+          geoJsonData.gmlContent,
+          kommune.data,
+          effectiveConfig,
+        );
         result.insertedPolygons += 1;
       } catch (error) {
         result.errors.push(`Cemetery: ${(error as Error).message}`);
@@ -110,7 +134,7 @@ async function fetchAdminPolygons(
       "--debug",
     ];
 
-    if (process.env.DEBUG) {
+    if (process.env.APP_DEBUG) {
       console.debug(
         `[DEBUG] Executing Python script: python ${args.join(" ")}`,
       );
@@ -122,7 +146,7 @@ async function fetchAdminPolygons(
     pythonProcess.stdout.on("data", (data) => (output += data.toString()));
     pythonProcess.stderr.on("data", (data) => (stderr += data.toString()));
     pythonProcess.on("close", (code) => {
-      if (process.env.DEBUG) {
+      if (process.env.APP_DEBUG) {
         console.debug(`[DEBUG] Python script exited with code ${code}`);
         if (stderr) console.debug(`[DEBUG] Python stderr: ${stderr}`);
       }
@@ -133,7 +157,7 @@ async function fetchAdminPolygons(
           // Look for the JSON object starting with { and ending with }
           const jsonMatch = output.match(/\{[\s\S]*\}/);
           if (!jsonMatch) {
-            if (process.env.DEBUG) {
+            if (process.env.APP_DEBUG) {
               console.debug(
                 `[DEBUG] No JSON found in Python output: ${output}`,
               );
@@ -151,14 +175,14 @@ async function fetchAdminPolygons(
                 try {
                   const wfstGmlPath = result.wfst_files[level.toString()];
                   const gmlContent = readFileSync(wfstGmlPath, "utf8");
-                  if (process.env.DEBUG) {
+                  if (process.env.APP_DEBUG) {
                     console.debug(
                       `[DEBUG] Loaded WFS-T GML from: ${wfstGmlPath}`,
                     );
                   }
                   resolve({ gmlContent, metadata: result });
                 } catch (fileError) {
-                  if (process.env.DEBUG) {
+                  if (process.env.APP_DEBUG) {
                     console.debug(
                       "DEBUG Failed to read WFS-T GML file:",
                       fileError,
@@ -168,13 +192,13 @@ async function fetchAdminPolygons(
                 }
               })
               .catch((importError) => {
-                if (process.env.DEBUG) {
+                if (process.env.APP_DEBUG) {
                   console.debug("DEBUG Failed to import fs:", importError);
                 }
                 reject(new Error("Failed to import filesystem module"));
               });
           } else {
-            if (process.env.DEBUG) {
+            if (process.env.APP_DEBUG) {
               console.debug(
                 `[DEBUG] Python script returned ${result.features?.length || 0} features`,
               );
@@ -182,7 +206,7 @@ async function fetchAdminPolygons(
             resolve(result);
           }
         } catch (e) {
-          if (process.env.DEBUG) {
+          if (process.env.APP_DEBUG) {
             console.debug(
               `[DEBUG] Python output that failed to parse: ${output}`,
             );
@@ -193,7 +217,7 @@ async function fetchAdminPolygons(
           reject(new Error("Invalid JSON from Python script"));
         }
       } else {
-        if (process.env.DEBUG) {
+        if (process.env.APP_DEBUG) {
           console.debug(`[DEBUG] Python script failed with output: ${output}`);
         }
         reject(new Error(`Python script failed with code ${code}: ${stderr}`));
@@ -212,7 +236,7 @@ async function fetchCemeteries(kommune: string): Promise<any> {
       "--debug",
     ];
 
-    if (process.env.DEBUG) {
+    if (process.env.APP_DEBUG) {
       console.debug(
         `[DEBUG] Executing Python script: python ${args.join(" ")}`,
       );
@@ -224,7 +248,7 @@ async function fetchCemeteries(kommune: string): Promise<any> {
     pythonProcess.stdout.on("data", (data) => (output += data.toString()));
     pythonProcess.stderr.on("data", (data) => (stderr += data.toString()));
     pythonProcess.on("close", (code) => {
-      if (process.env.DEBUG) {
+      if (process.env.APP_DEBUG) {
         console.debug(`[DEBUG] Python script exited with code ${code}`);
         if (stderr) console.debug(`[DEBUG] Python stderr: ${stderr}`);
       }
@@ -235,7 +259,7 @@ async function fetchCemeteries(kommune: string): Promise<any> {
           // Look for the JSON object starting with { and ending with }
           const jsonMatch = output.match(/\{[\s\S]*\}/);
           if (!jsonMatch) {
-            if (process.env.DEBUG) {
+            if (process.env.APP_DEBUG) {
               console.debug(
                 `[DEBUG] No JSON found in Python output: ${output}`,
               );
@@ -253,14 +277,14 @@ async function fetchCemeteries(kommune: string): Promise<any> {
                 try {
                   const wfstGmlPath = result.wfst_files["cemetery"];
                   const gmlContent = readFileSync(wfstGmlPath, "utf8");
-                  if (process.env.DEBUG) {
+                  if (process.env.APP_DEBUG) {
                     console.debug(
                       `[DEBUG] Loaded WFS-T GML from: ${wfstGmlPath}`,
                     );
                   }
                   resolve({ gmlContent, metadata: result });
                 } catch (fileError) {
-                  if (process.env.DEBUG) {
+                  if (process.env.APP_DEBUG) {
                     console.debug(
                       "DEBUG Failed to read WFS-T GML file:",
                       fileError,
@@ -270,13 +294,13 @@ async function fetchCemeteries(kommune: string): Promise<any> {
                 }
               })
               .catch((importError) => {
-                if (process.env.DEBUG) {
+                if (process.env.APP_DEBUG) {
                   console.debug("DEBUG Failed to import fs:", importError);
                 }
                 reject(new Error("Failed to import filesystem module"));
               });
           } else {
-            if (process.env.DEBUG) {
+            if (process.env.APP_DEBUG) {
               console.debug(
                 `[DEBUG] Python script returned ${result.features?.length || 0} features`,
               );
@@ -284,7 +308,7 @@ async function fetchCemeteries(kommune: string): Promise<any> {
             resolve(result);
           }
         } catch (e) {
-          if (process.env.DEBUG) {
+          if (process.env.APP_DEBUG) {
             console.debug(
               `[DEBUG] Python output that failed to parse: ${output}`,
             );
@@ -295,7 +319,7 @@ async function fetchCemeteries(kommune: string): Promise<any> {
           reject(new Error("Invalid JSON from Python script"));
         }
       } else {
-        if (process.env.DEBUG) {
+        if (process.env.APP_DEBUG) {
           console.debug(`[DEBUG] Python script failed with output: ${output}`);
         }
         reject(new Error(`Python script failed with code ${code}: ${stderr}`));
@@ -331,17 +355,29 @@ function convertToPolygonRecords(
 }
 
 // WFS-T Transaction für Insert
-async function persistViaWFST(records: PolygonRecord[]): Promise<void> {
-  if (process.env.DEBUG) {
+async function persistViaWFST(
+  records: PolygonRecord[],
+  wfstConfig?: {
+    endpoint: string;
+    username?: string;
+    password?: string;
+    namespace?: string;
+    workspace?: string;
+  },
+): Promise<void> {
+  if (process.env.APP_DEBUG) {
     console.debug(
       `[DEBUG] Starting WFS-T transaction for ${records.length} records`,
     );
   }
 
-  const wfsClient = WFSAuthClient.createWFSTClient();
+  if (!wfstConfig || !wfstConfig.endpoint) {
+    throw new Error("WFST configuration required: endpoint must be provided");
+  }
+  const wfsClient = WFSAuthClient.createWFSTClient(wfstConfig);
 
   // DEBUG: Environment-Variablen prüfen
-  if (process.env.DEBUG) {
+  if (process.env.APP_DEBUG) {
     console.debug("DEBUG WFST Config:");
     console.debug(
       "  ENDPOINT:",
@@ -360,7 +396,7 @@ async function persistViaWFST(records: PolygonRecord[]): Promise<void> {
 
   const transactionXml = buildWFSTInsertXML(records);
 
-  if (process.env.DEBUG) {
+  if (process.env.APP_DEBUG) {
     console.debug(
       `[DEBUG] WFS-T Transaction XML size: ${transactionXml.length} chars`,
     );
@@ -372,16 +408,16 @@ async function persistViaWFST(records: PolygonRecord[]): Promise<void> {
 
   const response = await wfsClient.executeWFSTransaction(transactionXml);
 
-  if (process.env.DEBUG) {
+  if (process.env.APP_DEBUG) {
     console.debug(`[DEBUG] WFS-T Response status: ${response.status}`);
   }
 
   if (!response.ok) {
     const error = await response.text();
-    if (process.env.DEBUG)
+    if (process.env.APP_DEBUG)
       console.debug("DEBUG WFS-T GML Error response:", error);
     // Log the full transaction XML that failed
-    if (process.env.DEBUG) {
+    if (process.env.APP_DEBUG) {
       console.debug(
         "DEBUG Failed transaction XML:",
         transactionXml.substring(0, 1000) + "...",
@@ -390,7 +426,7 @@ async function persistViaWFST(records: PolygonRecord[]): Promise<void> {
     throw new Error(`WFS-T GML failed: ${response.status} - ${error}`);
   }
 
-  if (process.env.DEBUG) {
+  if (process.env.APP_DEBUG) {
     console.debug(`[DEBUG] WFS-T transaction completed successfully`);
   }
 }
@@ -457,19 +493,29 @@ function escapeXml(text: string): string {
 async function persistGMLViaWFST(
   gmlContent: string,
   kommuneData: any,
+  wfstConfig?: {
+    endpoint: string;
+    username?: string;
+    password?: string;
+    namespace?: string;
+    workspace?: string;
+  },
 ): Promise<void> {
-  if (process.env.DEBUG) {
+  if (process.env.APP_DEBUG) {
     console.debug(`[DEBUG] Starting WFS-T GML transaction`);
   }
 
-  const wfsClient = WFSAuthClient.createWFSTClient();
+  if (!wfstConfig || !wfstConfig.endpoint) {
+    throw new Error("WFST configuration required: endpoint must be provided");
+  }
+  const wfsClient = WFSAuthClient.createWFSTClient(wfstConfig);
 
   // Remove XML declaration from GML content
   const cleanedGML = gmlContent.replace(/^<\?xml[^>]*\?>\s*/, "");
 
   const transactionXml = buildWFSTInsertFromGML(cleanedGML);
 
-  if (process.env.DEBUG) {
+  if (process.env.APP_DEBUG) {
     console.debug(
       `[DEBUG] WFS-T GML Transaction XML size: ${transactionXml.length} chars`,
     );
@@ -481,19 +527,19 @@ async function persistGMLViaWFST(
 
   const response = await wfsClient.executeWFSTransaction(transactionXml);
 
-  if (process.env.DEBUG) {
+  if (process.env.APP_DEBUG) {
     console.debug(`[DEBUG] WFS-T GML Response status: ${response.status}`);
   }
 
   if (!response.ok) {
     const error = await response.text();
-    if (process.env.DEBUG) {
+    if (process.env.APP_DEBUG) {
       console.debug(`[DEBUG] WFS-T GML Error response: ${error}`);
     }
     throw new Error(`WFS-T GML failed: ${response.status} - ${error}`);
   }
 
-  if (process.env.DEBUG) {
+  if (process.env.APP_DEBUG) {
     console.debug(`[DEBUG] WFS-T GML transaction completed successfully`);
   }
 }

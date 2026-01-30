@@ -21,7 +21,7 @@ const consoleLogger: Logger = {
     console.error(`[ERROR] ${message}`, error || "", data || "");
   },
   debug: (message: string, data?: any) => {
-    if (process.env.DEBUG) {
+    if (process.env.APP_DEBUG) {
       console.debug(`[DEBUG] ${message}`, data || "");
     }
   },
@@ -42,7 +42,7 @@ export function createLogger(astroLogger?: AstroIntegrationLogger): Logger {
         );
       },
       debug: (message: string, data?: any) => {
-        if (process.env.DEBUG) {
+        if (process.env.APP_DEBUG) {
           astroLogger.info(
             `[DEBUG] ${message}` + (data ? ` ${JSON.stringify(data)}` : ""),
           );

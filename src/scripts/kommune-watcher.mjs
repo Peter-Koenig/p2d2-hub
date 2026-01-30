@@ -128,10 +128,20 @@ export class KommuneWatcher {
         console.log(`[kommune-watcher] Starting sync for ${kommuneSlug}`);
 
         // Dynamic import the sync function
-        const { syncKommunePolygons } = await import(
-          "../utils/polygon-wfst-sync.js"
+        const { syncKommunePolygons } =
+          await import("../utils/polygon-wfst-sync.js");
+        const wfstConfig = {
+          endpoint: process.env.WFST_ENDPOINT,
+          workspace: process.env.WFST_WORKSPACE || "Verwaltungsdaten",
+          namespace: process.env.WFST_NAMESPACE || "urn:data-dna:govdata",
+          username: process.env.WFST_USERNAME,
+          password: process.env.WFST_PASSWORD,
+        };
+        const result = await syncKommunePolygons(
+          kommuneSlug,
+          ["admin_boundary"],
+          wfstConfig,
         );
-        const result = await syncKommunePolygons(kommuneSlug);
 
         if (result.success) {
           console.log(
@@ -195,10 +205,20 @@ export class KommuneWatcher {
   async triggerManualSync(slug) {
     try {
       console.log(`[kommune-watcher] Manual sync triggered for ${slug}`);
-      const { syncKommunePolygons } = await import(
-        "../utils/polygon-wfst-sync.js"
+      const { syncKommunePolygons } =
+        await import("../utils/polygon-wfst-sync.js");
+      const wfstConfig = {
+        endpoint: process.env.WFST_ENDPOINT,
+        workspace: process.env.WFST_WORKSPACE || "Verwaltungsdaten",
+        namespace: process.env.WFST_NAMESPACE || "urn:data-dna:govdata",
+        username: process.env.WFST_USERNAME,
+        password: process.env.WFST_PASSWORD,
+      };
+      const result = await syncKommunePolygons(
+        slug,
+        ["admin_boundary"],
+        wfstConfig,
       );
-      const result = await syncKommunePolygons(slug);
 
       if (result.success) {
         console.log(`[kommune-watcher] Manual sync successful for ${slug}`);

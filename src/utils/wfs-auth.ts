@@ -379,18 +379,22 @@ export class WFSAuthClient {
   }
 
   /**
-   * Create WFS-T client with write credentials from import.meta.env
+   * Create WFS-T client with write credentials
    */
-  static createWFSTClient(): WFSAuthClient {
+  static createWFSTClient(config: {
+    endpoint: string;
+    username?: string;
+    password?: string;
+    namespace?: string;
+    workspace?: string;
+  }): WFSAuthClient {
     return new WFSAuthClient({
-      endpoint:
-        import.meta.env.WFST_ENDPOINT ||
-        "https://wfs.data-dna.eu/geoserver/ows",
-      workspace: import.meta.env.WFST_WORKSPACE || "Verwaltungsdaten",
-      namespace: import.meta.env.WFST_NAMESPACE || "urn:data-dna:govdata",
+      endpoint: config.endpoint,
+      workspace: config.workspace || "Verwaltungsdaten",
+      namespace: config.namespace || "urn:data-dna:govdata",
       credentials: {
-        username: import.meta.env.WFST_USERNAME || "",
-        password: import.meta.env.WFST_PASSWORD || "",
+        username: config.username || "",
+        password: config.password || "",
       },
     });
   }
