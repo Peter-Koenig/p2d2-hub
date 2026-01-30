@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { createChallenge } from "altcha-lib";
-import { ALTCHA_HMAC_KEY } from "astro:env/server";
+import { ALTCHA_HMAC_KEY, APP_DEBUG } from "astro:env/server";
 
 export const GET: APIRoute = async () => {
   try {
@@ -18,14 +18,33 @@ export const GET: APIRoute = async () => {
     }
 
     // Create challenge with specified parameters
-    const challenge = createChallenge({
+    const challengeData = await createChallenge({
       algorithm: "SHA-256",
       maxnumber: 50000,
       hmacKey,
     });
 
-    // Return challenge as JSON
-    return new Response(JSON.stringify(challenge), {
+    // Filter response: Only send fields that the widget expects
+    // DO NOT include "maxnumber" in the response!
+    const response = {
+      algorithm: challengeData.algorithm,
+      challenge: challengeData.challenge,
+      salt: challengeData.salt,
+      signature: challengeData.signature,
+    };
+
+    // Debug logging
+    if (APP_DEBUG) {
+      console.log("🔍 Challenge created:", {
+        algorithm: response.algorithm,
+        challengeLength: response.challenge?.length || 0,
+        saltLength: response.salt?.length || 0,
+        signatureLength: response.signature?.length || 0,
+      });
+    }
+
+    // Return filtered challenge as JSON
+    return new Response(JSON.stringify(response), {
       status: 200,
       headers: {
         "Content-Type": "application/json",

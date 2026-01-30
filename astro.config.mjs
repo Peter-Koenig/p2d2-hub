@@ -55,7 +55,7 @@ export default defineConfig({
       }),
 
       // Debugging (optional, kann in.env stehen oder nicht)
-      DEBUG: envField.boolean({
+      APP_DEBUG: envField.boolean({
         context: "server",
         access: "public",
         default: false,
@@ -103,7 +103,7 @@ export default defineConfig({
       autoSync: true,
       followSymlinks: true,
       debounceMs: 5000, // Warte länger auf Vite HMR completion
-      debug: process.env.DEBUG === "true",
+      debug: process.env.APP_DEBUG === "true",
     }),
   ],
 });

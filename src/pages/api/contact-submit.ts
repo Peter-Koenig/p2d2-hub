@@ -10,6 +10,7 @@ import {
   SMTP_PASS,
   CONTACT_EMAIL_FROM,
   CONTACT_EMAIL_TO,
+  APP_DEBUG,
 } from "astro:env/server";
 
 // Rate limiting map
@@ -35,8 +36,29 @@ export const POST: APIRoute = async ({ request }) => {
     const message = data.message?.trim();
     const altcha = data.altcha;
 
+    // Debug logging
+    if (APP_DEBUG) {
+      console.debug("Contact form data received:", {
+        name: name || "empty",
+        email: email || "empty",
+        subject: subject || "empty",
+        message: message ? `length: ${message.length}` : "empty",
+        hasAltcha: !!altcha,
+        altchaLength: altcha ? altcha.length : 0,
+      });
+    }
+
     // Validate required fields
     if (!name || !email || !subject || !message || !altcha) {
+      if (APP_DEBUG) {
+        console.debug("Missing required fields:", {
+          missingName: !name,
+          missingEmail: !email,
+          missingSubject: !subject,
+          missingMessage: !message,
+          missingAltcha: !altcha,
+        });
+      }
       return new Response(
         JSON.stringify({
           success: false,
