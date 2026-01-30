@@ -27,7 +27,23 @@ interface PolygonRecord {
 export async function syncKommunePolygons(
   slug: string,
   categories: string[] = ["admin_boundary"],
+  wfstConfig?: {
+    endpoint: string;
+    username?: string;
+    password?: string;
+    namespace?: string;
+    workspace?: string;
+  },
 ): Promise<SyncResult> {
+  // Fallback to process.env if wfstConfig not provided
+  const effectiveConfig = wfstConfig || {
+    endpoint: process.env.WFST_ENDPOINT || "",
+    workspace: process.env.WFST_WORKSPACE || "Verwaltungsdaten",
+    namespace: process.env.WFST_NAMESPACE || "urn:data-dna:govdata",
+    username: process.env.WFST_USERNAME || "",
+    password: process.env.WFST_PASSWORD || "",
+  };
+
   const result: SyncResult = {
     success: true,
     processedLevels: [],
@@ -66,7 +82,11 @@ export async function syncKommunePolygons(
             );
           }
           const geoJsonData = await fetchAdminPolygons(municipalityName, level);
-          await persistGMLViaWFST(geoJsonData.gmlContent, kommune.data);
+          await persistGMLViaWFST(
+            geoJsonData.gmlContent,
+            kommune.data,
+            effectiveConfig,
+          );
           result.processedLevels.push(level);
           result.insertedPolygons += 1; // Count as one transaction for GML
         } catch (error) {
@@ -80,7 +100,11 @@ export async function syncKommunePolygons(
     if (categories.includes("cemetery")) {
       try {
         const geoJsonData = await fetchCemeteries(municipalityName);
-        await persistGMLViaWFST(geoJsonData.gmlContent, kommune.data);
+        await persistGMLViaWFST(
+          geoJsonData.gmlContent,
+          kommune.data,
+          effectiveConfig,
+        );
         result.insertedPolygons += 1;
       } catch (error) {
         result.errors.push(`Cemetery: ${(error as Error).message}`);
@@ -331,14 +355,26 @@ function convertToPolygonRecords(
 }
 
 // WFS-T Transaction für Insert
-async function persistViaWFST(records: PolygonRecord[]): Promise<void> {
+async function persistViaWFST(
+  records: PolygonRecord[],
+  wfstConfig?: {
+    endpoint: string;
+    username?: string;
+    password?: string;
+    namespace?: string;
+    workspace?: string;
+  },
+): Promise<void> {
   if (process.env.DEBUG) {
     console.debug(
       `[DEBUG] Starting WFS-T transaction for ${records.length} records`,
     );
   }
 
-  const wfsClient = WFSAuthClient.createWFSTClient();
+  if (!wfstConfig || !wfstConfig.endpoint) {
+    throw new Error("WFST configuration required: endpoint must be provided");
+  }
+  const wfsClient = WFSAuthClient.createWFSTClient(wfstConfig);
 
   // DEBUG: Environment-Variablen prüfen
   if (process.env.DEBUG) {
@@ -457,12 +493,22 @@ function escapeXml(text: string): string {
 async function persistGMLViaWFST(
   gmlContent: string,
   kommuneData: any,
+  wfstConfig?: {
+    endpoint: string;
+    username?: string;
+    password?: string;
+    namespace?: string;
+    workspace?: string;
+  },
 ): Promise<void> {
   if (process.env.DEBUG) {
     console.debug(`[DEBUG] Starting WFS-T GML transaction`);
   }
 
-  const wfsClient = WFSAuthClient.createWFSTClient();
+  if (!wfstConfig || !wfstConfig.endpoint) {
+    throw new Error("WFST configuration required: endpoint must be provided");
+  }
+  const wfsClient = WFSAuthClient.createWFSTClient(wfstConfig);
 
   // Remove XML declaration from GML content
   const cleanedGML = gmlContent.replace(/^<\?xml[^>]*\?>\s*/, "");

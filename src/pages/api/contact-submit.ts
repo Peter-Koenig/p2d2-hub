@@ -1,27 +1,24 @@
 import type { APIRoute } from "astro";
 import { verifySolution } from "altcha-lib";
 import nodemailer from "nodemailer";
+import {
+  ALTCHA_HMAC_KEY,
+  SMTP_HOST,
+  SMTP_PORT,
+  SMTP_SECURE,
+  SMTP_USER,
+  SMTP_PASS,
+  CONTACT_EMAIL_FROM,
+  CONTACT_EMAIL_TO,
+} from "astro:env/server";
 
 // Rate limiting map
 const rateLimiter = new Map<string, number>();
 
 export const POST: APIRoute = async ({ request }) => {
-  // DEBUG: Zeige alle geladenen ENV-Variablen
-  console.log("=== ENV DEBUG ===");
-  console.log("NODE_ENV:", process.env.NODE_ENV);
-  console.log("ALTCHA_HMAC_KEY exists?", !!process.env.ALTCHA_HMAC_KEY);
-  console.log("SMTP_HOST:", process.env.SMTP_HOST);
-  console.log(
-    "All env keys:",
-    Object.keys(process.env).filter(
-      (k) => k.startsWith("ALTCHA") || k.startsWith("SMTP"),
-    ),
-  );
-  console.log("=== END DEBUG ===");
-
   try {
     // 1. Get HMAC key from environment
-    const hmacKey = process.env.ALTCHA_HMAC_KEY;
+    const hmacKey = ALTCHA_HMAC_KEY;
     if (!hmacKey) {
       console.error("ALTCHA_HMAC_KEY environment variable is not set");
       return new Response(
@@ -143,41 +140,38 @@ export const POST: APIRoute = async ({ request }) => {
     // 5. Send email via SMTP
     try {
       // Check required SMTP environment variables
-      const requiredEnvVars = [
-        "SMTP_HOST",
-        "SMTP_USER",
-        "SMTP_PASS",
-        "CONTACT_EMAIL_FROM",
-        "CONTACT_EMAIL_TO",
-      ];
-      for (const envVar of requiredEnvVars) {
-        if (!process.env[envVar]) {
-          console.error(`Missing required environment variable: ${envVar}`);
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error:
-                "Email-Konfiguration fehlt. Bitte kontaktiere den Administrator.",
-            }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-          );
-        }
+      if (
+        !SMTP_HOST ||
+        !SMTP_USER ||
+        !SMTP_PASS ||
+        !CONTACT_EMAIL_FROM ||
+        !CONTACT_EMAIL_TO
+      ) {
+        console.error("Missing required SMTP environment variables");
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error:
+              "Email-Konfiguration fehlt. Bitte kontaktiere den Administrator.",
+          }),
+          { status: 500, headers: { "Content-Type": "application/json" } },
+        );
       }
 
       const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || "587"),
-        secure: process.env.SMTP_SECURE === "true", // true for 465, false for 587
+        host: SMTP_HOST,
+        port: SMTP_PORT,
+        secure: SMTP_SECURE, // Already boolean from schema
         auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
+          user: SMTP_USER,
+          pass: SMTP_PASS,
         },
       });
 
       // Email content
       const mailOptions = {
-        from: `"${name}" <${process.env.CONTACT_EMAIL_FROM}>`,
-        to: process.env.CONTACT_EMAIL_TO,
+        from: `"${name}" <${CONTACT_EMAIL_FROM}>`,
+        to: CONTACT_EMAIL_TO,
         replyTo: email, // User kann direkt antworten
         subject: `[p2d2 Kontakt] ${subject}`,
         text: `

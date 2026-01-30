@@ -1,10 +1,11 @@
 import type { APIRoute } from "astro";
 import { createChallenge } from "altcha-lib";
+import { ALTCHA_HMAC_KEY } from "astro:env/server";
 
 export const GET: APIRoute = async () => {
   try {
     // Get HMAC key from environment (required)
-    const hmacKey = process.env.ALTCHA_HMAC_KEY;
+    const hmacKey = ALTCHA_HMAC_KEY;
     if (!hmacKey) {
       console.error("ALTCHA_HMAC_KEY environment variable is not set");
       return new Response(

@@ -1,4 +1,11 @@
 import { syncKommunePolygons } from "../../utils/polygon-wfst-sync";
+import {
+  WFST_ENDPOINT,
+  WFST_WORKSPACE,
+  WFST_NAMESPACE,
+  WFST_USERNAME,
+  WFST_PASSWORD,
+} from "astro:env/server";
 
 export async function POST({ request }) {
   try {
@@ -14,9 +21,18 @@ export async function POST({ request }) {
       );
     }
 
+    const wfstConfig = {
+      endpoint: WFST_ENDPOINT,
+      workspace: WFST_WORKSPACE,
+      namespace: WFST_NAMESPACE,
+      username: WFST_USERNAME,
+      password: WFST_PASSWORD,
+    };
+
     const result = await syncKommunePolygons(
       slug,
       categories || ["admin_boundary"],
+      wfstConfig,
     );
 
     return new Response(JSON.stringify(result), {
