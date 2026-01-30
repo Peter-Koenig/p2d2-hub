@@ -7,6 +7,49 @@ import vue from "@astrojs/vue";
 import { polygonSyncPlugin } from "./src/integrations/polygon-sync-plugin.mjs";
 import { fileURLToPath } from "url";
 
+// WhereAmI
+
+import { defineConfig } from "astro/config";
+import { fileURLToPath } from "url";
+import { existsSync } from "fs";
+import { resolve } from "path";
+
+// === DEBUG: Zeige wo Astro läuft und .env sucht ===
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+const cwd = process.cwd();
+
+console.log("\n=== ASTRO CONFIG DEBUG ===");
+console.log("📂 Config File Location:", __dirname);
+console.log("📂 process.cwd():", cwd);
+console.log("📂 NODE_ENV:", process.env.NODE_ENV);
+console.log("\n🔍 .env File Check:");
+
+const envFiles = [
+  ".env",
+  ".env.local",
+  ".env.production",
+  ".env.production.local",
+  ".env.development",
+];
+
+envFiles.forEach((file) => {
+  const fullPath = resolve(cwd, file);
+  const exists = existsSync(fullPath);
+  console.log(`  ${exists ? "✅" : "❌"} ${file} (${fullPath})`);
+});
+
+console.log("\n🔑 Environment Variables Check:");
+console.log("  DB_HOST:", process.env.DB_HOST ? "✅ SET" : "❌ MISSING");
+console.log(
+  "  ALTCHA_HMAC_KEY:",
+  process.env.ALTCHA_HMAC_KEY ? "✅ SET" : "❌ MISSING",
+);
+console.log("  PORT:", process.env.PORT || "(not set)");
+console.log("=========================\n");
+// === END DEBUG ===
+
+// WhereAmI - END
+
 export default defineConfig({
   // Performance: Telemetrie deaktivieren (spart ~560ms)
   telemetry: false,
