@@ -48,7 +48,7 @@ console.log("  PORT:", process.env.PORT || "(not set)");
 console.log("=========================\n");
 // === END DEBUG ===
 
-// WhereAmI - END
+// WhereAmI - ENDE
 
 export default defineConfig({
   // Performance: Telemetrie deaktivieren (spart ~560ms)
