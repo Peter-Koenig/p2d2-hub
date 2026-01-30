@@ -314,10 +314,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             </div>
         </div>
     </main>
-    <script type="module" src="/src/scripts/init-altcha.ts"></script>
 </BaseLayout>
 
 <script>
+    import "altcha";
+    console.log("✅ ALTCHA Web Component geladen");
+
     // Formular-Behandlung mit ALTCHA CAPTCHA
     document.addEventListener("DOMContentLoaded", () => {
         console.log("✅ Kontaktformular wird initialisiert");
