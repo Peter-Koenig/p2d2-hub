@@ -333,20 +333,25 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                             ></textarea>
                         </div>
 
-                        <!-- ALTCHA Widget -->
-                        <div class="mb-6">
-                            <altcha-widget
-                                id="altcha-captcha"
-                                challengeurl="/api/altcha/challenge"
-                            ></altcha-widget>
-                        </div>
-
-                        <button
-                            type="submit"
-                            class="w-full bg-primary-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                        <!-- ALTCHA Widget & Submit Button -->
+                        <div
+                            class="flex flex-col md:flex-row gap-6 md:gap-4 md:items-stretch mb-6"
                         >
-                            Nachricht senden
-                        </button>
+                            <div
+                                class="w-full md:flex-1 h-full flex items-center"
+                            >
+                                <altcha-widget
+                                    id="altcha-captcha"
+                                    challengeurl="/api/altcha/challenge"
+                                ></altcha-widget>
+                            </div>
+                            <button
+                                type="submit"
+                                class="w-full md:flex-1 bg-primary-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                            >
+                                Nachricht senden
+                            </button>
+                        </div>
 
                         <p class="text-xs text-gray-500 text-center">
                             Mit dem Absenden stimmst Du unserer
