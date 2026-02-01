@@ -188,6 +188,11 @@ export const POST: APIRoute = async ({ request }) => {
           user: SMTP_USER,
           pass: SMTP_PASS,
         },
+        connectionTimeout: 10000, // 10 Sekunden
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
+        dnsTimeout: 5000,
+        family: 4,
       });
 
       // Email content
