@@ -180,13 +180,6 @@ export const POST: APIRoute = async ({ request }) => {
         );
       }
 
-      console.log("🔍 SMTP Debug Config:", {
-        host: SMTP_HOST,
-        port: SMTP_PORT,
-        secure: SMTP_SECURE,
-        type_of_secure: typeof SMTP_SECURE,
-      });
-
       const transporter = nodemailer.createTransport({
         host: SMTP_HOST,
         port: SMTP_PORT,
