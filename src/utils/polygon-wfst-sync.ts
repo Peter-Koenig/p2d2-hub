@@ -348,8 +348,8 @@ function convertToPolygonRecords(
       Date.now() + 4 * 7 * 24 * 60 * 60 * 1000,
     ).toISOString(), // 4 Wochen
     container_type: "administrative",
-    municipality: extractMunicipalityName(kommuneData.wp_name),
-    wp_name: kommuneData.wp_name,
+    municipality: extractMunicipalityName(kommuneData.wpName),
+    wp_name: kommuneData.wpName,
     osm_admin_level: level,
   }));
 }

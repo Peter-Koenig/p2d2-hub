@@ -28,7 +28,7 @@ export interface KommuneData {
   slug: string;
   title: string;
   osmAdminLevels?: number[];
-  wp_name: string;
+  wpName: string;
   osm_refinement?: string;
   colorStripe: string;
   map: {
@@ -51,7 +51,7 @@ export async function getAllKommunen(): Promise<KommuneData[]> {
           slug: k.slug,
           title: k.data.title,
           osmAdminLevels: k.data.osmAdminLevels,
-          wp_name: k.data.wp_name,
+          wpName: k.data.wp_name,
           osm_refinement: k.data.osm_refinement,
           colorStripe: k.data.colorStripe || "#FF6900",
           map: {
@@ -78,7 +78,7 @@ export async function getKommuneBySlug(
 // Utility function to check if a kommune has valid OSM data
 export function hasValidOSMData(kommune: KommuneData): boolean {
   return (
-    !!kommune.wp_name &&
+    !!kommune.wpName &&
     !!kommune.osmAdminLevels &&
     kommune.osmAdminLevels.length > 0 &&
     !!kommune.map?.center

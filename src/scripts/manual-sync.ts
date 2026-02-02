@@ -248,7 +248,7 @@ async function handleListCommand(): Promise<void> {
       kommune.osmAdminLevels && kommune.osmAdminLevels.length > 0
         ? `[${kommune.osmAdminLevels.join(",")}]`
         : "[none]";
-    const wpName = kommune.wp_name || "none";
+    const wpName = kommune.wpName || "none";
     console.log(
       `  ${kommune.slug.padEnd(15)} ${kommune.title.padEnd(20)} ${levels} wp:${wpName}`,
     );
