@@ -11,6 +11,8 @@ import GeoJSON from "ol/format/GeoJSON";
 import { wfsAuthClient } from "./wfs-auth";
 import { dispatchCrossWindowEvent } from "./cross-window-events";
 import { P2D2EventType } from "./events";
+import { mapState } from "./map-state";
+import type { KommuneData } from "./kommune-utils";
 
 // Type definitions
 interface WFSLayerConfig {
@@ -19,23 +21,190 @@ interface WFSLayerConfig {
   osmAdminLevel: number;
 }
 
-interface KommuneData {
-  slug: string;
-  wpName: string;
-  osmAdminLevels: number[];
-}
-
 export class WFSLayerManager {
   private map: OLMap;
   private activeLayer: VectorLayer<VectorSource> | null = null;
+  private vectorSource: VectorSource | null = null;
   private currentState: {
     kommune: KommuneData | null;
     categorySlug: string | null;
   } = { kommune: null, categorySlug: null };
   private layerCache = new Map<string, VectorLayer<VectorSource>>();
+  private unsubscribe: (() => void) | null = null;
+  private isRequestPending: boolean = false;
+  private lastLoadedSignature: string = "";
 
   constructor(map: OLMap) {
     this.map = map;
+
+    // Create vector source and layer
+    this.vectorSource = new VectorSource();
+    const vectorLayer = new VectorLayer({
+      source: this.vectorSource,
+      style: new Style({
+        stroke: new Stroke({
+          color: "#FF6900",
+          width: 2,
+        }),
+        fill: new Fill({
+          color: "rgba(255, 105, 0, 0.1)",
+        }),
+      }),
+      visible: true,
+    });
+    this.map.addLayer(vectorLayer);
+    this.activeLayer = vectorLayer;
+
+    // Initialize state subscription
+    this.initStateSubscription();
+
+    console.log(
+      "[WFSLayerManager] Initialized with reactive state subscription",
+    );
+  }
+
+  /**
+   * Initialize subscription to mapState changes
+   */
+  private initStateSubscription(): void {
+    this.unsubscribe = mapState.subscribe((state) => {
+      this.updateLayerBasedOnState(
+        state.selectedKommune,
+        state.selectedCategory,
+      );
+    });
+  }
+
+  /**
+   * Update layer based on current mapState
+   */
+  private async updateLayerBasedOnState(
+    kommune: KommuneData | null,
+    categorySlug: string | null,
+  ): Promise<void> {
+    console.log("[WFS] State update:", {
+      kommune: kommune?.slug,
+      categorySlug,
+      signature: `${kommune?.slug}|${categorySlug}`,
+    });
+
+    // If either kommune or category is missing, clear layer
+    if (!kommune || !categorySlug) {
+      console.log("[WFS] Missing state component, clearing layer");
+      this.clearLayer();
+      this.lastLoadedSignature = "";
+      this.currentState = { kommune: null, categorySlug: null };
+      return;
+    }
+
+    // Calculate signature to avoid unnecessary reloads
+    const signature = `${kommune.slug}|${categorySlug}`;
+    if (signature === this.lastLoadedSignature) {
+      console.log("[WFS] Signature unchanged, skipping reload");
+      return;
+    }
+
+    // Check if request is already pending
+    if (this.isRequestPending) {
+      console.log("[WFS] Request already pending, skipping");
+      return;
+    }
+
+    // Update signature and load layer
+    this.lastLoadedSignature = signature;
+    await this.loadLayer(kommune, categorySlug);
+  }
+
+  /**
+   * Load WFS layer for kommune and category
+   */
+  private async loadLayer(
+    kommune: KommuneData,
+    categorySlug: string,
+  ): Promise<void> {
+    try {
+      this.isRequestPending = true;
+
+      // Dispatch load start event
+      dispatchCrossWindowEvent(P2D2EventType.WFS_LOAD_START, {
+        layerName: `${kommune.wpName}-${categorySlug}`,
+        kommuneSlug: kommune.slug,
+        categorySlug,
+        timestamp: Date.now(),
+      });
+
+      // Get container type from category
+      const containerType = this.getContainerType(categorySlug);
+      const osmAdminLevel = this.getOsmAdminLevel(kommune, containerType);
+
+      // Build CQL filter with correct field names for WFS (backend schema: wp_name, container_type, osm_admin_level)
+      const cqlFilter = `wp_name='${kommune.wpName}' AND container_type='${containerType}' AND osm_admin_level=${osmAdminLevel}`;
+      console.log("[WFS] CQL Filter:", cqlFilter);
+
+      // Build authorized WFS URL
+      const wfsUrl = wfsAuthClient.buildAuthorizedWFSURL("p2d2_containers", {
+        CQL_FILTER: cqlFilter,
+        srsName: "EPSG:4326",
+      });
+      console.log("[WFS] Request URL:", wfsUrl);
+
+      // Fetch GeoJSON data
+      const response = await wfsAuthClient.fetchWithAuth(wfsUrl);
+      if (!response.ok) {
+        throw new Error(
+          `WFS request failed: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const geoJson = await response.json();
+      const features = new GeoJSON().readFeatures(geoJson, {
+        dataProjection: "EPSG:4326",
+        featureProjection: this.map.getView().getProjection(),
+      });
+
+      console.log(`[WFS] Loaded ${features.length} features`);
+
+      // Clear existing features and add new ones
+      this.vectorSource?.clear();
+      this.vectorSource?.addFeatures(features);
+
+      // Update current state and ensure layer is visible
+      this.currentState = { kommune, categorySlug };
+      if (this.activeLayer) {
+        this.activeLayer.setVisible(true);
+      }
+
+      // Dispatch load complete event
+      dispatchCrossWindowEvent(P2D2EventType.WFS_LOAD_COMPLETE, {
+        layerName: `${kommune.wpName}-${categorySlug}`,
+        kommuneSlug: kommune.slug,
+        categorySlug,
+        featureCount: features.length,
+        timestamp: Date.now(),
+        success: true,
+      });
+    } catch (error) {
+      console.error("[WFS] Failed to load layer:", error);
+
+      // Dispatch error event
+      dispatchCrossWindowEvent(P2D2EventType.WFS_LOAD_ERROR, {
+        layerName: `${kommune.wpName}-${categorySlug}`,
+        kommuneSlug: kommune.slug,
+        categorySlug,
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: Date.now(),
+      });
+    } finally {
+      this.isRequestPending = false;
+    }
+  }
+
+  /**
+   * Clear vector source (hide layer)
+   */
+  private clearLayer(): void {
+    this.vectorSource?.clear();
+    console.log("[WFS] Layer cleared");
   }
 
   /**
@@ -66,68 +235,8 @@ export class WFSLayerManager {
     kommune: KommuneData,
     categorySlug: string,
   ): Promise<void> {
-    try {
-      // NEU: Event dispatchen
-      dispatchCrossWindowEvent(P2D2EventType.WFS_LOAD_START, {
-        layerName: `${kommune.wpName}-${categorySlug}`,
-        kommuneSlug: kommune.slug,
-        categorySlug,
-        timestamp: Date.now(),
-      });
-
-      // Hide existing layer but keep cached
-      if (this.activeLayer) {
-        this.activeLayer.setVisible(false);
-      }
-
-      // Button-States werden von Grid-Komponenten verwaltet
-
-      const config = this.buildLayerConfig(kommune, categorySlug);
-      const cacheKey = `${config.wpName}-${config.containerType}-${config.osmAdminLevel}`;
-
-      // Try to get from cache first
-      let layer = this.layerCache.get(cacheKey);
-      if (!layer) {
-        console.log("[WFS] Creating new layer for:", cacheKey);
-        layer = await this.createWFSLayer(config);
-        this.layerCache.set(cacheKey, layer);
-        this.map.addLayer(layer);
-      } else {
-        console.log("[WFS] Reusing cached layer for:", cacheKey);
-      }
-
-      this.activeLayer = layer;
-
-      // Show layer
-      this.activeLayer.setVisible(true);
-
-      // NEU: Event dispatchen
-      dispatchCrossWindowEvent(P2D2EventType.WFS_LOAD_COMPLETE, {
-        layerName: `${kommune.wpName}-${categorySlug}`,
-        kommuneSlug: kommune.slug,
-        categorySlug,
-        featureCount: 0, // TODO: actual feature count
-        timestamp: Date.now(),
-        success: true,
-      });
-
-      // Update state
-      this.currentState = { kommune, categorySlug };
-
-      console.log(
-        `[WFS] Layer displayed: ${config.wpName} - ${config.containerType}`,
-      );
-    } catch (error) {
-      console.error("[WFS] Failed to display layer:", error);
-      // NEU: Event dispatchen
-      dispatchCrossWindowEvent(P2D2EventType.WFS_LOAD_ERROR, {
-        layerName: `${kommune.wpName}-${categorySlug}`,
-        kommuneSlug: kommune.slug,
-        categorySlug,
-        error: error instanceof Error ? error.message : String(error),
-        timestamp: Date.now(),
-      });
-    }
+    // Delegate to reactive state update handler
+    await this.updateLayerBasedOnState(kommune, categorySlug);
   }
 
   /**
@@ -136,10 +245,11 @@ export class WFSLayerManager {
   hideLayer(): void {
     if (this.activeLayer) {
       this.activeLayer.setVisible(false);
-      this.currentState = { kommune: null, categorySlug: null };
-      // Button-States werden von Grid-Komponenten verwaltet
-      console.log("[WFS] Layer hidden");
     }
+    this.vectorSource?.clear();
+    this.currentState = { kommune: null, categorySlug: null };
+    this.lastLoadedSignature = "";
+    console.log("[WFS] Layer hidden and cleared");
   }
 
   /**
@@ -246,7 +356,7 @@ export class WFSLayerManager {
       osmAdminLevel: config.osmAdminLevel,
     });
 
-    // Create properly encoded CQL filter - wp_name should NOT be double-encoded
+    // Create properly encoded CQL filter - use backend schema field names (wp_name, container_type, osm_admin_level)
     const cqlFilter = `wp_name='${config.wpName}' AND container_type='${config.containerType}' AND osm_admin_level=${config.osmAdminLevel}`;
 
     const wfsUrl = wfsAuthClient.buildAuthorizedWFSURL("p2d2_containers", {
