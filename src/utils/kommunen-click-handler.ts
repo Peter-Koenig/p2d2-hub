@@ -124,6 +124,12 @@ export default class KommunenClickHandler {
 
       // Toggle-Logik: Wenn gleiche Kommune nochmal geklickt → deaktivieren
       const currentKommune = (window as any).mapState?.getSelectedKommune?.();
+      const currentCategory = (window as any).mapState?.getSelectedCategory?.();
+      console.log("[UI] Kommune click received:", {
+        slug,
+        currentKommune: currentKommune?.slug,
+        currentCategory,
+      });
 
       if (currentKommune?.slug === slug) {
         // Alle Buttons deselektieren
@@ -133,13 +139,12 @@ export default class KommunenClickHandler {
 
         // Aus mapState entfernen
         (window as any).mapState?.setSelectedKommune?.(null);
+        console.log("[UI] Kommune deselected:", {
+          slug,
+          timestamp: Date.now(),
+        });
 
-        // WFS-Layer ausblenden, da Kommune nicht mehr ausgewählt
-        if ((window as any).wfsManager?.hideLayer) {
-          (window as any).wfsManager.hideLayer();
-        }
-
-        console.log("[KommunenClickHandler] Kommune deselektiert:", slug);
+        // WFS-Layer wird jetzt reaktiv über WFSLayerManager + mapState gemanaged
         return;
       }
 
@@ -160,15 +165,16 @@ export default class KommunenClickHandler {
       // 1. NAVIGATION
       this.dispatchKommunenFocus(detail);
 
-      // 2. WFS LAYER MANAGEMENT - NEU HINZUGEFÜGT!
-      this.handleWFSLayerToggle(detail);
+      // WFS-Layer wird jetzt reaktiv über WFSLayerManager + mapState gemanaged
 
       // In mapState speichern
       (window as any).mapState?.setSelectedKommune?.(detail);
-      console.log(
-        "[KommunenClickHandler] Kommune in mapState gespeichert:",
+      console.log("[UI] Kommune selected:", {
         slug,
-      );
+        wpName: detail.wpName,
+        currentCategory: (window as any).mapState?.getSelectedCategory?.(),
+        timestamp: Date.now(),
+      });
 
       // Persist selection
       this.persistSelection(detail);
@@ -181,23 +187,8 @@ export default class KommunenClickHandler {
     }
   }
 
-  // NEW: Handle WFS layer switching on kommune change
-  private handleWFSLayerToggle(detail: KommunenFocusDetail): void {
-    if (!(window as any).wfsManager) return;
-
-    const selectedCategory = (window as any).mapState?.getSelectedCategory?.();
-    if (!selectedCategory) {
-      console.log("[WFS] No category selected, skipping WFS layer toggle");
-      return;
-    }
-
-    // CRITICAL: Always switch layer - this will handle hide old and show new
-    console.log(
-      "[WFS] Auto-switching layer for kommune change to:",
-      detail.slug,
-    );
-    (window as any).wfsManager.displayLayer(detail, selectedCategory);
-  }
+  // WFS-Layer-Management erfolgt jetzt reaktiv über WFSLayerManager + mapState
+  // Diese Methode wurde entfernt, da WFS-Loads automatisch über State-Änderungen getriggert werden
 
   private dispatchKommunenFocus(detail: KommunenFocusDetail): void {
     try {

@@ -41,10 +41,7 @@ const sorted = kategorien.sort(
                         // Aus mapState entfernen
                         mapState.setSelectedCategory(null);
 
-                        // WFS-Layer ausblenden, da Kategorie nicht mehr ausgewählt
-                        if ((window as any).wfsManager?.hideLayer) {
-                            (window as any).wfsManager.hideLayer();
-                        }
+                        // WFS-Layer wird jetzt reaktiv über WFSLayerManager + mapState gemanaged
 
                         console.log(
                             "[KategorienGrid] Kategorie deselektiert:",
@@ -72,23 +69,13 @@ const sorted = kategorien.sort(
                         mapState.getSelectedCategory(),
                     );
 
-                    if ((window as any).wfsManager) {
-                        // Get current selected kommune from mapState
-                        const currentKommune = mapState.getSelectedKommune();
-
-                        console.log("[DEBUG] Current kommune:", currentKommune);
-
-                        if (currentKommune) {
-                            await (window as any).wfsManager.toggleLayer(
-                                currentKommune,
-                                categorySlug,
-                            );
-                        } else {
-                            console.warn(
-                                "[WFS] No kommune selected for category toggle",
-                            );
-                        }
-                    }
+                    // Logging für Debugging
+                    const currentKommune = mapState.getSelectedKommune();
+                    console.log("[UI] Category selected:", {
+                        categorySlug,
+                        currentKommune: currentKommune?.slug,
+                        timestamp: Date.now(),
+                    });
                 }
             }
         };
