@@ -21,7 +21,7 @@ interface WFSLayerConfig {
 
 interface KommuneData {
   slug: string;
-  wp_name: string;
+  wpName: string;
   osmAdminLevels: number[];
 }
 
@@ -69,7 +69,7 @@ export class WFSLayerManager {
     try {
       // NEU: Event dispatchen
       dispatchCrossWindowEvent(P2D2EventType.WFS_LOAD_START, {
-        layerName: `${kommune.wp_name}-${categorySlug}`,
+        layerName: `${kommune.wpName}-${categorySlug}`,
         kommuneSlug: kommune.slug,
         categorySlug,
         timestamp: Date.now(),
@@ -103,7 +103,7 @@ export class WFSLayerManager {
 
       // NEU: Event dispatchen
       dispatchCrossWindowEvent(P2D2EventType.WFS_LOAD_COMPLETE, {
-        layerName: `${kommune.wp_name}-${categorySlug}`,
+        layerName: `${kommune.wpName}-${categorySlug}`,
         kommuneSlug: kommune.slug,
         categorySlug,
         featureCount: 0, // TODO: actual feature count
@@ -121,7 +121,7 @@ export class WFSLayerManager {
       console.error("[WFS] Failed to display layer:", error);
       // NEU: Event dispatchen
       dispatchCrossWindowEvent(P2D2EventType.WFS_LOAD_ERROR, {
-        layerName: `${kommune.wp_name}-${categorySlug}`,
+        layerName: `${kommune.wpName}-${categorySlug}`,
         kommuneSlug: kommune.slug,
         categorySlug,
         error: error instanceof Error ? error.message : String(error),
@@ -153,7 +153,7 @@ export class WFSLayerManager {
     const osmAdminLevel = this.getOsmAdminLevel(kommune, containerType);
 
     return {
-      wpName: kommune.wp_name,
+      wpName: kommune.wpName,
       containerType,
       osmAdminLevel,
     };
@@ -241,9 +241,9 @@ export class WFSLayerManager {
     config: WFSLayerConfig,
   ): Promise<VectorLayer<VectorSource>> {
     console.log("[WFS] WFS request with:", {
-      wp_name: config.wpName,
-      containertype: config.containerType,
-      osmadminlevel: config.osmAdminLevel,
+      wpName: config.wpName,
+      containerType: config.containerType,
+      osmAdminLevel: config.osmAdminLevel,
     });
 
     // Create properly encoded CQL filter - wp_name should NOT be double-encoded

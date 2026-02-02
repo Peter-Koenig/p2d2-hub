@@ -10,11 +10,11 @@ const sorted = kommunen.sort(
 // Create client-side accessible kommune data map
 const kommuneDataMap: Record<
     string,
-    { wp_name: string; osmAdminLevels: number[] }
+    { wpName: string; osmAdminLevels: number[] }
 > = {};
 kommunen.forEach((kommune) => {
     kommuneDataMap[kommune.slug] = {
-        wp_name: kommune.data.wp_name, // KORRIGIERT: wp_name statt wpname
+        wpName: kommune.data.wp_name, // KORRIGIERT: wpName statt wp_name
         osmAdminLevels: kommune.data.osmAdminLevels || [],
     };
 });

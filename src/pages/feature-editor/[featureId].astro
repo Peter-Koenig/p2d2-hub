@@ -13,14 +13,14 @@ initializeCrossWindowBridge();
 console.log("[feature-editor] Cross-window bridge initialized (editor window)");
 
 const { featureId } = Astro.params;
-const wp_name = Astro.url.searchParams.get("wp_name");
-const container_type = Astro.url.searchParams.get("container_type");
-const name = Astro.url.searchParams.get("name");
-const extent = Astro.url.searchParams.get("extent"); // WGS84 Extent
-const projection = Astro.url.searchParams.get("projection"); // Lokale Projektion (z.B. EPSG:25832)
+const wpName = Astro.url.searchParams.get("wp_name") ?? "";
+const containerType = Astro.url.searchParams.get("container_type") ?? "";
+const name = Astro.url.searchParams.get("name") ?? "";
+const extent = Astro.url.searchParams.get("extent") ?? ""; // WGS84 Extent
+const projection = Astro.url.searchParams.get("projection") ?? ""; // Lokale Projektion (z.B. EPSG:25832)
 
 // Validate required parameters
-if (!wp_name || !container_type || !name || !extent || !projection) {
+if (!wpName || !containerType || !name || !extent || !projection) {
     throw new Error(
         "Missing required URL parameters (wp_name, container_type, name, extent, projection)",
     );
@@ -39,8 +39,8 @@ const decodedName = decodeURIComponent(name);
         <FeatureEditorHeader
             title={decodedName}
             commune=""
-            wpName={wp_name}
-            containerType={container_type}
+            wpName={wpName}
+            containerType={containerType}
         />
 
         <div class="editor-content">
@@ -48,8 +48,8 @@ const decodedName = decodeURIComponent(name);
                 <div
                     id="feature-editor-map"
                     class="w-full h-full"
-                    data-wp-name={wp_name}
-                    data-container-type={container_type}
+                    data-wp-name={wpName}
+                    data-container-type={containerType}
                     data-name={name}
                     data-extent={extent}
                     data-projection={projection}

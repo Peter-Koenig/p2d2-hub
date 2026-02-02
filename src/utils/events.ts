@@ -112,7 +112,7 @@ export interface KommunenFocusDetail {
   projection?: string;
   extra?: any;
   slug?: string;
-  wp_name?: string;
+  wpName?: string;
   osmAdminLevels?: number[];
 }
 

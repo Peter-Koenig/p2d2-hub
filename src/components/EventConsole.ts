@@ -435,7 +435,7 @@ export class EventConsole {
         if (detail.center || detail.extent || detail.slug) {
           const parts: string[] = [];
           if (detail.slug) parts.push(`slug: ${detail.slug}`);
-          if (detail.wp_name) parts.push(`name: ${detail.wp_name}`);
+          if (detail.wpName) parts.push(`name: ${detail.wpName}`);
           if (detail.center)
             parts.push(
               `center: [${detail.center[0]?.toFixed(4)}, ${detail.center[1]?.toFixed(4)}]`,

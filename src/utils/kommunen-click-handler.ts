@@ -8,7 +8,7 @@ import {
 
 interface KommuneData {
   slug: string;
-  wp_name: string; // KORRIGIERT: wp_name statt wpname
+  wpName: string; // KORRIGIERT: wpName statt wp_name
   osmAdminLevels: number[];
 }
 
@@ -111,7 +111,7 @@ export default class KommunenClickHandler {
       }
 
       console.log("[kommunen-handler] Found kommune:", {
-        wp_name: kommuneData.wp_name, // KORRIGIERT: wp_name statt wpname!
+        wpName: kommuneData.wpName, // KORRIGIERT: wpName statt wp_name!
         adminLevels: kommuneData.osmAdminLevels,
       });
 
