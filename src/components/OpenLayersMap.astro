@@ -3,8 +3,21 @@ import MapCanvas from "./MapCanvas.astro";
 ---
 
 <div class="w-full mb-section">
-    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4 text-center">
-        Kommune / Kategorie auswählen und los gehts!
+    <h2
+        id="kommune-kategorie-header"
+        class="text-2xl md:text-3xl font-bold text-gray-900 mb-4 text-center"
+    >
+        <a
+            href="#kommunen-grid"
+            onclick="handleKommuneClick(event)"
+            class="text-orange-400 hover:text-orange-500 underline decoration-2 underline-offset-4 hover:decoration-4 transition-colors duration-200 font-bold"
+            >Kommune</a
+        > / <a
+            href="#kategorien-grid"
+            onclick="handleKategorieClick(event)"
+            class="text-green-400 hover:text-green-500 underline decoration-2 underline-offset-4 hover:decoration-4 transition-colors duration-200 font-bold"
+            >Kategorie</a
+        > auswählen und los gehts!
     </h2>
     <div
         class="w-full h-[30rem] text-lg text-grey-900 mb-8 text-center relative"
@@ -13,4 +26,102 @@ import MapCanvas from "./MapCanvas.astro";
             <MapCanvas />
         </main>
     </div>
+
+    <script is:inline>
+        function handleKommuneClick(e) {
+            e.preventDefault();
+            const gridContainer = document.getElementById("grid-container");
+            if (gridContainer) {
+                gridContainer.scrollIntoView({ behavior: "smooth" });
+            }
+            // Try to use global switchTab function if available
+            if (typeof window.switchTab === "function") {
+                window.switchTab("kommunen");
+            } else {
+                const kommunenTab = document.querySelector(
+                    '.tab-button[data-tab="kommunen"]',
+                );
+                if (kommunenTab) {
+                    kommunenTab.click();
+                }
+            }
+        }
+
+        function handleKategorieClick(e) {
+            e.preventDefault();
+            const gridContainer = document.getElementById("grid-container");
+            if (gridContainer) {
+                gridContainer.scrollIntoView({ behavior: "smooth" });
+            }
+            // Try to use global switchTab function if available
+            if (typeof window.switchTab === "function") {
+                window.switchTab("kategorien");
+            } else {
+                const kategorienTab = document.querySelector(
+                    '.tab-button[data-tab="kategorien"]',
+                );
+                if (kategorienTab) {
+                    kategorienTab.click();
+                }
+            }
+        }
+
+        function scrollToSelectionHeader() {
+            // Finde zuerst den Header
+            const header = document.getElementById("kommune-kategorie-header");
+
+            if (!header) {
+                console.warn("[OpenLayersMap] Header not found");
+                return;
+            }
+
+            // Versuche, den nächstgelegenen übergeordneten Container mit .w-full.mb-section zu finden
+            let mapSection = header.closest(".w-full.mb-section");
+
+            if (mapSection) {
+                // Scrolle so, dass die gesamte Karte sichtbar wird
+                mapSection.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                });
+
+                console.log(
+                    "[OpenLayersMap] Scrolled to map section (map + header visible)",
+                );
+            } else {
+                // Fallback: Direkt zum Header scrollen
+                console.warn(
+                    "[OpenLayersMap] Could not find .w-full.mb-section parent, scrolling to header",
+                );
+                header.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                });
+            }
+        }
+
+        // Listen for selection events to scroll back to header
+        if (typeof window !== "undefined") {
+            // When a kommune is selected
+            window.addEventListener("p2d2:kommunen:focus", () => {
+                console.log(
+                    "[OpenLayersMap] Kommune selected - scrolling to map section",
+                );
+                setTimeout(scrollToSelectionHeader, 300);
+            });
+
+            // When a category is selected
+            window.addEventListener("p2d2:category:selected", () => {
+                console.log(
+                    "[OpenLayersMap] Category selected - scrolling to map section",
+                );
+                setTimeout(scrollToSelectionHeader, 300);
+            });
+
+            // Also expose globally for direct calls
+            window.scrollToSelectionHeader = scrollToSelectionHeader;
+
+            console.log("[OpenLayersMap] Scroll event listeners registered");
+        }
+    </script>
 </div>

@@ -27,6 +27,7 @@ const THROTTLE_MS = 200; // Reduced for better responsiveness
 export enum P2D2EventType {
   KOMMUNEN_FOCUS = "p2d2:kommunen:focus",
   KOMMUNEN_SELECTED = "p2d2:kommunen:selected",
+  CATEGORY_SELECTED = "p2d2:category:selected",
   MAP_READY = "p2d2:map:ready",
   MAP_MOVEEND = "p2d2:map:moveend",
   MAP_ZOOMEND = "p2d2:map:zoomend",
@@ -55,6 +56,7 @@ export enum P2D2EventType {
 export interface P2D2EventMap {
   [P2D2EventType.KOMMUNEN_FOCUS]: KommunenFocusDetail;
   [P2D2EventType.KOMMUNEN_SELECTED]: KommunenSelectedDetail;
+  [P2D2EventType.CATEGORY_SELECTED]: CategorySelectedDetail;
   [P2D2EventType.MAP_READY]: MapReadyDetail;
   [P2D2EventType.MAP_MOVEEND]: MapMoveEndDetail;
   [P2D2EventType.MAP_ZOOMEND]: MapZoomEndDetail;
@@ -72,6 +74,7 @@ export interface P2D2EventMap {
   [P2D2EventType.EDITOR_TOOL_SWITCH]: EditorToolSwitchDetail;
   [P2D2EventType.EDITOR_MODE_CHANGE]: EditorModeChangeDetail;
   [P2D2EventType.EDITOR_FEATURE_SELECTED]: EditorFeatureSelectedDetail;
+  [P2D2EventType.EDITOR_FEATURE_DESELECTED]: EditorFeatureDeselectedDetail;
   [P2D2EventType.EDITOR_SAVE_START]: EditorSaveStartDetail;
   [P2D2EventType.EDITOR_SAVE_COMPLETE]: EditorSaveCompleteDetail;
   [P2D2EventType.EDITOR_SAVE_ERROR]: EditorSaveErrorDetail;
@@ -162,6 +165,11 @@ export interface KommunenSelectedDetail {
   timestamp: number;
 }
 
+export interface CategorySelectedDetail {
+  categorySlug: string;
+  timestamp: number;
+}
+
 export interface MapMoveEndDetail {
   center: [number, number];
   zoom: number;
@@ -247,6 +255,11 @@ export interface EditorFeatureSelectedDetail {
   featureId: string;
   geometry: any;
   properties: Record<string, any>;
+  windowId: string;
+  timestamp: number;
+}
+
+export interface EditorFeatureDeselectedDetail {
   windowId: string;
   timestamp: number;
 }

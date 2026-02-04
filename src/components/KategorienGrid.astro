@@ -10,6 +10,7 @@ const sorted = kategorien.sort(
 
 <script>
     import { mapState } from "../utils/map-state";
+    import { dispatchP2D2Event, P2D2EventType } from "../utils/events";
 
     // Global window interface extensions
     interface Window {
@@ -68,6 +69,26 @@ const sorted = kategorien.sort(
                         "[DEBUG] Selected category set to:",
                         mapState.getSelectedCategory(),
                     );
+
+                    // Dispatch event for scrolling back to header (disable throttling)
+                    dispatchP2D2Event(
+                        P2D2EventType.CATEGORY_SELECTED,
+                        {
+                            categorySlug,
+                            timestamp: Date.now(),
+                        },
+                        { throttleMs: 0 },
+                    );
+
+                    // FALLBACK: Direct scroll call (if event system is too slow)
+                    setTimeout(() => {
+                        if (
+                            typeof (window as any).scrollToSelectionHeader ===
+                            "function"
+                        ) {
+                            (window as any).scrollToSelectionHeader();
+                        }
+                    }, 350);
 
                     // Logging für Debugging
                     const currentKommune = mapState.getSelectedKommune();

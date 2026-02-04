@@ -193,7 +193,9 @@ export default class KommunenClickHandler {
   private dispatchKommunenFocus(detail: KommunenFocusDetail): void {
     try {
       // Use type-safe event dispatching
-      dispatchP2D2Event(P2D2EventType.KOMMUNEN_FOCUS, detail);
+      dispatchP2D2Event(P2D2EventType.KOMMUNEN_FOCUS, detail, {
+        throttleMs: 0,
+      });
     } catch (error) {
       console.warn("[kommunen-handler] Dispatch failed, retrying...", error);
       // Fallback to direct dispatch if the typed dispatcher fails
