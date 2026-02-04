@@ -44,6 +44,7 @@ export enum P2D2EventType {
   EDITOR_TOOL_SWITCH = "p2d2:editor:tool:switch",
   EDITOR_MODE_CHANGE = "p2d2:editor:mode:change",
   EDITOR_FEATURE_SELECTED = "p2d2:editor:feature:selected",
+  EDITOR_FEATURE_DESELECTED = "p2d2:editor:feature:deselected",
   EDITOR_SAVE_START = "p2d2:editor:save:start",
   EDITOR_SAVE_COMPLETE = "p2d2:editor:save:complete",
   EDITOR_SAVE_ERROR = "p2d2:editor:save:error",

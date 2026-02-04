@@ -151,7 +151,7 @@ export class EditorLayerManager {
     const grabflurLayer = new VectorLayer({
       source: grabflurSource,
       style: this.GRABFLUR_STYLE,
-      zIndex: MAP_CONFIG.Z_INDEX.GRABFLUR,
+      zIndex: 50, // ← HINZUFÜGEN: Mittlere Ebene
     });
     this.addLayer("grabflur", grabflurLayer);
 
@@ -171,7 +171,7 @@ export class EditorLayerManager {
       source: graeberSource,
       // VERWENDE REAKTIVE STYLE-FUNKTION statt statischem Stil
       style: this.graeberStyleFunction.bind(this) as any,
-      zIndex: MAP_CONFIG.Z_INDEX.GRAVES || 25,
+      zIndex: 100, // ← HINZUFÜGEN: Oberste Ebene
       // HINZUFÜGEN:
       updateWhileAnimating: false,
       updateWhileInteracting: false,
@@ -239,7 +239,7 @@ export class EditorLayerManager {
 
   private createLabelFeatures(
     grabflurFeatures: Feature<Geometry>[],
-  ): Feature[] {
+  ): Feature<Point>[] {
     return grabflurFeatures
       .map((feature) => {
         const name = feature.get("name") || "Unbenannt";
@@ -268,16 +268,16 @@ export class EditorLayerManager {
               }),
             }),
           );
-          return labelFeature;
+          return labelFeature as Feature<Point>;
         }
         return null;
       })
-      .filter((f): f is Feature => f !== null);
+      .filter((f): f is Feature<Point> => f !== null);
   }
 
   private extractGrabflurNumber(name: string): string {
     if (!name) return "?";
-    const match = name.match(/-(\d+)$/);
+    const match = name.match(/-(\d+\w?)$/);
     return match ? match[1] : name;
   }
 

@@ -253,6 +253,7 @@ export class EditorInteractionManager {
     // Select (wird auch für Modify/Translate benötigt)
     this.select = new Select({
       layers: [this.layerManager.getGraeberLayer()!],
+      hitTolerance: 5, // ← HINZUFÜGEN: 5 Pixel Toleranz für Hit-Detection
 
       // KORREKTUR: Ersetze statisches HOVER_STYLE durch eine Style-Funktion (Bug 1)
       style: (feature) => {
