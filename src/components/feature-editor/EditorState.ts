@@ -121,10 +121,22 @@ export class EditorState {
     // NEU: Event dispatchen
     if (feature) {
       console.log("[EditorState] Feature selected:", feature.getId());
+
+      // KORREKTUR: Nur serialisierbare Daten senden
       dispatchCrossWindowEvent(P2D2EventType.EDITOR_FEATURE_SELECTED, {
         featureId: feature.getId() as string,
-        geometry: (feature.getGeometry() as any)?.getCoordinates?.() ?? null, // Optional
-        properties: feature.getProperties(),
+        geometry: (feature.getGeometry() as any)?.getCoordinates?.() ?? null,
+        properties: {
+          grabflur: feature.get("grabflur"),
+          grabnummer: feature.get("grabnummer"),
+        },
+        windowId: getWindowId(),
+        timestamp: Date.now(),
+      });
+    } else {
+      console.log("[EditorState] Feature deselected");
+
+      dispatchCrossWindowEvent(P2D2EventType.EDITOR_FEATURE_DESELECTED, {
         windowId: getWindowId(),
         timestamp: Date.now(),
       });
@@ -154,6 +166,13 @@ export class EditorState {
 
   getTool(): string {
     return this.currentTool;
+  }
+
+  // NEU: Stiller Tool-Reset (ohne notifyListeners)
+  // Wird für interne Cleanup-Operationen verwendet
+  public resetToolSilent(tool: string): void {
+    this.currentTool = tool;
+    // Bewusst KEIN notifyListeners() - für interne Resets
   }
 
   setEditorMode(mode: "navigate" | "edit") {

@@ -204,6 +204,15 @@ export class EditorDataManager {
         const id = feature.getId();
         if (id && !graeberSource.getFeatureById(id)) {
           graeberSource.addFeature(feature);
+          console.log(
+            "%c[DEBUG DataManager] Grab hinzugefügt:",
+            "color: teal; font-weight: bold;",
+            {
+              id: feature.getId(),
+              grabflur: feature.get("grabflur"),
+              grabnummer: feature.get("grabnummer"),
+            },
+          );
           addedCount++;
         }
       });

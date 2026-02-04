@@ -1,5 +1,5 @@
 import type { Map as OLMap } from "ol";
-import type { Feature } from "ol";
+import { Feature } from "ol";
 import type { Geometry } from "ol/geom";
 import Overlay from "ol/Overlay";
 import { Style, Stroke, Fill, Text } from "ol/style";
@@ -253,6 +253,7 @@ export class EditorInteractionManager {
     // Select (wird auch für Modify/Translate benötigt)
     this.select = new Select({
       layers: [this.layerManager.getGraeberLayer()!],
+      hitTolerance: 5, // ← HINZUFÜGEN: 5 Pixel Toleranz für Hit-Detection
 
       // KORREKTUR: Ersetze statisches HOVER_STYLE durch eine Style-Funktion (Bug 1)
       style: (feature) => {
@@ -292,6 +293,15 @@ export class EditorInteractionManager {
           activeGrabflurName || "",
         );
         const featureGrabflurName = feature.get("grabflur");
+
+        // DEBUG
+        console.log("%c[DEBUG Select-Filter]", "color: orange;", {
+          featureId: feature.getId(),
+          activeGrabflurName,
+          activeGrabflurNumber,
+          featureGrabflurName,
+          match: featureGrabflurName === activeGrabflurNumber,
+        });
 
         return (
           featureGrabflurName &&
@@ -340,6 +350,18 @@ export class EditorInteractionManager {
     );
     this.setMapDragPan(false);
     this.originalGeometries.clear();
+
+    // DEBUG: Anzahl Gräber in aktueller Grabflur
+    const graeberSource = this.layerManager.getGraeberSource();
+    if (graeberSource) {
+      console.log(
+        "%c[DEBUG] Anzahl Gräber in aktueller Grabflur:",
+        "color: purple; font-weight: bold;",
+        graeberSource.getFeatures().length,
+      );
+    } else {
+      console.warn("[DEBUG] Graeber-Source ist nicht verfügbar.");
+    }
 
     // 1. Interaktionen nur initialisieren (NICHT zur Karte hinzufügen)
     this.initModifyInteractions();
@@ -532,6 +554,9 @@ export class EditorInteractionManager {
 
     // KORREKTUR: Setzt den Klick-Status zurück.
     this.lastClickedGrabflur = null;
+
+    // NEU: Tool-State zurücksetzen (für nächsten Edit-Zyklus)
+    this.state.resetToolSilent("select");
   }
 
   // NEU: Hilfsfunktion für Bug 2
@@ -566,7 +591,7 @@ export class EditorInteractionManager {
 
   private extractGrabflurNumber(name: string): string {
     if (!name) return "?";
-    const match = name.match(/-(\d+)$/);
+    const match = name.match(/-(\d+\w?)$/);
     return match ? match[1] : name;
   }
 
@@ -587,9 +612,20 @@ export class EditorInteractionManager {
     console.log(
       `[InteractionManager] 🔧 Wechsle Tool: ${this.state.getTool()} → ${toolName}`,
     );
+
+    // --- NEU: Selection zwischenspeichern ---
+    const selectedFeatures: Feature<Geometry>[] = [];
+    if (this.select) {
+      this.select.getFeatures().forEach((feature) => {
+        selectedFeatures.push(feature);
+      });
+    }
+    // --- ENDE NEU ---
+
+    // State-Update
     this.state.setTool(toolName);
 
-    // Clear selection to remove visual overlays (rotation anchor, etc.)
+    // Selection löschen (entfernt visuelle Overlays wie Rotation-Anker)
     if (this.select) {
       this.select.getFeatures().clear();
     }
@@ -624,5 +660,22 @@ export class EditorInteractionManager {
         if (this.snap) this.map.addInteraction(this.snap);
         break;
     }
+
+    // --- NEU: Selection wiederherstellen ---
+    if (this.select && selectedFeatures.length > 0) {
+      selectedFeatures.forEach((feature) => {
+        this.select!.getFeatures().push(feature);
+      });
+
+      // Explizit das Feature im State setzen (falls nur 1 Feature)
+      if (selectedFeatures.length === 1) {
+        this.state.setSelectedFeature(selectedFeatures[0]);
+      }
+
+      console.log(
+        `[InteractionManager] ✅ ${selectedFeatures.length} Features wiederhergestellt`,
+      );
+    }
+    // --- ENDE NEU ---
   }
 }
