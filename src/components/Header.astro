@@ -31,75 +31,99 @@ function isActive(item) {
 <header
     class="w-full bg-green-50/90 backdrop-blur-sm shadow-sm sticky top-0 z-50"
 >
-    <nav class="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
-        <div class="flex items-center">
-            <a
-                href="/"
-                class="flex items-center font-poppins text-3xl font-bold text-green-700 tracking-tight select-none"
-            >
-                <img
-                    src="/images/logo.svg"
-                    alt="Public-Public Data-DNA Logo"
-                    class="h-12 w-12 mr-2"
-                />
-                p<sub>2</sub>d<sub>2</sub>
-            </a>
-            <ul class="flex ml-12 gap-6 text-lg font-medium font-poppins">
-                {
-                    nav.map((item) => {
-                        if (item.children) {
-                            // Dropdown-Menü für "Über …" – mit mouseenter/mouseleave für zuverlässiges Öffnen
-                            return (
-                                <li
-                                    class="relative"
-                                    on:mouseenter={() => {
-                                        const el =
-                                            document.getElementById(
-                                                "dropdown-ueber",
-                                            );
-                                        if (el) el.classList.remove("hidden");
-                                    }}
-                                    on:mouseleave={() => {
-                                        const el =
-                                            document.getElementById(
-                                                "dropdown-ueber",
-                                            );
-                                        if (el) el.classList.add("hidden");
-                                    }}
+    <nav
+        class="max-w-7xl mx-auto flex items-center justify-between px-4 py-3 md:px-6 md:py-4"
+    >
+        <!-- Logo -->
+        <a
+            href="/"
+            class="flex items-center font-poppins text-2xl md:text-3xl font-bold text-green-700 tracking-tight select-none"
+        >
+            <img
+                src="/images/logo.svg"
+                alt="Public-Public Data-DNA Logo"
+                class="h-10 w-10 md:h-12 md:w-12 mr-2"
+            />
+            p<sub>2</sub>d<sub>2</sub>
+        </a>
+
+        <!-- Hamburger Button (mobile only) -->
+        <button
+            id="mobile-menu-toggle"
+            class="md:hidden flex flex-col justify-center items-center w-10 h-10 p-2"
+            aria-label="Menü öffnen"
+            aria-expanded="false"
+        >
+            <span
+                class="w-6 h-0.5 bg-green-700 mb-1.5 transition-transform duration-300"
+            ></span>
+            <span
+                class="w-6 h-0.5 bg-green-700 mb-1.5 transition-opacity duration-300"
+            ></span>
+            <span
+                class="w-6 h-0.5 bg-green-700 transition-transform duration-300"
+            ></span>
+        </button>
+
+        <!-- Desktop Navigation -->
+        <ul
+            class="hidden md:flex ml-8 lg:ml-12 gap-4 lg:gap-6 text-base lg:text-lg font-medium font-poppins"
+        >
+            {
+                nav.map((item) => {
+                    if (item.children) {
+                        // Dropdown-Menü für "Über …" – mit mouseenter/mouseleave für zuverlässiges Öffnen
+                        return (
+                            <li
+                                class="relative"
+                                on:mouseenter={() => {
+                                    const el =
+                                        document.getElementById(
+                                            "dropdown-ueber",
+                                        );
+                                    if (el) el.classList.remove("hidden");
+                                }}
+                                on:mouseleave={() => {
+                                    const el =
+                                        document.getElementById(
+                                            "dropdown-ueber",
+                                        );
+                                    if (el) el.classList.add("hidden");
+                                }}
+                            >
+                                <button
+                                    class="px-1 pb-1 text-gray-700 hover:text-gray-900 transition-colors duration-200"
+                                    data-dropdown="true"
                                 >
-                                    <button
-                                        class="px-1 pb-1"
-                                        data-dropdown="true"
-                                    >
-                                        {item.name}
-                                    </button>
-                                    <ul
-                                        id="dropdown-ueber"
-                                        class="hidden absolute left-0 mt-2 bg-green-50/90 backdrop-blur-md rounded-lg shadow-lg z-50 min-w-160px transition-all border border-green-200/50"
-                                    >
-                                        {item.children.map((child) => (
-                                            <li>
-                                                <a
-                                                    href={child.href}
-                                                    class={`block px-4 py-2 hover:bg-white/40 ${
-                                                        isActive(child)
-                                                            ? "text-green-700 font-semibold"
-                                                            : "text-gray-900"
-                                                    }`}
-                                                >
-                                                    {child.name}
-                                                </a>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </li>
-                            );
-                        } else {
-                            return (
-                                <li>
-                                    <a
-                                        href={item.href}
-                                        class={`relative transition-colors duration-200
+                                    {item.name}
+                                </button>
+                                <ul
+                                    id="dropdown-ueber"
+                                    class="hidden absolute left-0 mt-2 bg-green-50/90 backdrop-blur-md rounded-lg shadow-lg z-50 min-w-160px transition-all border border-green-200/50"
+                                >
+                                    {item.children.map((child) => (
+                                        <li>
+                                            <a
+                                                href={child.href}
+                                                class={`block px-4 py-2 hover:bg-white/40 ${
+                                                    isActive(child)
+                                                        ? "text-green-700 font-semibold"
+                                                        : "text-gray-900"
+                                                }`}
+                                            >
+                                                {child.name}
+                                            </a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </li>
+                        );
+                    } else {
+                        return (
+                            <li>
+                                <a
+                                    href={item.href}
+                                    class={`relative transition-colors duration-200
                         ${
                             isActive(item)
                                 ? "text-green-700 after:content-[''] after:absolute after:left-0 after:-bottom-1 after:w-full after:h-0.5 after:bg-green-500"
@@ -107,39 +131,326 @@ function isActive(item) {
                         }
                         px-1 pb-1
                       `}
-                                        aria-current={
-                                            isActive(item) ? "page" : undefined
-                                        }
-                                        style="display: inline-block; position: relative;"
-                                    >
-                                        {item.name}
-                                    </a>
-                                </li>
-                            );
+                                    aria-current={
+                                        isActive(item) ? "page" : undefined
+                                    }
+                                    style="display: inline-block; position: relative;"
+                                >
+                                    {item.name}
+                                </a>
+                            </li>
+                        );
+                    }
+                })
+            }
+        </ul>
+
+        <!-- Mobile Navigation Overlay (KORRIGIERT) -->
+        <div
+            id="mobile-nav"
+            class="md:hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-sm
+                   opacity-0 pointer-events-none transition-opacity duration-300"
+        >
+            <!-- Sidebar (von rechts) -->
+            <div
+                id="mobile-nav-sidebar"
+                class="absolute right-0 top-0 h-full w-[280px] sm:w-[320px]
+                       bg-green-50/98 backdrop-blur-md shadow-2xl
+                       transform translate-x-full transition-transform duration-300 ease-in-out
+                       overflow-y-auto"
+            >
+                <!-- Close Button (oben rechts in Sidebar) -->
+                <button
+                    id="mobile-menu-close"
+                    class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center
+                           text-green-700 hover:bg-green-100 rounded-full transition-colors"
+                    aria-label="Menü schließen"
+                >
+                    <svg
+                        class="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+
+                <!-- Menu Content -->
+                <div class="pt-20 pb-6 px-6">
+                    <ul class="space-y-6">
+                        {
+                            nav.map((item) => {
+                                if (item.children) {
+                                    return (
+                                        <li>
+                                            <details class="group">
+                                                <summary class="flex items-center justify-between text-xl font-semibold text-green-800 cursor-pointer py-2">
+                                                    {item.name}
+                                                    <svg
+                                                        class="w-5 h-5 transition-transform group-open:rotate-180"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M19 9l-7 7-7-7"
+                                                        />
+                                                    </svg>
+                                                </summary>
+                                                <ul class="mt-3 ml-4 space-y-3">
+                                                    {item.children.map(
+                                                        (child) => (
+                                                            <li>
+                                                                <a
+                                                                    href={
+                                                                        child.href
+                                                                    }
+                                                                    class={`block py-2 text-lg ${
+                                                                        isActive(
+                                                                            child,
+                                                                        )
+                                                                            ? "text-green-700 font-semibold"
+                                                                            : "text-gray-700 hover:text-gray-900"
+                                                                    }`}
+                                                                >
+                                                                    {child.name}
+                                                                </a>
+                                                            </li>
+                                                        ),
+                                                    )}
+                                                </ul>
+                                            </details>
+                                        </li>
+                                    );
+                                } else {
+                                    return (
+                                        <li>
+                                            <a
+                                                href={item.href}
+                                                class={`block text-xl font-semibold py-2 ${
+                                                    isActive(item)
+                                                        ? "text-green-700 border-l-4 border-green-500 pl-3 -ml-3"
+                                                        : "text-gray-700 hover:text-gray-900"
+                                                }`}
+                                                aria-current={
+                                                    isActive(item)
+                                                        ? "page"
+                                                        : undefined
+                                                }
+                                            >
+                                                {item.name}
+                                            </a>
+                                        </li>
+                                    );
+                                }
+                            })
                         }
-                    })
-                }
-            </ul>
+                    </ul>
+
+                    <!-- Logo am Ende -->
+                    <div class="mt-12 pt-6 border-t border-green-200">
+                        <a
+                            href="/"
+                            class="flex items-center justify-center text-green-700 font-bold text-xl"
+                        >
+                            <img
+                                src="/images/logo.svg"
+                                alt="Public-Public Data-DNA Logo"
+                                class="h-12 w-12 mr-3"
+                            />
+                            p<sub>2</sub>d<sub>2</sub>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </nav>
+
     <script is:inline>
-        // Fallback für Touch/Tab: Dropdown per Klick öffnen/schließen
-        // Only target specific dropdown buttons with data-dropdown attribute
+        // Mobile Menu Toggle
+        const mobileMenuToggle = document.getElementById("mobile-menu-toggle");
+        const mobileNav = document.getElementById("mobile-nav");
+        const mobileNavSidebar = document.getElementById("mobile-nav-sidebar");
+        const mobileMenuClose = document.getElementById("mobile-menu-close");
+        const hamburgerSpans = mobileMenuToggle?.querySelectorAll("span");
+
+        function openMobileMenu() {
+            if (mobileNav && mobileNavSidebar) {
+                mobileMenuToggle?.setAttribute("aria-expanded", "true");
+
+                // Overlay sichtbar machen
+                mobileNav.classList.remove("opacity-0", "pointer-events-none");
+                mobileNav.classList.add("opacity-100");
+
+                // Sidebar von rechts einfahren
+                mobileNavSidebar.classList.remove("translate-x-full");
+                mobileNavSidebar.classList.add("translate-x-0");
+
+                // Hamburger animation
+                if (hamburgerSpans) {
+                    hamburgerSpans[0].classList.add(
+                        "rotate-45",
+                        "translate-y-2",
+                    );
+                    hamburgerSpans[1].classList.add("opacity-0");
+                    hamburgerSpans[2].classList.add(
+                        "-rotate-45",
+                        "-translate-y-2",
+                    );
+                }
+            }
+        }
+
+        function closeMobileMenu() {
+            if (mobileNav && mobileNavSidebar) {
+                mobileMenuToggle?.setAttribute("aria-expanded", "false");
+
+                // Sidebar nach rechts ausfahren
+                mobileNavSidebar.classList.remove("translate-x-0");
+                mobileNavSidebar.classList.add("translate-x-full");
+
+                // Overlay ausblenden (nach Animation)
+                setTimeout(() => {
+                    mobileNav.classList.add("opacity-0", "pointer-events-none");
+                    mobileNav.classList.remove("opacity-100");
+                }, 300);
+
+                // Reset hamburger animation
+                if (hamburgerSpans) {
+                    hamburgerSpans[0].classList.remove(
+                        "rotate-45",
+                        "translate-y-2",
+                    );
+                    hamburgerSpans[1].classList.remove("opacity-0");
+                    hamburgerSpans[2].classList.remove(
+                        "-rotate-45",
+                        "-translate-y-2",
+                    );
+                }
+            }
+        }
+
+        // Event Listeners
+        mobileMenuToggle?.addEventListener("click", () => {
+            const isExpanded =
+                mobileMenuToggle.getAttribute("aria-expanded") === "true";
+            if (isExpanded) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
+        });
+
+        // Close button in sidebar
+        mobileMenuClose?.addEventListener("click", closeMobileMenu);
+
+        // Close when clicking overlay (outside sidebar)
+        mobileNav?.addEventListener("click", (e) => {
+            if (e.target === mobileNav) {
+                closeMobileMenu();
+            }
+        });
+
+        // Close mobile menu when clicking on a link
+        mobileNavSidebar?.querySelectorAll("a").forEach((link) => {
+            link.addEventListener("click", closeMobileMenu);
+        });
+
+        // Dropdown handling (bleibt unverändert)
         document
             .querySelectorAll("li.relative > button[data-dropdown]")
             .forEach((btn) => {
                 btn.addEventListener("click", (e) => {
-                    // KRITISCH: Nur für echte Dropdown-Buttons, nicht für andere Events
                     const target = e.target;
-                    if (!target.closest("[data-dropdown]")) {
-                        return; // Nicht unser Event
-                    }
+                    if (!target.closest("[data-dropdown]")) return;
 
                     e.preventDefault();
-                    // e.stopPropagation(); // ENTFERNT: Blockiert andere Handler
                     const dropdown = btn.parentElement.querySelector("ul");
                     if (dropdown) dropdown.classList.toggle("hidden");
                 });
             });
     </script>
+
+    <style is:global>
+        /* Mobile-Nav Sichtbarkeits-Fix */
+        #mobile-nav {
+            z-index: 60 !important;
+            position: fixed !important;
+        }
+
+        #mobile-nav-sidebar {
+            background: rgba(240, 253, 244, 0.98) !important;
+            z-index: 10000 !important;
+            position: fixed !important;
+            top: 0 !important;
+            right: 0 !important;
+            height: 100vh !important;
+        }
+
+        #mobile-nav-sidebar * {
+            visibility: visible !important;
+        }
+
+        #mobile-nav-sidebar ul {
+            display: block !important;
+            list-style: none !important;
+            padding-left: 0 !important;
+        }
+
+        #mobile-nav-sidebar li {
+            display: block !important;
+            margin-bottom: 1.5rem !important;
+        }
+
+        /* Links und Text */
+        #mobile-nav-sidebar a {
+            display: block !important;
+            color: #374151 !important; /* gray-700 */
+            text-decoration: none !important;
+            opacity: 1 !important;
+        }
+
+        #mobile-nav-sidebar a:hover {
+            color: #111827 !important; /* gray-900 */
+        }
+
+        /* Summary (Dropdown-Trigger) */
+        #mobile-nav-sidebar summary {
+            display: flex !important;
+            color: #166534 !important; /* green-800 */
+            opacity: 1 !important;
+            cursor: pointer !important;
+        }
+
+        /* Active Link */
+        #mobile-nav-sidebar a.text-green-700,
+        #mobile-nav-sidebar a[aria-current="page"] {
+            color: #15803d !important; /* green-700 */
+            font-weight: 600 !important;
+        }
+
+        /* Details (Dropdown) */
+        #mobile-nav-sidebar details ul {
+            margin-top: 0.75rem !important;
+            margin-left: 1rem !important;
+        }
+
+        #mobile-nav-sidebar details li {
+            margin-bottom: 0.75rem !important;
+        }
+
+        /* Logo am Ende */
+        #mobile-nav-sidebar img {
+            display: block !important;
+            opacity: 1 !important;
+        }
+    </style>
 </header>
