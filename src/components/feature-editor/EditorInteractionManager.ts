@@ -1,5 +1,5 @@
 import type { Map as OLMap } from "ol";
-import type { Feature } from "ol";
+import { Feature } from "ol";
 import type { Geometry } from "ol/geom";
 import Overlay from "ol/Overlay";
 import { Style, Stroke, Fill, Text } from "ol/style";
@@ -612,9 +612,20 @@ export class EditorInteractionManager {
     console.log(
       `[InteractionManager] 🔧 Wechsle Tool: ${this.state.getTool()} → ${toolName}`,
     );
+
+    // --- NEU: Selection zwischenspeichern ---
+    const selectedFeatures: Feature<Geometry>[] = [];
+    if (this.select) {
+      this.select.getFeatures().forEach((feature) => {
+        selectedFeatures.push(feature);
+      });
+    }
+    // --- ENDE NEU ---
+
+    // State-Update
     this.state.setTool(toolName);
 
-    // Clear selection to remove visual overlays (rotation anchor, etc.)
+    // Selection löschen (entfernt visuelle Overlays wie Rotation-Anker)
     if (this.select) {
       this.select.getFeatures().clear();
     }
@@ -649,5 +660,22 @@ export class EditorInteractionManager {
         if (this.snap) this.map.addInteraction(this.snap);
         break;
     }
+
+    // --- NEU: Selection wiederherstellen ---
+    if (this.select && selectedFeatures.length > 0) {
+      selectedFeatures.forEach((feature) => {
+        this.select!.getFeatures().push(feature);
+      });
+
+      // Explizit das Feature im State setzen (falls nur 1 Feature)
+      if (selectedFeatures.length === 1) {
+        this.state.setSelectedFeature(selectedFeatures[0]);
+      }
+
+      console.log(
+        `[InteractionManager] ✅ ${selectedFeatures.length} Features wiederhergestellt`,
+      );
+    }
+    // --- ENDE NEU ---
   }
 }

@@ -215,6 +215,11 @@ export class EditorUIManager {
         this.interactionManager.setTool(
           toolName as "select" | "move" | "modify" | "rotate", // <-- ERWEITERN
         );
+
+        // KORREKTUR: Event-Bubbling zur Map verhindern
+        event.stopPropagation(); // Stoppt Bubbling zum Parent
+        event.preventDefault(); // Verhindert Default-Aktion
+        return; // Früh aussteigen
       } else if (toolName === "save") {
         console.log("[UIManager] 💾 'Speichern' Aktion gestartet...");
         // ... (Logik zum Sammeln der Features bleibt gleich)
@@ -271,12 +276,13 @@ export class EditorUIManager {
       if (newState.editorMode === "edit") {
         editToolsContainer.classList.remove("edit-tools-hidden");
         editToolsContainer.classList.add("edit-tools-visible");
-        // --- ERSETZEN START ---
-        // Standardmäßig 'move' highlighten
-        const moveBtn =
-          document.querySelector<HTMLElement>('[data-tool="move"]');
-        if (moveBtn) {
-          // Alle anderen de-highlighten
+        // --- ERSETZT: Highlighte das aktuelle Tool aus dem State ---
+        const currentToolBtn = document.querySelector<HTMLElement>(
+          `[data-tool="${newState.currentTool}"]`,
+        );
+
+        if (currentToolBtn) {
+          // Alle Tool-Buttons (außer Save/Cancel) de-highlighten
           document
             .querySelectorAll<HTMLElement>("[data-tool]")
             .forEach((btn) => {
@@ -287,9 +293,14 @@ export class EditorUIManager {
                 btn.classList.remove("highlighted");
               }
             });
-          moveBtn.classList.add("highlighted");
+
+          // Aktuelles Tool highlighten
+          currentToolBtn.classList.add("highlighted");
+          console.log(
+            `[UIManager] 🎨 Button highlighted: ${newState.currentTool}`,
+          );
         }
-        // --- ERSETZEN ENDE ---
+        // --- ENDE ERSETZT ---
       } else {
         editToolsContainer.classList.add("edit-tools-hidden");
         editToolsContainer.classList.remove("edit-tools-visible");
