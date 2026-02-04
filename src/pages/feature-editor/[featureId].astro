@@ -35,14 +35,10 @@ const decodedName = decodeURIComponent(name);
 ---
 
 <BaseLayout title={`Feature Editor: ${decodedName}`} showFooter={false}>
-    <div class="feature-editor-container">
-        <FeatureEditorHeader
-            title={decodedName}
-            commune=""
-            wpName={wpName}
-            containerType={containerType}
-        />
+    <!-- WICHTIG: slot="header" überschreibt den Standard-Header -->
+    <FeatureEditorHeader slot="header" friedhofName={decodedName} />
 
+    <div class="feature-editor-container">
         <div class="editor-content">
             <div class="map-container">
                 <div

@@ -35,6 +35,13 @@ export class EditorApp {
       // 1. State initialisieren (liest data-Attribute)
       this.state = new EditorState(this.container);
 
+      // Initialen Dirty-State für Header setzen
+      try {
+        document.body.dataset.hasDirtyFeatures = "false";
+      } catch (e) {
+        // Ignore
+      }
+
       // 2. Karte initialisieren
       this.mapManager = new MapManager(
         this.container.id,
@@ -121,6 +128,13 @@ export class EditorApp {
         "color: blue; font-weight: bold;",
       );
       // --- END DEBUGGING ---
+
+      // Setze Dirty-State für Header
+      try {
+        document.body.dataset.hasDirtyFeatures = String(newDirtyState);
+      } catch (e) {
+        // Fallback falls document nicht verfügbar (z.B. SSR)
+      }
 
       // --- KORREKTUR (BUG 3): "Hanging" UI Fix ---
       // Der Guard muss auf die 'last'-Variablen prüfen,
