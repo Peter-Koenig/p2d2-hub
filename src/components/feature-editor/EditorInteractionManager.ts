@@ -554,6 +554,9 @@ export class EditorInteractionManager {
 
     // KORREKTUR: Setzt den Klick-Status zurück.
     this.lastClickedGrabflur = null;
+
+    // NEU: Tool-State zurücksetzen (für nächsten Edit-Zyklus)
+    this.state.resetToolSilent("select");
   }
 
   // NEU: Hilfsfunktion für Bug 2

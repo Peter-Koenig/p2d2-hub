@@ -168,6 +168,13 @@ export class EditorState {
     return this.currentTool;
   }
 
+  // NEU: Stiller Tool-Reset (ohne notifyListeners)
+  // Wird für interne Cleanup-Operationen verwendet
+  public resetToolSilent(tool: string): void {
+    this.currentTool = tool;
+    // Bewusst KEIN notifyListeners() - für interne Resets
+  }
+
   setEditorMode(mode: "navigate" | "edit") {
     if (this.editorMode === mode) return; // <-- GUARD HINZUGEFÜGT
 
