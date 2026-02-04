@@ -30,6 +30,7 @@ pnpm-debug.log*
 
 # Source Code
 src.txt
+src_*
 index_canva_3.html-template
 nohup.out
 .ragit/

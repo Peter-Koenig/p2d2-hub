@@ -293,6 +293,15 @@ export class EditorInteractionManager {
         );
         const featureGrabflurName = feature.get("grabflur");
 
+        // DEBUG
+        console.log("%c[DEBUG Select-Filter]", "color: orange;", {
+          featureId: feature.getId(),
+          activeGrabflurName,
+          activeGrabflurNumber,
+          featureGrabflurName,
+          match: featureGrabflurName === activeGrabflurNumber,
+        });
+
         return (
           featureGrabflurName &&
           activeGrabflurNumber &&
@@ -340,6 +349,18 @@ export class EditorInteractionManager {
     );
     this.setMapDragPan(false);
     this.originalGeometries.clear();
+
+    // DEBUG: Anzahl Gräber in aktueller Grabflur
+    const graeberSource = this.layerManager.getGraeberSource();
+    if (graeberSource) {
+      console.log(
+        "%c[DEBUG] Anzahl Gräber in aktueller Grabflur:",
+        "color: purple; font-weight: bold;",
+        graeberSource.getFeatures().length,
+      );
+    } else {
+      console.warn("[DEBUG] Graeber-Source ist nicht verfügbar.");
+    }
 
     // 1. Interaktionen nur initialisieren (NICHT zur Karte hinzufügen)
     this.initModifyInteractions();
@@ -566,7 +587,7 @@ export class EditorInteractionManager {
 
   private extractGrabflurNumber(name: string): string {
     if (!name) return "?";
-    const match = name.match(/-(\d+)$/);
+    const match = name.match(/-(\d+\w?)$/);
     return match ? match[1] : name;
   }
 
