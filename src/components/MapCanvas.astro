@@ -269,6 +269,62 @@ import "../styles/feature-popup.css";
         crsToggleButton.dataset.listenerBound = "true";
     }
 
+    // Event listeners for tab buttons to scroll to grid container
+    const tabKommunenButton = document.getElementById("tab-kommunen");
+    const tabKategorienButton = document.getElementById("tab-kategorien");
+
+    if (tabKommunenButton && !tabKommunenButton.dataset.listenerBound) {
+        tabKommunenButton.addEventListener("click", (e) => {
+            e.preventDefault();
+
+            // Scroll to grid container
+            const gridContainer = document.getElementById("grid-container");
+            if (gridContainer) {
+                gridContainer.scrollIntoView({ behavior: "smooth" });
+            }
+
+            // Switch to kommunen tab
+            if (typeof (window as any).switchTab === "function") {
+                (window as any).switchTab("kommunen");
+            } else {
+                // Fallback: Direct DOM manipulation
+                const kommunenTab = document.querySelector(
+                    '.tab-button[data-tab="kommunen"]',
+                );
+                if (kommunenTab) {
+                    (kommunenTab as HTMLElement).click();
+                }
+            }
+        });
+        tabKommunenButton.dataset.listenerBound = "true";
+    }
+
+    if (tabKategorienButton && !tabKategorienButton.dataset.listenerBound) {
+        tabKategorienButton.addEventListener("click", (e) => {
+            e.preventDefault();
+
+            // Scroll to grid container
+            const gridContainer = document.getElementById("grid-container");
+            if (gridContainer) {
+                gridContainer.scrollIntoView({ behavior: "smooth" });
+            }
+
+            // Switch to kategorien tab
+            if (typeof (window as any).switchTab === "function") {
+                (window as any).switchTab("kategorien");
+            } else {
+                // Fallback: Direct DOM manipulation
+                const kategorienTab = document.querySelector(
+                    '.tab-button[data-tab="kategorien"]',
+                );
+                if (kategorienTab) {
+                    (kategorienTab as HTMLElement).click();
+                }
+            }
+        });
+        tabKategorienButton.dataset.listenerBound = "true";
+    }
+
     // Subscribe to map state changes
     mapState.subscribe((state) => {
         updateCRSButton();
