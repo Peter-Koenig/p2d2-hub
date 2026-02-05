@@ -17,7 +17,7 @@ import { P2D2EventType } from "../../utils/events";
  * Haupt-App-Klasse für den Feature Editor.
  * Orchestriert alle Sub-Module (State, Map, Layers, Data, UI).
  */
-export class EditorApp {
+export default class EditorApp {
   private container: HTMLElement;
   private state!: EditorState;
   private mapManager!: MapManager;
