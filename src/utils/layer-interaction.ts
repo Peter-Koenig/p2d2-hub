@@ -77,7 +77,7 @@ export class LayerInteractionManager {
 
     // === TOUCH EVENTS ===
     const handleTouchStart = (e: TouchEvent) => {
-      e.preventDefault(); // Prevent default touch behavior
+      // e.preventDefault() removed to allow click events on mobile
       this.startPressTracking(state, layer, buttonId, layerId);
     };
 
@@ -89,7 +89,7 @@ export class LayerInteractionManager {
       this.stopPressTracking(state, layer, layerId);
     };
 
-    button.addEventListener("touchstart", handleTouchStart, { passive: false });
+    button.addEventListener("touchstart", handleTouchStart, { passive: true });
     button.addEventListener("touchend", handleTouchEnd);
     button.addEventListener("touchcancel", handleTouchCancel);
 
