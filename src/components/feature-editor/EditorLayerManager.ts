@@ -131,6 +131,26 @@ export class EditorLayerManager {
     this.addLayer("friedhofsplan", friedhofsplanLayer);
   }
 
+  // ========================================
+  // 🔌 Public API für Layer-Zugriff
+  // ========================================
+
+  /**
+   * Gibt den Sichtbarkeits-Status aller Base-Layer zurück.
+   * @returns Objekt mit Layer-Namen und deren Sichtbarkeit
+   */
+  public getBaseLayerStates(): Record<string, boolean> {
+    const luftbild = this.layers.get("luftbild");
+    const basemap = this.layers.get("basemap");
+    const friedhofsplan = this.layers.get("friedhofsplan");
+
+    return {
+      luftbild: luftbild?.getVisible() ?? false,
+      basemap: basemap?.getVisible() ?? false,
+      friedhofsplan: friedhofsplan?.getVisible() ?? false,
+    };
+  }
+
   /**
    * Erstellt die Feature-Layer (Hintergrund, Grabflure, Labels, Gräber)
    */

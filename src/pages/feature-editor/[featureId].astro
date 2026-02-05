@@ -60,31 +60,71 @@ const decodedName = decodeURIComponent(name);
     </div>
 
     <script>
-        import { EditorApp } from "../../components/feature-editor/EditorApp";
+        import EditorApp from "../../components/feature-editor/EditorApp";
         import { initializeCrossWindowBridge } from "../../utils/cross-window-events";
 
-        document.addEventListener("DOMContentLoaded", () => {
-            if (typeof window !== "undefined") {
-                initializeCrossWindowBridge();
-                console.log(
-                    "[feature-editor] Cross-window bridge initialized (editor window)",
-                );
-            }
-
-            const mapContainer = document.getElementById("feature-editor-map");
-
-            if (mapContainer) {
-                const editorApp = new EditorApp(mapContainer);
-                editorApp.init().catch((error) => {
-                    console.error(
-                        "Fehler beim Initialisieren des Editors:",
-                        error,
-                    );
-                    // Hier könnte man dem Nutzer eine Fehlermeldung anzeigen
+        /**
+         * Robuste DOM-Ready-Funktion
+         * Funktioniert auch wenn DOMContentLoaded schon gefeuert hat
+         */
+        function domReady(callback: () => void): void {
+            if (document.readyState === "loading") {
+                // DOM lädt noch - warte auf Event
+                document.addEventListener("DOMContentLoaded", callback, {
+                    once: true,
                 });
             } else {
+                // DOM ist schon fertig - sofort ausführen
+                callback();
+            }
+        }
+
+        // Editor initialisieren
+        domReady(() => {
+            if (typeof window === "undefined") return;
+
+            // Cross-Window-Bridge initialisieren
+            initializeCrossWindowBridge();
+            console.log(
+                "[feature-editor] Cross-window bridge initialized (editor window)",
+            );
+
+            // Editor-Container finden
+            const container = document.getElementById("feature-editor-map");
+            if (!container) {
                 console.error(
                     "Editor-Map-Container nicht gefunden. App kann nicht starten.",
+                );
+                return;
+            }
+
+            // EditorApp initialisieren
+            try {
+                const editorApp = new EditorApp(container);
+
+                // Globalen Zugriff für Layer-Controls und Debugging
+                (window as any).editorApp = editorApp;
+
+                editorApp
+                    .init()
+                    .then(() => {
+                        // LayerManager global verfügbar machen
+                        if (editorApp["layerManager"]) {
+                            (window as any).layerManager =
+                                editorApp["layerManager"];
+                        }
+                        console.log("✅ Editor erfolgreich initialisiert");
+                    })
+                    .catch((error: Error) => {
+                        console.error(
+                            "Fehler beim Initialisieren des Editors:",
+                            error,
+                        );
+                    });
+            } catch (error) {
+                console.error(
+                    "Fehler beim Erstellen der EditorApp-Instanz:",
+                    error,
                 );
             }
         });

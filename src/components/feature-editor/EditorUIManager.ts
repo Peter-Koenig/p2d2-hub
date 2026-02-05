@@ -77,6 +77,13 @@ export class EditorUIManager {
   private bindLayerControls() {
     const layerButtons = document.querySelectorAll("[data-layer-toggle]");
 
+    if (layerButtons.length === 0) {
+      console.warn(
+        "[UIManager] Keine Layer-Toggle-Buttons gefunden. Stellen Sie sicher, dass LayerControls.astro gerendert wurde.",
+      );
+      return;
+    }
+
     layerButtons.forEach((button) => {
       const layerName = (button as HTMLElement).dataset.layerToggle;
       const buttonId = button.id;
@@ -102,11 +109,17 @@ export class EditorUIManager {
 
       // 3. Registriere Klick (Toggle)
       button.addEventListener("click", () => {
+        console.log(
+          `[UIManager] Layer-Button-Klick: ${layerName} (${buttonId})`,
+        );
         // Prüfe, ob es ein Long-Press war
         const state = (this.layerInteractionManager as any).states?.get(
           buttonId,
         );
         if (state?.wasLongPress) {
+          console.log(
+            `[UIManager] Long-Press erkannt, kein Toggle für ${layerName}`,
+          );
           state.wasLongPress = false; // Flag zurücksetzen
           return; // Kein Toggle nach Long-Press
         }
@@ -129,18 +142,27 @@ export class EditorUIManager {
     layerName: string,
     layer: TileLayer<any> | ImageLayer<any>,
   ) {
-    const newVisibility = !layer.getVisible();
+    const oldVisibility = layer.getVisible();
+    const newVisibility = !oldVisibility;
+
+    console.log(
+      `[UIManager] Layer-Toggle: ${layerName}, ${oldVisibility} -> ${newVisibility}`,
+    );
 
     // 1. Setze Sichtbarkeit im LayerManager
     this.layerManager.setLayerVisible(layerName, newVisibility);
 
     // 2. Button-Highlighting
     const btn = document.querySelector(`[data-layer-toggle="${layerName}"]`);
+    console.log(`[UIManager] Button gefunden: ${!!btn}`);
     btn?.classList.toggle("highlighted", newVisibility);
 
     // 3. Persistenz
     try {
       localStorage.setItem(`${layerName}Visible`, String(newVisibility));
+      console.log(
+        `[UIManager] Layer-State gespeichert: ${layerName}=${newVisibility}`,
+      );
     } catch (error) {
       console.warn("Could not persist layer state", error);
     }

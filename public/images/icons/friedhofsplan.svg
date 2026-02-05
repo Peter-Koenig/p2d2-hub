@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Friedhof-Icon: vereinfacht -->
+  <defs>
+    <style>
+      .bg { fill: #f5f5f5; stroke: #333; stroke-width: 1; }
+      .path { fill: #8fbc8f; stroke: #333; stroke-width: 0.5; }
+      .grave { fill: #666; opacity: 0.7; }
+      .cross { fill: none; stroke: #333; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <!-- Hintergrund -->
+  <rect class="bg" x="2" y="2" width="60" height="60" rx="4"/>
+
+  <!-- Wege (vereinfacht) -->
+  <path class="path" d="M 10,10 L 10,54 L 54,54 L 54,10 Z M 15,15 L 15,49 L 49,49 L 49,15 Z"/>
+
+  <!-- Gräber als einfache Rechtecke -->
+  <!-- Obere Reihe -->
+  <rect class="grave" x="18" y="18" width="4" height="6" rx="0.5"/>
+  <rect class="grave" x="25" y="18" width="4" height="6" rx="0.5"/>
+  <rect class="grave" x="32" y="18" width="4" height="6" rx="0.5"/>
+  <rect class="grave" x="39" y="18" width="4" height="6" rx="0.5"/>
+
+  <!-- Mittlere Reihe -->
+  <rect class="grave" x="18" y="28" width="4" height="6" rx="0.5"/>
+  <rect class="grave" x="25" y="28" width="4" height="6" rx="0.5"/>
+  <rect class="grave" x="32" y="28" width="4" height="6" rx="0.5"/>
+  <rect class="grave" x="39" y="28" width="4" height="6" rx="0.5"/>
+
+  <!-- Untere Reihe -->
+  <rect class="grave" x="18" y="38" width="4" height="6" rx="0.5"/>
+  <rect class="grave" x="25" y="38" width="4" height="6" rx="0.5"/>
+  <rect class="grave" x="32" y="38" width="4" height="6" rx="0.5"/>
+  <rect class="grave" x="39" y="38" width="4" height="6" rx="0.5"/>
+
+  <!-- Symbolisches Kreuz als Hauptelement -->
+  <g class="cross">
+    <line x1="50" y1="8" x2="50" y2="16"/>
+    <line x1="46" y1="12" x2="54" y2="12"/>
+  </g>
+</svg>
