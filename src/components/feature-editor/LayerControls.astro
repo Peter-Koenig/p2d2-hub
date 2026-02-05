@@ -1,8 +1,6 @@
 ---
-interface Props {
-    // Props can be added later if needed for customization
-}
-
+// Props
+// Props can be added later if needed for customization
 // No props needed for now, component handles its own state
 ---
 
@@ -21,6 +19,7 @@ interface Props {
         />
         <span class="layer-label">Luftbild 2024</span>
     </button>
+
     <button
         id="toggle-basemap"
         class="layer-btn"
@@ -35,6 +34,7 @@ interface Props {
         />
         <span class="layer-label">basemap.de</span>
     </button>
+
     <button
         id="toggle-friedhofsplan"
         class="layer-btn"
@@ -42,7 +42,11 @@ interface Props {
         title="Friedhofsplan ein-/ausblenden"
         aria-label="Friedhofsplan"
     >
-        <span class="icon">📋</span>
+        <img
+            src="/images/icons/friedhofsplan.svg"
+            alt="friedhofsplan"
+            class="layer-icon"
+        />
         <span class="layer-label">Friedhofsplan</span>
     </button>
 </div>
@@ -50,7 +54,7 @@ interface Props {
 <style>
     .layer-controls {
         position: absolute;
-        top: 0.4rem; /* KORREKTUR: Erhöht (z.B. 1rem + 2.5rem für den OL-Button) */
+        top: 0.4rem; /* KORREKTUR: Erhöht (z.B. 1rem → 2.5rem) für den OL-Button */
         right: 1.5rem;
         display: flex;
         flex-direction: column;
@@ -114,7 +118,7 @@ interface Props {
 
     @media (max-width: 768px) {
         .layer-controls {
-            top: 3rem; /* KORREKTUR: Erhöht (z.B. 0.5rem + 2.5rem) */
+            top: 3rem; /* KORREKTUR: Erhöht (z.B. 0.5rem → 2.5rem) */
             right: 0.5rem;
         }
 
@@ -139,3 +143,146 @@ interface Props {
         }
     }
 </style>
+
+<script>
+    // Layer Controls for Feature Editor
+    // Direct access to EditorLayerManager via window.editorApp
+
+    /**
+     * Update button visual state based on layer visibility
+     * @param {string} layerName
+     * @param {boolean} isVisible
+     */
+    function updateButtonState(layerName, isVisible) {
+        const button = document.querySelector(
+            `[data-layer-toggle="${layerName}"]`,
+        );
+        if (button) {
+            button.classList.toggle("highlighted", isVisible);
+        }
+    }
+
+    /**
+     * Toggle layer visibility using EditorLayerManager
+     * @param {string} layerName
+     */
+    function toggleBaseLayer(layerName) {
+        // @ts-ignore - window.editorApp is dynamically added
+        const editorApp = window.editorApp;
+        if (!editorApp?.layerManager) {
+            console.error(
+                "[LayerControls] EditorApp oder LayerManager nicht verfügbar",
+            );
+            return;
+        }
+
+        const layer = editorApp.layerManager.getLayer(layerName);
+        if (!layer) {
+            console.error(
+                `[LayerControls] Layer "${layerName}" nicht gefunden`,
+            );
+            return;
+        }
+
+        // Toggle Sichtbarkeit
+        const newVisibility = !layer.getVisible();
+        layer.setVisible(newVisibility);
+
+        console.log(
+            `[LayerControls] Layer "${layerName}" toggled to:`,
+            newVisibility,
+        );
+
+        // Button-Status aktualisieren
+        updateButtonState(layerName, newVisibility);
+
+        // Persistenz in localStorage
+        try {
+            localStorage.setItem(`${layerName}:visible`, String(newVisibility));
+            console.log(
+                `[LayerControls] Layer-State gespeichert: ${layerName}=${newVisibility}`,
+            );
+        } catch (error) {
+            console.warn(
+                "[LayerControls] Could not persist layer state",
+                error,
+            );
+        }
+    }
+
+    /**
+     * Restore layer states from localStorage and initialize event listeners
+     */
+    function initLayerControls() {
+        console.log("[LayerControls] Initialisiere Layer-Controls...");
+
+        // Add event listeners for layer toggle buttons
+        document.addEventListener("click", (event) => {
+            const target = event.target;
+            if (!target || !(target instanceof HTMLElement)) return;
+
+            const button = target.closest("[data-layer-toggle]");
+            if (!button || !(button instanceof HTMLElement)) return;
+
+            const layerName = button.dataset.layerToggle;
+            if (layerName) {
+                toggleBaseLayer(layerName);
+            }
+        });
+
+        // Restore previous layer states from localStorage
+        try {
+            // @ts-ignore - window.editorApp is dynamically added
+            const editorApp = window.editorApp;
+            if (!editorApp?.layerManager) {
+                console.warn(
+                    "[LayerControls] EditorApp nicht verfügbar, verzögere Wiederherstellung",
+                );
+                // Try again later when editorApp is ready
+                setTimeout(initLayerControls, 500);
+                return;
+            }
+
+            // Restore each layer state
+            ["luftbild", "basemap", "friedhofsplan"].forEach((layerName) => {
+                const savedVisible =
+                    localStorage.getItem(`${layerName}:visible`) === "true";
+                const layer = editorApp.layerManager.getLayer(layerName);
+                if (layer) {
+                    layer.setVisible(savedVisible);
+                    updateButtonState(layerName, savedVisible);
+                    console.log(
+                        `[LayerControls] Layer "${layerName}" restored:`,
+                        savedVisible,
+                    );
+                }
+            });
+        } catch (error) {
+            console.warn(
+                "[LayerControls] Could not restore layer states from localStorage",
+                error,
+            );
+        }
+    }
+
+    /**
+     * Initialize when DOM is ready, but only if EditorUIManager doesn't already handle controls
+     */
+    function initializeIfNeeded() {
+        // @ts-ignore - window.editorApp is dynamically added
+        if (window.editorApp?.uiManager) {
+            console.log(
+                "[LayerControls] EditorUIManager already handles controls, skipping initialization",
+            );
+            return;
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initLayerControls);
+        } else {
+            initLayerControls();
+        }
+    }
+
+    initializeIfNeeded();
+</script>
