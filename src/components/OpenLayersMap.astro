@@ -67,37 +67,53 @@ import MapCanvas from "./MapCanvas.astro";
         }
 
         function scrollToSelectionHeader() {
-            // Finde zuerst den Header
-            const header = document.getElementById("kommune-kategorie-header");
+            // Warte auf nächsten Frame, damit OpenLayers die Karte rendern kann
+            requestAnimationFrame(() => {
+                // Suche das Map-Element (wird von OpenLayers dynamisch erstellt)
+                const mapElement = document.getElementById("map");
 
-            if (!header) {
-                console.warn("[OpenLayersMap] Header not found");
-                return;
-            }
+                if (mapElement) {
+                    // Berechne Scroll-Position mit Offset für Header (80px Abstand)
+                    const headerOffset = 80;
+                    const elementPosition =
+                        mapElement.getBoundingClientRect().top;
+                    const offsetPosition =
+                        elementPosition + window.pageYOffset - headerOffset;
 
-            // Versuche, den nächstgelegenen übergeordneten Container mit .w-full.mb-section zu finden
-            let mapSection = header.closest(".w-full.mb-section");
+                    // Scrolle mit Offset
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: "smooth",
+                    });
 
-            if (mapSection) {
-                // Scrolle so, dass die gesamte Karte sichtbar wird
-                mapSection.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start",
-                });
+                    console.log("[OpenLayersMap] Scrolled to map with offset");
+                    return;
+                }
 
-                console.log(
-                    "[OpenLayersMap] Scrolled to map section (map + header visible)",
+                // Fallback: Zum Header scrollen (falls Map noch nicht existiert)
+                const header = document.getElementById(
+                    "kommune-kategorie-header",
                 );
-            } else {
-                // Fallback: Direkt zum Header scrollen
-                console.warn(
-                    "[OpenLayersMap] Could not find .w-full.mb-section parent, scrolling to header",
-                );
-                header.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start",
-                });
-            }
+                if (header) {
+                    const headerOffset = 80;
+                    const elementPosition = header.getBoundingClientRect().top;
+                    const offsetPosition =
+                        elementPosition + window.pageYOffset - headerOffset;
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: "smooth",
+                    });
+
+                    console.log(
+                        "[OpenLayersMap] Fallback: Scrolled to header with offset",
+                    );
+                } else {
+                    console.warn(
+                        "[OpenLayersMap] Neither map nor header found",
+                    );
+                }
+            });
         }
 
         // Listen for selection events to scroll back to header
