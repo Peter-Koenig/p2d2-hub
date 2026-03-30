@@ -110,7 +110,7 @@ export class EditorLayerManager {
     const friedhofsplanSource = new ImageWMS({
       url: "https://ows.data-dna.eu/service",
       params: {
-        LAYERS: "friedhofsplan_rheinkassel",
+        LAYERS: "friedhofsplaene",
         FORMAT: "image/png",
         TRANSPARENT: true,
         VERSION: "1.1.1",
