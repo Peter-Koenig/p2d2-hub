@@ -53,6 +53,12 @@ export class EditorDataManager {
 
     // 5. LayerManager anweisen (Signatur geändert)
     this.layerManager.createFeatureLayers(parentFeature, childFeatures);
+
+    // 6. Friedhofsplan-Layer Extent setzen
+    const parentGeometry = parentFeature.getGeometry();
+    if (parentGeometry) {
+      this.layerManager.setFriedhofsplanExtent(parentGeometry.getExtent());
+    }
   }
 
   /**

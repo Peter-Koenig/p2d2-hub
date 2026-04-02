@@ -122,13 +122,25 @@ export class EditorLayerManager {
 
     const friedhofsplanLayer = new ImageLayer({
       source: friedhofsplanSource,
-      extent: [355079.917, 5656115.018, 355310.314, 5656324.347],
+      extent: undefined, // Kein hardcodierter Extent mehr
       zIndex: MAP_CONFIG.Z_INDEX.GRAVES || 10,
       opacity: 0.7,
       visible: true,
     });
 
     this.addLayer("friedhofsplan", friedhofsplanLayer);
+  }
+
+  /**
+   * Setzt den Extent für den Friedhofsplan-Layer basierend auf dem Parent-Feature
+   */
+  public setFriedhofsplanExtent(extent: number[]): void {
+    const friedhofsplanLayer = this.layers.get(
+      "friedhofsplan",
+    ) as ImageLayer<any>;
+    if (friedhofsplanLayer) {
+      friedhofsplanLayer.setExtent(extent);
+    }
   }
 
   // ========================================
@@ -297,8 +309,9 @@ export class EditorLayerManager {
 
   private extractGrabflurNumber(name: string): string {
     if (!name) return "?";
-    const match = name.match(/-(\d+\w?)$/);
-    return match ? match[1] : name;
+    const lastDash = name.lastIndexOf("-");
+    if (lastDash === -1) return name;
+    return name.substring(lastDash + 1);
   }
 
   // --- Öffentliche Methoden ---
