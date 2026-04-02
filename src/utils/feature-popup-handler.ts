@@ -227,7 +227,13 @@ export class FeaturePopupHandler {
   ): Promise<GrabflurFeatureProperties[]> {
     // Build CQL filter for grabflur features
     // Das % für SQL LIKE wird im URL-Encoding automatisch korrekt behandelt
-    const namePattern = `${cemeteryProps.name}-%`;
+    // NEU: admin_name als Präfix nutzen, Fallback auf name (osm_name)
+    const rawAdminName = cemeteryProps.admin_name;
+    const prefix =
+      rawAdminName && rawAdminName.trim() !== ""
+        ? rawAdminName.trim()
+        : cemeteryProps.name;
+    const namePattern = `${prefix}-%`;
 
     // Get container type dynamically from selected category
     const containerType = this.getActiveContainerType();

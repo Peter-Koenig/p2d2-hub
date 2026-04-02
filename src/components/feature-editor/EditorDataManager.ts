@@ -17,6 +17,8 @@ export class EditorDataManager {
 
   // HINZUFÜGEN: WFS-Request-Cache für bereits geladene Grabfluren
   private loadedGrabflurIDs: Set<string | number> = new Set();
+  // NEU: Präfix für Grabflur-Namen aus admin_name des Parent-Features
+  private grabflurPrefix: string | null = null;
 
   constructor(
     state: EditorState,
@@ -34,17 +36,14 @@ export class EditorDataManager {
    * Gräber werden nicht mehr zentral geladen, sondern on-demand per BBOX.
    */
   async loadInitialFeatures() {
-    console.log("[DataManager] Lade Features parallel...");
+    console.log("[DataManager] Lade Features sequenziell...");
 
-    // ERSETZEN: Sequenzielle awaits durch parallele Anfragen
-    const [parentFeature, childFeatures] = await Promise.all([
-      this.fetchParentFeature(),
-      this.fetchChildFeatures(),
-    ]);
-
+    // ÄNDERUNG: Von parallel auf sequenziell umgestellt
+    const parentFeature = await this.fetchParentFeature();
     if (!parentFeature) {
       throw new Error(`Haupt-Feature '${this.state.name}' nicht gefunden.`);
     }
+    const childFeatures = await this.fetchChildFeatures();
 
     // 3. Gräber (L12) NICHT MEHR LADEN
     // const graeberFeatures = await this.fetchGraeberFeatures(altName); // <-- ENTFERNT
@@ -84,6 +83,10 @@ export class EditorDataManager {
 
     if (features.length === 0) return null;
 
+    // NEU: admin_name aus GeoJSON-Properties lesen und speichern
+    const rawAdminName = geoJson.features?.[0]?.properties?.admin_name;
+    this.grabflurPrefix = rawAdminName ?? null;
+
     // 'altName' Extraktion entfernt
 
     return features[0];
@@ -93,7 +96,9 @@ export class EditorDataManager {
    * Lädt die Child-Features (Grabflure)
    */
   private async fetchChildFeatures(): Promise<Feature<Geometry>[]> {
-    const namePattern = `${this.state.name}-%`;
+    // ÄNDERUNG: Verwende grabflurPrefix (admin_name) oder fallback auf state.name
+    const prefix = this.grabflurPrefix ?? this.state.name;
+    const namePattern = `${prefix}-%`;
     const cqlFilter = `osm_admin_level=10 AND wp_name='${this.state.wpName}' AND container_type='${this.state.containerType}' AND name LIKE '${namePattern}'`;
 
     const wfsUrl = this.wfsClient.buildAuthorizedWFSURL("p2d2_containers", {
