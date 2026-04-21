@@ -76,20 +76,6 @@ function isActive(item: { href?: string; name: string; children?: { name: string
                         return (
                             <li
                                 class="relative"
-                                onmouseenter={() => {
-                                    const el =
-                                        document.getElementById(
-                                            "dropdown-ueber",
-                                        );
-                                    if (el) el.classList.remove("hidden");
-                                }}
-                                onmouseleave={() => {
-                                    const el =
-                                        document.getElementById(
-                                            "dropdown-ueber",
-                                        );
-                                    if (el) el.classList.add("hidden");
-                                }}
                             >
                                 <button
                                     class="px-1 pb-1 text-gray-700 hover:text-gray-900 transition-colors duration-200"
@@ -365,6 +351,18 @@ function isActive(item: { href?: string; name: string; children?: { name: string
         });
 
         // Dropdown handling (bleibt unverändert)
+        const dropdownTrigger = document.querySelector("li.relative");
+        if (dropdownTrigger) {
+            dropdownTrigger.addEventListener("mouseenter", () => {
+                const el = document.getElementById("dropdown-ueber");
+                if (el) el.classList.remove("hidden");
+            });
+            dropdownTrigger.addEventListener("mouseleave", () => {
+                const el = document.getElementById("dropdown-ueber");
+                if (el) el.classList.add("hidden");
+            });
+        }
+
         document
             .querySelectorAll("li.relative > button[data-dropdown]")
             .forEach((btn) => {

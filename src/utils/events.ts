@@ -130,6 +130,7 @@ export interface MapReadyDetail {
   projection?: string;
   timestamp: number;
   center: number[];
+  zoom: number | undefined;
 }
 
 export interface LayerToggleDetail {

@@ -150,7 +150,7 @@ import "../styles/feature-popup.css";
     // NEU: Event dispatchen
     dispatchCrossWindowEvent(P2D2EventType.MAP_READY, {
         projection: map.getView().getProjection().getCode(),
-        center: map.getView().getCenter(),
+        center: map.getView().getCenter() ?? [0, 0],
         zoom: map.getView().getZoom(),
         timestamp: Date.now(),
     });
