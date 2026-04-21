@@ -34,6 +34,7 @@
     "vue": "^3.5.14"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.8",
     "@types/chokidar": "^1.7.5",
     "@types/nodemailer": "^7.0.9",
     "@types/ol": "^6.5.3",
@@ -41,6 +42,7 @@
     "concurrently": "^8.2.2",
     "cross-env": "^10.0.0",
     "dotenv": "^17.2.2",
-    "tsx": "^4.20.5"
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.3"
   }
 }
