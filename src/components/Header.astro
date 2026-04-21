@@ -20,7 +20,7 @@ const nav = [
 const currentPath = Astro.url.pathname;
 
 // Hilfsfunktion für aktive Links
-function isActive(item) {
+function isActive(item: { href?: string; name: string; children?: { name: string; href: string }[] }) {
     if (!item.href) return false;
     return item.href === "/"
         ? currentPath === "/"
@@ -76,14 +76,14 @@ function isActive(item) {
                         return (
                             <li
                                 class="relative"
-                                on:mouseenter={() => {
+                                onmouseenter={() => {
                                     const el =
                                         document.getElementById(
                                             "dropdown-ueber",
                                         );
                                     if (el) el.classList.remove("hidden");
                                 }}
-                                on:mouseleave={() => {
+                                onmouseleave={() => {
                                     const el =
                                         document.getElementById(
                                             "dropdown-ueber",
