@@ -1,10 +1,12 @@
 ---
-import { getEntryBySlug } from "astro:content";
+import { getEntry } from "astro:content";
 
-const mission = await getEntryBySlug("intern", "mission");
+const mission = await getEntry("intern", "mission");
+const rendered = mission ? await mission.render() : null;
+const { Content } = rendered ?? { Content: null };
 ---
 
 <section class="mission-statement">
     <h2>Unsere Mission</h2>
-    <div innerHTML={mission?.body}></div>
+    {Content && <Content />}
 </section>
