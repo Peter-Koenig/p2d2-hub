@@ -1,70 +1,70 @@
-import { PolygonWatcherService } from '../services/polygon-watcher-service';
+import { KommuneWatcher } from "./kommune-watcher.mjs";
 
 // Test script to verify polygon sync functionality
 async function testPolygonSync() {
-  console.log('Starting polygon sync test...');
+  console.log("Starting polygon sync test...");
 
   // Test with different configurations
   const testConfigs = [
     {
-      name: 'Default config',
+      name: "Default config",
       options: {
-        watchDir: 'src/content/kommunen',
+        watchDir: "src/content/kommunen",
         followSymlinks: true,
         debounceMs: 1000,
-        debug: true
-      }
+        debug: true,
+      },
     },
     {
-      name: 'No symlinks',
+      name: "No symlinks",
       options: {
-        watchDir: 'src/content/kommunen',
+        watchDir: "src/content/kommunen",
         followSymlinks: false,
         debounceMs: 1500,
-        debug: true
-      }
-    }
+        debug: true,
+      },
+    },
   ];
 
   for (const config of testConfigs) {
     console.log(`\n=== Testing: ${config.name} ===`);
 
-    const watcher = new PolygonWatcherService(config.options);
+    const watcher = new KommuneWatcher(config.options);
 
     try {
       // Test manual sync with a known slug
-      console.log('Testing manual sync...');
-      await watcher.triggerManualSync('test-kommune');
+      console.log("Testing manual sync...");
+      await watcher.triggerManualSync("test-kommune");
 
-      console.log('Manual sync test completed');
-
-    } catch (error) {
-      console.error('Test failed:', error.message);
+      console.log("Manual sync test completed");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("Test failed:", message);
     }
   }
 
-  console.log('\n=== All tests completed ===');
+  console.log("\n=== All tests completed ===");
 }
 
 // Test slug extraction
 function testSlugExtraction() {
-  console.log('\nTesting slug extraction...');
+  console.log("\nTesting slug extraction...");
 
   const testPaths = [
-    'src/content/kommunen/berlin.md',
-    '/symlinked/content/kommunen/muenchen.md',
-    'kommunen/hamburg.md',
-    'invalid-path.txt'
+    "src/content/kommunen/berlin.md",
+    "/symlinked/content/kommunen/muenchen.md",
+    "kommunen/hamburg.md",
+    "invalid-path.txt",
   ];
 
-  const watcher = new PolygonWatcherService({
-    watchDir: 'src/content/kommunen',
+  const watcher = new KommuneWatcher({
+    watchDir: "src/content/kommunen",
     followSymlinks: true,
     debounceMs: 1000,
-    debug: true
+    debug: true,
   });
 
-  testPaths.forEach(path => {
+  testPaths.forEach((path) => {
     // @ts-ignore - accessing private method for testing
     const slug = watcher.extractSlugFromPath(path);
     console.log(`Path: ${path} -> Slug: ${slug}`);
@@ -77,7 +77,7 @@ async function main() {
     await testPolygonSync();
     testSlugExtraction();
   } catch (error) {
-    console.error('Test execution failed:', error);
+    console.error("Test execution failed:", error);
     process.exit(1);
   }
 }
