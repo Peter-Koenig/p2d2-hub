@@ -428,28 +428,30 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         }
 
         // Variable zum Speichern der ALTCHA-Payload
-        let altchaPayload = null;
+        let altchaPayload: string | null = null;
 
         // Event-Listener: Widget teilt uns mit, wenn CAPTCHA gelöst ist
-        widget.addEventListener("statechange", (event) => {
-            const state = event.detail?.state;
-            console.log("🔔 ALTCHA State Change:", state);
+        widget.addEventListener(
+            "statechange",
+            ((event: CustomEvent<{ state: string; payload?: string }>) => {
+                const state = event.detail?.state;
+                console.log("🔔 ALTCHA State Change:", state);
 
-            if (state === "verified") {
-                // Payload ist jetzt verfügbar!
-                altchaPayload = event.detail?.payload;
+                if (state === "verified") {
+                    altchaPayload = event.detail?.payload ?? null;
                 console.log(
                     "✅ CAPTCHA gelöst! Payload Länge:",
                     altchaPayload?.length || 0,
                 );
             } else if (state === "error") {
-                console.error("❌ ALTCHA Fehler:", event.detail);
+                console.error('ALTCHA Fehler', event.detail);
                 altchaPayload = null;
             } else if (state === "expired") {
                 console.warn("⚠️ ALTCHA abgelaufen");
                 altchaPayload = null;
             }
-        });
+            }) as EventListener
+        );
 
         // Form Submit Handler
         form.addEventListener("submit", async (e) => {
@@ -476,9 +478,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
                 name: data.name,
                 email: data.email,
                 subject: data.subject,
-                messageLength: data.message?.length || 0,
+                messageLength: (data.message as string)?.length || 0,
                 hasAltcha: !!data.altcha,
-                altchaLength: data.altcha?.length || 0,
+                altchaLength: (data.altcha as string)?.length || 0,
             });
 
             try {
@@ -504,8 +506,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
                     // Reset ALTCHA
                     altchaPayload = null;
-                    if (widget.reset) {
-                        widget.reset();
+                    if ((widget as any).reset) {
+                        (widget as any).reset();
                     }
                 } else {
                     alert(

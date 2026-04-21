@@ -7,7 +7,7 @@ import {
   WFST_PASSWORD,
 } from "astro:env/server";
 
-export async function POST({ request }) {
+export async function POST({ request }: { request: Request }) {
   try {
     const { slug, categories } = await request.json();
 
@@ -39,8 +39,9 @@ export async function POST({ request }) {
       status: result.success ? 200 : 500,
       headers: { "Content-Type": "application/json" },
     });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

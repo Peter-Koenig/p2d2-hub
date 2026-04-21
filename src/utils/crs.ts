@@ -132,10 +132,13 @@ export function toNewViewPreservingScale(
     return false;
   }
 
+  let currentCenter: number[] | undefined;
+  let currentZoom: number | undefined;
+  const currentRotation = view.getRotation();
+
   try {
-    const currentCenter = view.getCenter();
-    const currentZoom = view.getZoom() || 10;
-    const currentRotation = view.getRotation();
+    currentCenter = view.getCenter();
+    currentZoom = view.getZoom() || 10;
 
     if (!currentCenter) {
       console.error("[crs] current center not available");

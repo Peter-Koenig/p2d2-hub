@@ -193,7 +193,7 @@ export const POST: APIRoute = async ({ request }) => {
         socketTimeout: 10000,
         dnsTimeout: 5000,
         family: 4,
-      });
+      } as nodemailer.TransportOptions);
 
       // Email content
       const mailOptions = {

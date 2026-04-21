@@ -95,6 +95,10 @@ export function logToEventConsole(
     throttled?: boolean;
     success?: boolean;
     error?: string;
+    source?: string;
+    windowId?: string;
+    crossWindow?: boolean;
+    timestamp?: number;
   },
 ): void {
   // Check if EventConsole is available
@@ -125,6 +129,8 @@ export interface MapReadyDetail {
   view?: any;
   projection?: string;
   timestamp: number;
+  center: number[];
+  zoom: number | undefined;
 }
 
 export interface LayerToggleDetail {
