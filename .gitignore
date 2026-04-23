@@ -59,3 +59,5 @@ sourcetree.json.txt
 src-p2d2.txt
 .aider*
 refactor_GISEditor.sh
+env-bakups/*
+.env.*

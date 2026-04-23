@@ -60,10 +60,7 @@ export class WFSAuthClient {
     const envInfo = detectEnvironment();
     const isDev = envInfo.isDev;
 
-    // Environment-spezifische Defaults
-    // Weiche für dev/prod ohne import.meta.env Abhängigkeit
-
-    // Für Development: Versuche zuerst globalen Endpoint
+    // Environment-spezifische Defaults als letzter Fallback
     const defaultEndpoint = isDev
       ? "https://wfs.data-dna.eu/geoserver/ows" // Development mit CORS-fähigem Endpoint
       : "https://wfs.data-dna.eu/geoserver/Verwaltungsdaten/ows"; // Production Endpoint
@@ -81,9 +78,15 @@ export class WFSAuthClient {
     }
 
     this.config = {
-      endpoint: config.endpoint || defaultEndpoint,
-      workspace: config.workspace || "Verwaltungsdaten",
-      namespace: config.namespace || "urn:data-dna:govdata",
+      endpoint:
+        config.endpoint ??
+        import.meta.env.PUBLIC_WFST_ENDPOINT ??
+        defaultEndpoint,
+      workspace:
+        config.workspace ??
+        import.meta.env.PUBLIC_WFST_WORKSPACE ??
+        "Verwaltungsdaten",
+      namespace: config.namespace ?? "urn:data-dna:govdata",
       credentials: {
         username: config.credentials?.username || RO_USERNAME,
         password: config.credentials?.password || RO_PASSWORD,
