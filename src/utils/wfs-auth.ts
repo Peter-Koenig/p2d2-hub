@@ -35,23 +35,6 @@ function detectEnvironment(): EnvironmentInfo {
   };
 }
 
-/**
- * WFS Authorization Client
- * Handles authentication and authorized requests to WFS endpoints
- */
-
-export interface WFSCredentials {
-  username: string;
-  password: string;
-}
-
-export interface WFSConfig {
-  endpoint: string;
-  workspace: string;
-  namespace: string;
-  credentials: WFSCredentials;
-}
-
 export class WFSAuthClient {
   private config: WFSConfig;
 
@@ -59,11 +42,6 @@ export class WFSAuthClient {
     // Environment detection using unified function
     const envInfo = detectEnvironment();
     const isDev = envInfo.isDev;
-
-    // Environment-spezifische Defaults als letzter Fallback
-    const defaultEndpoint = isDev
-      ? "https://wfs.data-dna.eu/geoserver/ows" // Development mit CORS-fähigem Endpoint
-      : "https://wfs.data-dna.eu/geoserver/Verwaltungsdaten/ows"; // Production Endpoint
 
     // TODO: Issue https://gitlab.opencode.de/OC000028072444/p2d2/-/issues/1 - Remove hardcoded credentials once anonymous GeoServer access is configured
     // These are temporary read-only credentials that will be replaced with anonymous access
@@ -78,14 +56,8 @@ export class WFSAuthClient {
     }
 
     this.config = {
-      endpoint:
-        config.endpoint ??
-        import.meta.env.PUBLIC_WFST_ENDPOINT ??
-        defaultEndpoint,
-      workspace:
-        config.workspace ??
-        import.meta.env.PUBLIC_WFST_WORKSPACE ??
-        "Verwaltungsdaten",
+      endpoint: config.endpoint ?? import.meta.env.PUBLIC_WFST_ENDPOINT,
+      workspace: config.workspace ?? import.meta.env.PUBLIC_WFST_WORKSPACE,
       namespace: config.namespace ?? "urn:data-dna:govdata",
       credentials: {
         username: config.credentials?.username || RO_USERNAME,
@@ -393,7 +365,7 @@ export class WFSAuthClient {
   }): WFSAuthClient {
     return new WFSAuthClient({
       endpoint: config.endpoint,
-      workspace: config.workspace || "Verwaltungsdaten",
+      workspace: config.workspace,
       namespace: config.namespace || "urn:data-dna:govdata",
       credentials: {
         username: config.username || "",

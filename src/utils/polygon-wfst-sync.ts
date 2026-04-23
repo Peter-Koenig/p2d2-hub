@@ -38,7 +38,7 @@ export async function syncKommunePolygons(
   // Fallback to process.env if wfstConfig not provided
   const effectiveConfig = wfstConfig || {
     endpoint: process.env.WFST_ENDPOINT || "",
-    workspace: process.env.WFST_WORKSPACE || "Verwaltungsdaten",
+    workspace: process.env.WFST_WORKSPACE,
     namespace: process.env.WFST_NAMESPACE || "urn:data-dna:govdata",
     username: process.env.WFST_USERNAME || "",
     password: process.env.WFST_PASSWORD || "",
@@ -378,20 +378,17 @@ async function persistViaWFST(
 
   // DEBUG: Environment-Variablen prüfen
   if (process.env.APP_DEBUG) {
+    // TODO Issue #[env]: polygon-wfst-sync nutzt process.env.WFST_* (server-only).
+    // env-Templates müssen WFST_ENDPOINT und WFST_WORKSPACE ohne PUBLIC_-Präfix führen.
+    // Bis dahin: OSM-Polygon-Sync schlägt fehl, wenn Templates unverändert kopiert werden.
+    // Betrieb (Karte, WFS-T-Formulare) ist davon nicht betroffen.
     console.debug("DEBUG WFST Config:");
     console.debug(
       "  ENDPOINT:",
-      import.meta.env.WFST_ENDPOINT ??
-        "DEFAULT: https://wfs.data-dna.eu/geoserver/ows",
+      process.env.WFST_ENDPOINT ?? "MISSING – siehe TODO oben",
     );
-    console.debug(
-      "  USERNAME:",
-      import.meta.env.WFST_USERNAME ? "SET" : "MISSING",
-    );
-    console.debug(
-      "  PASSWORD:",
-      import.meta.env.WFST_PASSWORD ? "SET" : "MISSING",
-    );
+    console.debug("  USERNAME:", process.env.WFST_USERNAME ? "SET" : "MISSING");
+    console.debug("  PASSWORD:", process.env.WFST_PASSWORD ? "SET" : "MISSING");
   }
 
   const transactionXml = buildWFSTInsertXML(records);
