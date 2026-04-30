@@ -25,9 +25,6 @@ pnpm-debug.log*
 .env_dev
 .env_prod
 .env.development
-<<<<<<< HEAD
-.env.*
-=======
 .env.local
 .env.develop
 .env.de1
@@ -35,7 +32,6 @@ pnpm-debug.log*
 .env.fv
 .env.*
 
->>>>>>> feature/team-de1/wfs-zugriff-anonym
 
 # macOS-specific files
 .DS_Store

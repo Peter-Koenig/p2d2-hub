@@ -38,8 +38,6 @@ function detectEnvironment(): EnvironmentInfo {
   };
 }
 
-<<<<<<< HEAD
-=======
 /**
  * Checks if running in local development environment
  * Local dev requires proxy to bypass CORS restrictions
@@ -61,7 +59,6 @@ function isLocalDevEnvironment(): boolean {
  * WFS Client
  * Handles WFS requests with support for both anonymous (read) and authenticated (WFS-T) access.
  */
->>>>>>> feature/team-de1/wfs-zugriff-anonym
 export class WFSAuthClient {
   private config: WFSConfig;
 
@@ -70,28 +67,6 @@ export class WFSAuthClient {
     const envInfo = detectEnvironment();
     const isDev = envInfo.isDev;
 
-<<<<<<< HEAD
-    // TODO: Issue https://gitlab.opencode.de/OC000028072444/p2d2/-/issues/1 - Remove hardcoded credentials once anonymous GeoServer access is configured
-    // These are temporary read-only credentials that will be replaced with anonymous access
-    const RO_USERNAME = "p2d2_wfs_user"; // Echter Read-Only User
-    const RO_PASSWORD = "eif1nu4ao9Loh0oobeev"; // Echtes Read-Only Passwort
-
-    // Log warning in development about temporary credentials
-    if (isDev && RO_USERNAME === "p2d2_wfs_user") {
-      console.warn(
-        "[WFS-Auth] Using temporary hardcoded read-only credentials. See Issue https://gitlab.opencode.de/OC000028072444/p2d2/-/issues/1 for roadmap to anonymous access.",
-      );
-    }
-
-    this.config = {
-      endpoint: config.endpoint ?? import.meta.env.PUBLIC_WFST_ENDPOINT,
-      workspace: config.workspace ?? import.meta.env.PUBLIC_WFST_WORKSPACE,
-      namespace: config.namespace ?? "urn:data-dna:govdata",
-      credentials: {
-        username: config.credentials?.username || RO_USERNAME,
-        password: config.credentials?.password || RO_PASSWORD,
-      },
-=======
     // Environment-spezifische Defaults
     // Weiche für dev/prod ohne import.meta.env Abhängigkeit
 
@@ -111,7 +86,6 @@ export class WFSAuthClient {
             password: config.credentials.password,
           }
         : undefined,
->>>>>>> feature/team-de1/wfs-zugriff-anonym
     };
 
     if (isDev) {
