@@ -80,24 +80,29 @@ export class WFSAuthClient {
     //   PUBLIC_WFST_ENDPOINT=https://wfs.data-dna.eu/geoserver/ows
     //   PUBLIC_WFST_WORKSPACE=Verwaltungsdaten_de1
     //   => https://wfs.data-dna.eu/geoserver/Verwaltungsdaten_de1/ows
+    //
+    // Fail-fast: If PUBLIC_* env vars are missing or malformed, throw error.
+    // No silent fallback to global workspace/endpoint to prevent misconfiguration.
     let readConfig: WFSConfig;
     try {
-      const derivedConfig = createWFSReadConfig({
+      readConfig = createWFSReadConfig({
         endpoint: config.endpoint,
         workspace: config.workspace,
         namespace: config.namespace,
       });
-      readConfig = derivedConfig;
     } catch (error) {
-      // Fallback for environments without PUBLIC_* vars (e.g., tests)
-      // Use global endpoint as fallback
-      const fallbackEndpoint =
-        config.endpoint ?? "https://wfs.data-dna.eu/geoserver/ows";
-      readConfig = {
-        endpoint: fallbackEndpoint,
-        workspace: config.workspace ?? "Verwaltungsdaten",
-        namespace: config.namespace ?? "urn:data-dna:govdata",
-      };
+      // Only allow fallback in test environment
+      if (process.env.NODE_ENV === "test") {
+        // Explicit test-only fallback - not for production/staging use
+        readConfig = {
+          endpoint: config.endpoint ?? "https://wfs.data-dna.eu/geoserver/ows",
+          workspace: config.workspace ?? "Verwaltungsdaten",
+          namespace: config.namespace ?? "urn:data-dna:govdata",
+        };
+      } else {
+        // In all real environments: fail fast to expose config issues
+        throw error;
+      }
     }
 
     // Read access is anonymous - no default credentials
@@ -275,36 +280,8 @@ export class WFSAuthClient {
       if (!response.ok) {
         const text = await response.text();
 
-        // Spezielle Behandlung für Namespace-Fehler
-        if (text.includes("Unknown namespace")) {
-          console.warn(
-            `[WFS] Namespace error detected, trying alternative endpoint...`,
-          );
-
-          // Fallback: Globaler Endpoint - replace workspace-specific path with global
-          const fallbackDirectUrl = this.config.endpoint.replace(
-            `/geoserver/${this.config.workspace}/ows`,
-            "/geoserver/ows",
-          );
-
-          if (fallbackDirectUrl !== this.config.endpoint) {
-            // Rebuild URL with global endpoint
-            const urlObj = new URL(url);
-            const typeName = urlObj.searchParams.get("typeName") || "";
-            const globalUrl = `${fallbackDirectUrl}?${urlObj.searchParams.toString()}`;
-
-            // Apply proxy resolution to fallback URL as well
-            const fallbackRequestUrl = this.resolveReadURL(globalUrl);
-            console.log(
-              `[WFS] Retrying with global endpoint: ${fallbackRequestUrl}`,
-            );
-            return await fetch(fallbackRequestUrl, {
-              ...options,
-              headers: new Headers(options.headers),
-            });
-          }
-        }
-
+        // No automatic fallback to global endpoint on namespace errors.
+        // Fail fast to expose workspace/namespace misconfiguration.
         throw new Error(
           `WFS request failed: ${response.status} ${response.statusText}\n${text}`,
         );
