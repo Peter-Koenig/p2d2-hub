@@ -3,8 +3,16 @@
  * Handles WFS requests with support for both anonymous (read) and authenticated (WFS-T) access.
  *
  * Read access: Anonymous (no credentials required)
+ * - Primary read endpoint is derived from PUBLIC_WFST_ENDPOINT + PUBLIC_WFST_WORKSPACE
+ *   Example: https://wfs.data-dna.eu/geoserver/ows + Verwaltungsdaten_de1
+ *   => https://wfs.data-dna.eu/geoserver/Verwaltungsdaten_de1/ows
+ * - Local dev proxy (/api/wfs-proxy) is used only for CORS bypass during development
+ * - Production/Staging use direct anonymous access
+ *
  * Write access (WFS-T): Requires explicit credentials via createWFSTClient()
  */
+
+import { createWFSReadConfig } from "./wfs-read-config";
 
 export interface WFSCredentials {
   username: string;
@@ -42,7 +50,7 @@ function detectEnvironment(): EnvironmentInfo {
  * Checks if running in local development environment
  * Local dev requires proxy to bypass CORS restrictions
  */
-function isLocalDevEnvironment(): boolean {
+export function isLocalDevEnvironment(): boolean {
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
     return host === "localhost" || host === "127.0.0.1";
@@ -67,19 +75,36 @@ export class WFSAuthClient {
     const envInfo = detectEnvironment();
     const isDev = envInfo.isDev;
 
-    // Environment-spezifische Defaults
-    // Weiche für dev/prod ohne import.meta.env Abhängigkeit
-
-    // Für Development: Versuche zuerst globalen Endpoint
-    const defaultEndpoint = isDev
-      ? "https://wfs.data-dna.eu/geoserver/ows" // Development mit CORS-fähigem Endpoint
-      : "https://wfs.data-dna.eu/geoserver/Verwaltungsdaten/ows"; // Production Endpoint
+    // Derive stage-specific read endpoint from environment variables
+    // Uses createWFSReadConfig which derives:
+    //   PUBLIC_WFST_ENDPOINT=https://wfs.data-dna.eu/geoserver/ows
+    //   PUBLIC_WFST_WORKSPACE=Verwaltungsdaten_de1
+    //   => https://wfs.data-dna.eu/geoserver/Verwaltungsdaten_de1/ows
+    let readConfig: WFSConfig;
+    try {
+      const derivedConfig = createWFSReadConfig({
+        endpoint: config.endpoint,
+        workspace: config.workspace,
+        namespace: config.namespace,
+      });
+      readConfig = derivedConfig;
+    } catch (error) {
+      // Fallback for environments without PUBLIC_* vars (e.g., tests)
+      // Use global endpoint as fallback
+      const fallbackEndpoint =
+        config.endpoint ?? "https://wfs.data-dna.eu/geoserver/ows";
+      readConfig = {
+        endpoint: fallbackEndpoint,
+        workspace: config.workspace ?? "Verwaltungsdaten",
+        namespace: config.namespace ?? "urn:data-dna:govdata",
+      };
+    }
 
     // Read access is anonymous - no default credentials
     this.config = {
-      endpoint: config.endpoint || defaultEndpoint,
-      workspace: config.workspace || "Verwaltungsdaten",
-      namespace: config.namespace || "urn:data-dna:govdata",
+      endpoint: readConfig.endpoint,
+      workspace: readConfig.workspace,
+      namespace: readConfig.namespace,
       credentials: config.credentials
         ? {
             username: config.credentials.username,
@@ -132,6 +157,10 @@ export class WFSAuthClient {
 
   /**
    * Builds a WFS GetFeature URL for anonymous read access
+   *
+   * Handles both workspace-specific endpoints (standard) and global endpoints (fallback):
+   * - Workspace-specific: typeName is used as-is (e.g., "p2d2_containers")
+   * - Global endpoint: typeName is prefixed with workspace (e.g., "Verwaltungsdaten:p2d2_containers")
    */
   buildWFSURL(typeName: string, params: Record<string, string> = {}): string {
     // Erlaubte Parameter definieren
@@ -147,9 +176,11 @@ export class WFSAuthClient {
     );
 
     // Erkennung ob workspace-spezifischer oder globaler Endpoint
+    // Standardfall: endpoint already contains workspace (e.g., /geoserver/Verwaltungsdaten_de1/ows)
+    // Fallback: global endpoint (e.g., /geoserver/ows) requires workspace prefix in typeName
     const useGlobalEndpoint =
-      this.config.endpoint.includes("/ows") &&
-      !this.config.endpoint.includes(`/${this.config.workspace}/ows`);
+      this.config.endpoint.includes("/geoserver/ows") &&
+      !this.config.endpoint.includes(`/geoserver/${this.config.workspace}/ows`);
 
     const baseParams = {
       service: "WFS",
@@ -250,15 +281,20 @@ export class WFSAuthClient {
             `[WFS] Namespace error detected, trying alternative endpoint...`,
           );
 
-          // Fallback: Globaler Endpoint
-          const fallbackDirectUrl = url.replace(
-            "/geoserver/Verwaltungsdaten/ows",
+          // Fallback: Globaler Endpoint - replace workspace-specific path with global
+          const fallbackDirectUrl = this.config.endpoint.replace(
+            `/geoserver/${this.config.workspace}/ows`,
             "/geoserver/ows",
           );
 
-          if (fallbackDirectUrl !== url) {
+          if (fallbackDirectUrl !== this.config.endpoint) {
+            // Rebuild URL with global endpoint
+            const urlObj = new URL(url);
+            const typeName = urlObj.searchParams.get("typeName") || "";
+            const globalUrl = `${fallbackDirectUrl}?${urlObj.searchParams.toString()}`;
+
             // Apply proxy resolution to fallback URL as well
-            const fallbackRequestUrl = this.resolveReadURL(fallbackDirectUrl);
+            const fallbackRequestUrl = this.resolveReadURL(globalUrl);
             console.log(
               `[WFS] Retrying with global endpoint: ${fallbackRequestUrl}`,
             );
