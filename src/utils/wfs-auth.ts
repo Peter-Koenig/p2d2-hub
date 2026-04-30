@@ -6,8 +6,8 @@
  * - Primary read endpoint is derived from PUBLIC_WFST_ENDPOINT + PUBLIC_WFST_WORKSPACE
  *   Example: https://wfs.data-dna.eu/geoserver/ows + Verwaltungsdaten_de1
  *   => https://wfs.data-dna.eu/geoserver/Verwaltungsdaten_de1/ows
- * - Local dev proxy (/api/wfs-proxy) is used only for CORS bypass during development
- * - Production/Staging use direct anonymous access
+ * - All browser requests use /api/wfs-proxy to avoid origin-specific 403 errors
+ * - Local dev and Staging/Prod both route through the proxy
  *
  * Write access (WFS-T): Requires explicit credentials via createWFSTClient()
  */
@@ -211,21 +211,20 @@ export class WFSAuthClient {
   }
 
   /**
-   * Resolves the final read URL based on environment
-   * - Local dev: uses proxy to bypass CORS
-   * - Production: direct anonymous access
+   * Resolves the final read URL based on environment.
+   *
+   * - Local dev: uses /api/wfs-proxy to bypass CORS.
+   * - Staging/Prod: also uses /api/wfs-proxy so that the browser only talks to
+   *   the frontend origin, and WFS access runs server-side against wfs.data-dna.eu.
+   *
+   * This avoids origin-specific 403 responses from the WFS backend.
    */
   private resolveReadURL(url: string): string {
-    if (isLocalDevEnvironment()) {
-      const proxyUrl = `/api/wfs-proxy?url=${encodeURIComponent(url)}`;
-      console.log(
-        `[WFS] Dev mode: Using local proxy for read access`,
-        proxyUrl,
-      );
-      return proxyUrl;
-    }
-    console.log(`[WFS] Using direct anonymous WFS access`, url);
-    return url;
+    // All environments (dev, staging, prod) use the WFS proxy
+    // This ensures the browser only communicates with the frontend origin
+    const proxyUrl = `/api/wfs-proxy?url=${encodeURIComponent(url)}`;
+    console.log(`[WFS] Using WFS proxy for read access`, proxyUrl);
+    return proxyUrl;
   }
 
   /**
@@ -265,11 +264,11 @@ export class WFSAuthClient {
 
   /**
    * Fetches data from WFS endpoint (anonymous for read operations)
-   * Uses proxy in local dev to bypass CORS, direct access in production
+   * Uses /api/wfs-proxy in all environments (dev, staging, prod)
    */
   async fetchWFS(url: string, options: RequestInit = {}): Promise<Response> {
     try {
-      // Resolve URL: proxy for local dev, direct for production
+      // Resolve URL: always uses proxy (dev + staging/prod)
       const requestUrl = this.resolveReadURL(url);
 
       const response = await fetch(requestUrl, {
