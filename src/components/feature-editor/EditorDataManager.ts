@@ -68,11 +68,11 @@ export class EditorDataManager {
     const cqlFilter = `osm_admin_level=8 AND wp_name='${this.state.wpName}' AND container_type='${this.state.containerType}' AND name='${this.state.name}'`;
 
     // 'propertyName' wird entfernt, da 'alt_name' nicht mehr benötigt wird
-    const wfsUrl = this.wfsClient.buildAuthorizedWFSURL("p2d2_containers", {
+    const wfsUrl = this.wfsClient.buildWFSURL("p2d2_containers", {
       CQL_FILTER: cqlFilter,
     });
 
-    const response = await this.wfsClient.fetchWithAuth(wfsUrl);
+    const response = await this.wfsClient.fetchWFS(wfsUrl);
     if (!response.ok) {
       throw new Error(
         `WFS-Anfrage für Parent-Feature fehlgeschlagen: ${response.statusText}`,
@@ -107,11 +107,11 @@ export class EditorDataManager {
     const namePattern = `${prefix}-%`;
     const cqlFilter = `osm_admin_level=10 AND wp_name='${this.state.wpName}' AND container_type='${this.state.containerType}' AND name LIKE '${namePattern}'`;
 
-    const wfsUrl = this.wfsClient.buildAuthorizedWFSURL("p2d2_containers", {
+    const wfsUrl = this.wfsClient.buildWFSURL("p2d2_containers", {
       CQL_FILTER: cqlFilter,
     });
 
-    const response = await this.wfsClient.fetchWithAuth(wfsUrl);
+    const response = await this.wfsClient.fetchWFS(wfsUrl);
     if (!response.ok) {
       throw new Error(
         `WFS-Anfrage für Child-Features fehlgeschlagen: ${response.statusText}`,
@@ -168,14 +168,14 @@ export class EditorDataManager {
     const currentProjection = this.state.projection;
     const wgs84Extent = transformExtent(extent, currentProjection, "EPSG:4326");
 
-    const wfsUrl = this.wfsClient.buildAuthorizedWFSURL("p2d2_graeber", {
+    const wfsUrl = this.wfsClient.buildWFSURL("p2d2_graeber", {
       bbox: `${wgs84Extent.join(",")},EPSG:4326`,
     });
 
     console.log(`[DataManager] Lade Gräber für BBOX: ${wgs84Extent.join(",")}`);
 
     try {
-      const response = await this.wfsClient.fetchWithAuth(wfsUrl);
+      const response = await this.wfsClient.fetchWFS(wfsUrl);
       if (!response.ok) {
         throw new Error(
           `WFS-Anfrage für Gräber (BBOX) fehlgeschlagen: ${response.statusText}`,

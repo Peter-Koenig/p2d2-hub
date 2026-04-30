@@ -1,5 +1,11 @@
 import type { APIRoute } from "astro";
 
+/**
+ * WFS Proxy for CORS bypass
+ *
+ * Read access (GET): Anonymous - no credentials required
+ * Write access (POST with body): Requires explicit credentials in request
+ */
 export const POST: APIRoute = async ({ request }) => {
   try {
     const {
@@ -29,16 +35,20 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    // WFS Credentials (aus Environment oder hardcoded als Fallback)
-    const WFS_USERNAME = "p2d2_wfs_user";
-    const WFS_PASSWORD = "eif1nu4ao9Loh0oobeev";
-
     // Prepare headers
     const headers = new Headers();
-    headers.set(
-      "Authorization",
-      `Basic ${btoa(`${WFS_USERNAME}:${WFS_PASSWORD}`)}`,
-    );
+
+    // Only add Authorization header if credentials are explicitly provided in request
+    // For anonymous read access, no Authorization header is set
+    const authUsername = params.username as string | undefined;
+    const authPassword = params.password as string | undefined;
+
+    if (authUsername && authPassword) {
+      headers.set(
+        "Authorization",
+        `Basic ${btoa(`${authUsername}:${authPassword}`)}`,
+      );
+    }
 
     if (requestBody) {
       headers.set("Content-Type", "application/xml");
@@ -48,7 +58,6 @@ export const POST: APIRoute = async ({ request }) => {
     const requestOptions: RequestInit = {
       method: method.toUpperCase(),
       headers,
-      credentials: "include" as RequestCredentials,
     };
 
     // Add body for POST requests
@@ -130,12 +139,72 @@ export const GET: APIRoute = async ({ url }) => {
     );
   }
 
-  // Forward to POST handler with GET method
-  return POST({
-    request: new Request(url, {
-      method: "POST",
+  // Validate that URL is from trusted WFS endpoints
+  const allowedHosts = ["wfs.data-dna.eu", "ows.data-dna.eu"];
+  try {
+    const urlHost = new URL(targetUrl).hostname;
+    if (!allowedHosts.includes(urlHost)) {
+      console.error("[WFS-PROXY-DEBUG] Untrusted endpoint:", urlHost);
+      return new Response(JSON.stringify({ error: "Untrusted WFS endpoint" }), {
+        status: 403,
+      });
+    }
+  } catch (error) {
+    console.error("[WFS-PROXY-DEBUG] Invalid target URL:", targetUrl);
+    return new Response(JSON.stringify({ error: "Invalid target URL" }), {
+      status: 400,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: targetUrl, method: "GET" }),
-    }),
-  } as any);
+    });
+  }
+
+  // Direct anonymous GET request - no credentials required for read access
+  try {
+    const response = await fetch(targetUrl, {
+      method: "GET",
+      headers: new Headers(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("WFS Proxy GET Error:", response.status, errorText);
+
+      return new Response(
+        JSON.stringify({
+          error: `WFS request failed: ${response.status} ${response.statusText}`,
+          details: errorText,
+        }),
+        {
+          status: response.status,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Return successful response
+    const responseText = await response.text();
+
+    return new Response(responseText, {
+      status: response.status,
+      headers: {
+        "Content-Type":
+          response.headers.get("Content-Type") || "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      },
+    });
+  } catch (error) {
+    console.error("WFS Proxy GET Internal Error:", error);
+
+    return new Response(
+      JSON.stringify({
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : String(error),
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
 };

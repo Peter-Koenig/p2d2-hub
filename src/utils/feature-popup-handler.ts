@@ -247,14 +247,14 @@ export class FeaturePopupHandler {
     console.log("[FeaturePopup] CQL Filter:", cqlFilter);
 
     try {
-      // Use the corrected buildAuthorizedWFSURL method that now handles encoding correctly
-      const url = wfsAuthClient.buildAuthorizedWFSURL("p2d2_containers", {
+      // Build WFS URL for anonymous read access
+      const url = wfsAuthClient.buildWFSURL("p2d2_containers", {
         CQL_FILTER: cqlFilter,
       });
 
-      console.log("[FeaturePopup] Using corrected WFS URL:", url);
+      console.log("[FeaturePopup] Using WFS URL:", url);
 
-      const response = await wfsAuthClient.fetchWithAuth(url);
+      const response = await wfsAuthClient.fetchWFS(url);
 
       if (!response.ok) {
         throw new Error(`WFS request failed: ${response.status}`);

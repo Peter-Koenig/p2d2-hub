@@ -1,6 +1,8 @@
 /**
  * WFS Layer Manager - Complete corrected version
  * State-of-the-Art WFS Layer Management für p2d2
+ *
+ * Uses anonymous WFS read access (no credentials required).
  */
 
 import { Map as OLMap } from "ol";
@@ -141,15 +143,15 @@ export class WFSLayerManager {
       const cqlFilter = `wp_name='${kommune.wpName}' AND container_type='${containerType}' AND osm_admin_level=${osmAdminLevel}`;
       console.log("[WFS] CQL Filter:", cqlFilter);
 
-      // Build authorized WFS URL
-      const wfsUrl = wfsAuthClient.buildAuthorizedWFSURL("p2d2_containers", {
+      // Build WFS URL (anonymous read access)
+      const wfsUrl = wfsAuthClient.buildWFSURL("p2d2_containers", {
         CQL_FILTER: cqlFilter,
         srsName: "EPSG:4326",
       });
       console.log("[WFS] Request URL:", wfsUrl);
 
-      // Fetch GeoJSON data
-      const response = await wfsAuthClient.fetchWithAuth(wfsUrl);
+      // Fetch GeoJSON data (anonymous)
+      const response = await wfsAuthClient.fetchWFS(wfsUrl);
       if (!response.ok) {
         throw new Error(
           `WFS request failed: ${response.status} ${response.statusText}`,
@@ -359,7 +361,7 @@ export class WFSLayerManager {
     // Create properly encoded CQL filter - use backend schema field names (wp_name, container_type, osm_admin_level)
     const cqlFilter = `wp_name='${config.wpName}' AND container_type='${config.containerType}' AND osm_admin_level=${config.osmAdminLevel}`;
 
-    const wfsUrl = wfsAuthClient.buildAuthorizedWFSURL("p2d2_containers", {
+    const wfsUrl = wfsAuthClient.buildWFSURL("p2d2_containers", {
       CQL_FILTER: cqlFilter,
     });
 

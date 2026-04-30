@@ -19,7 +19,7 @@ Dieses Dokument beschreibt die Implementierung des Feature-Popup-Systems für Fr
 
 ### 3. Grabflur-Daten Integration
 - **Asynchroner WFS-Request**: Laden verwandter Grabflur-Polygone
-- **Korrekte CQL-Filter-Syntax**: Doppeltes URL-Encoding für WFS-Proxy
+- **Korrekte CQL-Filter-Syntax**: URL-Encoding für CQL_FILTER-Parameter
 - **Error-Handling**: Graceful Degradation bei Netzwerkfehlern
 - **Daten-Caching**: Effiziente Wiederverwendung geladener Daten
 
@@ -86,8 +86,9 @@ AND name like 'Rheinkassel-%'
 
 ### WFS-URL Struktur
 ```
-/api/wfs-proxy?url=[encoded_wfs_url]
+https://wfs.data-dna.eu/geoserver/ows?service=WFS&version=2.0.0&request=GetFeature&typeName=Verwaltungsdaten:p2d2_containers&CQL_FILTER=...
 ```
+**Hinweis**: Der Read-Zugriff erfolgt anonym ohne Authentifizierung.
 
 ## Feature-Attribute Schema
 
@@ -168,7 +169,7 @@ console.log('Popup handler initialized:', window.popupHandler.isHandlerInitializ
 
 ## Bekannte Einschränkungen
 
-1. **WFS-Proxy Abhängigkeit**: Funktioniert nur mit aktiviertem Proxy
+1. **Anonymer Read-Zugriff**: Erfordert anonyme Leseberechtigung im GeoServer
 2. **Cemetery-spezifisch**: Nur für `container_type: 'cemetery'` Features
 3. **OpenLayers 7+**: Kompatibel mit aktueller OpenLayers Version
 

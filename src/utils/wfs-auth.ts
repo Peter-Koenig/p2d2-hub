@@ -1,6 +1,9 @@
 /**
- * WFS Authorization Client
- * Handles authentication and authorized requests to WFS endpoints
+ * WFS Client
+ * Handles WFS requests with support for both anonymous (read) and authenticated (WFS-T) access.
+ *
+ * Read access: Anonymous (no credentials required)
+ * Write access (WFS-T): Requires explicit credentials via createWFSTClient()
  */
 
 export interface WFSCredentials {
@@ -12,7 +15,7 @@ export interface WFSConfig {
   endpoint: string;
   workspace: string;
   namespace: string;
-  credentials: WFSCredentials;
+  credentials?: WFSCredentials;
 }
 
 // Environment detection type
@@ -36,22 +39,26 @@ function detectEnvironment(): EnvironmentInfo {
 }
 
 /**
- * WFS Authorization Client
- * Handles authentication and authorized requests to WFS endpoints
+ * Checks if running in local development environment
+ * Local dev requires proxy to bypass CORS restrictions
  */
+function isLocalDevEnvironment(): boolean {
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    return host === "localhost" || host === "127.0.0.1";
+  }
 
-export interface WFSCredentials {
-  username: string;
-  password: string;
+  if (typeof process !== "undefined") {
+    return process.env.NODE_ENV === "development";
+  }
+
+  return false;
 }
 
-export interface WFSConfig {
-  endpoint: string;
-  workspace: string;
-  namespace: string;
-  credentials: WFSCredentials;
-}
-
+/**
+ * WFS Client
+ * Handles WFS requests with support for both anonymous (read) and authenticated (WFS-T) access.
+ */
 export class WFSAuthClient {
   private config: WFSConfig;
 
@@ -68,66 +75,36 @@ export class WFSAuthClient {
       ? "https://wfs.data-dna.eu/geoserver/ows" // Development mit CORS-fähigem Endpoint
       : "https://wfs.data-dna.eu/geoserver/Verwaltungsdaten/ows"; // Production Endpoint
 
-    // TODO: Issue https://gitlab.opencode.de/OC000028072444/p2d2/-/issues/1 - Remove hardcoded credentials once anonymous GeoServer access is configured
-    // These are temporary read-only credentials that will be replaced with anonymous access
-    const RO_USERNAME = "p2d2_wfs_user"; // Echter Read-Only User
-    const RO_PASSWORD = "eif1nu4ao9Loh0oobeev"; // Echtes Read-Only Passwort
-
-    // Log warning in development about temporary credentials
-    if (isDev && RO_USERNAME === "p2d2_wfs_user") {
-      console.warn(
-        "[WFS-Auth] Using temporary hardcoded read-only credentials. See Issue https://gitlab.opencode.de/OC000028072444/p2d2/-/issues/1 for roadmap to anonymous access.",
-      );
-    }
-
+    // Read access is anonymous - no default credentials
     this.config = {
       endpoint: config.endpoint || defaultEndpoint,
       workspace: config.workspace || "Verwaltungsdaten",
       namespace: config.namespace || "urn:data-dna:govdata",
-      credentials: {
-        username: config.credentials?.username || RO_USERNAME,
-        password: config.credentials?.password || RO_PASSWORD,
-      },
+      credentials: config.credentials
+        ? {
+            username: config.credentials.username,
+            password: config.credentials.password,
+          }
+        : undefined,
     };
 
     if (isDev) {
-      console.log("[WFS-Auth] Configuration loaded:", {
+      console.log("[WFS] Configuration loaded:", {
         endpoint: this.config.endpoint,
         workspace: this.config.workspace,
         namespace: this.config.namespace,
-        hasUsername: !!this.config.credentials.username,
-        hasPassword: !!this.config.credentials.password,
+        hasCredentials: !!(
+          this.config.credentials?.username && this.config.credentials?.password
+        ),
+        timestamp: new Date().toISOString(),
       });
     }
 
     // Validierung der kritischen Konfiguration
     if (!this.config.endpoint) {
-      throw new Error("[WFS-Auth] Endpoint configuration missing");
-    }
-
-    // Enhanced logging for debugging
-    if (isDev) {
-      console.log("[WFS-Auth] Configuration loaded:", {
-        endpoint: this.config.endpoint,
-        workspace: this.config.workspace,
-        hasCredentials: !!(
-          this.config.credentials.username && this.config.credentials.password
-        ),
-        usingProxy: true,
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Warnung wenn Credentials fehlen
-    if (
-      !this.config.credentials.username ||
-      !this.config.credentials.password
-    ) {
-      console.warn("[WFS-Auth] Missing credentials - requests may fail");
+      throw new Error("[WFS] Endpoint configuration missing");
     }
   }
-
-  // ... Rest der Methoden bleibt unverändert ...
 
   /**
    * Validates if the configured workspace exists in GeoServer
@@ -154,12 +131,9 @@ export class WFSAuthClient {
   }
 
   /**
-   * Builds a WFS GetFeature URL with authorization parameters
+   * Builds a WFS GetFeature URL for anonymous read access
    */
-  buildAuthorizedWFSURL(
-    typeName: string,
-    params: Record<string, string> = {},
-  ): string {
+  buildWFSURL(typeName: string, params: Record<string, string> = {}): string {
     // Erlaubte Parameter definieren
     const allowedParams = [
       "bbox",
@@ -179,12 +153,12 @@ export class WFSAuthClient {
 
     const baseParams = {
       service: "WFS",
-      version: "2.0.0", // Upgrade auf WFS 2.0.0 für bessere Namespace-Behandlung
+      version: "2.0.0",
       request: "GetFeature",
       typeName: useGlobalEndpoint
         ? `${this.config.workspace}:${typeName}`
-        : typeName, // Bei workspace-spezifischem Endpoint ohne Prefix
-      outputFormat: "application/json", // Oder "text/xml" falls JSON nicht funktioniert
+        : typeName,
+      outputFormat: "application/json",
       srsName: "EPSG:4326",
       ...safeParams,
     };
@@ -196,26 +170,38 @@ export class WFSAuthClient {
 
     const wfsUrl = `${this.config.endpoint}?${queryString}`;
 
-    // Proxy-URL für CORS-Umgehung verwenden
-    const encodedWfsUrl = encodeURIComponent(wfsUrl);
-    const proxyUrl = `/api/wfs-proxy?url=${encodedWfsUrl}`;
-
-    console.log(`[WFS-Auth] Built Proxy URL: ${proxyUrl}`);
-    return proxyUrl;
+    console.log(`[WFS] Built URL: ${wfsUrl}`);
+    return wfsUrl;
   }
 
   /**
-   * Builds HTTP headers with authentication
+   * Resolves the final read URL based on environment
+   * - Local dev: uses proxy to bypass CORS
+   * - Production: direct anonymous access
+   */
+  private resolveReadURL(url: string): string {
+    if (isLocalDevEnvironment()) {
+      const proxyUrl = `/api/wfs-proxy?url=${encodeURIComponent(url)}`;
+      console.log(
+        `[WFS] Dev mode: Using local proxy for read access`,
+        proxyUrl,
+      );
+      return proxyUrl;
+    }
+    console.log(`[WFS] Using direct anonymous WFS access`, url);
+    return url;
+  }
+
+  /**
+   * Builds HTTP headers with authentication (only for WFS-T write operations)
    */
   private buildHeaders(existingHeaders?: HeadersInit): Headers {
     const headers = new Headers(existingHeaders);
 
     // Add Basic Auth only if valid credentials are provided
     if (
-      this.config.credentials.username?.trim() &&
-      this.config.credentials.password?.trim() &&
-      this.config.credentials.username !== "" &&
-      this.config.credentials.password !== ""
+      this.config.credentials?.username?.trim() &&
+      this.config.credentials?.password?.trim()
     ) {
       const authString = btoa(
         `${this.config.credentials.username}:${this.config.credentials.password}`,
@@ -235,54 +221,50 @@ export class WFSAuthClient {
     crs: string = "EPSG:4326",
   ): string {
     const [minx, miny, maxx, maxy] = bbox;
-    return this.buildAuthorizedWFSURL(typeName, {
+    return this.buildWFSURL(typeName, {
       bbox: `${minx},${miny},${maxx},${maxy},${crs}`,
       srsName: crs,
     });
   }
 
   /**
-   * Fetches data from WFS endpoint with authentication
+   * Fetches data from WFS endpoint (anonymous for read operations)
+   * Uses proxy in local dev to bypass CORS, direct access in production
    */
-  async fetchWithAuth(
-    url: string,
-    options: RequestInit = {},
-  ): Promise<Response> {
+  async fetchWFS(url: string, options: RequestInit = {}): Promise<Response> {
     try {
-      // Für Proxy-Requests keine zusätzlichen Headers benötigt
-      const isProxyRequest = url.startsWith("/api/wfs-proxy");
+      // Resolve URL: proxy for local dev, direct for production
+      const requestUrl = this.resolveReadURL(url);
 
-      const response = await fetch(url, {
+      const response = await fetch(requestUrl, {
         ...options,
-        headers: isProxyRequest
-          ? new Headers(options.headers)
-          : this.buildHeaders(options.headers),
-        credentials: "include" as RequestCredentials,
+        headers: new Headers(options.headers),
       });
 
       if (!response.ok) {
         const text = await response.text();
 
-        // Spezielle Behandlung für Namespace-Fehler (nur bei direkten WFS-Requests)
-        if (!isProxyRequest && text.includes("Unknown namespace")) {
+        // Spezielle Behandlung für Namespace-Fehler
+        if (text.includes("Unknown namespace")) {
           console.warn(
-            `[WFS-Auth] Namespace error detected, trying alternative endpoint...`,
+            `[WFS] Namespace error detected, trying alternative endpoint...`,
           );
 
           // Fallback: Globaler Endpoint
-          const fallbackUrl = url.replace(
+          const fallbackDirectUrl = url.replace(
             "/geoserver/Verwaltungsdaten/ows",
             "/geoserver/ows",
           );
 
-          if (fallbackUrl !== url) {
+          if (fallbackDirectUrl !== url) {
+            // Apply proxy resolution to fallback URL as well
+            const fallbackRequestUrl = this.resolveReadURL(fallbackDirectUrl);
             console.log(
-              `[WFS-Auth] Retrying with global endpoint: ${fallbackUrl}`,
+              `[WFS] Retrying with global endpoint: ${fallbackRequestUrl}`,
             );
-            return await fetch(fallbackUrl, {
+            return await fetch(fallbackRequestUrl, {
               ...options,
-              headers: this.buildHeaders(options.headers),
-              credentials: "include" as RequestCredentials,
+              headers: new Headers(options.headers),
             });
           }
         }
@@ -294,25 +276,25 @@ export class WFSAuthClient {
 
       return response;
     } catch (error) {
-      console.error("[WFS-Auth] Request failed:", error);
+      console.error("[WFS] Request failed:", error);
       throw error;
     }
   }
 
   /**
-   * Fetches GeoJSON features from WFS
+   * Fetches GeoJSON features from WFS (anonymous read)
    */
   async getFeatures(
     typeName: string,
     params: Record<string, string> = {},
   ): Promise<any> {
-    const url = this.buildAuthorizedWFSURL(typeName, params);
-    const response = await this.fetchWithAuth(url);
+    const url = this.buildWFSURL(typeName, params);
+    const response = await this.fetchWFS(url);
     return response.json();
   }
 
   /**
-   * Fetches features within a bounding box
+   * Fetches features within a bounding box (anonymous read)
    */
   async getFeaturesInBBox(
     typeName: string,
@@ -320,19 +302,23 @@ export class WFSAuthClient {
     crs: string = "EPSG:4326",
   ): Promise<any> {
     const url = this.buildBBoxWFSURL(typeName, bbox, crs);
-    const response = await this.fetchWithAuth(url);
+    const response = await this.fetchWFS(url);
     return response.json();
   }
 
   /**
-   * Executes a WFS-T transaction
+   * Executes a WFS-T transaction (requires credentials)
    */
   async executeWFSTransaction(transactionXml: string): Promise<Response> {
     const headers = new Headers({
       "Content-Type": "application/xml",
     });
 
-    if (this.config.credentials.username && this.config.credentials.password) {
+    // Add Basic Auth for WFS-T write operations
+    if (
+      this.config.credentials?.username &&
+      this.config.credentials?.password
+    ) {
       const authString = btoa(
         `${this.config.credentials.username}:${this.config.credentials.password}`,
       );
@@ -343,7 +329,6 @@ export class WFSAuthClient {
       method: "POST",
       headers,
       body: transactionXml,
-      credentials: "include" as RequestCredentials,
     });
 
     if (!response.ok) {
@@ -356,14 +341,16 @@ export class WFSAuthClient {
   }
 
   /**
-   * Checks if WFS endpoint is accessible
+   * Checks if WFS endpoint is accessible (anonymous read test)
+   * Uses GET with maxFeatures=1 instead of HEAD for better proxy compatibility
    */
   async testConnection(): Promise<boolean> {
     try {
-      const testUrl = this.buildAuthorizedWFSURL("p2d2_containers", {
+      const testUrl = this.buildWFSURL("p2d2_containers", {
         maxFeatures: "1",
       });
-      const response = await this.fetchWithAuth(testUrl, { method: "HEAD" });
+      // Use GET instead of HEAD for better proxy/GeoServer compatibility
+      const response = await this.fetchWFS(testUrl);
       return response.ok;
     } catch (error) {
       console.warn("WFS connection test failed:", error);
@@ -400,5 +387,5 @@ export class WFSAuthClient {
   }
 }
 
-// Export singleton instance - sollte explizit mit Konfiguration erstellt werden
+// Export singleton instance for anonymous read access
 export const wfsAuthClient = new WFSAuthClient();
