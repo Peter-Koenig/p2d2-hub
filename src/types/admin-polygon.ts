@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
+// SPDX-License-Identifier: EUPL-1.2
 // TypeScript interfaces for Admin Polygon Sync functionality
 export type { GeoJSON } from "geojson";
 

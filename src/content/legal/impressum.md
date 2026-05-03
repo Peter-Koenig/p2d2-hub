@@ -18,7 +18,7 @@ E-Mail: p2d2-info@nospam.scanea.de
 Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.
 
 **Urheberrecht:**
-Alle auf dieser Website veröffentlichten Inhalte stehen – sofern nicht anders angegeben – unter der GNU General Public License Version 3 (GPLv3).
+Alle auf dieser Website veröffentlichten Inhalte stehen – sofern nicht anders angegeben – unter der GNU European Union Public Licence v1.2 (EUPL-1.2).
 
 **Kontakt:**
 Fragen, Hinweise oder rechtliche Anliegen bitte an:

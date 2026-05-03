@@ -4,16 +4,16 @@ url: /legal/lizenzen
 ---
 # Lizenz
 
-Dieses Projekt steht unter der [GNU General Public License Version 3 (GPLv3)](https://www.gnu.org/licenses/gpl-3.0.de.html).
+Dieses Projekt steht unter der [GNU European Union Public Licence v1.2 (EUPL-1.2)](https://eupl.eu/1.2/en/).
 
 **Kurzfassung:**
 - Die Software darf frei genutzt, verändert und weiterverbreitet werden.
-- Änderungen und Weiterentwicklungen müssen ebenfalls unter der GPLv3 veröffentlicht werden.
+- Änderungen und Weiterentwicklungen müssen ebenfalls unter der EUPL-1.2 veröffentlicht werden.
 - Es gibt keine Garantie; die Nutzung erfolgt auf eigene Gefahr.
 
 **Lizenztext:**
 Den vollständigen Lizenztext findest du unter:
-https://www.gnu.org/licenses/gpl-3.0.de.html
+https://eupl.eu/1.2/en/
 
 **Copyright (C) 2025**
 Peter König und die Mitwirkenden des Projekts p2d2

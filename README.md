@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu> -->
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
 # p2d2: Public-Public Data-DNA
 
 > [English version below](#english-version) | [Deutsche Version](#deutsche-version)
@@ -24,7 +26,7 @@ Beide sollen gleichwertig, transparent und souverän miteinander interagieren. D
 - Verwaltungsdaten synchronisieren mit offenen Daten
 - Interaktive Karten mit OpenLayers + GeoServer/WMS
 - TailwindCSS + Astro für schnelle, moderne Weboberfläche
-- Strikte Open Source-Orientierung (GPLv3) – Offen, transparent, erweiterbar
+- Strikte Open Source-Orientierung (EUPL-1.2) – Offen, transparent, erweiterbar
 - Fokus auf Community-Beiträge: Mitmachen statt nur Zuschauen
 
 ***
@@ -139,7 +141,7 @@ Siehe `CONTRIBUTING.md`.
 
 ### Lizenz
 
-Dieses Projekt steht unter der **General Public License Version 3 (GPLv3)** – siehe `LICENSE`.
+Dieses Projekt steht unter der **European Union Public Licence v1.2 (EUPL-1.2)** – siehe `LICENSE`.
 
 ---
 
@@ -181,7 +183,7 @@ Both should interact equally, transparently, and sovereignly. This promotes part
 - Synchronization of administrative data with open data
 - Interactive maps using OpenLayers + GeoServer/WMS
 - TailwindCSS + Astro for fast, modern web interfaces
-- Strict open source orientation (GPLv3) – Open, transparent, extensible
+- Strict open source orientation (EUPL-1.2) – Open, transparent, extensible
 - Focus on community contributions: Participate instead of just watching
 
 ---
@@ -285,7 +287,7 @@ See `CONTRIBUTING.md`.
 
 ### License
 
-This project is licensed under the **General Public License Version 3 (GPLv3)** – see `LICENSE`.
+This project is licensed under the **European Union Public Licence v1.2 (EUPL-1.2)** – see `LICENSE`.
 
 ***
 

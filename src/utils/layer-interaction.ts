@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
+// SPDX-License-Identifier: EUPL-1.2
 /**
  * Layer Interaction Manager
  * Handles long-press opacity adjustment for WMS layers

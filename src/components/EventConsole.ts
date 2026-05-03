@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
+// SPDX-License-Identifier: EUPL-1.2
 /**
  * Event Console for debugging P2D2 events
  * Shows live event logs in a visual overlay
