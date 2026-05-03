@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
+// SPDX-License-Identifier: EUPL-1.2
 /**
  * WFS Client
  * Handles WFS requests with support for both anonymous (read) and authenticated (WFS-T) access.

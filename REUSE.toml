@@ -1,0 +1,36 @@
+version = 1
+
+[[annotations]]
+path = ["**.json", "tsconfig.json", "package.json"]
+SPDX-FileCopyrightText = "2024-2026 Peter König <peter.koenig@data-dna.eu>"
+SPDX-License-Identifier = "EUPL-1.2"
+
+[[annotations]]
+path = ["public/**"]
+SPDX-FileCopyrightText = "2024-2026 Peter König <peter.koenig@data-dna.eu>"
+SPDX-License-Identifier = "EUPL-1.2"
+
+[[annotations]]
+path = ["src/content/**"]
+SPDX-FileCopyrightText = "2024-2026 Peter König <peter.koenig@data-dna.eu>"
+SPDX-License-Identifier = "EUPL-1.2"
+
+[[annotations]]
+path = ["env-templates/**", "**.env.template"]
+SPDX-FileCopyrightText = "2024-2026 Peter König <peter.koenig@data-dna.eu>"
+SPDX-License-Identifier = "EUPL-1.2"
+
+[[annotations]]
+path = ["LICENSES/EUPL-1.2.txt"]
+SPDX-FileCopyrightText = "European Union 2007, 2016"
+SPDX-License-Identifier = "EUPL-1.2"
+
+[[annotations]]
+path = ["src/components/icons/*.svg", "p2d2_logo.svg"]
+SPDX-FileCopyrightText = "2024-2026 Peter König <peter.koenig@data-dna.eu>"
+SPDX-License-Identifier = "EUPL-1.2"
+
+[[annotations]]
+path = [".opencode/screenshots/**"]
+SPDX-FileCopyrightText = "2024-2026 Peter König <peter.koenig@data-dna.eu>"
+SPDX-License-Identifier = "EUPL-1.2"

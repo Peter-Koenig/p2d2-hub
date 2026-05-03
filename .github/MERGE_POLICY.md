@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu> -->
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
 # Merge- und Branch-Policy für p2d2
 : Hinweis: Nach Vorgabe KI-generiert, detaillierter Review und Implementierung aussetehend (25.8.2025)
 

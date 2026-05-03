@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
+// SPDX-License-Identifier: EUPL-1.2
 // Manual Sync CLI Script - Command line interface for admin polygon synchronization
 
 // Set NODE_ENV to development for proper credential selection

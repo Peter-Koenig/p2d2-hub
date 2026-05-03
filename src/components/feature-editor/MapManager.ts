@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
+// SPDX-License-Identifier: EUPL-1.2
 import { Map as OLMap, View } from "ol";
 import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";

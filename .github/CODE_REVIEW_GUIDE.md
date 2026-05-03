@@ -1,3 +1,5 @@
+<!-- SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu> -->
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
 # Leitfaden für Code-Reviews
 
 Dieser Leitfaden beschreibt Standards und Best Practices für Code-Reviews im p2d2-Projekt. Er soll helfen, Qualität zu sichern, Wissen zu teilen und konsistente Prozesse zu etablieren.

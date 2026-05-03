@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
+// SPDX-License-Identifier: EUPL-1.2
 import proj4 from "proj4";
 import type { Map } from "ol";
 import { register } from "ol/proj/proj4";
