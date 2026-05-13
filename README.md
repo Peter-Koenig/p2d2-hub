@@ -4,8 +4,6 @@
 
 > [English version below](#english-version) | [Deutsche Version](#deutsche-version)
 
-***
-
 <a name="deutsche-version"></a>
 ## Deutsche Version
 
