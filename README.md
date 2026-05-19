@@ -16,8 +16,6 @@ Das Projekt **p2d2 (Public-Public Data-DNA)** verfolgt das Ziel, die offenen Dat
 
 Beide sollen gleichwertig, transparent und souverän miteinander interagieren. Dies fördert Teilhabe, Vertrauen, Innovation und Kooperation in der digitalen Infrastruktur von Städten und Kommunen.
 
-***
-
 ### Features
 
 - Integration von OpenStreetMap als öffentliche Datenbasis
