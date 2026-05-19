@@ -170,7 +170,7 @@ export class EditorDataManager {
     const currentProjection = this.state.projection;
     const wgs84Extent = transformExtent(extent, currentProjection, "EPSG:4326");
 
-    const wfsUrl = this.wfsClient.buildWFSURL("p2d2_graeber", {
+    const wfsUrl = this.wfsClient.buildWFSURL("graeber", {
       bbox: `${wgs84Extent.join(",")},EPSG:4326`,
     });
 
