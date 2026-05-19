@@ -250,7 +250,7 @@ export class FeaturePopupHandler {
 
     try {
       // Build WFS URL for anonymous read access
-      const url = wfsAuthClient.buildWFSURL("p2d2_containers", {
+      const url = wfsAuthClient.buildWFSURL("geo-containers", {
         CQL_FILTER: cqlFilter,
       });
 

@@ -146,7 +146,7 @@ export class WFSLayerManager {
       console.log("[WFS] CQL Filter:", cqlFilter);
 
       // Build WFS URL (anonymous read access)
-      const wfsUrl = wfsAuthClient.buildWFSURL("p2d2_containers", {
+      const wfsUrl = wfsAuthClient.buildWFSURL("geo-containers", {
         CQL_FILTER: cqlFilter,
         srsName: "EPSG:4326",
       });
@@ -363,7 +363,7 @@ export class WFSLayerManager {
     // Create properly encoded CQL filter - use backend schema field names (wp_name, container_type, osm_admin_level)
     const cqlFilter = `wp_name='${config.wpName}' AND container_type='${config.containerType}' AND osm_admin_level=${config.osmAdminLevel}`;
 
-    const wfsUrl = wfsAuthClient.buildWFSURL("p2d2_containers", {
+    const wfsUrl = wfsAuthClient.buildWFSURL("geo-containers", {
       CQL_FILTER: cqlFilter,
     });
 

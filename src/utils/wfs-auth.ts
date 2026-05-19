@@ -166,8 +166,8 @@ export class WFSAuthClient {
    * Builds a WFS GetFeature URL for anonymous read access
    *
    * Handles both workspace-specific endpoints (standard) and global endpoints (fallback):
-   * - Workspace-specific: typeName is used as-is (e.g., "p2d2_containers")
-   * - Global endpoint: typeName is prefixed with workspace (e.g., "Verwaltungsdaten:p2d2_containers")
+   * - Workspace-specific: typeName is used as-is (e.g., "geo-containers")
+   * - Global endpoint: typeName is prefixed with workspace (e.g., "Verwaltungsdaten:geo-containers")
    */
   buildWFSURL(typeName: string, params: Record<string, string> = {}): string {
     // Erlaubte Parameter definieren
@@ -360,7 +360,7 @@ export class WFSAuthClient {
    */
   async testConnection(): Promise<boolean> {
     try {
-      const testUrl = this.buildWFSURL("p2d2_containers", {
+      const testUrl = this.buildWFSURL("geo-containers", {
         maxFeatures: "1",
       });
       // Use GET instead of HEAD for better proxy/GeoServer compatibility

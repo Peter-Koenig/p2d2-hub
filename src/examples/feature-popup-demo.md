@@ -88,7 +88,7 @@ AND name like 'Rheinkassel-%'
 
 ### WFS-URL Struktur
 ```
-https://wfs.data-dna.eu/geoserver/ows?service=WFS&version=2.0.0&request=GetFeature&typeName=Verwaltungsdaten:p2d2_containers&CQL_FILTER=...
+https://wfs.data-dna.eu/geoserver/ows?service=WFS&version=2.0.0&request=GetFeature&typeName=Verwaltungsdaten:geo-containers&CQL_FILTER=...
 ```
 **Hinweis**: Der Read-Zugriff erfolgt anonym ohne Authentifizierung.
 

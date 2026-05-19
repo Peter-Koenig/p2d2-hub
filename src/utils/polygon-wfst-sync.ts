@@ -438,7 +438,7 @@ function buildWFSTInsertXML(records: PolygonRecord[]): string {
       const posList = coords.map((coord: any) => coord.join(" ")).join(" ");
 
       return `
-      <p2d2:p2d2_containers>
+      <p2d2:geo-containers>
         <p2d2:category>${escapeXml(record.category)}</p2d2:category>
         <p2d2:osm_id>${escapeXml(record.osm_id)}</p2d2:osm_id>
         <p2d2:name>${escapeXml(record.name)}</p2d2:name>
@@ -459,7 +459,7 @@ function buildWFSTInsertXML(records: PolygonRecord[]): string {
             </gml:exterior>
           </gml:Polygon>
         </p2d2:geometry>
-      </p2d2:p2d2_containers>`;
+      </p2d2:geo-containers>`;
     })
     .join("");
 
