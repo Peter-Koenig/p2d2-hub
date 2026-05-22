@@ -36,7 +36,7 @@ export const GET: APIRoute = async ({ request, redirect }) => {
     "[AUTH-CALLBACK] redirectUri:",
     `${getOrigin()}/api/auth/callback`,
   );
-  console.log("[AUTH-CALLBACK] request.url:", request.url);
+  console.log("[AUTH-CALLBACK] redirectUri-1:", redirectUri);
 
   const scope = [
     "openid",
