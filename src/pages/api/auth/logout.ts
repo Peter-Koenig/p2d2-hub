@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
 import type { APIRoute } from "astro";
+import { getOrigin } from "../../../lib/auth/origin-helper";
 import { getSession, clearSession } from "../../../lib/auth/session";
 import { ZITADEL_ISSUER, ZITADEL_CLIENT_ID } from "astro:env/server";
 

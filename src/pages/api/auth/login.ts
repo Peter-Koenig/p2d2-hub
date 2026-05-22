@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 import type { APIRoute } from "astro";
 import { getOidcConfig } from "../../../lib/auth/oidc-client";
+import { getOrigin } from "../../../lib/auth/origin-helper";
 import { setCookie } from "../../../lib/auth/session";
 import { buildAuthorizationUrl } from "openid-client";
 import { ZITADEL_PROJECT_ID } from "astro:env/server";
@@ -28,7 +29,8 @@ export const GET: APIRoute = async ({ request, redirect }) => {
   const url = new URL(request.url);
   const returnTo = url.searchParams.get("returnTo") ?? "/";
 
-  const redirectUri = url.origin + "/api/auth/callback";
+  const origin = getOrigin();
+  const redirectUri = `${origin}/api/auth/callback`;
 
   const scope = [
     "openid",
