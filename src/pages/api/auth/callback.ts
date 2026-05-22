@@ -51,7 +51,7 @@ export const GET: APIRoute = async ({ request, redirect }) => {
 
     const redirectUri = `${getOrigin()}/api/auth/callback`;
 
-    console.log("[AUTH-CALLBACK] request.url-2:", request.url);
+    console.log("[AUTH-CALLBACK] redirectUri-2:", redirectUri);
 
     // Exchange code + code_verifier for tokens
     const tokenResponse = await authorizationCodeGrant(config, request, {
