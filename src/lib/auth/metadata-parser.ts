@@ -66,16 +66,27 @@ const KNOWN_MEMBERSHIP_FIELDS = ["type", "key", "wp_name", "role"] as const;
 /**
  * Dekodiert einen Base64(Url)-String fehlertolerant.
  * Gibt null bei ungültigen Eingaben oder Übergröße zurück.
+ *
+ * Wandelt den atob()-Output (Latin-1) bytegenau in ein Uint8Array um
+ * und dekodiert es anschließend als UTF-8. Dadurch werden Umlaute
+ * und andere UTF-8-Mehrbyte-Zeichen korrekt dargestellt.
  */
 function safeBase64Decode(encoded: string): string | null {
   try {
     if (encoded.length > MAX_RAW_BASE64_LENGTH) return null;
+
     // Base64url → Base64
     const base64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
-    const decoded = atob(base64);
-    // Null-Bytes als Abbruchkriterium (sicherheitshalber)
-    if (decoded.includes("\0")) return null;
-    return decoded;
+
+    // atob() liefert einen Latin-1-String (jedes Zeichen = 1 Byte)
+    const binaryString = atob(base64);
+
+    // Null-Bytes als Abbruchkriterium – Prüfung auf Roh-Byte-Ebene
+    if (binaryString.includes("\0")) return null;
+
+    // Bytegenau in Uint8Array umwandeln und als UTF-8 dekodieren
+    const bytes = Uint8Array.from(binaryString, (c) => c.charCodeAt(0));
+    return new TextDecoder("utf-8", { fatal: false }).decode(bytes);
   } catch {
     return null;
   }
@@ -100,7 +111,10 @@ function safeJsonParse(input: string): unknown {
  * - Überschreitet maxLength → null
  * - Gibt null bei zu langen oder leeren Werten zurück
  */
-function safeString(input: unknown, maxLength: number = MAX_STRING_LENGTH): string | null {
+function safeString(
+  input: unknown,
+  maxLength: number = MAX_STRING_LENGTH,
+): string | null {
   if (typeof input !== "string") return null;
   const trimmed = input.trim();
   if (trimmed.length === 0) return null;
@@ -189,9 +203,15 @@ function parsePreferences(raw: unknown): UserPreferences {
   const obj = raw as Record<string, unknown>;
 
   return {
-    defaultTopicKey: parsePreferenceValue(obj["p2d2.preferences.default_topic_key"]),
-    homeKommuneSlug: parsePreferenceValue(obj["p2d2.preferences.home_kommune_slug"]),
-    homeRegionKey: parsePreferenceValue(obj["p2d2.preferences.home_region_key"]),
+    defaultTopicKey: parsePreferenceValue(
+      obj["p2d2.preferences.default_topic_key"],
+    ),
+    homeKommuneSlug: parsePreferenceValue(
+      obj["p2d2.preferences.home_kommune_slug"],
+    ),
+    homeRegionKey: parsePreferenceValue(
+      obj["p2d2.preferences.home_region_key"],
+    ),
   };
 }
 

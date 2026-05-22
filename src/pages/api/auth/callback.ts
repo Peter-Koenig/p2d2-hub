@@ -89,7 +89,16 @@ export const GET: APIRoute = async ({ request, redirect }) => {
       userId: idTokenClaims.sub!,
       userName:
         (idTokenClaims["preferred_username"] as string) ??
+        (idTokenClaims["email"] as string) ??
+        idTokenClaims.sub!,
+      displayName:
         (idTokenClaims["name"] as string) ??
+        ((idTokenClaims["given_name"] as string) &&
+        (idTokenClaims["family_name"] as string)
+          ? `${idTokenClaims["given_name"]} ${idTokenClaims["family_name"]}`
+          : undefined) ??
+        (idTokenClaims["preferred_username"] as string) ??
+        (idTokenClaims["email"] as string) ??
         idTokenClaims.sub!,
       email: (idTokenClaims.email as string) ?? "",
       roles,

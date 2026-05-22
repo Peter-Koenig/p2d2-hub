@@ -7,6 +7,7 @@ declare namespace App {
     user: {
       id: string;
       name: string;
+      displayName: string;
       email: string;
       roles: string[];
       isAnonymous: boolean;

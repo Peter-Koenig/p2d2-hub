@@ -17,6 +17,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     locals.user = {
       id: session.userId,
       name: session.userName,
+      displayName: session.displayName,
       email: session.email,
       roles: session.roles,
       isAnonymous: false,
@@ -41,6 +42,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     locals.user = {
       id: `anon:${hashHex}`,
       name: "Anonymer Beitragender",
+      displayName: "Anonymer Beitragender",
       email: "",
       roles: ["editor"],
       isAnonymous: true,

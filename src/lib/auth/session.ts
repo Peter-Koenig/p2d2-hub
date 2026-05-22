@@ -7,6 +7,7 @@ import type { Membership, UserPreferences } from "./metadata-parser";
 export interface SessionData {
   userId: string;
   userName: string;
+  displayName: string;
   email: string;
   roles: string[];
   memberships?: Membership[];
@@ -172,12 +173,8 @@ export async function applySessionCookie(
   // im nächsten Schritt gegen das 4096-Byte-Limit abzusichern.
   console.log("[COOKIE-SIZE] session JSON length:", plaintext.length);
   console.log(
-    "[COOKIE-SIZE] memberships count:",
-    data.memberships?.length ?? 0,
-  );
-  console.log(
-    "[COOKIE-SIZE] preferences present:",
-    data.preferences ? "yes" : "no",
+    "[COOKIE-SIZE] displayName, memberships:",
+    `name=${data.displayName ? "yes" : "no"}, mem=${data.memberships?.length ?? 0}, pref=${data.preferences ? "yes" : "no"}`,
   );
 
   const cookieValue = await encrypt(plaintext);
@@ -287,7 +284,9 @@ export function getUserSession(locals: App.Locals): UserSession {
     isAuthenticated: true,
     sub: locals.user.id,
     userName: locals.user.name,
-    displayName: locals.user.name,
+    displayName:
+      ((locals.user as Record<string, unknown>).displayName as string) ??
+      locals.user.name,
     email: locals.user.email,
     roles,
     memberships: (locals.user as Record<string, unknown>).memberships as
