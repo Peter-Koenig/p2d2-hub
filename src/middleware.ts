@@ -14,44 +14,30 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const session = await getSession(request);
 
-  if (session) {
-    const now = Math.floor(Date.now() / 1000);
-    if (session.expiresAt < now - 30) {
-      if (session.refreshToken) {
-        try {
-          const config = await getOidcConfig();
-          const tokenResponse = await refreshTokenGrant(
-            config,
-            session.refreshToken,
-          );
-          const newExpiresAt = now + (tokenResponse.expires_in ?? 3600);
-          (context as any)._sessionRefresh = {
-            userId: session.userId,
-            userName: session.userName,
-            email: session.email,
-            roles: session.roles,
-            accessToken: tokenResponse.access_token,
-            refreshToken: tokenResponse.refresh_token ?? session.refreshToken,
-            expiresAt: newExpiresAt,
-          };
-        } catch {
-          (context as any)._clearSession = true;
-        }
-      } else {
-        (context as any)._clearSession = true;
-      }
-    }
+  // TEMPORARY DEBUG — SESSION-DIAGNOSE
+  console.log(
+    "[TEMPORARY DEBUG] Session gelesen:",
+    session !== null ? "ja" : "nein",
+  );
 
-    if (!(context as any)._clearSession) {
-      locals.user = {
-        id: session.userId,
-        name: session.userName,
-        email: session.email,
-        roles: session.roles,
-        isAnonymous: false,
-      };
-      locals.isAuthenticated = true;
-    }
+  if (session) {
+    // Session existiert – kein Refresh nötig (Tokens aus Session entfernt)
+    locals.user = {
+      id: session.userId,
+      name: session.userName,
+      email: session.email,
+      roles: session.roles,
+      isAnonymous: false,
+    };
+    locals.isAuthenticated = true;
+
+    // TEMPORARY DEBUG — SESSION-DIAGNOSE
+    console.log(
+      "[TEMPORARY DEBUG] Session userId:",
+      session.userId,
+      "Rollenanzahl:",
+      session.roles.length,
+    );
   }
 
   if (!locals.user) {

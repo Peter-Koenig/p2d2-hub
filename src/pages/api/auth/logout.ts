@@ -13,10 +13,8 @@ export const GET: APIRoute = async ({ request, redirect }) => {
 
   endSessionUrl.searchParams.set("post_logout_redirect_uri", origin);
 
-  // If we have an id_token, pass it as hint
-  if (session) {
-    endSessionUrl.searchParams.set("id_token_hint", session.idToken);
-  }
+  // Note: id_token_hint wird nicht mehr gesendet, da idToken aus der Session entfernt wurde
+  // (Cookie-Größen-Limit: 4096 Bytes)
 
   let response = redirect(endSessionUrl.toString(), 302);
 

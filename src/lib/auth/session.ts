@@ -8,9 +8,6 @@ export interface SessionData {
   userName: string;
   email: string;
   roles: string[];
-  accessToken: string;
-  refreshToken: string;
-  idToken: string;
   expiresAt: number;
 }
 
@@ -103,11 +100,13 @@ async function decrypt(encoded: string): Promise<string | null> {
 }
 
 // Cookie helpers
+const _isSecure = import.meta.env.PROD;
+
 function buildCookieHeader(value: string, maxAge: number): string {
   return [
     `${COOKIE_NAME}=${value}`,
     "HttpOnly",
-    "Secure",
+    ...(_isSecure ? ["Secure"] : []),
     "SameSite=Lax",
     "Path=/",
     `Max-Age=${maxAge}`,
@@ -118,7 +117,7 @@ function clearCookieHeader(): string {
   return [
     `${COOKIE_NAME}=`,
     "HttpOnly",
-    "Secure",
+    ...(_isSecure ? ["Secure"] : []),
     "SameSite=Lax",
     "Path=/",
     "Max-Age=0",
@@ -163,10 +162,34 @@ export async function applySessionCookie(
   data: SessionData,
 ): Promise<Response> {
   const plaintext = JSON.stringify(data);
+
+  // TEMPORARY DEBUG — Cookie-Größen-Diagnose
+  console.log("[TEMPORARY DEBUG] session JSON length:", plaintext.length);
+  console.log("[TEMPORARY DEBUG] session field lengths:", {
+    userId: data.userId.length,
+    userName: data.userName.length,
+    email: data.email.length,
+    roles: data.roles.length,
+  });
+
   const cookieValue = await encrypt(plaintext);
+
+  console.log("[TEMPORARY DEBUG] encrypted cookie length:", cookieValue.length);
+
   const maxAge = Math.max(0, data.expiresAt - Math.floor(Date.now() / 1000));
+  const cookieHeader = buildCookieHeader(cookieValue, maxAge);
+
+  console.log(
+    "[TEMPORARY DEBUG] Set-Cookie header length:",
+    cookieHeader.length,
+  );
+  console.log(
+    "[TEMPORARY DEBUG] approx cookie budget remaining:",
+    Math.max(0, 4096 - cookieHeader.length),
+  );
+
   const newHeaders = new Headers(response.headers);
-  newHeaders.set("Set-Cookie", buildCookieHeader(cookieValue, maxAge));
+  newHeaders.set("Set-Cookie", cookieHeader);
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -237,6 +260,12 @@ export function extractRoles(claims: Record<string, unknown>): string[] {
 }
 
 export function getUserSession(locals: App.Locals): UserSession {
+  // TEMPORARY DEBUG — SESSION-DIAGNOSE
+  console.log(
+    "[TEMPORARY DEBUG] getUserSession: locals.isAuthenticated =",
+    locals.isAuthenticated,
+  );
+
   // Kein gültiger Login – anonymen User ignorieren
   if (!locals.isAuthenticated || !locals.user || locals.user.isAnonymous) {
     return { isAuthenticated: false, roles: [] };
@@ -264,6 +293,61 @@ export function getUserSession(locals: App.Locals): UserSession {
     roles,
   };
 }
+
+/*
+ * TEMPORARY DEBUG — ENCRYPT/DECRYPT ROUNDTRIP-TEST
+ *
+ * Prüft, ob encrypt() und decrypt() auch mit Sonderzeichen wie
+ * "_", "-", "+", "/", "=" und langen Base64-Strings sauber funktionieren.
+ *
+ * Wird automatisch beim ersten Import dieses Moduls ausgeführt (genau einmal).
+ */
+let _roundtripTestDone = false;
+async function _runRoundtripTest(): Promise<void> {
+  if (_roundtripTestDone) return;
+  _roundtripTestDone = true;
+
+  const testStrings = [
+    "default_topic_key",
+    "Hans Meier",
+    "hans@data-dna.eu",
+    `{"x":"_/-+="}`,
+    "WwogIHsKICAgICJ0eXBlIjogImtvbW11bmUiLAogICAgImtleSI6ICJib25uIiwKICAgICJ3cF9uYW1lIjogImRlLUJvbm4iLAogICAgInJvbGUiOiAidmVyd2FsdHVuZyIKICB9Cl0=",
+  ];
+
+  for (const test of testStrings) {
+    try {
+      const encrypted = await encrypt(test);
+      const decrypted = await decrypt(encrypted);
+      const encOk = decrypted !== null ? "ja" : "nein";
+      const roundtripOk = decrypted === test ? "ja" : "nein";
+      const preview = test.length > 40 ? test.slice(0, 37) + "..." : test;
+      console.log(
+        "[TEMPORARY DEBUG] Roundtrip-Test",
+        `"${preview}"`,
+        "| encrypt/decrypt erfolgreich:",
+        encOk,
+        "| Roundtrip identisch:",
+        roundtripOk,
+      );
+    } catch (err) {
+      const preview = test.length > 40 ? test.slice(0, 37) + "..." : test;
+      console.log(
+        "[TEMPORARY DEBUG] Roundtrip-Test",
+        `"${preview}"`,
+        "| encrypt/decrypt erfolgreich: nein",
+        "| Roundtrip identisch: nein",
+        "| Fehler:",
+        String(err),
+      );
+    }
+  }
+}
+
+// Ausführung beim ersten Import – Key-Cache wird dabei initialisiert.
+_runRoundtripTest().catch((err) =>
+  console.error("[TEMPORARY DEBUG] Roundtrip-Test fehlgeschlagen:", err),
+);
 
 /*
   VERIFIKATION – temporär in einer .astro-Seite einfügen:

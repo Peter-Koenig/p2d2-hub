@@ -66,6 +66,14 @@ export const GET: APIRoute = async ({ request, redirect }) => {
 
     console.log("[CALLBACK-CLAIMS]", JSON.stringify(idTokenClaims, null, 2));
 
+    // TEMPORARY DEBUG — LOGIN-DIAGNOSE
+    console.log("[TEMPORARY DEBUG] sub:", idTokenClaims.sub);
+    console.log("[TEMPORARY DEBUG] name:", idTokenClaims["name"]);
+    console.log(
+      "[TEMPORARY DEBUG] preferred_username:",
+      idTokenClaims["preferred_username"],
+    );
+
     if (!idTokenClaims) {
       throw new Error("ID-Token-Claims fehlen nach Validierung");
     }
@@ -80,7 +88,10 @@ export const GET: APIRoute = async ({ request, redirect }) => {
       roles = Object.keys(rolesClaim);
     }
 
-    // Build session data
+    // TEMPORARY DEBUG — LOGIN-DIAGNOSE
+    console.log("[TEMPORARY DEBUG] erkannte Rollen:", roles);
+
+    // Build session data (ohne Tokens – Cookie-Größen-Limit)
     const now = Math.floor(Date.now() / 1000);
     const sessionData = {
       userId: idTokenClaims.sub!,
@@ -90,9 +101,6 @@ export const GET: APIRoute = async ({ request, redirect }) => {
         idTokenClaims.sub!,
       email: (idTokenClaims.email as string) ?? "",
       roles,
-      accessToken: tokenResponse.access_token,
-      refreshToken: tokenResponse.refresh_token ?? "",
-      idToken: tokenResponse.id_token ?? "",
       expiresAt: now + (tokenResponse.expires_in ?? 3600),
     };
 
