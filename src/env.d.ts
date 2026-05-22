@@ -12,5 +12,6 @@ declare namespace App {
       isAnonymous: boolean;
     };
     isAuthenticated: boolean;
+    idTokenClaims?: Record<string, unknown>;
   }
 }

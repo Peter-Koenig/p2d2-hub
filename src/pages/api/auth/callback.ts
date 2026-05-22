@@ -83,8 +83,8 @@ export const GET: APIRoute = async ({ request, redirect }) => {
     const sessionData = {
       userId: idTokenClaims.sub!,
       userName:
-        (idTokenClaims.name as string) ??
-        (idTokenClaims.preferred_username as string) ??
+        (idTokenClaims["preferred_username"] as string) ??
+        (idTokenClaims["name"] as string) ??
         idTokenClaims.sub!,
       email: (idTokenClaims.email as string) ?? "",
       roles,

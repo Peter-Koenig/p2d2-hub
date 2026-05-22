@@ -25,6 +25,9 @@ const categoryMap: Record<string, { containerType?: string }> = {};
 for (const kategorie of kategorien) {
     categoryMap[kategorie.slug] = { containerType: kategorie.containerType };
 }
+import { getUserSession } from "../lib/auth/session";
+const _session = getUserSession(Astro.locals);
+console.log('[SESSION-TEST]', JSON.stringify(_session, null, 2));
 ---
 
 <BaseLayout title="P2D2">

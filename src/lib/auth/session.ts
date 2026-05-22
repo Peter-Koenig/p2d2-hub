@@ -14,6 +14,15 @@ export interface SessionData {
   expiresAt: number;
 }
 
+export interface UserSession {
+  isAuthenticated: boolean;
+  sub?: string;
+  userName?: string;
+  displayName?: string;
+  email?: string;
+  roles: string[];
+}
+
 // Constants
 const COOKIE_NAME = "p2d2_session";
 const ALGORITHM = "AES-GCM";
@@ -205,3 +214,77 @@ export function setCookie(
 export function deleteCookie(response: Response, name: string): Response {
   return setCookie(response, name, "", { maxAge: 0 });
 }
+
+// ---------------------------------------------------------------------------
+// Neue Hilfsfunktionen für OIDC-Session-Abfrage
+// ---------------------------------------------------------------------------
+
+// TODO: Admin-Seite erforderlich
+// Die Rollen-Keys ("verwaltung", "editor" etc.) und der Claim-Schlüssel sind
+// derzeit fest verdrahtet. Zukünftig soll eine Admin-Seite das Mapping von
+// Zitadel-Rollen auf Frontend-Berechtigungen konfigurierbar machen.
+// Zitadel-Referenz: Projekt-ID 370485493374155365, Org-ID 359353128044296805
+// Siehe: https://accounts.data-dna.eu/ui/login
+export function extractRoles(claims: Record<string, unknown>): string[] {
+  if (!claims || typeof claims !== "object") return [];
+  const raw = claims["urn:zitadel:iam:org:project:roles"];
+  if (!raw || typeof raw !== "object") return [];
+  try {
+    return Object.keys(raw as Record<string, unknown>);
+  } catch {
+    return [];
+  }
+}
+
+export function getUserSession(locals: App.Locals): UserSession {
+  // Kein gültiger Login – anonymen User ignorieren
+  if (!locals.isAuthenticated || !locals.user || locals.user.isAnonymous) {
+    return { isAuthenticated: false, roles: [] };
+  }
+
+  // extractRoles aufrufen, falls rohe idToken-Claims in locals liegen
+  let roles: string[] = [];
+  const maybeClaims = (locals as unknown as Record<string, unknown>)
+    .idTokenClaims;
+  if (maybeClaims && typeof maybeClaims === "object") {
+    roles = extractRoles(maybeClaims as Record<string, unknown>);
+  }
+
+  // Fallback: von Middleware bereits geparste Rollen
+  if (roles.length === 0 && Array.isArray(locals.user.roles)) {
+    roles = locals.user.roles;
+  }
+
+  return {
+    isAuthenticated: true,
+    sub: locals.user.id,
+    userName: locals.user.name,
+    displayName: locals.user.name,
+    email: locals.user.email,
+    roles,
+  };
+}
+
+/*
+  VERIFIKATION – temporär in einer .astro-Seite einfügen:
+
+  ---
+  import { getUserSession } from '../lib/auth/session';
+  const session = getUserSession(Astro.locals);
+  console.log('[SESSION-TEST]', JSON.stringify(session, null, 2));
+  ---
+
+  Erwartete Ausgabe für eingeloggten User mit Rolle "editor":
+  {
+    "isAuthenticated": true,
+    "sub": "373026613324970597",
+    "userName": "PeterK",
+    "roles": ["editor"]
+  }
+
+  Erwartete Ausgabe ohne Login:
+  {
+    "isAuthenticated": false,
+    "roles": []
+  }
+*/
