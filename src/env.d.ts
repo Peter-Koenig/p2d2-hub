@@ -10,6 +10,8 @@ declare namespace App {
       email: string;
       roles: string[];
       isAnonymous: boolean;
+      memberships?: import("./lib/auth/metadata-parser").Membership[];
+      preferences?: import("./lib/auth/metadata-parser").UserPreferences;
     };
     isAuthenticated: boolean;
     idTokenClaims?: Record<string, unknown>;

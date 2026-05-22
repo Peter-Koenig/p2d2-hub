@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
 import { SESSION_SECRET } from "astro:env/server";
+import type { Membership, UserPreferences } from "./metadata-parser";
 
 // Types
 export interface SessionData {
@@ -8,6 +9,8 @@ export interface SessionData {
   userName: string;
   email: string;
   roles: string[];
+  memberships?: Membership[];
+  preferences?: UserPreferences;
   expiresAt: number;
 }
 
@@ -18,6 +21,8 @@ export interface UserSession {
   displayName?: string;
   email?: string;
   roles: string[];
+  memberships?: Membership[];
+  preferences?: UserPreferences;
 }
 
 // Constants
@@ -166,6 +171,14 @@ export async function applySessionCookie(
   // Cookie-Größenkontrolle – bleibt erhalten, um Session-Erweiterungen
   // im nächsten Schritt gegen das 4096-Byte-Limit abzusichern.
   console.log("[COOKIE-SIZE] session JSON length:", plaintext.length);
+  console.log(
+    "[COOKIE-SIZE] memberships count:",
+    data.memberships?.length ?? 0,
+  );
+  console.log(
+    "[COOKIE-SIZE] preferences present:",
+    data.preferences ? "yes" : "no",
+  );
 
   const cookieValue = await encrypt(plaintext);
 
@@ -277,5 +290,11 @@ export function getUserSession(locals: App.Locals): UserSession {
     displayName: locals.user.name,
     email: locals.user.email,
     roles,
+    memberships: (locals.user as Record<string, unknown>).memberships as
+      | Membership[]
+      | undefined,
+    preferences: (locals.user as Record<string, unknown>).preferences as
+      | UserPreferences
+      | undefined,
   };
 }

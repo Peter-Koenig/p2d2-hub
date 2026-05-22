@@ -4,6 +4,7 @@ import type { APIRoute } from "astro";
 import { authorizationCodeGrant } from "openid-client";
 import { getOidcConfig } from "../../../lib/auth/oidc-client";
 import { applySessionCookie, deleteCookie } from "../../../lib/auth/session";
+import { parseMetadata } from "../../../lib/auth/metadata-parser";
 import { ZITADEL_PROJECT_ID } from "astro:env/server";
 
 export const GET: APIRoute = async ({ request, redirect }) => {
@@ -62,8 +63,6 @@ export const GET: APIRoute = async ({ request, redirect }) => {
       Buffer.from(idToken.split(".")[1], "base64url").toString("utf-8"),
     ) as Record<string, unknown> & { sub: string };
 
-    // ID-Token-Claims validieren (kein Loggen der Claims im Normalbetrieb)
-
     if (!idTokenClaims) {
       throw new Error("ID-Token-Claims fehlen nach Validierung");
     }
@@ -78,6 +77,12 @@ export const GET: APIRoute = async ({ request, redirect }) => {
       roles = Object.keys(rolesClaim);
     }
 
+    // Metadata aus ID-Token-Claims parsen (defensiv, Fehler unterbrechen Login nicht)
+    const metadataRaw = idTokenClaims["urn:zitadel:iam:user:metadata"] as
+      | Record<string, unknown>
+      | undefined;
+    const parsedMetadata = parseMetadata(metadataRaw);
+
     // Build session data (ohne Tokens – Cookie-Größen-Limit)
     const now = Math.floor(Date.now() / 1000);
     const sessionData = {
@@ -88,6 +93,17 @@ export const GET: APIRoute = async ({ request, redirect }) => {
         idTokenClaims.sub!,
       email: (idTokenClaims.email as string) ?? "",
       roles,
+      ...(parsedMetadata.memberships.length > 0
+        ? { memberships: parsedMetadata.memberships }
+        : {}),
+      ...(Object.keys(parsedMetadata.preferences).some(
+        (k) =>
+          parsedMetadata.preferences[
+            k as keyof typeof parsedMetadata.preferences
+          ] !== undefined,
+      )
+        ? { preferences: parsedMetadata.preferences }
+        : {}),
       expiresAt: now + (tokenResponse.expires_in ?? 3600),
     };
 

@@ -20,6 +20,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
       email: session.email,
       roles: session.roles,
       isAnonymous: false,
+      memberships: session.memberships,
+      preferences: session.preferences,
     };
     locals.isAuthenticated = true;
   }
