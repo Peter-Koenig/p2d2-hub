@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 import type { APIRoute } from "astro";
 import { getSession, clearSession } from "../../../lib/auth/session";
-import { ZITADEL_ISSUER } from "astro:env/server";
+import { ZITADEL_ISSUER, ZITADEL_CLIENT_ID } from "astro:env/server";
 
 export const GET: APIRoute = async ({ request, redirect }) => {
   const session = await getSession(request);
@@ -13,8 +13,8 @@ export const GET: APIRoute = async ({ request, redirect }) => {
 
   endSessionUrl.searchParams.set("post_logout_redirect_uri", `${origin}/`);
 
-  // Kein id_token_hint: Das idToken wird nicht in der Browser-Session gespeichert,
-  // um das Cookie-Größenlimit (4096 Bytes) einzuhalten.
+  // client_id ersetzt das nicht mehr verfügbare id_token_hint
+  endSessionUrl.searchParams.set("client_id", ZITADEL_CLIENT_ID);
 
   let response = redirect(endSessionUrl.toString(), 302);
 
