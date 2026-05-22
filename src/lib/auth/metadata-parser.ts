@@ -28,7 +28,7 @@
 export interface Membership {
   type: string;
   key: string;
-  wpName?: string;
+  wp_name?: string;
   role: string;
 }
 
@@ -153,13 +153,20 @@ function parseMemberships(raw: unknown): Membership[] {
     const type = safeString(obj["type"]);
     const key = safeString(obj["key"]);
     const role = safeString(obj["role"]);
-    const wpName = safeString(obj["wp_name"]);
+
+    // wp_name normalisieren: akzeptiere Legacy-Schreibweisen,
+    // priorisiere aber die kanonische Form wp_name
+    const wpName =
+      safeString(obj["wp_name"]) ??
+      safeString(obj["wpName"]) ??
+      safeString(obj["wpname"]) ??
+      safeString(obj["wp_Name"]);
 
     // Minimalstruktur: type + key müssen vorhanden sein
     if (!type || !key) continue;
 
     const membership: Membership = { type, key, role: role ?? "" };
-    if (wpName) membership.wpName = wpName;
+    if (wpName) membership.wp_name = wpName;
 
     result.push(membership);
 

@@ -11,7 +11,7 @@ export const GET: APIRoute = async ({ request, redirect }) => {
   const endSessionUrl = new URL("/oidc/v1/end_session", ZITADEL_ISSUER);
   const origin = new URL(request.url).origin;
 
-  endSessionUrl.searchParams.set("post_logout_redirect_uri", origin);
+  endSessionUrl.searchParams.set("post_logout_redirect_uri", `${origin}/`);
 
   // Kein id_token_hint: Das idToken wird nicht in der Browser-Session gespeichert,
   // um das Cookie-Größenlimit (4096 Bytes) einzuhalten.

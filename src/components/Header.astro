@@ -34,7 +34,7 @@ const userSession = getUserSession(Astro.locals);
 const initials = userSession.isAuthenticated
   ? (userSession.displayName ?? userSession.userName ?? '?')
       .split(' ')
-      .map((w: string) => w?.toUpperCase() ?? '')
+      .map((w: string) => w?.charAt(0)?.toUpperCase() ?? '')
       .slice(0, 2)
       .join('')
   : '';
@@ -156,7 +156,7 @@ const initials = userSession.isAuthenticated
                             <span class="w-6 h-6 rounded-full bg-white text-green-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
                                 {initials}
                             </span>
-                            <span>{userSession.userName}</span>
+                            <span title={userSession.userName}>{userSession.displayName ?? userSession.userName ?? userSession.email ?? 'Benutzer'}</span>
                             <svg class="w-4 h-4 transition-transform duration-200" id="user-dropdown-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                             </svg>
@@ -305,7 +305,7 @@ const initials = userSession.isAuthenticated
                                             <span class="w-6 h-6 rounded-full bg-white text-green-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
                                                 {initials}
                                             </span>
-                                            <span>{userSession.userName}</span>
+                                            <span title={userSession.userName}>{userSession.displayName ?? userSession.userName ?? userSession.email ?? 'Benutzer'}</span>
                                             <svg class="w-4 h-4 ml-auto transition-transform duration-200" id="user-dropdown-arrow-mobile" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                             </svg>
