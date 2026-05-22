@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 import type { APIRoute } from "astro";
 import { authorizationCodeGrant } from "openid-client";
+import { getOrigin } from "../../../lib/auth/origin-helper";
 import { getOidcConfig } from "../../../lib/auth/oidc-client";
 import { applySessionCookie, deleteCookie } from "../../../lib/auth/session";
 import { parseMetadata } from "../../../lib/auth/metadata-parser";
@@ -48,11 +49,16 @@ export const GET: APIRoute = async ({ request, redirect }) => {
   try {
     const config = await getOidcConfig();
 
+    const redirectUri = `${getOrigin()}/api/auth/callback`;
+
     // Exchange code + code_verifier for tokens
     const tokenResponse = await authorizationCodeGrant(config, request, {
       pkceCodeVerifier: pkceData.codeVerifier,
       expectedState: state,
+      redirectUri,
     });
+
+    console.log("[AUTH-CALLBACK] request.url:", request.url);
 
     // Validate ID token
     const idToken = tokenResponse.id_token;
