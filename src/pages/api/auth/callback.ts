@@ -53,6 +53,22 @@ export const GET: APIRoute = async ({ request, redirect }) => {
 
     console.log("[AUTH-CALLBACK] redirectUri-2:", redirectUri);
 
+    console.log("[AUTH-CALLBACK-DEBUG] request.url =", request.url);
+    console.log("[AUTH-CALLBACK-DEBUG] host =", request.headers.get("host"));
+    console.log(
+      "[AUTH-CALLBACK-DEBUG] x-forwarded-host =",
+      request.headers.get("x-forwarded-host"),
+    );
+    console.log(
+      "[AUTH-CALLBACK-DEBUG] x-forwarded-proto =",
+      request.headers.get("x-forwarded-proto"),
+    );
+    console.log(
+      "[AUTH-CALLBACK-DEBUG] x-forwarded-port =",
+      request.headers.get("x-forwarded-port"),
+    );
+    console.log("[AUTH-CALLBACK-DEBUG] redirectUri =", redirectUri);
+
     // Exchange code + code_verifier for tokens
     const tokenResponse = await authorizationCodeGrant(config, request, {
       pkceCodeVerifier: pkceData.codeVerifier,
