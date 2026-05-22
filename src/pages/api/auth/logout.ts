@@ -12,6 +12,8 @@ export const GET: APIRoute = async ({ request, redirect }) => {
   const endSessionUrl = new URL("/oidc/v1/end_session", ZITADEL_ISSUER);
   const origin = new URL(request.url).origin;
 
+  console.log("[AUTH-LOGIN] redirectUri:", `${getOrigin()}/api/auth/callback`);
+
   endSessionUrl.searchParams.set("post_logout_redirect_uri", `${origin}/`);
 
   // client_id ersetzt das nicht mehr verfügbare id_token_hint
