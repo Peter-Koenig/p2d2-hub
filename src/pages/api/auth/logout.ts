@@ -13,8 +13,8 @@ export const GET: APIRoute = async ({ request, redirect }) => {
 
   endSessionUrl.searchParams.set("post_logout_redirect_uri", origin);
 
-  // Note: id_token_hint wird nicht mehr gesendet, da idToken aus der Session entfernt wurde
-  // (Cookie-Größen-Limit: 4096 Bytes)
+  // Kein id_token_hint: Das idToken wird nicht in der Browser-Session gespeichert,
+  // um das Cookie-Größenlimit (4096 Bytes) einzuhalten.
 
   let response = redirect(endSessionUrl.toString(), 302);
 

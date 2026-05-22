@@ -6,19 +6,11 @@ import {
   applySessionCookie,
   clearSession,
 } from "./lib/auth/session";
-import { getOidcConfig } from "./lib/auth/oidc-client";
-import { refreshTokenGrant } from "openid-client";
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { request, locals } = context;
 
   const session = await getSession(request);
-
-  // TEMPORARY DEBUG — SESSION-DIAGNOSE
-  console.log(
-    "[TEMPORARY DEBUG] Session gelesen:",
-    session !== null ? "ja" : "nein",
-  );
 
   if (session) {
     // Session existiert – kein Refresh nötig (Tokens aus Session entfernt)
@@ -30,14 +22,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
       isAnonymous: false,
     };
     locals.isAuthenticated = true;
-
-    // TEMPORARY DEBUG — SESSION-DIAGNOSE
-    console.log(
-      "[TEMPORARY DEBUG] Session userId:",
-      session.userId,
-      "Rollenanzahl:",
-      session.roles.length,
-    );
   }
 
   if (!locals.user) {

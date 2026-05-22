@@ -62,17 +62,7 @@ export const GET: APIRoute = async ({ request, redirect }) => {
       Buffer.from(idToken.split(".")[1], "base64url").toString("utf-8"),
     ) as Record<string, unknown> & { sub: string };
 
-    // Debug – zeigt alle Claims inkl. Zitadel-Rollen:
-
-    console.log("[CALLBACK-CLAIMS]", JSON.stringify(idTokenClaims, null, 2));
-
-    // TEMPORARY DEBUG — LOGIN-DIAGNOSE
-    console.log("[TEMPORARY DEBUG] sub:", idTokenClaims.sub);
-    console.log("[TEMPORARY DEBUG] name:", idTokenClaims["name"]);
-    console.log(
-      "[TEMPORARY DEBUG] preferred_username:",
-      idTokenClaims["preferred_username"],
-    );
+    // ID-Token-Claims validieren (kein Loggen der Claims im Normalbetrieb)
 
     if (!idTokenClaims) {
       throw new Error("ID-Token-Claims fehlen nach Validierung");
@@ -87,9 +77,6 @@ export const GET: APIRoute = async ({ request, redirect }) => {
     if (rolesClaim && typeof rolesClaim === "object") {
       roles = Object.keys(rolesClaim);
     }
-
-    // TEMPORARY DEBUG — LOGIN-DIAGNOSE
-    console.log("[TEMPORARY DEBUG] erkannte Rollen:", roles);
 
     // Build session data (ohne Tokens – Cookie-Größen-Limit)
     const now = Math.floor(Date.now() / 1000);
