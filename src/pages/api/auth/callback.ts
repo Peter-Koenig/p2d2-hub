@@ -58,7 +58,7 @@ export const GET: APIRoute = async ({ request, redirect }) => {
       redirectUri,
     });
 
-    console.log("[AUTH-CALLBACK] request.url:", request.url);
+    console.log("[AUTH-CALLBACK] request.url2:", request.url);
 
     // Validate ID token
     const idToken = tokenResponse.id_token;
