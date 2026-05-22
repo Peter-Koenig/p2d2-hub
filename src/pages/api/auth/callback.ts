@@ -51,30 +51,29 @@ export const GET: APIRoute = async ({ request, redirect }) => {
 
     const redirectUri = `${getOrigin()}/api/auth/callback`;
 
-    console.log("[AUTH-CALLBACK] redirectUri-2:", redirectUri);
+    // Normalisiere die Request-URL für Reverse-Proxy-Setups:
+    // request.url enthält intern localhost, die externe URL muss verwendet werden,
+    // damit openid-client den redirect_uri-Abgleich korrekt durchführen kann.
+    const incomingUrl = new URL(request.url);
+    const externalCallbackUrl = `${redirectUri}${incomingUrl.search}`;
+    const normalizedRequest = new Request(externalCallbackUrl, {
+      method: request.method,
+      headers: request.headers,
+    });
 
-    console.log("[AUTH-CALLBACK-DEBUG] request.url =", request.url);
-    console.log("[AUTH-CALLBACK-DEBUG] host =", request.headers.get("host"));
-    console.log(
-      "[AUTH-CALLBACK-DEBUG] x-forwarded-host =",
-      request.headers.get("x-forwarded-host"),
-    );
-    console.log(
-      "[AUTH-CALLBACK-DEBUG] x-forwarded-proto =",
-      request.headers.get("x-forwarded-proto"),
-    );
-    console.log(
-      "[AUTH-CALLBACK-DEBUG] x-forwarded-port =",
-      request.headers.get("x-forwarded-port"),
-    );
-    console.log("[AUTH-CALLBACK-DEBUG] redirectUri =", redirectUri);
+    console.log("[AUTH-CALLBACK-DEBUG] Original request.url:", request.url);
+    console.log("[AUTH-CALLBACK-DEBUG] Normalized URL:", externalCallbackUrl);
+    console.log("[AUTH-CALLBACK-DEBUG] redirectUri:", redirectUri);
 
     // Exchange code + code_verifier for tokens
-    const tokenResponse = await authorizationCodeGrant(config, request, {
-      pkceCodeVerifier: pkceData.codeVerifier,
-      expectedState: state,
-      redirectUri,
-    });
+    const tokenResponse = await authorizationCodeGrant(
+      config,
+      normalizedRequest,
+      {
+        pkceCodeVerifier: pkceData.codeVerifier,
+        expectedState: state,
+      },
+    );
 
     // Validate ID token
     const idToken = tokenResponse.id_token;
