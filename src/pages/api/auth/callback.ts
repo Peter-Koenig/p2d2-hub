@@ -51,14 +51,14 @@ export const GET: APIRoute = async ({ request, redirect }) => {
 
     const redirectUri = `${getOrigin()}/api/auth/callback`;
 
+    console.log("[AUTH-CALLBACK] request.url-2:", request.url);
+
     // Exchange code + code_verifier for tokens
     const tokenResponse = await authorizationCodeGrant(config, request, {
       pkceCodeVerifier: pkceData.codeVerifier,
       expectedState: state,
       redirectUri,
     });
-
-    console.log("[AUTH-CALLBACK] request.url2:", request.url);
 
     // Validate ID token
     const idToken = tokenResponse.id_token;
