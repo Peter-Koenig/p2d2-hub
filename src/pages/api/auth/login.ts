@@ -35,6 +35,7 @@ export const GET: APIRoute = async ({ request, redirect }) => {
     "profile",
     "email",
     "offline_access",
+    "urn:zitadel:iam:user:metadata",
     `urn:zitadel:iam:org:project:id:${ZITADEL_PROJECT_ID}:aud`,
     "urn:zitadel:iam:org:project:roles",
   ].join(" ");

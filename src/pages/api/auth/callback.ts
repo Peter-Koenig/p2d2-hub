@@ -64,6 +64,8 @@ export const GET: APIRoute = async ({ request, redirect }) => {
 
     // Debug – zeigt alle Claims inkl. Zitadel-Rollen:
 
+    console.log("[CALLBACK-CLAIMS]", JSON.stringify(idTokenClaims, null, 2));
+
     if (!idTokenClaims) {
       throw new Error("ID-Token-Claims fehlen nach Validierung");
     }
