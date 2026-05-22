@@ -14,6 +14,11 @@ export function getOrigin(): string {
     return envOrigin.replace(/\/$/, ''); // Trailing Slash entfernen
   }
   
+
+  console.log("[OIDC-ORIGIN] import.meta.env.DEV =", import.meta.env.DEV);
+  console.log("[OIDC-ORIGIN] import.meta.env.MODE =", import.meta.env.MODE);
+  console.log("[OIDC-ORIGIN] PUBLIC_SITE_URL =", envOrigin);
+
   // Fallback für lokale Entwicklung ohne .env
   if (import.meta.env.DEV) {
     return 'http://localhost:4321';
