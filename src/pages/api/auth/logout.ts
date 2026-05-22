@@ -10,11 +10,23 @@ export const GET: APIRoute = async ({ request, redirect }) => {
 
   // Build end-session URL
   const endSessionUrl = new URL("/oidc/v1/end_session", ZITADEL_ISSUER);
-  const origin = new URL(request.url).origin;
 
-  console.log("[AUTH-LOGIN] redirectUri:", `${getOrigin()}/api/auth/callback`);
+  // Explizite externe Origin aus PUBLIC_SITE_URL, nicht aus request.url
+  // (hinter Reverse-Proxy ist request.url = https://localhost/ – falsch)
+  const origin = getOrigin();
+  const postLogoutRedirectUri = `${origin}/`;
 
-  endSessionUrl.searchParams.set("post_logout_redirect_uri", `${origin}/`);
+  console.log("[AUTH-LOGOUT-DEBUG] request.url:", request.url);
+  console.log("[AUTH-LOGOUT-DEBUG] origin (getOrigin):", origin);
+  console.log(
+    "[AUTH-LOGOUT-DEBUG] post_logout_redirect_uri:",
+    postLogoutRedirectUri,
+  );
+
+  endSessionUrl.searchParams.set(
+    "post_logout_redirect_uri",
+    postLogoutRedirectUri,
+  );
 
   // client_id ersetzt das nicht mehr verfügbare id_token_hint
   endSessionUrl.searchParams.set("client_id", ZITADEL_CLIENT_ID);
