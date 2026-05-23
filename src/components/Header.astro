@@ -2,6 +2,11 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 ---
 import { getUserSession } from '../lib/auth/session';
+const userSession = getUserSession(Astro.locals);
+const canShowVerwaltung =
+  userSession.isAuthenticated &&
+  userSession.roles.includes("verwaltung");
+
 const nav = [
     {
         name: "Über p2d2",
@@ -18,6 +23,9 @@ const nav = [
     { name: "Community", href: "/community", key: "community" },
     { name: "Mitmachen", href: "/mitmachen", key: "mitmachen" },
     { name: "Kontakt", href: "/kontakt", key: "kontakt" },
+    ...(canShowVerwaltung
+      ? [{ name: "Verwaltung", href: "/verwaltung", key: "verwaltung" }]
+      : []),
 ];
 
 const currentPath = Astro.url.pathname;
@@ -30,7 +38,7 @@ function isActive(item: { href?: string; name: string; children?: { name: string
         : currentPath.startsWith(item.href);
 }
 
-const userSession = getUserSession(Astro.locals);
+// userSession wurde bereits weiter oben definiert
 const initials = userSession.isAuthenticated
   ? (userSession.displayName ?? userSession.userName ?? '?')
       .split(' ')

@@ -1,0 +1,50 @@
+<!-- SPDX-FileCopyrightText: 2026-2026 Peter König <peter.koenig@data-dna.eu> -->
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getUserSession } from '../lib/auth/session';
+
+const session = getUserSession(Astro.locals);
+
+if (!session.isAuthenticated || !session.roles.includes("verwaltung")) {
+  return Astro.redirect("/");
+}
+---
+
+<BaseLayout
+  title="Verwaltung | p2d2 - Public-Public Data-DNA"
+  description="Verwaltungsbereich – nur für autorisierte Benutzer"
+>
+  <main class="flex flex-col items-center w-full">
+
+    <!-- Einfache Willkommensseite als Platzhalter -->
+    <section class="w-full max-w-5xl mx-auto px-6 py-12">
+      <div class="text-center mb-12">
+        <h1 class="font-poppins font-bold text-3xl text-gray-900 mb-6">Verwaltung</h1>
+        <p class="text-lg text-gray-700 max-w-3xl mx-auto">
+          Dieser Bereich ist derzeit in Vorbereitung. Hier werden künftig administrative Funktionen
+          zur Verwaltung von Nutzern, Themenbereichen und Kommunen zur Verfügung gestellt.
+        </p>
+      </div>
+
+      <div class="bg-white p-8 rounded-xl border border-gray-200 shadow-lg max-w-2xl mx-auto">
+        <h2 class="font-poppins font-bold text-2xl mb-4 text-gray-900">Status</h2>
+        <ul class="space-y-3 text-gray-700">
+          <li class="flex items-start">
+            <span class="text-green-500 mr-3">✓</span>
+            Authentifizierung mit Zitadel
+          </li>
+          <li class="flex items-start">
+            <span class="text-green-500 mr-3">✓</span>
+            Rollenbasierte Zugriffskontrolle
+          </li>
+          <li class="flex items-start">
+            <span class="text-yellow-500 mr-3">◷</span>
+            Verwaltungsfunktionen (in Entwicklung)
+          </li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+</BaseLayout>
