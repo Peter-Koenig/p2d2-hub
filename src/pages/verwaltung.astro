@@ -1,0 +1,74 @@
+<!-- SPDX-FileCopyrightText: 2026-2026 Peter König <peter.koenig@data-dna.eu> -->
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getUserSession } from '../lib/auth/session';
+
+const session = getUserSession(Astro.locals);
+
+if (!session.isAuthenticated || !session.roles.includes("verwaltung")) {
+  return Astro.redirect("/");
+}
+---
+
+<BaseLayout
+  title="Verwaltung | p2d2 - Public-Public Data-DNA"
+  description="Verwaltungsbereich – nur für autorisierte Benutzer"
+>
+  <main class="flex flex-col items-center w-full">
+
+    <section class="w-full max-w-5xl mx-auto px-6 py-12">
+      <div class="text-center mb-12">
+        <h1 class="font-poppins font-bold text-3xl text-gray-900 mb-6">Verwaltung</h1>
+        <p class="text-lg text-gray-700 max-w-3xl mx-auto">
+          Willkommen im Verwaltungsbereich von p2d2. Hier stehen administrative Funktionen
+          für autorisierte Nutzer mit der Rolle „verwaltung“ zur Verfügung.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+
+        <!-- Status-Kachel -->
+        <div class="bg-white p-8 rounded-xl border border-gray-200 shadow-lg">
+          <h2 class="font-poppins font-bold text-2xl mb-4 text-gray-900">Status</h2>
+          <ul class="space-y-3 text-gray-700">
+            <li class="flex items-start">
+              <span class="text-green-500 mr-3">✓</span>
+              Authentifizierung mit Zitadel
+            </li>
+            <li class="flex items-start">
+              <span class="text-green-500 mr-3">✓</span>
+              Rollenbasierte Zugriffskontrolle
+            </li>
+            <li class="flex items-start">
+              <span class="text-green-500 mr-3">✓</span>
+              Grabflur-Editor
+            </li>
+            <li class="flex items-start">
+              <span class="text-yellow-500 mr-3">◷</span>
+              Weitere Verwaltungsfunktionen sind denkbar und wünschenswert ;-)
+            </li>
+          </ul>
+        </div>
+
+        <!-- Aktionen-Kachel -->
+        <div class="bg-white p-8 rounded-xl border border-gray-200 shadow-lg">
+          <h2 class="font-poppins font-bold text-2xl mb-4 text-gray-900">Aktionen</h2>
+          <ul class="space-y-4 text-gray-700">
+            <li>
+              <button
+                type="button"
+                class="w-full px-4 py-3 rounded-md text-sm font-medium font-poppins text-white bg-green-700 hover:bg-green-800 transition-colors duration-200 text-center cursor-pointer"
+                onclick="var w=window.open('/verwaltung/grabflur-editor','grabflur-editor','width=1200,height=800,resizable=yes,scrollbars=yes,location=yes');if(!w){alert('Popup-Blocker verhindert das Öffnen des Grabflur-Editors. Bitte erlauben Sie Popups f\u00fcr diese Seite.');}return false;"
+              >
+                Grabflur-Editor öffnen
+              </button>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</BaseLayout>

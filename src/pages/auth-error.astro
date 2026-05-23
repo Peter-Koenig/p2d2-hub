@@ -1,0 +1,105 @@
+---
+// SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
+// SPDX-License-Identifier: EUPL-1.2
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const reason = Astro.url.searchParams.get("reason") ?? "";
+
+interface ErrorInfo {
+  title: string;
+  description: string;
+}
+
+const errorMap: Record<string, ErrorInfo> = {
+  invalid_request: {
+    title: "Ungültige Anfrage",
+    description:
+      "Die Anmeldeanfrage war unvollständig oder abgelaufen. Bitte versuche es erneut.",
+  },
+  invalid_pkce_cookie: {
+    title: "Sitzungsfehler",
+    description:
+      "Die Sicherheitsdaten der Anmeldung konnten nicht gelesen werden. Bitte starte den Anmeldevorgang neu.",
+  },
+  state_mismatch: {
+    title: "Sicherheitsfehler",
+    description:
+      "Die Anmeldeanfrage konnte nicht verifiziert werden (State-Mismatch). Bitte versuche es erneut.",
+  },
+  token_error: {
+    title: "Authentifizierung fehlgeschlagen",
+    description:
+      "Die Verbindung zum Identitätsdienst ist fehlgeschlagen. Bitte versuche es später erneut.",
+  },
+};
+
+const fallback: ErrorInfo = {
+  title: "Unbekannter Fehler",
+  description:
+    "Bei der Anmeldung ist ein unerwarteter Fehler aufgetreten.",
+};
+
+const { title, description } = errorMap[reason] ?? fallback;
+---
+
+<BaseLayout title={title}>
+  <div class="flex flex-col items-center justify-center flex-1 px-4 py-16 text-center">
+    <!-- Warnsymbol -->
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 64 64"
+      class="w-20 h-20 mb-6"
+      aria-hidden="true"
+    >
+      <path
+        d="M32 8L4 56h56L32 8z"
+        fill="none"
+        stroke="#000080"
+        stroke-width="4"
+        stroke-linejoin="round"
+      />
+      <line
+        x1="32"
+        y1="28"
+        x2="32"
+        y2="40"
+        stroke="#000080"
+        stroke-width="4"
+        stroke-linecap="round"
+      />
+      <circle cx="32" cy="48" r="2" fill="#000080" />
+    </svg>
+
+    <!-- Titel -->
+    <h1 class="text-2xl font-bold text-gray-900 mb-3">{title}</h1>
+
+    <!-- Beschreibung -->
+    <p class="text-gray-600 max-w-md mb-6 leading-relaxed">{description}</p>
+
+    <!-- Reason-Code für Debugging -->
+    {
+      reason && (
+        <p class="text-sm text-gray-400 mb-8">
+          Fehlercode: <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">{reason}</code>
+        </p>
+      )
+    }
+
+    <!-- Buttons -->
+    <div class="flex flex-col sm:flex-row gap-3">
+      <a
+        href="/api/auth/login"
+        class="inline-flex items-center justify-center px-6 py-2.5 rounded-md text-white font-medium transition-colors"
+        style="background-color: #000080;"
+      >
+        Erneut anmelden
+      </a>
+      <a
+        href="/"
+        class="inline-flex items-center justify-center px-6 py-2.5 rounded-md border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+      >
+        Zur Startseite
+      </a>
+    </div>
+  </div>
+</BaseLayout>

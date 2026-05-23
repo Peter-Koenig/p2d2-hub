@@ -1,0 +1,119 @@
+<!-- SPDX-FileCopyrightText: 2026-2026 Peter König <peter.koenig@data-dna.eu> -->
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getUserSession } from '../lib/auth/session';
+
+const session = getUserSession(Astro.locals);
+
+if (!session.isAuthenticated || !session.roles.includes("osm")) {
+  return Astro.redirect("/");
+}
+---
+
+<BaseLayout
+  title="OSM-Community | p2d2 - Public-Public Data-DNA"
+  description="OSM-Community-Bereich – nur für autorisierte OSM-Mitwirkende"
+>
+  <main class="flex flex-col items-center w-full">
+
+    <section class="w-full max-w-5xl mx-auto px-6 py-12">
+      <div class="text-center mb-12">
+        <h1 class="font-poppins font-bold text-3xl text-gray-900 mb-6">OSM-Community</h1>
+        <p class="text-lg text-gray-700 max-w-3xl mx-auto">
+          Willkommen im OSM-Community-Bereich von p2d2. Hier finden OSM-Mitwirkende
+          Werkzeuge zur Qualitätssicherung, zum Datenabgleich und zur Konfliktbearbeitung
+          zwischen OSM- und Verwaltungsdaten.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+
+        <!-- Status-Kachel -->
+        <div class="bg-white p-8 rounded-xl border border-gray-200 shadow-lg">
+          <h2 class="font-poppins font-bold text-2xl mb-4 text-gray-900">Status</h2>
+          <ul class="space-y-3 text-gray-700">
+            <li class="flex items-start">
+              <span class="text-green-500 mr-3">✓</span>
+              Rollenbasierter Zugang für OSM-Mitwirkende
+            </li>
+            <li class="flex items-start">
+              <span class="text-yellow-500 mr-3">◷</span>
+              Qualitätssicherung von OSM-relevanten Daten
+            </li>
+            <li class="flex items-start">
+              <span class="text-yellow-500 mr-3">◷</span>
+              Vergleich von OSM- und Verwaltungsdaten
+            </li>
+            <li class="flex items-start">
+              <span class="text-yellow-500 mr-3">◷</span>
+              Merge-/Abgleich-Workflows (in Vorbereitung)
+            </li>
+            <li class="flex items-start">
+              <span class="text-yellow-500 mr-3">◷</span>
+              Konfliktmanagement bei divergierenden Datenständen
+            </li>
+            <li class="flex items-start">
+              <span class="text-yellow-500 mr-3">◷</span>
+              Community- und Review-Werkzeuge (in Planung)
+            </li>
+          </ul>
+        </div>
+
+        <!-- Arbeitsbereiche-Kachel -->
+        <div class="bg-white p-8 rounded-xl border border-gray-200 shadow-lg">
+          <h2 class="font-poppins font-bold text-2xl mb-4 text-gray-900">Arbeitsbereiche</h2>
+          <ul class="space-y-4 text-gray-700">
+            <li>
+              <div class="flex items-start">
+                <span class="text-gray-400 mr-3">–</span>
+                <div>
+                  <p class="font-medium text-gray-900">Qualitätssicherung</p>
+                  <p class="text-sm text-gray-500">Werkzeuge zur Prüfung und Validierung von OSM-Daten (in Vorbereitung)</p>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="flex items-start">
+                <span class="text-gray-400 mr-3">–</span>
+                <div>
+                  <p class="font-medium text-gray-900">Datenabgleich OSM ↔ Verwaltung</p>
+                  <p class="text-sm text-gray-500">Gegenüberstellung und Abgleich der Datenbestände (geplant)</p>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="flex items-start">
+                <span class="text-gray-400 mr-3">–</span>
+                <div>
+                  <p class="font-medium text-gray-900">Konfliktliste</p>
+                  <p class="text-sm text-gray-500">Übersicht über abweichende Einträge zwischen Community- und Verwaltungsdaten (geplant)</p>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="flex items-start">
+                <span class="text-gray-400 mr-3">–</span>
+                <div>
+                  <p class="font-medium text-gray-900">Review- und Freigabe-Workflows</p>
+                  <p class="text-sm text-gray-500">Prüfung und Freigabe von Änderungen durch die Community (in Planung)</p>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div class="flex items-start">
+                <span class="text-gray-400 mr-3">–</span>
+                <div>
+                  <p class="font-medium text-gray-900">Mapping-Hinweise</p>
+                  <p class="text-sm text-gray-500">Hinweise und Empfehlungen zur Kartenerfassung für die OSM-Community (in Planung)</p>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</BaseLayout>

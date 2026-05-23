@@ -1,6 +1,15 @@
 <!-- SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu> -->
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 ---
+import { getUserSession } from '../lib/auth/session';
+const userSession = getUserSession(Astro.locals);
+const canShowVerwaltung =
+  userSession.isAuthenticated &&
+  userSession.roles.includes("verwaltung");
+const canShowOsm =
+  userSession.isAuthenticated &&
+  userSession.roles.includes("osm");
+
 const nav = [
     {
         name: "Über p2d2",
@@ -17,6 +26,12 @@ const nav = [
     { name: "Community", href: "/community", key: "community" },
     { name: "Mitmachen", href: "/mitmachen", key: "mitmachen" },
     { name: "Kontakt", href: "/kontakt", key: "kontakt" },
+    ...(canShowVerwaltung
+      ? [{ name: "Verwaltung", href: "/verwaltung", key: "verwaltung" }]
+      : []),
+    ...(canShowOsm
+      ? [{ name: "OSM", href: "/osm", key: "osm" }]
+      : []),
 ];
 
 const currentPath = Astro.url.pathname;
@@ -28,6 +43,15 @@ function isActive(item: { href?: string; name: string; children?: { name: string
         ? currentPath === "/"
         : currentPath.startsWith(item.href);
 }
+
+// userSession wurde bereits weiter oben definiert
+const initials = userSession.isAuthenticated
+  ? (userSession.displayName ?? userSession.userName ?? '?')
+      .split(' ')
+      .map((w: string) => w?.charAt(0)?.toUpperCase() ?? '')
+      .slice(0, 2)
+      .join('')
+  : '';
 ---
 
 <header
@@ -78,6 +102,7 @@ function isActive(item: { href?: string; name: string; children?: { name: string
                         return (
                             <li
                                 class="relative"
+                                data-dropdown-wrapper="about"
                             >
                                 <button
                                     class="px-1 pb-1 text-gray-700 hover:text-gray-900 transition-colors duration-200"
@@ -87,7 +112,7 @@ function isActive(item: { href?: string; name: string; children?: { name: string
                                 </button>
                                 <ul
                                     id="dropdown-ueber"
-                                    class="hidden absolute left-0 mt-2 bg-green-50/90 backdrop-blur-md rounded-lg shadow-lg z-50 min-w-160px transition-all border border-green-200/50"
+                                    class="hidden absolute left-0 top-full pt-1 bg-green-50/90 backdrop-blur-md rounded-lg shadow-lg z-50 min-w-160px transition-all border border-green-200/50"
                                 >
                                     {item.children.map((child) => (
                                         <li>
@@ -132,6 +157,47 @@ function isActive(item: { href?: string; name: string; children?: { name: string
                 })
             }
         </ul>
+
+        <!-- Desktop Login/Logout -->
+        <div class="hidden md:flex items-center ml-4">
+            {
+                userSession.isAuthenticated ? (
+                    <div class="relative" id="user-dropdown-wrapper">
+                        <button
+                            id="user-dropdown-btn"
+                            class="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium font-poppins text-white bg-green-700 hover:bg-green-800 transition-colors duration-200"
+                            aria-expanded="false"
+                        >
+                            <span class="w-6 h-6 rounded-full bg-white text-green-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                                {initials}
+                            </span>
+                            <span title={userSession.userName}>{userSession.displayName ?? userSession.userName ?? userSession.email ?? 'Benutzer'}</span>
+                            <svg class="w-4 h-4 transition-transform duration-200" id="user-dropdown-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        <div
+                            id="user-dropdown"
+                            class="hidden absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-100 z-50"
+                        >
+                            <a
+                                href="/api/auth/logout"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                            >
+                                Abmelden
+                            </a>
+                        </div>
+                    </div>
+                ) : (
+                    <a
+                        href="/api/auth/login"
+                        class="px-4 py-2 rounded-md text-sm font-medium font-poppins text-white bg-red-600 hover:bg-red-700 transition-colors duration-200"
+                    >
+                        Anmelden
+                    </a>
+                )
+            }
+        </div>
 
         <!-- Mobile Navigation Overlay (KORRIGIERT) -->
         <div
@@ -240,6 +306,48 @@ function isActive(item: { href?: string; name: string; children?: { name: string
                                     );
                                 }
                             })
+                        }
+                        <!-- Mobile Login/Logout -->
+                        {
+                            userSession.isAuthenticated ? (
+                                <li>
+                                    <div class="relative" id="user-dropdown-wrapper-mobile">
+                                        <button
+                                            id="user-dropdown-btn-mobile"
+                                            class="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium font-poppins text-white bg-green-700 hover:bg-green-800 transition-colors duration-200 w-full"
+                                            aria-expanded="false"
+                                        >
+                                            <span class="w-6 h-6 rounded-full bg-white text-green-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                                                {initials}
+                                            </span>
+                                            <span title={userSession.userName}>{userSession.displayName ?? userSession.userName ?? userSession.email ?? 'Benutzer'}</span>
+                                            <svg class="w-4 h-4 ml-auto transition-transform duration-200" id="user-dropdown-arrow-mobile" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                            </svg>
+                                        </button>
+                                        <div
+                                            id="user-dropdown-mobile"
+                                            class="hidden mt-2 w-full bg-white rounded-md shadow-lg border border-gray-100 z-50"
+                                        >
+                                            <a
+                                                href="/api/auth/logout"
+                                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                                            >
+                                                Abmelden
+                                            </a>
+                                        </div>
+                                    </div>
+                                </li>
+                            ) : (
+                                <li>
+                                    <a
+                                        href="/api/auth/login"
+                                        class="block px-4 py-2 rounded-md text-sm font-medium font-poppins text-white bg-red-600 hover:bg-red-700 transition-colors duration-200 text-center"
+                                    >
+                                        Anmelden
+                                    </a>
+                                </li>
+                            )
                         }
                     </ul>
 
@@ -352,16 +460,28 @@ function isActive(item: { href?: string; name: string; children?: { name: string
             link.addEventListener("click", closeMobileMenu);
         });
 
-        // Dropdown handling (bleibt unverändert)
-        const dropdownTrigger = document.querySelector("li.relative");
-        if (dropdownTrigger) {
-            dropdownTrigger.addEventListener("mouseenter", () => {
-                const el = document.getElementById("dropdown-ueber");
-                if (el) el.classList.remove("hidden");
+        // Dropdown handling – About-Menü
+        let aboutCloseTimeout = null;
+        const aboutWrapper = document.querySelector(
+            '[data-dropdown-wrapper="about"]',
+        );
+        const aboutMenu = document.getElementById("dropdown-ueber");
+
+        if (aboutWrapper && aboutMenu) {
+            aboutWrapper.addEventListener("mouseenter", () => {
+                if (aboutCloseTimeout) clearTimeout(aboutCloseTimeout);
+                aboutMenu.classList.remove("hidden");
             });
-            dropdownTrigger.addEventListener("mouseleave", () => {
-                const el = document.getElementById("dropdown-ueber");
-                if (el) el.classList.add("hidden");
+            aboutWrapper.addEventListener("mouseleave", () => {
+                aboutCloseTimeout = setTimeout(() => {
+                    aboutMenu.classList.add("hidden");
+                }, 200);
+            });
+            aboutMenu.addEventListener("mouseenter", () => {
+                if (aboutCloseTimeout) clearTimeout(aboutCloseTimeout);
+            });
+            aboutMenu.addEventListener("mouseleave", () => {
+                aboutMenu.classList.add("hidden");
             });
         }
 
@@ -377,6 +497,88 @@ function isActive(item: { href?: string; name: string; children?: { name: string
                     if (dropdown) dropdown.classList.toggle("hidden");
                 });
             });
+
+        // User-Dropdown Toggle (Desktop)
+        const userDropdownBtn = document.getElementById("user-dropdown-btn");
+        const userDropdown = document.getElementById("user-dropdown");
+        const userDropdownArrow = document.getElementById("user-dropdown-arrow");
+
+        if (userDropdownBtn && userDropdown) {
+            userDropdownBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const isOpen = !userDropdown.classList.contains("hidden");
+                userDropdown.classList.toggle("hidden");
+                userDropdownBtn.setAttribute("aria-expanded", String(!isOpen));
+                if (userDropdownArrow) {
+                    userDropdownArrow.style.transform = isOpen
+                        ? "rotate(0deg)"
+                        : "rotate(180deg)";
+                }
+            });
+
+            // Schließen bei Klick auf "Abmelden"
+            userDropdown.querySelector("a")?.addEventListener("click", () => {
+                userDropdown.classList.add("hidden");
+                userDropdownBtn.setAttribute("aria-expanded", "false");
+                if (userDropdownArrow) {
+                    userDropdownArrow.style.transform = "rotate(0deg)";
+                }
+            });
+        }
+
+        // User-Dropdown Toggle (Mobile)
+        const userDropdownBtnMobile = document.getElementById("user-dropdown-btn-mobile");
+        const userDropdownMobile = document.getElementById("user-dropdown-mobile");
+        const userDropdownArrowMobile = document.getElementById("user-dropdown-arrow-mobile");
+
+        if (userDropdownBtnMobile && userDropdownMobile) {
+            userDropdownBtnMobile.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const isOpen = !userDropdownMobile.classList.contains("hidden");
+                userDropdownMobile.classList.toggle("hidden");
+                userDropdownBtnMobile.setAttribute("aria-expanded", String(!isOpen));
+                if (userDropdownArrowMobile) {
+                    userDropdownArrowMobile.style.transform = isOpen
+                        ? "rotate(0deg)"
+                        : "rotate(180deg)";
+                }
+            });
+
+            // Schließen bei Klick auf "Abmelden"
+            userDropdownMobile.querySelector("a")?.addEventListener("click", () => {
+                userDropdownMobile.classList.add("hidden");
+                userDropdownBtnMobile.setAttribute("aria-expanded", "false");
+                if (userDropdownArrowMobile) {
+                    userDropdownArrowMobile.style.transform = "rotate(0deg)";
+                }
+            });
+        }
+
+        // Dropdown schließen bei Klick außerhalb
+        document.addEventListener("click", (e) => {
+            // Desktop
+            if (userDropdown && userDropdownBtn) {
+                const wrapper = document.getElementById("user-dropdown-wrapper");
+                if (wrapper && !wrapper.contains(e.target)) {
+                    userDropdown.classList.add("hidden");
+                    userDropdownBtn.setAttribute("aria-expanded", "false");
+                    if (userDropdownArrow) {
+                        userDropdownArrow.style.transform = "rotate(0deg)";
+                    }
+                }
+            }
+            // Mobile
+            if (userDropdownMobile && userDropdownBtnMobile) {
+                const wrapper = document.getElementById("user-dropdown-wrapper-mobile");
+                if (wrapper && !wrapper.contains(e.target)) {
+                    userDropdownMobile.classList.add("hidden");
+                    userDropdownBtnMobile.setAttribute("aria-expanded", "false");
+                    if (userDropdownArrowMobile) {
+                        userDropdownArrowMobile.style.transform = "rotate(0deg)";
+                    }
+                }
+            }
+        });
     </script>
 
     <style is:global>

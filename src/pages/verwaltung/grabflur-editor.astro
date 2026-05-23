@@ -1,0 +1,470 @@
+<!-- SPDX-FileCopyrightText: 2026-2026 Peter König <peter.koenig@data-dna.eu> -->
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getUserSession } from '../../lib/auth/session';
+import { getKommuneBySlug } from '../../utils/kommune-utils';
+import '../../styles/feature-editor.css';
+
+const session = getUserSession(Astro.locals);
+
+if (!session.isAuthenticated || !session.roles.includes('verwaltung')) {
+  return Astro.redirect('/');
+}
+
+// Kommune aus Benutzer-Metadaten ableiten
+const kommuneMembership = session.memberships?.find(
+  (m) => m.type === 'kommune',
+);
+const kommuneSlug =
+  kommuneMembership?.key ?? session.preferences?.homeKommuneSlug ?? null;
+const kommune = kommuneSlug ? await getKommuneBySlug(kommuneSlug) : null;
+
+const wpName = kommune?.wpName ?? '';
+const extent = kommune?.map?.extent ?? null;
+const center = kommune?.map?.center ?? null;
+const projection = kommune?.map?.projection ?? 'EPSG:3857';
+const zoom = kommune?.map?.zoom ?? 12;
+const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
+---
+
+<BaseLayout
+  title={`Grabflur-Editor – ${kommuneTitle} | p2d2`}
+  showFooter={false}
+>
+    <!-- Editor-Header (via slot – überschreibt den Standard-Header) -->
+    <header slot="header" class="feature-editor-header">
+      <div class="logo-container">
+        <img src="/images/logo.svg" alt="p2d2 Logo" class="logo" />
+        <span class="brand-name">p2d2</span>
+      </div>
+      <h1 class="editor-title">Grabflur-Editor: {kommuneTitle}</h1>
+      <button id="close-editor-btn" class="close-btn" aria-label="Editor schließen">Schließen</button>
+    </header>
+
+  <div class="grabflur-editor-layout h-screen flex flex-col">
+    <!-- Hauptbereich -->
+    <div class="flex flex-1 overflow-hidden">
+      {kommune ? (
+        <>
+          <!-- Kartencontainer -->
+          <div class="flex-1 relative">
+            <div
+              id="grabflur-map"
+              class="w-full h-full"
+              data-wp-name={wpName}
+              data-extent={extent ? JSON.stringify(extent) : ''}
+              data-center={center ? JSON.stringify(center) : ''}
+              data-projection={projection}
+              data-zoom={zoom}
+            ></div>
+          </div>
+
+          <!-- Info-Panel -->
+          <div
+            id="feature-info"
+            class="w-72 bg-white border-l border-gray-200 overflow-y-auto p-4 flex flex-col gap-4"
+          >
+            <div class="text-center py-8 text-gray-400">
+              <svg
+                class="w-12 h-12 mx-auto mb-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                  d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+                />
+              </svg>
+              <p class="text-sm">
+                Klicke auf ein Grabflur-Polygon, um Informationen anzuzeigen.
+              </p>
+            </div>
+          </div>
+        </>
+      ) : (
+        <!-- Fallback: Keine Kommune -->
+        <div class="flex-1 flex items-center justify-center">
+          <div class="text-center max-w-md mx-auto p-8">
+            <h2 class="font-poppins font-bold text-2xl text-gray-900 mb-4">
+              Keine Kommune gefunden
+            </h2>
+            <p class="text-gray-700 mb-6">
+              Aus Ihren Benutzer-Metadaten konnte keine zugeordnete Kommune
+              abgeleitet werden. Bitte wenden Sie sich an Ihren Administrator.
+            </p>
+            <a
+              href="/verwaltung"
+              class="inline-block px-4 py-2 rounded-md text-sm font-medium text-white bg-green-700 hover:bg-green-800 transition-colors"
+            >
+              Zurück zur Verwaltung
+            </a>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+
+  <style>
+    /* Editor-Header – konsistent zum FeatureEditorHeader */
+    .feature-editor-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        background: rgba(240, 253, 244, 0.9);
+        border-bottom: 1px solid #bbf7d0;
+        gap: 1rem;
+        position: relative;
+        z-index: 50;
+    }
+
+    .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .logo {
+        height: 2rem;
+        width: auto;
+    }
+
+    .brand-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #14532d;
+    }
+
+    .editor-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #14532d;
+        text-align: center;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .close-btn {
+        padding: 0.5rem 1rem;
+        background: #dc2626;
+        color: white;
+        border: none;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 0.875rem;
+        white-space: nowrap;
+    }
+
+    .close-btn:hover {
+        background: #b91c1c;
+    }
+
+    .close-btn:active {
+        transform: scale(0.98);
+    }
+
+    @media (max-width: 768px) {
+        .feature-editor-header {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto auto;
+            padding: 0.75rem 1rem;
+            gap: 0.75rem;
+        }
+
+        .logo-container {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .close-btn {
+            grid-column: 1;
+            grid-row: 1;
+            justify-self: end;
+            align-self: center;
+            padding: 0.375rem 0.75rem;
+        }
+
+        .editor-title {
+            grid-column: 1;
+            grid-row: 2;
+            font-size: 1rem;
+        }
+
+        .logo {
+            height: 1.5rem;
+        }
+
+        .brand-name {
+            font-size: 1.25rem;
+        }
+    }
+  </style>
+
+  <!-- Schließen-Button Script -->
+  <script>
+    document
+      .getElementById("close-editor-btn")
+      ?.addEventListener("click", () => {
+        // Keine Dirty-Prüfung im Grabflur-Editor (keine Persistenz vorhanden)
+        window.close();
+        if (!window.closed) {
+          window.history.back();
+        }
+      });
+  </script>
+
+  <script>
+    import { MapManager } from '../../components/feature-editor/MapManager';
+    import { wfsAuthClient } from '../../utils/wfs-auth';
+    import GeoJSON from 'ol/format/GeoJSON';
+    import VectorSource from 'ol/source/Vector';
+    import VectorLayer from 'ol/layer/Vector';
+    import { Style, Stroke, Fill, Text } from 'ol/style';
+    import { Select } from 'ol/interaction';
+    import { click } from 'ol/events/condition';
+    import { getArea } from 'ol/sphere';
+    import { fromLonLat } from 'ol/proj';
+
+    function domReady(callback: () => void): void {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', callback, { once: true });
+      } else {
+        callback();
+      }
+    }
+
+    domReady(async () => {
+      const container = document.getElementById('grabflur-map');
+      if (!container) return;
+
+      const wpName = container.dataset.wpName || '';
+      const extentRaw = container.dataset.extent || '';
+      const centerRaw = container.dataset.center || '';
+      const projection = container.dataset.projection || 'EPSG:3857';
+      const zoom = parseInt(container.dataset.zoom || '12', 10);
+
+      try {
+        // -------------------------------------------------------
+        // 1. MapManager initialisieren – erzeugt OSM + View + Controls
+        // -------------------------------------------------------
+        const mapManager = new MapManager('grabflur-map', projection);
+        const map = mapManager.getMap();
+
+        // -------------------------------------------------------
+        // 2. Karte auf Kommune-Extent ausrichten
+        // -------------------------------------------------------
+        let initialExtent: number[] | null = null;
+        if (extentRaw) {
+          try {
+            initialExtent = JSON.parse(extentRaw);
+          } catch {
+            /* ungültiges JSON ignorieren */
+          }
+        }
+
+        if (initialExtent && initialExtent.length === 4) {
+          mapManager.fitToInitialExtent(initialExtent);
+        } else if (centerRaw) {
+          // Fallback: nur Zentrum + Zoom
+          try {
+            const centerArr = JSON.parse(centerRaw);
+            if (Array.isArray(centerArr) && centerArr.length === 2) {
+              map.getView().setCenter(fromLonLat(centerArr));
+              map.getView().setZoom(zoom);
+            }
+          } catch {
+            /* kein gültiges Zentrum */
+          }
+        }
+
+        // -------------------------------------------------------
+        // 3. Grabflur-WFS-Layer anlegen (initiale Style-Definition)
+        // -------------------------------------------------------
+        const grabfurSource = new VectorSource();
+        const grabfurLayer = new VectorLayer({
+          source: grabfurSource,
+          style: new Style({
+            stroke: new Stroke({ color: '#dc2626', width: 2 }),
+            fill: new Fill({ color: 'rgba(234, 88, 12, 0.2)' }),
+          }),
+        });
+        map.addLayer(grabfurLayer);
+
+        // -------------------------------------------------------
+        // 4. Grabflur-Daten per WFS laden
+        // -------------------------------------------------------
+        if (wpName) {
+          try {
+            const wfsUrl = wfsAuthClient.buildWFSURL('geo-containers', {
+              CQL_FILTER: `osm_admin_level=10 AND wp_name='${wpName}'`,
+            });
+
+            const response = await wfsAuthClient.fetchWFS(wfsUrl);
+            if (!response.ok) {
+              throw new Error(
+                `WFS-Fehler: ${response.status} ${response.statusText}`,
+              );
+            }
+
+            const geojson = await response.json();
+
+            const format = new GeoJSON();
+            const features = format.readFeatures(geojson, {
+              dataProjection: 'EPSG:4326',
+              featureProjection: projection,
+            });
+
+            // Namen aus den Rohdaten in die Feature-Properties übernehmen
+            if (geojson.features) {
+              geojson.features.forEach((raw: any, i: number) => {
+                if (features[i]) {
+                  const rawName =
+                    raw.properties?.name || raw.properties?.title || '';
+                  features[i].set('name', rawName);
+                  features[i].set(
+                    'containerType',
+                    raw.properties?.container_type || '',
+                  );
+                }
+              });
+            }
+
+            grabfurSource.addFeatures(features);
+
+            // Fallback: Auf WFS-Feature-Extent zoomen, wenn kein Content-Collection-Extent vorhanden ist
+            if (!initialExtent && features.length > 0) {
+              const wfsExtent = grabfurSource.getExtent();
+              if (wfsExtent && !isNaN(wfsExtent[0]) && !isNaN(wfsExtent[1])) {
+                map.getView().fit(wfsExtent, {
+                  size: map.getSize(),
+                  padding: [50, 50, 50, 50],
+                  maxZoom: 16,
+                });
+              }
+            }
+
+            // Dynamischer Style mit Labels – nach dem Laden anwenden
+            grabfurLayer.setStyle((feature) => {
+              const name = feature.get('name') || '';
+              // Letzten Teil nach dem letzten '-' als Label nutzen (Grabflur-Nummer)
+              const parts = name.split('-');
+              const label = parts.length > 1 ? parts[parts.length - 1] : '';
+
+              return new Style({
+                stroke: new Stroke({ color: '#dc2626', width: 2 }),
+                fill: new Fill({ color: 'rgba(234, 88, 12, 0.2)' }),
+                text: label
+                  ? new Text({
+                      text: label,
+                      font: 'bold 12px Inter, sans-serif',
+                      fill: new Fill({ color: '#dc2626' }),
+                      stroke: new Stroke({ color: '#ffffff', width: 3 }),
+                      overflow: true,
+                    })
+                  : undefined,
+              });
+            });
+
+            console.log(
+              `[Grabflur-Editor] ${features.length} Grabflure geladen`,
+            );
+          } catch (err) {
+            console.error(
+              '[Grabflur-Editor] Fehler beim Laden der Grabflure:',
+              err,
+            );
+            // Fehler im UI anzeigen
+            const infoPanel = document.getElementById('feature-info');
+            if (infoPanel) {
+              infoPanel.innerHTML = `
+                <div class="p-4 text-center">
+                  <p class="text-red-600 text-sm font-medium mb-2">Fehler beim Laden der Grabflure</p>
+                  <p class="text-gray-500 text-xs">${err instanceof Error ? err.message : 'Unbekannter Fehler'}</p>
+                </div>
+              `;
+            }
+          }
+        }
+
+        // -------------------------------------------------------
+        // 5. Klick-Interaktion: Feature selektieren + Info anzeigen
+        // -------------------------------------------------------
+        const select = new Select({ condition: click });
+        map.addInteraction(select);
+
+        const infoPanel = document.getElementById('feature-info');
+        select.on('select', (e) => {
+          if (!infoPanel) return;
+
+          const selected = e.selected[0];
+          if (!selected) {
+            // Deselektiert → Platzhalter anzeigen
+            infoPanel.innerHTML = `
+              <div class="text-center py-8 text-gray-400">
+                <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                </svg>
+                <p class="text-sm">Klicke auf ein Grabflur-Polygon, um Informationen anzuzeigen.</p>
+              </div>
+            `;
+            return;
+          }
+
+          const name = selected.get('name') || 'Unbenannt';
+          const id = String(selected.getId() ?? '');
+          const area = getArea(selected.getGeometry()!, { projection });
+          const areaHa = (area / 10000).toFixed(2);
+          const areaM2 = area.toFixed(0);
+
+          infoPanel.innerHTML = `
+            <div>
+              <h3 class="font-poppins font-bold text-base text-gray-900 mb-4">Grabflur-Details</h3>
+              <dl class="space-y-3 text-sm">
+                <div class="border-b border-gray-100 pb-2">
+                  <dt class="text-gray-500 text-xs uppercase tracking-wide">Name</dt>
+                  <dd class="font-medium text-gray-900 mt-0.5">${name}</dd>
+                </div>
+                <div class="border-b border-gray-100 pb-2">
+                  <dt class="text-gray-500 text-xs uppercase tracking-wide">ID</dt>
+                  <dd class="font-mono text-xs text-gray-700 mt-0.5 break-all">${id}</dd>
+                </div>
+                <div class="border-b border-gray-100 pb-2">
+                  <dt class="text-gray-500 text-xs uppercase tracking-wide">Fläche</dt>
+                  <dd class="font-medium text-gray-900 mt-0.5">${areaHa} ha <span class="text-gray-400 font-normal">(${areaM2} m²)</span></dd>
+                </div>
+              </dl>
+            </div>
+            <div class="mt-4 pt-3 border-t border-gray-100">
+              <p class="text-xs text-gray-400 italic">Weitere Bearbeitungsfunktionen folgen in Kürze.</p>
+            </div>
+          `;
+        });
+
+        console.log('[Grabflur-Editor] ✅ Initialisierung abgeschlossen');
+      } catch (err) {
+        console.error(
+          '[Grabflur-Editor] Fehler bei der Initialisierung:',
+          err,
+        );
+        const containerEl = document.getElementById('grabflur-map');
+        if (containerEl && !containerEl.querySelector('.error-message')) {
+          const errorDiv = document.createElement('div');
+          errorDiv.className =
+            'error-message absolute inset-0 flex items-center justify-center bg-white/80';
+          errorDiv.innerHTML =
+            '<p class="text-red-600 font-medium">Fehler beim Initialisieren der Karte.</p>';
+          containerEl.style.position = 'relative';
+          containerEl.appendChild(errorDiv);
+        }
+      }
+    });
+  </script>
+</BaseLayout>
