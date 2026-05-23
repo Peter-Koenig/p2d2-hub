@@ -1,0 +1,24 @@
+<!-- SPDX-FileCopyrightText: 2026-2026 Peter König <peter.koenig@data-dna.eu> -->
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Prose from "../../components/Prose.astro";
+import { getCollection, render } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+
+const entries: CollectionEntry<"intern">[] = await getCollection("intern");
+const entry = entries.find((e) => e.slug === "hintergrund");
+if (!entry) throw new Error("Eintrag 'hintergrund' in Collection 'intern' nicht gefunden.");
+
+const { Content } = await render(entry);
+const pageTitle = entry.data.name || "Hintergrund";
+const pageDescription = entry.data.description || "";
+---
+
+<BaseLayout title={`${pageTitle} | p2d2`} description={pageDescription}>
+    <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
+        <Prose>
+            <Content />
+        </Prose>
+    </main>
+</BaseLayout>

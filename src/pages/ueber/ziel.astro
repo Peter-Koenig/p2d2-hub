@@ -1,4 +1,4 @@
-<!-- SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu> -->
+<!-- SPDX-FileCopyrightText: 2026-2026 Peter König <peter.koenig@data-dna.eu> -->
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
@@ -6,23 +6,16 @@ import Prose from "../../components/Prose.astro";
 import { getCollection, render } from "astro:content";
 import type { CollectionEntry } from "astro:content";
 
-const { slug } = Astro.params;
-const internEntries = await getCollection("intern");
+const internEntries: CollectionEntry<"intern">[] = await getCollection("intern");
 const entry = internEntries.find(
-    (item): item is CollectionEntry<"intern"> => item.slug === slug,
+    (item): item is CollectionEntry<"intern"> => item.slug === "ziel",
 );
-
-if (!entry) {
-    throw new Error(
-        `Kein Eintrag mit Slug "${slug}" in Collection "intern" gefunden.`,
-    );
-}
-
+if (!entry) throw new Error("Eintrag 'ziel' in Collection 'intern' nicht gefunden.");
 const { Content } = await render(entry);
-const pageTitle = entry.data.name ?? "p2d2";
+const pageTitle = entry.data.name ?? "Ziel";
 ---
 
-<BaseLayout title={pageTitle as string}>
+<BaseLayout title={pageTitle}>
     <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
         <Prose>
             <Content />
