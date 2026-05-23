@@ -61,10 +61,6 @@ export const GET: APIRoute = async ({ request, redirect }) => {
       headers: request.headers,
     });
 
-    console.log("[AUTH-CALLBACK-DEBUG] Original request.url:", request.url);
-    console.log("[AUTH-CALLBACK-DEBUG] Normalized URL:", externalCallbackUrl);
-    console.log("[AUTH-CALLBACK-DEBUG] redirectUri:", redirectUri);
-
     // Exchange code + code_verifier for tokens
     const tokenResponse = await authorizationCodeGrant(
       config,
@@ -141,7 +137,6 @@ export const GET: APIRoute = async ({ request, redirect }) => {
     redirectResponse = await applySessionCookie(redirectResponse, sessionData);
     return redirectResponse;
   } catch (err) {
-    console.error("[AUTH-CALLBACK] Token exchange failed:", err);
     return redirect("/auth-error?reason=token_error", 302);
   }
 };

@@ -16,13 +16,6 @@ export const GET: APIRoute = async ({ request, redirect }) => {
   const origin = getOrigin();
   const postLogoutRedirectUri = `${origin}/`;
 
-  console.log("[AUTH-LOGOUT-DEBUG] request.url:", request.url);
-  console.log("[AUTH-LOGOUT-DEBUG] origin (getOrigin):", origin);
-  console.log(
-    "[AUTH-LOGOUT-DEBUG] post_logout_redirect_uri:",
-    postLogoutRedirectUri,
-  );
-
   endSessionUrl.searchParams.set(
     "post_logout_redirect_uri",
     postLogoutRedirectUri,

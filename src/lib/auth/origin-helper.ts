@@ -9,20 +9,16 @@
 export function getOrigin(): string {
   // Umgebungsvariable hat Vorrang (explizit konfiguriert pro Stage)
   const envOrigin = import.meta.env.PUBLIC_SITE_URL;
-  
-  console.log("[OIDC-ORIGIN] import.meta.env.DEV =", import.meta.env.DEV);
-  console.log("[OIDC-ORIGIN] import.meta.env.MODE =", import.meta.env.MODE);
-  console.log("[OIDC-ORIGIN] PUBLIC_SITE_URL =", envOrigin);
 
   if (envOrigin) {
-    return envOrigin.replace(/\/$/, ''); // Trailing Slash entfernen
+    return envOrigin.replace(/\/$/, ""); // Trailing Slash entfernen
   }
-  
+
   // Fallback für lokale Entwicklung ohne .env
   if (import.meta.env.DEV) {
-    return 'http://localhost:4321';
+    return "http://localhost:4321";
   }
-  
+
   // Sollte nie erreicht werden
-  throw new Error('PUBLIC_SITE_URL ist nicht konfiguriert in .env');
+  throw new Error("PUBLIC_SITE_URL ist nicht konfiguriert in .env");
 }
