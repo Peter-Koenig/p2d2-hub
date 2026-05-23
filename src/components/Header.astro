@@ -6,6 +6,9 @@ const userSession = getUserSession(Astro.locals);
 const canShowVerwaltung =
   userSession.isAuthenticated &&
   userSession.roles.includes("verwaltung");
+const canShowOsm =
+  userSession.isAuthenticated &&
+  userSession.roles.includes("osm");
 
 const nav = [
     {
@@ -25,6 +28,9 @@ const nav = [
     { name: "Kontakt", href: "/kontakt", key: "kontakt" },
     ...(canShowVerwaltung
       ? [{ name: "Verwaltung", href: "/verwaltung", key: "verwaltung" }]
+      : []),
+    ...(canShowOsm
+      ? [{ name: "OSM", href: "/osm", key: "osm" }]
       : []),
 ];
 
@@ -96,6 +102,7 @@ const initials = userSession.isAuthenticated
                         return (
                             <li
                                 class="relative"
+                                data-dropdown-wrapper="about"
                             >
                                 <button
                                     class="px-1 pb-1 text-gray-700 hover:text-gray-900 transition-colors duration-200"
@@ -105,7 +112,7 @@ const initials = userSession.isAuthenticated
                                 </button>
                                 <ul
                                     id="dropdown-ueber"
-                                    class="hidden absolute left-0 mt-2 bg-green-50/90 backdrop-blur-md rounded-lg shadow-lg z-50 min-w-160px transition-all border border-green-200/50"
+                                    class="hidden absolute left-0 top-full pt-1 bg-green-50/90 backdrop-blur-md rounded-lg shadow-lg z-50 min-w-160px transition-all border border-green-200/50"
                                 >
                                     {item.children.map((child) => (
                                         <li>
@@ -453,16 +460,28 @@ const initials = userSession.isAuthenticated
             link.addEventListener("click", closeMobileMenu);
         });
 
-        // Dropdown handling (bleibt unverändert)
-        const dropdownTrigger = document.querySelector("li.relative");
-        if (dropdownTrigger) {
-            dropdownTrigger.addEventListener("mouseenter", () => {
-                const el = document.getElementById("dropdown-ueber");
-                if (el) el.classList.remove("hidden");
+        // Dropdown handling – About-Menü
+        let aboutCloseTimeout = null;
+        const aboutWrapper = document.querySelector(
+            '[data-dropdown-wrapper="about"]',
+        );
+        const aboutMenu = document.getElementById("dropdown-ueber");
+
+        if (aboutWrapper && aboutMenu) {
+            aboutWrapper.addEventListener("mouseenter", () => {
+                if (aboutCloseTimeout) clearTimeout(aboutCloseTimeout);
+                aboutMenu.classList.remove("hidden");
             });
-            dropdownTrigger.addEventListener("mouseleave", () => {
-                const el = document.getElementById("dropdown-ueber");
-                if (el) el.classList.add("hidden");
+            aboutWrapper.addEventListener("mouseleave", () => {
+                aboutCloseTimeout = setTimeout(() => {
+                    aboutMenu.classList.add("hidden");
+                }, 200);
+            });
+            aboutMenu.addEventListener("mouseenter", () => {
+                if (aboutCloseTimeout) clearTimeout(aboutCloseTimeout);
+            });
+            aboutMenu.addEventListener("mouseleave", () => {
+                aboutMenu.classList.add("hidden");
             });
         }
 
