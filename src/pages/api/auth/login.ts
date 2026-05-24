@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: OIDC-Login: PKCE-Challenge, Authorization-Request, Scope-Definition
 import type { APIRoute } from "astro";
 import { getOidcConfig } from "../../../lib/auth/oidc-client";
 import { getOrigin } from "../../../lib/auth/origin-helper";

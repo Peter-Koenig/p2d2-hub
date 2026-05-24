@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: Kategorie-Utilities: Daten aus Content-Collection lesen
 import { getCollection } from "astro:content";
 
 // Cache for category mappings to avoid repeated content collection calls
@@ -27,13 +28,13 @@ export async function getAllKategorien(): Promise<KategorieData[]> {
     const kategorienCollection = await getCollection("kategorien");
 
     return kategorienCollection
-      .map(kategorie => ({
+      .map((kategorie) => ({
         slug: kategorie.slug,
         title: kategorie.data.title,
         icon: kategorie.data.icon,
         order: kategorie.data.order,
         description: kategorie.data.description,
-        containerType: kategorie.data.containerType
+        containerType: kategorie.data.containerType,
       }))
       .sort((a, b) => a.order - b.order);
   } catch (error) {
@@ -46,9 +47,14 @@ export async function getAllKategorien(): Promise<KategorieData[]> {
  * Get dynamic category to container type mapping
  * Uses caching for better performance
  */
-export async function getKategorieContainerMapping(): Promise<Record<string, string>> {
+export async function getKategorieContainerMapping(): Promise<
+  Record<string, string>
+> {
   // Return cached result if available and not expired
-  if (categoryMappingsCache && Date.now() - cacheTimestamp < CACHE_DURATION_MS) {
+  if (
+    categoryMappingsCache &&
+    Date.now() - cacheTimestamp < CACHE_DURATION_MS
+  ) {
     return Object.fromEntries(categoryMappingsCache);
   }
 
@@ -72,7 +78,9 @@ export async function getKategorieContainerMapping(): Promise<Record<string, str
  * Get container type for a specific category slug
  * Returns null if category not found or no container type defined
  */
-export async function getContainerTypeForCategory(slug: string): Promise<string | null> {
+export async function getContainerTypeForCategory(
+  slug: string,
+): Promise<string | null> {
   const mapping = await getKategorieContainerMapping();
   return mapping[slug] || null;
 }

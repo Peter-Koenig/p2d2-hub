@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: API-Endpunkt für manuelle OSM-Polygon-Synchronisation
 import { syncKommunePolygons } from "../../utils/polygon-wfst-sync";
 import {
   WFST_ENDPOINT,

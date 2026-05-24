@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: WFS-Layer-Manager: dynamische Layer aus GeoServer für Hauptkarte
 /**
  * WFS Layer Manager - Complete corrected version
  * State-of-the-Art WFS Layer Management für p2d2

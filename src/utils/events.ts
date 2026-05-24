@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: Event-System: typisierte Cross-Window-Events für p2d2
 /**
  * Robust Event Handling with Retry Mechanism
  * Provides reliable event dispatching for p2d2 kommune focus events

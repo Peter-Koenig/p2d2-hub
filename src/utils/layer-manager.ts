@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: Zentraler Layer-Manager: Themen- und Kommunen-Layer auf Startseite
 /**
  * Layer Management Module for Feature Editor
  * Centralizes layer creation, toggling, and control initialization

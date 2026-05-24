@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: WFS-Auth-Client: authentifizierte GeoServer-Anfragen
 /**
  * WFS Client
  * Handles WFS requests with support for both anonymous (read) and authenticated (WFS-T) access.

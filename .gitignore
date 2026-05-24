@@ -72,3 +72,9 @@ src-p2d2.txt
 refactor_GISEditor.sh
 env-bakups/*
 .env.*
+src-index.txt
+src-index-annotated.txt
+__pycache__/*
+.venv/*
+src/scripts/__pycache__/
+src/utils/geo/__pycache__/*

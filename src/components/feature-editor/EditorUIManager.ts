@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: Editor-UI-Manager: Toolbar, Navigation, Layer-Controls
 import type { ViewHistoryManager } from "@/utils/view-history-manager";
 import type { EditorLayerManager } from "./EditorLayerManager";
 import type { EditorInteractionManager } from "./EditorInteractionManager";

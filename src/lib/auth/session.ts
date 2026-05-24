@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: Session-Verschlüsselung, Cookie-Handling und UserSession-Factory
 import { SESSION_SECRET } from "astro:env/server";
 import type { Membership, UserPreferences } from "./metadata-parser";
 

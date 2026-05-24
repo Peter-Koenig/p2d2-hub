@@ -1,0 +1,175 @@
+src/components/CallToAction.astro: <!-- p2d2: Call-to-Action-Banner: Mitmach-Aufruf -->
+src/components/CommunityBenefits.astro: <!-- p2d2: Community-Vorteile: Auflistung von Nutzen für Mitwirkende -->
+src/components/CommunitySection.astro: <!-- p2d2: Community-Bereich: Vorstellung der Community-Gruppen -->
+src/components/EventConsole.ts: // p2d2: Entwickler-Debug-Konsole für Cross-Window-Events
+src/components/Footer.astro: <!-- p2d2: Seiten-Footer: Links, Copyright und Logos -->
+src/components/Header.astro: <!-- p2d2: Hauptnavigation: Menü, Login/Logout, rollenabhängige Einträge -->
+src/components/HeroSection.astro: <!-- p2d2: Hero-Bereich der Startseite mit Logo und Claim -->
+src/components/Kategorien.astro: <!-- p2d2: Kategorien-Abschnitt der Startseite -->
+src/components/KategorienGrid.astro: <!-- p2d2: Rasteransicht der Themenkategorien -->
+src/components/KommunenGrid.astro: <!-- p2d2: Rasteransicht der teilnehmenden Kommunen -->
+src/components/MapCanvas.astro: <!-- p2d2: Karten-Canvas-Container für OpenLayers -->
+src/components/MissionStatement.astro: <!-- p2d2: Leitbild-Abschnitt: Mission und Vision von p2d2 -->
+src/components/Mitmachmöglichkeiten.astro: <!-- p2d2: Mitmach-Möglichkeiten: Übersicht der Beteiligungsformen -->
+src/components/Modal.astro: <!-- p2d2: Modales Dialog-Fenster für Popups -->
+src/components/OpenLayersMap.astro: <!-- p2d2: OpenLayers-Kartenkomponente für die Startseite -->
+src/components/Prose.astro: <!-- p2d2: Markdown-Prose-Container für Inhaltsseiten -->
+src/components/TailwindTest.astro: <!-- p2d2: Testseite für Tailwind-CSS-Komponenten -->
+src/components/TestimonialCard.astro: <!-- p2d2: Erfahrungsbericht-Karte für Testimonials -->
+src/components/TestimonialsSection.astro: <!-- p2d2: Testimonials-Abschnitt: Erfahrungsberichte von Nutzern -->
+src/components/ThemenbereichCard.astro: <!-- p2d2: Themenbereich-Karte für die Übersichtsseite -->
+src/components/ThemenbereicheOverview.astro: <!-- p2d2: Themenbereichs-Übersicht mit Kategorien-Karten -->
+src/components/Werte.astro: <!-- p2d2: Werte-Abschnitt der Startseite -->
+src/components/WerteGrid.astro: <!-- p2d2: Werte-Raster: Transparenz, Gemeinschaft, Offene Daten -->
+src/components/feature-editor/EditorApp.ts: // p2d2: Editor-Hauptklasse: orchestriert alle Sub-Module
+src/components/feature-editor/EditorDataManager.ts: // p2d2: Editor-Datenmanager: WFS-Laden, Caching, uMap-Speichern
+src/components/feature-editor/EditorInteractionManager.ts: // p2d2: Editor-Interaktionen: Select, Modify, Hover, Werkzeuge
+src/components/feature-editor/EditorLayerManager.ts: // p2d2: Editor-Layer-Manager: Basis-Layer, Feature-Layer, Grabflur-Styles
+src/components/feature-editor/EditorState.ts: // p2d2: Editor-Statusverwaltung mit reaktivem State und Dirty-Tracking
+src/components/feature-editor/EditorUIManager.ts: // p2d2: Editor-UI-Manager: Toolbar, Navigation, Layer-Controls
+src/components/feature-editor/FeatureEditorHeader.astro: <!-- p2d2: Editor-Header: Logo, Titel, Schließen-Button -->
+src/components/feature-editor/IconButton.astro: <!-- p2d2: Icon-Button-Komponente für die Editor-Toolbar -->
+src/components/feature-editor/LayerControls.astro: <!-- p2d2: Layer-Controls: Sichtbarkeit von Kartenebenen umschalten -->
+src/components/feature-editor/MapManager.ts: // p2d2: OpenLayers-Karteninitialisierung mit Projektions-Registrierung
+src/components/feature-editor/NavigationControls.astro: <!-- p2d2: Karten-Navigations-Controls: Zurück, Vor, Zentrieren -->
+src/components/feature-editor/Toolbar.astro: <!-- p2d2: Editor-Toolbar: Werkzeug-Auswahl (Select, Edit, etc.) -->
+src/components/icons/Abfallbehaelter.svg: 
+src/components/icons/Baeume.svg: 
+src/components/icons/BlumenbeetIcon.astro: <!-- p2d2: Blumenbeet-Icon für die Kategorien-Darstellung -->
+src/components/icons/Fahnenmasten.svg: 
+src/components/icons/Fahrradstaender.svg: 
+src/components/icons/FriedhofIcon.astro: <!-- p2d2: Friedhof-Icon für die Kategorien-Darstellung -->
+src/components/icons/GemeinschaftIcon.astro: <!-- p2d2: Gemeinschafts-Icon für die Werte-Darstellung -->
+src/components/icons/LaternenIcon.astro: <!-- p2d2: Laternen-Icon für die Kategorien-Darstellung -->
+src/components/icons/OffeneDatenIcon.astro: <!-- p2d2: Offene-Daten-Icon für die Werte-Darstellung -->
+src/components/icons/Pflanzenbehaelter.svg: 
+src/components/icons/Spielsandkisten.svg: 
+src/components/icons/Sportrasen.svg: 
+src/components/icons/Stege.svg: 
+src/components/icons/Strassenlaternen.svg: 
+src/components/icons/TransparenzIcon.astro: <!-- p2d2: Transparenz-Icon für die Werte-Darstellung -->
+src/components/icons/Tribuenen.svg: 
+src/components/icons/blumenbeet.svg: 
+src/components/icons/friedhof.svg: 
+src/config/map-config.ts: // p2d2: OpenLayers-Kartenkonfiguration (Center, Zoom, Layer-Z-Indizes)
+src/content/copyright/copyright.md: 
+src/content/hero.md: 
+src/content/intern/BMWSB.png: 
+src/content/intern/KOE_VM_Logo.jpg: 
+src/content/intern/KfW.png: 
+src/content/intern/Unbox_Logo.png: 
+src/content/intern/hintergrund.md: 
+src/content/intern/partner.md: 
+src/content/intern/status.md: 
+src/content/intern/umsetzung.md: 
+src/content/intern/ziel.md: 
+src/content/kategorien/abfallbehaelter.md: 
+src/content/kategorien/baume.md: 
+src/content/kategorien/blumenbeete.md: 
+src/content/kategorien/fahnenmaste.md: 
+src/content/kategorien/fahrradstaender.md: 
+src/content/kategorien/friedhoefe.md: 
+src/content/kategorien/oeffentlicherRaum.md: 
+src/content/kategorien/pflanzenbehaelter.md: 
+src/content/kategorien/spielsandkisten.md: 
+src/content/kategorien/sportrasen.md: 
+src/content/kategorien/stege.md: 
+src/content/kategorien/strassenlaternen.md: 
+src/content/kategorien/tribuenen.md: 
+src/content/kommunen/Dortmund.md: 
+src/content/kommunen/Kronshagen.md: 
+src/content/kommunen/berlin.md: 
+src/content/kommunen/bonn.md: 
+src/content/kommunen/bornheim.md: 
+src/content/kommunen/flensburg.md: 
+src/content/kommunen/hamburg.md: 
+src/content/kommunen/hangzhou.md: 
+src/content/kommunen/kiel.md: 
+src/content/kommunen/koeln.md: 
+src/content/kommunen/san-francisco.md: 
+src/content/legal/datenschutz.md: 
+src/content/legal/impressum.md: 
+src/content/legal/lizenzen.md: 
+src/content/mission.md: 
+src/content/mitmachmoeglichkeiten.md: 
+src/content/repositories/github.md: url: https://github.com/Peter-Koenig/p2d2-hub.git
+src/content/repositories/opencode.md: url: https://gitlab.opencode.de/OC000028072444/p2d2
+src/content/resources/api.md: 
+src/content/socialmedia/friendica.md: 
+src/content/socialmedia/mastodon.md: 
+src/content/socialmedia/peertube.md: 
+src/content/socialmedia/pixelfed.md: 
+src/content/werte/gemeinschaft.md: 
+src/content/werte/offene-daten.md: 
+src/content/werte/transparenz.md: 
+src/content.config.ts: // p2d2: Astro-Content-Collection-Definitionen (Kategorien, Kommunen, Intern, Legal)
+src/env.d.ts: // p2d2: TypeScript-Typen für Astro.locals (User, Session, Authentifizierung)
+src/examples/feature-popup-demo.md: # Feature Popup Demo - p2d2 Cemetery Feature Handler
+src/integrations/polygon-sync-plugin.mjs: 
+src/layouts/BaseLayout.astro: <!-- p2d2: Zentrales Seiten-Layout: Header, Content und Footer -->
+src/lib/auth/metadata-parser.ts: // p2d2: Defensiver Parser für Zitadel-User-Metadaten (Memberships, Preferences)
+src/lib/auth/oidc-client.ts: // p2d2: OIDC-Client-Singleton via Zitadel-Discovery-Endpoint
+src/lib/auth/origin-helper.ts: // p2d2: Ermittlung der externen Origin aus PUBLIC_SITE_URL für Reverse-Proxy-Setups
+src/lib/auth/session.ts: // p2d2: Session-Verschlüsselung, Cookie-Handling und UserSession-Factory
+src/middleware.ts: // p2d2: Astro-Middleware: Session-Lesung, User-Kontext, anonyme Fallbacks
+src/pages/api/altcha/challenge.ts: // p2d2: ALTCHA-Captcha-Challenge-API für Kontaktformular
+src/pages/api/auth/callback.ts: // p2d2: OIDC-Callback: Token-Exchange, Session-Aufbau, Request-Normalisierung
+src/pages/api/auth/login.ts: // p2d2: OIDC-Login: PKCE-Challenge, Authorization-Request, Scope-Definition
+src/pages/api/auth/logout.ts: // p2d2: OIDC-Logout: End-Session, Cookie-Löschung, client_id-Parameter
+src/pages/api/contact-submit.ts: // p2d2: Kontaktformular-Submit: SMTP-Versand mit Nodemailer
+src/pages/api/save-for-umap.ts: // p2d2: GeoJSON-Speicher-API für uMap-Export aus dem Feature-Editor
+src/pages/api/sync-polygons.ts: // p2d2: API-Endpunkt für manuelle OSM-Polygon-Synchronisation
+src/pages/api/wfs-proxy.ts: // p2d2: WFS-Proxy: Server-seitiger WFS-Request mit Auth-Forwarding
+src/pages/auth-error.astro: 
+src/pages/community.astro: <!-- p2d2: Community-Seite: Gruppen, Mitmach-Formate und Engagement -->
+src/pages/feature-editor/[featureId].astro: <!-- p2d2: Feature-Editor: Friedhofs-Grabflur-Editor mit Karte -->
+src/pages/index.astro: <!-- p2d2: Startseite mit Karte, Kategorien- und Kommunen-Grids -->
+src/pages/kontakt.astro: <!-- p2d2: Kontaktseite mit Formular und ALTCHA-Captcha -->
+src/pages/legal/[slug].astro: <!-- p2d2: Rechtsseiten: Impressum, Datenschutz, Lizenzen (dynamisch) -->
+src/pages/mitmachen.astro: <!-- p2d2: Mitmach-Seite: Wege zur Beteiligung an p2d2 -->
+src/pages/osm.astro: <!-- p2d2: OSM-Community-Seite: geschützter Bereich für Rolle "osm" -->
+src/pages/themenbereiche.astro: <!-- p2d2: Themenbereichs-Übersichtsseite mit Kategorien -->
+src/pages/ueber/hintergrund.astro: <!-- p2d2: Über p2d2: Hintergrund, Motivation und Data-DNA-Konzept -->
+src/pages/ueber/status.astro: <!-- p2d2: Über p2d2: Entwicklungsstand und Roadmap -->
+src/pages/ueber/testen.astro: <!-- p2d2: MeetUp-Seite: Community-Testing von p2d2 -->
+src/pages/ueber/umsetzung.astro: <!-- p2d2: Über p2d2: Technische Umsetzung und Architektur -->
+src/pages/ueber/ziel.astro: <!-- p2d2: Über p2d2: Ziele, Mission und langfristige Vision 2030 -->
+src/pages/verwaltung/grabflur-editor.astro: <!-- p2d2: Grabflur-Editor: Karte + Klick-Info für Verwaltungsnutzer -->
+src/pages/verwaltung.astro: <!-- p2d2: Verwaltungsbereich: geschützte Startseite für Rolle "verwaltung" -->
+src/scripts/__pycache__/fetch-cemeteries.cpython-313.pyc: 
+src/scripts/__pycache__/fetch_admin_polygons.cpython-313.pyc: 
+src/scripts/dev-startup.ts: // p2d2: Dev-Server-Startup: initiale OSM-Synchronisation beim Hochfahren
+src/scripts/fetch-cemeteries.py: 
+src/scripts/fetch_admin_polygons.py: 
+src/scripts/init-altcha.ts: // p2d2: ALTCHA-HMAC-Key-Initialisierung für Captcha-Dienst
+src/scripts/kommune-watcher.mjs: 
+src/scripts/manual-sync.ts: // p2d2: Manuelles OSM-Polygon-Sync-Script für Verwaltungsgrenzen
+src/scripts/test-polygon-sync.ts: // p2d2: Test-Script: Polygon-Synchronisation für einzelne Kommunen
+src/styles/feature-editor.css: /* p2d2: Feature-Editor-Styling: Map-Container, Toolbar, Karten-Overlays */
+src/styles/feature-popup.css: /* p2d2: Popup-Styling: Cemetery- und Grabflur-Info-Dialog */
+src/styles/global.css: /* p2d2: Globales Styling: Tailwind-Theme, Fonts, Hintergrund, UI-Komponenten */
+src/types/admin-polygon.ts: // p2d2: TypeScript-Typen für Verwaltungs-Polygon-Synchronisation
+src/utils/admin-polygon-sync.ts: // p2d2: Admin-Polygon-Sync-Manager: Bulk-Synchronisation aller Kommunen
+src/utils/cross-window-events.ts: // p2d2: Cross-Window-Event-Bridge zwischen Haupt- und Editor-Fenster
+src/utils/crs.ts: // p2d2: Koordinatenreferenzsystem: UTM-Zonen-Registrierung für OpenLayers
+src/utils/events.ts: // p2d2: Event-System: typisierte Cross-Window-Events für p2d2
+src/utils/feature-popup-handler.ts: // p2d2: Feature-Popup: Klick-Interaktion auf Friedhofs-Features
+src/utils/geo/__init__.py: 
+src/utils/geo/gml_converter.py: 
+src/utils/geo/overpass_downloader.py: 
+src/utils/kategorie-utils.ts: // p2d2: Kategorie-Utilities: Daten aus Content-Collection lesen
+src/utils/kommune-utils.ts: // p2d2: Kommune-Utilities: Daten aus Content-Collection lesen
+src/utils/kommunen-click-handler.ts: 
+src/utils/layer-interaction.ts: // p2d2: Layer-Interaktion: Hover- und Klick-Events auf Geodaten
+src/utils/layer-manager.ts: // p2d2: Zentraler Layer-Manager: Themen- und Kommunen-Layer auf Startseite
+src/utils/logger.ts: // p2d2: Logger: strukturiertes Logging mit levels und Formatierung
+src/utils/map-initializer.ts: // p2d2: Karten-Initialisierung: OpenLayers-Map-Erstellung und Layer-Setup
+src/utils/map-navigation.ts: // p2d2: Karten-Navigation: Zoom, Pan und Extent-Fit
+src/utils/map-state.ts: // p2d2: Globaler Karten-Status: Projektion, Center, Zoom, Layer
+src/utils/polygon-wfst-sync.ts: // p2d2: Polygon-Synchronisation: WFS-T-Import von OSM-Verwaltungsgrenzen
+src/utils/tab-persistence.ts: // p2d2: Tab-Persistenz: Kommunen/Kategorien-Tab-Status im localStorage
+src/utils/utm-resolutions.ts: // p2d2: UTM-Auflösungen: Zoomstufen für OpenLayers-View in UTM-Projektion
+src/utils/view-history-manager.ts: // p2d2: View-History: Zurück/Vor-Navigation in der Kartenansicht
+src/utils/wfs-auth.ts: // p2d2: WFS-Auth-Client: authentifizierte GeoServer-Anfragen
+src/utils/wfs-layer-manager.ts: // p2d2: WFS-Layer-Manager: dynamische Layer aus GeoServer für Hauptkarte
+src/utils/wfs-read-config.ts: // p2d2: WFS-Konfiguration: Layer-Definitionen für GeoServer-Integration
