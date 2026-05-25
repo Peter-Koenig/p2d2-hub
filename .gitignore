@@ -72,3 +72,4 @@ src-p2d2.txt
 refactor_GISEditor.sh
 env-bakups/*
 .env.*
+src.tar.txt
