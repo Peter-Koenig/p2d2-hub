@@ -12,81 +12,49 @@ if (!session.isAuthenticated || !session.roles.includes('verwaltung')) {
   return Astro.redirect('/');
 }
 
-// Kommune aus Benutzer-Metadaten ableiten
-const kommuneMembership = session.memberships?.find(
-  (m) => m.type === 'kommune',
-);
+const kommuneMembership = session.memberships?.find((m) => m.type === 'kommune');
 const kommuneSlug =
   kommuneMembership?.key ?? session.preferences?.homeKommuneSlug ?? null;
 const kommune = kommuneSlug ? await getKommuneBySlug(kommuneSlug) : null;
 
-const wpName = kommune?.wpName ?? '';
-const extent = kommune?.map?.extent ?? null;
-const center = kommune?.map?.center ?? null;
+const wpName     = kommune?.wpName ?? '';
+const extent     = kommune?.map?.extent ?? null;
+const center     = kommune?.map?.center ?? null;
 const projection = kommune?.map?.projection ?? 'EPSG:3857';
-const zoom = kommune?.map?.zoom ?? 12;
+const zoom       = kommune?.map?.zoom ?? 12;
 const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
 ---
 
-<BaseLayout
-  title={`Grabflur-Editor – ${kommuneTitle} | p2d2`}
-  showFooter={false}
->
-    <!-- Editor-Header (via slot – überschreibt den Standard-Header) -->
-    <header slot="header" class="feature-editor-header">
-      <div class="logo-container">
-        <img src="/images/logo.svg" alt="p2d2 Logo" class="logo" />
-        <span class="brand-name">p2d2</span>
-      </div>
-      <h1 class="editor-title">Grabflur-Editor: {kommuneTitle}</h1>
-      <button id="close-editor-btn" class="close-btn" aria-label="Editor schließen">Schließen</button>
-    </header>
+<BaseLayout title={`Grabflur-Editor – ${kommuneTitle} | p2d2`} showFooter={false}>
 
-  <div class="grabflur-editor-layout h-screen flex flex-col">
-    <!-- Hauptbereich -->
-    <div class="flex flex-1 overflow-hidden">
+  <!-- Editor-Header via slot -->
+  <header slot="header" class="feature-editor-header">
+    <div class="logo-container">
+      <img src="/images/logo.svg" alt="p2d2 Logo" class="logo" />
+      <span class="brand-name">p2d2</span>
+    </div>
+    <h1 class="editor-title">Grabflur-Editor: {kommuneTitle}</h1>
+    <button id="close-editor-btn" class="close-btn" aria-label="Editor schließen">
+      Schließen
+    </button>
+  </header>
+
+  <!-- Layout: nutzt feature-editor.css-Klassen für korrekte Darstellung mit abgerundeten Ecken -->
+  <div class="feature-editor-container">
+    <div class="editor-content">
       {kommune ? (
-        <>
-          <!-- Kartencontainer -->
-          <div class="flex-1 relative">
-            <div
-              id="grabflur-map"
-              class="w-full h-full"
-              data-wp-name={wpName}
-              data-extent={extent ? JSON.stringify(extent) : ''}
-              data-center={center ? JSON.stringify(center) : ''}
-              data-projection={projection}
-              data-zoom={zoom}
-            ></div>
-          </div>
-
-          <!-- Info-Panel -->
+        <div class="map-container">
           <div
-            id="feature-info"
-            class="w-72 bg-white border-l border-gray-200 overflow-y-auto p-4 flex flex-col gap-4"
-          >
-            <div class="text-center py-8 text-gray-400">
-              <svg
-                class="w-12 h-12 mx-auto mb-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.5"
-                  d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
-                />
-              </svg>
-              <p class="text-sm">
-                Klicke auf ein Grabflur-Polygon, um Informationen anzuzeigen.
-              </p>
-            </div>
-          </div>
-        </>
+            id="grabflur-map"
+            class="w-full h-full"
+            data-wp-name={wpName}
+            data-extent={extent ? JSON.stringify(extent) : ''}
+            data-center={center ? JSON.stringify(center) : ''}
+            data-projection={projection}
+            data-zoom={zoom}
+          ></div>
+        </div>
       ) : (
-        <!-- Fallback: Keine Kommune -->
         <div class="flex-1 flex items-center justify-center">
           <div class="text-center max-w-md mx-auto p-8">
             <h2 class="font-poppins font-bold text-2xl text-gray-900 mb-4">
@@ -109,129 +77,69 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
   </div>
 
   <style>
-    /* Editor-Header – konsistent zum FeatureEditorHeader */
     .feature-editor-header {
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        align-items: center;
-        padding: 1rem 1.5rem;
-        background: rgba(240, 253, 244, 0.9);
-        border-bottom: 1px solid #bbf7d0;
-        gap: 1rem;
-        position: relative;
-        z-index: 50;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      background: rgba(240, 253, 244, 0.9);
+      border-bottom: 1px solid #bbf7d0;
+      gap: 1rem;
+      position: relative;
+      z-index: 50;
     }
-
-    .logo-container {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
+    .logo-container { display: flex; align-items: center; gap: 0.75rem; }
+    .logo           { height: 2rem; width: auto; }
+    .brand-name     { font-size: 1.5rem; font-weight: 700; color: #14532d; }
+    .editor-title   {
+      font-size: 1.25rem; font-weight: 600; color: #14532d;
+      text-align: center; margin: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-
-    .logo {
-        height: 2rem;
-        width: auto;
-    }
-
-    .brand-name {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #14532d;
-    }
-
-    .editor-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #14532d;
-        text-align: center;
-        margin: 0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
     .close-btn {
-        padding: 0.5rem 1rem;
-        background: #dc2626;
-        color: white;
-        border: none;
-        border-radius: 0.375rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background 0.2s;
-        font-size: 0.875rem;
-        white-space: nowrap;
+      padding: 0.5rem 1rem; background: #dc2626; color: white;
+      border: none; border-radius: 0.375rem; font-weight: 500;
+      cursor: pointer; transition: background 0.2s; font-size: 0.875rem;
+      white-space: nowrap;
     }
-
-    .close-btn:hover {
-        background: #b91c1c;
-    }
-
-    .close-btn:active {
-        transform: scale(0.98);
-    }
+    .close-btn:hover  { background: #b91c1c; }
+    .close-btn:active { transform: scale(0.98); }
 
     @media (max-width: 768px) {
-        .feature-editor-header {
-            grid-template-columns: 1fr;
-            grid-template-rows: auto auto;
-            padding: 0.75rem 1rem;
-            gap: 0.75rem;
-        }
-
-        .logo-container {
-            grid-column: 1;
-            grid-row: 1;
-        }
-
-        .close-btn {
-            grid-column: 1;
-            grid-row: 1;
-            justify-self: end;
-            align-self: center;
-            padding: 0.375rem 0.75rem;
-        }
-
-        .editor-title {
-            grid-column: 1;
-            grid-row: 2;
-            font-size: 1rem;
-        }
-
-        .logo {
-            height: 1.5rem;
-        }
-
-        .brand-name {
-            font-size: 1.25rem;
-        }
+      .feature-editor-header {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        padding: 0.75rem 1rem;
+        gap: 0.5rem;
+      }
+      .logo-container { grid-column: 1; grid-row: 1; }
+      .close-btn      { grid-column: 1; grid-row: 1; justify-self: end; align-self: center; padding: 0.375rem 0.75rem; }
+      .editor-title   { grid-column: 1; grid-row: 2; font-size: 1rem; }
+      .logo           { height: 1.5rem; }
+      .brand-name     { font-size: 1.25rem; }
     }
   </style>
 
-  <!-- Schließen-Button Script -->
   <script>
-    document
-      .getElementById("close-editor-btn")
-      ?.addEventListener("click", () => {
-        // Keine Dirty-Prüfung im Grabflur-Editor (keine Persistenz vorhanden)
-        window.close();
-        if (!window.closed) {
-          window.history.back();
-        }
-      });
+    document.getElementById('close-editor-btn')?.addEventListener('click', () => {
+      window.close();
+      if (!window.closed) window.history.back();
+    });
   </script>
 
   <script>
     import { MapManager } from '../../components/feature-editor/MapManager';
     import { wfsAuthClient } from '../../utils/wfs-auth';
+    import { initializeCrossWindowBridge } from '../../utils/cross-window-events';
     import GeoJSON from 'ol/format/GeoJSON';
     import VectorSource from 'ol/source/Vector';
     import VectorLayer from 'ol/layer/Vector';
     import Overlay from 'ol/Overlay';
-    import { Style, Stroke, Fill, Text } from 'ol/style';
+    import { Style, Stroke, Fill } from 'ol/style';
     import { Select } from 'ol/interaction';
     import { click } from 'ol/events/condition';
     import { getArea } from 'ol/sphere';
+    import { transformExtent } from 'ol/proj';
 
     function domReady(callback: () => void): void {
       if (document.readyState === 'loading') {
@@ -242,126 +150,40 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
     }
 
     domReady(async () => {
+      // Cross-Window-Bridge initialisieren (für EventConsole Cross-Window-Logging)
+      initializeCrossWindowBridge();
+
       const container = document.getElementById('grabflur-map');
       if (!container) return;
 
-      const wpName = container.dataset.wpName || '';
+      const wpName     = container.dataset.wpName || '';
       const projection = container.dataset.projection || 'EPSG:3857';
+      const extentRaw  = container.dataset.extent || '';
+      const centerRaw  = container.dataset.center || '';
+      const zoom       = parseInt(container.dataset.zoom || '12', 10);
 
       try {
-        // -------------------------------------------------------
-        // 1. MapManager initialisieren – erzeugt OSM + View + Controls
-        // -------------------------------------------------------
+        // 1. MapManager initialisieren
         const mapManager = new MapManager('grabflur-map', projection);
         const map = mapManager.getMap();
 
-        // -------------------------------------------------------
-        // 2. Friedhofs-WFS-Layer (L8) anlegen
-        // -------------------------------------------------------
+        // 2. Friedhofs-WFS-Layer vorbereiten (Layer vor postrender hinzufügen)
         const friedhofSource = new VectorSource();
         const friedhofLayer = new VectorLayer({
           source: friedhofSource,
+          zIndex: 20,
           style: new Style({
-            stroke: new Stroke({ color: '#0d9488', width: 2 }),
-            fill: new Fill({ color: 'rgba(13, 148, 136, 0.1)' }),
+            stroke: new Stroke({ color: '#FF6900', width: 2 }),
+            fill:   new Fill({ color: 'rgba(255, 105, 0, 0.1)' }),
           }),
         });
         map.addLayer(friedhofLayer);
 
-        // -------------------------------------------------------
-        // 3. Friedhofs-Daten (L8) per WFS laden
-        // -------------------------------------------------------
-        if (wpName) {
-          try {
-            const wfsUrl = wfsAuthClient.buildWFSURL('geo-containers', {
-              CQL_FILTER: `container_type='cemetery' AND osm_admin_level=8 AND wp_name='${wpName}'`,
-            });
-
-            const response = await wfsAuthClient.fetchWFS(wfsUrl);
-            if (!response.ok) {
-              throw new Error(
-                `WFS-Fehler: ${response.status} ${response.statusText}`,
-              );
-            }
-
-            const geojson = await response.json();
-
-            const format = new GeoJSON();
-            const features = format.readFeatures(geojson, {
-              dataProjection: 'EPSG:4326',
-              featureProjection: projection,
-            });
-
-            // Namen aus den Rohdaten in die Feature-Properties übernehmen
-            if (geojson.features) {
-              geojson.features.forEach((raw: any, i: number) => {
-                if (features[i]) {
-                  features[i].set('name', raw.properties?.name || 'Unbenannt');
-                  features[i].set('container_type', raw.properties?.container_type || '');
-                }
-              });
-            }
-
-            friedhofSource.addFeatures(features);
-
-            // Immer auf BBOX der geladenen Friedhöfe zoomen (robuster als vorgespeicherter Kommune-Extent)
-            if (features.length > 0) {
-              const extent = friedhofSource.getExtent();
-              if (extent && !isNaN(extent[0]) && !isNaN(extent[1])) {
-                map.getView().fit(extent, {
-                  size: map.getSize(),
-                  padding: [50, 50, 50, 50],
-                  maxZoom: 16,
-                });
-              }
-            }
-
-            // Dynamischer Style mit Friedhofsnamen
-            friedhofLayer.setStyle((feature) => {
-              const name = feature.get('name') || '';
-              return new Style({
-                stroke: new Stroke({ color: '#0d9488', width: 2 }),
-                fill: new Fill({ color: 'rgba(13, 148, 136, 0.1)' }),
-                text: name
-                  ? new Text({
-                      text: name,
-                      font: 'bold 12px Inter, sans-serif',
-                      fill: new Fill({ color: '#0d9488' }),
-                      stroke: new Stroke({ color: '#ffffff', width: 3 }),
-                      overflow: true,
-                    })
-                  : undefined,
-              });
-            });
-
-            console.log(
-              `[Grabflur-Editor] ${features.length} Friedhöfe geladen`,
-            );
-          } catch (err) {
-            console.error(
-              '[Grabflur-Editor] Fehler beim Laden der Friedhöfe:',
-              err,
-            );
-            // Fehler im UI anzeigen
-            const infoPanel = document.getElementById('feature-info');
-            if (infoPanel) {
-              infoPanel.innerHTML = `
-                <div class="p-4 text-center">
-                  <p class="text-red-600 text-sm font-medium mb-2">Fehler beim Laden der Friedhöfe</p>
-                  <p class="text-gray-500 text-xs">${err instanceof Error ? err.message : 'Unbekannter Fehler'}</p>
-                </div>
-              `;
-            }
-          }
-        }
-
-        // -------------------------------------------------------
-        // 4. Hover-Popup für Friedhofsnamen
-        // -------------------------------------------------------
+        // Hover-Popup vorbereiten
         const popupElement = document.createElement('div');
         popupElement.className = 'grabflur-hover-popup';
         popupElement.style.cssText =
-          'display: none; position: absolute; background: white; border: 1px solid #0d9488; border-radius: 6px; padding: 6px 10px; font-size: 13px; pointer-events: none; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.15);';
+          'display:none;position:absolute;background:white;border:1px solid #FF6900;border-radius:6px;padding:6px 10px;font-size:13px;pointer-events:none;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.15);';
         document.body.appendChild(popupElement);
 
         const hoverPopup = new Overlay({
@@ -372,128 +194,205 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
         });
         map.addOverlay(hoverPopup);
 
-        let hoverFeature: any = null;
-        let hoverTimeout: number | null = null;
+        // 3. FIX Race Condition: WFS-Load NACH erstem postrender
+        //    → Map hat dann garantiert eine echte Größe (nicht [0,0])
+        map.once('postrender', async () => {
+          map.updateSize();
 
+          // 4. WFS-Daten laden
+          if (!wpName) return;
+
+          try {
+            const baseUrl = wfsAuthClient.buildWFSURL('geo-containers');
+            const cqlFilter = `container_type='cemetery' AND osm_admin_level=8 AND wp_name='${wpName}'`;
+            const wfsUrl = `${baseUrl}&CQL_FILTER=${encodeURIComponent(cqlFilter)}`;
+
+            const response = await wfsAuthClient.fetchWFS(wfsUrl);
+            if (!response.ok) throw new Error(`WFS ${response.status} ${response.statusText}`);
+
+            const geojson  = await response.json();
+            const format   = new GeoJSON();
+            const features = format.readFeatures(geojson, {
+              dataProjection: 'EPSG:4326',
+              featureProjection: projection,
+            });
+
+            if (geojson.features) {
+              geojson.features.forEach((raw: any, i: number) => {
+                if (features[i]) {
+                  features[i].set('name', raw.properties?.name || 'Unbenannt');
+                  features[i].set('container_type', raw.properties?.container_type || '');
+                }
+              });
+            }
+
+
+
+            friedhofSource.addFeatures(features);
+
+            // ─── DIAGNOSE 1: Feature-Validierung ───
+            /* DIAG */ console.log('--- DIAGNOSE [Grabflur-Editor] ---');
+            /* DIAG */ console.log('[DIAG] Features im Source:', friedhofSource.getFeatures().length);
+            /* DIAG */ const firstFeat = features[0];
+            /* DIAG */ if (firstFeat) {
+            /* DIAG */   const geom = firstFeat.getGeometry();
+            /* DIAG */   const coords = geom?.getFirstCoordinate();
+            /* DIAG */   console.log('[DIAG] Erstes Feature – Typ:', geom?.getType(), '| erste Koordinate:', coords);
+            /* DIAG */   console.log('[DIAG]   → Erwarte UTM-Werte (z.B. [354000, 5645000]) – sind es lat/lon?');
+            /* DIAG */ }
+            /* DIAG */ const srcExtent = friedhofSource.getExtent();
+            /* DIAG */ console.log('[DIAG] Source-Extent:', srcExtent);
+            /* DIAG */ console.log('[DIAG] Extent ist valide (nicht Infinity)?', srcExtent.every((v: number) => Number.isFinite(v)));
+            /* DIAG */ console.log('[DIAG] View-Projektion:', map.getView().getProjection().getCode());
+            /* DIAG */ console.log('[DIAG] featureProjection beim readFeatures:', projection);
+            /* DIAG */ console.log('--- ENDE DIAGNOSE 1 ---');
+
+            // Auf geladene Features zoomen
+            if (features.length > 0) {
+              const loadedExtent = friedhofSource.getExtent();
+              const mapSize      = map.getSize();
+              console.log('[Grabflur-Editor] 🔍 fit() Aufruf:', { loadedExtent, mapSize });
+              if (mapSize && mapSize[0] > 0 && loadedExtent.every(Number.isFinite)) {
+                map.getView().fit(loadedExtent, {
+                  size:    mapSize,
+                  padding: [50, 50, 50, 50],
+                  maxZoom: 16,
+                });
+                console.log('[Grabflur-Editor] ✅ fit() ausgeführt, Center:', map.getView().getCenter());
+              }
+            }
+
+            console.log(`[Grabflur-Editor] ✅ ${features.length} Friedhöfe geladen`);
+
+            // ─── DIAGNOSE 2: Render-Check nach dem durch fit() getriggerten Render ───
+            /* DIAG */ map.once('postrender', () => {
+            /* DIAG */   console.log('--- DIAGNOSE 2 [Grabflur-Editor] nach fit()-Render ---');
+            /* DIAG */   const centerCoord = map.getView().getCenter();
+            /* DIAG */   const centerPixel = centerCoord ? map.getPixelFromCoordinate(centerCoord) : null;
+            /* DIAG */   console.log('[DIAG2] View-Center (Koordinate):', centerCoord);
+            /* DIAG */   console.log('[DIAG2] View-Center (Pixel):', centerPixel);
+            /* DIAG */   console.log('[DIAG2] Map-Size:', map.getSize());
+            /* DIAG */   console.log('[DIAG2] View-Zoom:', map.getView().getZoom());
+            /* DIAG */   console.log('[DIAG2] Layer sichtbar?:', friedhofLayer.getVisible());
+            /* DIAG */   console.log('[DIAG2] Layer-ZIndex:', friedhofLayer.getZIndex());
+            /* DIAG */   console.log('[DIAG2] Feature-Anzahl Source:', friedhofSource.getFeatures().length);
+            /* DIAG */   console.log('[DIAG2] Layer-Liste:',
+            /* DIAG */     map.getLayers().getArray().map((l: any, i: number) =>
+            /* DIAG */       `${i}:${l instanceof VectorLayer ? 'Vector' : 'Tile'} z=${l.getZIndex()}`
+            /* DIAG */     ).join(' | ')
+            /* DIAG */   );
+            /* DIAG */   // Prüfe Features an 9 gleichmäßig verteilten Pixeln (3×3 Raster)
+            /* DIAG */   if (centerPixel) {
+            /* DIAG */     const mapSize = map.getSize()!;
+            /* DIAG */     const pixelsToCheck = [
+            /* DIAG */       { label: 'Zentrum', px: centerPixel[0], py: centerPixel[1] },
+            /* DIAG */       { label: 'oben-links', px: 50, py: 50 },
+            /* DIAG */       { label: 'oben-rechts', px: mapSize[0] - 50, py: 50 },
+            /* DIAG */       { label: 'unten-links', px: 50, py: mapSize[1] - 50 },
+            /* DIAG */       { label: 'unten-rechts', px: mapSize[0] - 50, py: mapSize[1] - 50 },
+            /* DIAG */       { label: 'oben-Mitte', px: Math.round(mapSize[0] / 2), py: 50 },
+            /* DIAG */       { label: 'unten-Mitte', px: Math.round(mapSize[0] / 2), py: mapSize[1] - 50 },
+            /* DIAG */       { label: 'Mitte-links', px: 50, py: Math.round(mapSize[1] / 2) },
+            /* DIAG */       { label: 'Mitte-rechts', px: mapSize[0] - 50, py: Math.round(mapSize[1] / 2) },
+            /* DIAG */     ];
+            /* DIAG */     let totalFound = 0;
+            /* DIAG */     for (const p of pixelsToCheck) {
+            /* DIAG */       const features = map.getFeaturesAtPixel([p.px, p.py], { hitTolerance: 5 });
+            /* DIAG */       if (features && features.length > 0) {
+            /* DIAG */         totalFound += features.length;
+            /* DIAG */         console.log('[DIAG2] ✅ Pixel', p.label, `(${p.px},${p.py}):`, features.length, 'Feature(s)');
+            /* DIAG */         features.forEach((f: any) => console.log('[DIAG2]   →', f.get('name') || 'unbenannt'));
+            /* DIAG */       } else {
+            /* DIAG */         console.log('[DIAG2] ❌ Pixel', p.label, `(${p.px},${p.py}):`, '0 Features');
+            /* DIAG */       }
+            /* DIAG */     }
+            /* DIAG */     console.log('[DIAG2] Features insgesamt an 9 Pixeln:', totalFound);
+            /* DIAG */     if (totalFound === 0) {
+            /* DIAG */       console.log('[DIAG2] 🚨 KEIN EINZIGES Feature an 9 Pixeln gefunden – Layer wird NICHT gerendert!');
+            /* DIAG */       console.log('[DIAG2] Mögliche Ursachen: Layer unsichtbar, WebGL-Fehler, Z-Index-Konflikt, Canvas nicht im DOM');
+            /* DIAG */     }
+            /* DIAG */   }
+            /* DIAG */   console.log('--- ENDE DIAGNOSE 2 ---');
+            /* DIAG */ });
+            // ─── ENDE DIAGNOSE 2 ───
+
+          } catch (err) {
+            console.error('[Grabflur-Editor] WFS-Fehler:', err);
+            const mapEl = document.getElementById('grabflur-map');
+            if (mapEl) {
+              const errDiv = document.createElement('div');
+              errDiv.className = 'absolute inset-0 flex items-center justify-center bg-white/80 z-50';
+              errDiv.innerHTML = `<p class="text-red-600 font-medium">Fehler beim Laden der Friedhöfe:<br>
+                <span class="text-sm font-normal">${err instanceof Error ? err.message : 'Unbekannter Fehler'}</span></p>`;
+              mapEl.style.position = 'relative';
+              mapEl.appendChild(errDiv);
+            }
+          }
+        }); // Ende map.once('postrender')
+
+        // 5. Hover-Interaktion
+        let hoverFeature: any = null;
+        let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
         const HOVER_STYLE = new Style({
-          stroke: new Stroke({ color: '#0d6660', width: 3 }),
-          fill: new Fill({ color: 'rgba(13, 148, 136, 0.25)' }),
+          stroke: new Stroke({ color: '#CC5500', width: 3 }),
+          fill:   new Fill({ color: 'rgba(255, 105, 0, 0.35)' }),
         });
 
         map.on('pointermove', (evt) => {
           if (evt.dragging) return;
-
           let featureAtPixel: any = null;
-
           map.forEachFeatureAtPixel(evt.pixel, (f, layer) => {
-            if (layer === friedhofLayer) {
-              featureAtPixel = f;
-              return true;
-            }
+            if (layer === friedhofLayer) { featureAtPixel = f; return true; }
           });
 
           if (featureAtPixel !== hoverFeature) {
             if (hoverTimeout) clearTimeout(hoverTimeout);
-
-            // Vorheriges Hover-Feature zurücksetzen
-            if (hoverFeature) {
-              hoverFeature.setStyle(undefined);
-            }
-
+            if (hoverFeature) hoverFeature.setStyle(undefined);
             hoverFeature = featureAtPixel;
 
             if (!featureAtPixel) {
               popupElement.style.display = 'none';
               hoverPopup.setPosition(undefined);
+              return;
             }
 
-            if (featureAtPixel) {
-              featureAtPixel.setStyle(HOVER_STYLE);
-
-              hoverTimeout = window.setTimeout(() => {
-                const name = featureAtPixel.get('name') || 'Unbenannt';
-                popupElement.innerHTML = `
-                  <div style="font-weight: 600; color: #0d9488;">Friedhof</div>
-                  <div style="color: #374151; font-size: 12px;">${name}</div>
-                `;
-                popupElement.style.display = 'block';
-                hoverPopup.setPosition(evt.coordinate);
-              }, 600);
-            }
+            featureAtPixel.setStyle(HOVER_STYLE);
+            hoverTimeout = setTimeout(() => {
+              const name = featureAtPixel.get('name') || 'Unbenannt';
+              popupElement.innerHTML = `
+                <div style="font-weight:600;color:#FF6900;">Friedhof</div>
+                <div style="color:#374151;font-size:12px;">${name}</div>`;
+              popupElement.style.display = 'block';
+              hoverPopup.setPosition(evt.coordinate);
+            }, 600);
           }
         });
 
-        // -------------------------------------------------------
-        // 5. Klick-Interaktion: Friedhof selektieren + Info anzeigen
-        // -------------------------------------------------------
+        // 6. Klick-Selektion
         const select = new Select({ condition: click });
         map.addInteraction(select);
 
-        const infoPanel = document.getElementById('feature-info');
         select.on('select', (e) => {
-          if (!infoPanel) return;
-
           const selected = e.selected[0];
-          if (!selected) {
-            // Deselektiert → Platzhalter anzeigen
-            infoPanel.innerHTML = `
-              <div class="text-center py-8 text-gray-400">
-                <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
-                </svg>
-                <p class="text-sm">Klicke auf ein Friedhofs-Polygon, um Informationen anzuzeigen.</p>
-              </div>
-            `;
-            return;
+          // Kein Info-Panel mehr – bei Bedarf hier einen kompakten Toast/Overlay einbauen
+          if (selected) {
+            const name = selected.get('name') || 'Unbenannt';
+            console.log(`[Grabflur-Editor] Ausgewählt: ${name}`);
           }
-
-          const name = selected.get('name') || 'Unbenannt';
-          const id = String(selected.getId() ?? '');
-          const area = getArea(selected.getGeometry()!, { projection });
-          const areaHa = (area / 10000).toFixed(2);
-          const areaM2 = area.toFixed(0);
-
-          infoPanel.innerHTML = `
-            <div>
-              <h3 class="font-poppins font-bold text-base text-gray-900 mb-4">Friedhofs-Details</h3>
-              <dl class="space-y-3 text-sm">
-                <div class="border-b border-gray-100 pb-2">
-                  <dt class="text-gray-500 text-xs uppercase tracking-wide">Name</dt>
-                  <dd class="font-medium text-gray-900 mt-0.5">${name}</dd>
-                </div>
-                <div class="border-b border-gray-100 pb-2">
-                  <dt class="text-gray-500 text-xs uppercase tracking-wide">ID</dt>
-                  <dd class="font-mono text-xs text-gray-700 mt-0.5 break-all">${id}</dd>
-                </div>
-                <div class="border-b border-gray-100 pb-2">
-                  <dt class="text-gray-500 text-xs uppercase tracking-wide">Fläche</dt>
-                  <dd class="font-medium text-gray-900 mt-0.5">${areaHa} ha <span class="text-gray-400 font-normal">(${areaM2} m²)</span></dd>
-                </div>
-              </dl>
-            </div>
-            <div class="mt-4 pt-3 border-t border-gray-100">
-              <p class="text-xs text-gray-400 italic">Friedhof auswählen und mit Doppelklick den Grabflur-Editor öffnen.</p>
-            </div>
-          `;
         });
 
-        console.log('[Grabflur-Editor] ✅ Schritt 1 abgeschlossen: Friedhöfe geladen');
       } catch (err) {
-        console.error(
-          '[Grabflur-Editor] Fehler bei der Initialisierung:',
-          err,
-        );
-        const containerEl = document.getElementById('grabflur-map');
-        if (containerEl && !containerEl.querySelector('.error-message')) {
-          const errorDiv = document.createElement('div');
-          errorDiv.className =
-            'error-message absolute inset-0 flex items-center justify-center bg-white/80';
-          errorDiv.innerHTML =
-            '<p class="text-red-600 font-medium">Fehler beim Initialisieren der Karte.</p>';
-          containerEl.style.position = 'relative';
-          containerEl.appendChild(errorDiv);
+        console.error('[Grabflur-Editor] Initialisierungsfehler:', err);
+        const mapEl = document.getElementById('grabflur-map');
+        if (mapEl) {
+          const errDiv = document.createElement('div');
+          errDiv.className = 'absolute inset-0 flex items-center justify-center bg-white/80';
+          errDiv.innerHTML = '<p class="text-red-600 font-medium">Fehler beim Initialisieren der Karte.</p>';
+          mapEl.style.position = 'relative';
+          mapEl.appendChild(errDiv);
         }
       }
     });
   </script>
+
 </BaseLayout>
