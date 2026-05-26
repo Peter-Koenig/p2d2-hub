@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: Kommune-Utilities: Daten aus Content-Collection lesen
 import { readFileSync, readdirSync } from "fs";
 import { join, extname } from "path";
 import matter from "gray-matter";

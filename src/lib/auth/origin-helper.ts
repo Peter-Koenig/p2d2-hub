@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: Ermittlung der externen Origin aus PUBLIC_SITE_URL für Reverse-Proxy-Setups
 
 /**
  * Ermittelt den korrekten Origin für OIDC-Redirects.

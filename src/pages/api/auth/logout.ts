@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: OIDC-Logout: End-Session, Cookie-Löschung, client_id-Parameter
 import type { APIRoute } from "astro";
 import { getOrigin } from "../../../lib/auth/origin-helper";
 import { getSession, clearSession } from "../../../lib/auth/session";

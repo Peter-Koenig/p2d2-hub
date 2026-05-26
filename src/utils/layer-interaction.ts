@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: Layer-Interaktion: Hover- und Klick-Events auf Geodaten
 /**
  * Layer Interaction Manager
  * Handles long-press opacity adjustment for WMS layers

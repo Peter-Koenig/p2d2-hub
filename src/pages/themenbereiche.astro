@@ -1,12 +1,13 @@
 <!-- SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu> -->
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
+<!-- p2d2: Themenbereichs-Übersichtsseite mit Kategorien -->
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ThemenbereicheOverview from '../components/ThemenbereicheOverview.astro';
 ---
 
-<BaseLayout 
-  title="Themenbereiche | p2d2 - Public-Public Data-DNA" 
+<BaseLayout
+  title="Themenbereiche | p2d2 - Public-Public Data-DNA"
   description="Entdecke die verschiedenen Themenbereiche von p2d2 und finde Projekte, die zu deinen Interessen passen."
 >
   <main class="flex flex-col items-center w-full">
@@ -14,7 +15,7 @@ import ThemenbereicheOverview from '../components/ThemenbereicheOverview.astro';
     <!-- Detaillierte Themenbereiche -->
     <section class="w-full max-w-5xl mx-auto px-6 py-12">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        
+
         <!-- Friedhöfe digitalisieren -->
         <div class="themenbereich-card bg-white p-8 rounded-xl border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
           <div class="h-2 bg-primary-500 rounded-full mb-6"></div>
@@ -100,8 +101,8 @@ import ThemenbereicheOverview from '../components/ThemenbereicheOverview.astro';
         <p class="text-xl mb-8 max-w-2xl mx-auto">
           Wähle einen Themenbereich aus und starte noch heute mit der Erfassung in deiner Umgebung.
         </p>
-        <a 
-          href="/mitmachen" 
+        <a
+          href="/mitmachen"
           class="inline-block bg-white text-primary-700 font-bold px-8 py-4 rounded-lg hover:bg-gray-100 transition-all duration-300 hover:scale-105"
         >
           Jetzt mitmachen!
@@ -111,4 +112,3 @@ import ThemenbereicheOverview from '../components/ThemenbereicheOverview.astro';
 
   </main>
 </BaseLayout>
-

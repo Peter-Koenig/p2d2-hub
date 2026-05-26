@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: UTM-Auflösungen: Zoomstufen für OpenLayers-View in UTM-Projektion
 /**
  * UTM Projection Resolutions Utility
  *
@@ -35,7 +36,7 @@
  */
 export function calculateUtmResolutions(
   maxResolution: number = 15000,
-  maxZoom: number = 28
+  maxZoom: number = 28,
 ): number[] {
   const resolutions: number[] = [];
 
@@ -67,12 +68,12 @@ export function isUtmProjection(projection: string): boolean {
  */
 export function getRecommendedMaxResolution(projection: string): number {
   if (isUtmProjection(projection)) {
-    return 15000;  // ~15km/px at zoom 0 for all UTM zones
+    return 15000; // ~15km/px at zoom 0 for all UTM zones
   }
 
   // EPSG:3857 (Web Mercator)
-  if (projection === 'EPSG:3857') {
-    return 156543.03;  // Standard Web Mercator
+  if (projection === "EPSG:3857") {
+    return 156543.03; // Standard Web Mercator
   }
 
   // Fallback
