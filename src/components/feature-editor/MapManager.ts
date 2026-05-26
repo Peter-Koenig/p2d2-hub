@@ -5,6 +5,7 @@ import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";
 import { defaults } from "ol/control/defaults";
 import FullScreen from "ol/control/FullScreen";
+import { defaults as defaultInteractions } from "ol/interaction";
 // KORREKTUR: 'get' importieren
 import { transformExtent, get as getProjection } from "ol/proj";
 
@@ -73,6 +74,10 @@ export class MapManager {
           zIndex: MAP_CONFIG.Z_INDEX.BASE,
         }),
       ],
+      interactions: defaultInteractions({
+        altShiftDragRotate: false,
+        pinchRotate: false,
+      }),
       controls: defaults({
         zoom: MAP_CONFIG.CONTROLS.ZOOM,
         rotate: MAP_CONFIG.CONTROLS.ROTATE,

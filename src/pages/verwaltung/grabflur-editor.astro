@@ -66,6 +66,39 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
               </svg>
             </button>
           </div>
+          <!-- Layer-Steuerung -->
+          <div class="layer-controls">
+            <button id="toggle-luftbild" class="layer-btn" data-layer-toggle="luftbild" title="Luftbild 2024 ein-/ausblenden">
+              <span class="layer-icon">🕊️</span>
+              <span class="layer-label">Luftbild 2024</span>
+            </button>
+            <button id="toggle-basemap" class="layer-btn" data-layer-toggle="basemap" title="basemap.de ein-/ausblenden">
+              <span class="layer-icon">🗺️</span>
+              <span class="layer-label">basemap.de</span>
+            </button>
+
+          </div>
+          <!-- Editier-Werkzeuge (Toolbar) -->
+          <div class="toolbar-controls" id="toolbar-controls">
+            <div id="edit-tools-container" class="edit-tools-hidden">
+              <button id="tool-select" class="tool-btn highlighted" data-tool="select" title="Auswählen (S)">
+                <span>👆</span>
+              </button>
+              <button id="tool-move" class="tool-btn" data-tool="move" title="Verschieben (M)">
+                <span>↔️</span>
+              </button>
+              <button id="tool-modify" class="tool-btn" data-tool="modify" title="Punkte bearbeiten (E)">
+                <span>✍️</span>
+              </button>
+              <div class="toolbar-divider"></div>
+              <button id="tool-save" class="tool-btn save-btn" data-tool="save" title="Speichern" disabled>
+                <span>💾</span>
+              </button>
+              <button id="tool-cancel" class="tool-btn cancel-btn" data-tool="cancel" title="Abbrechen">
+                <span>❌</span>
+              </button>
+            </div>
+          </div>
         </div>
       ) : (
         <div class="flex-1 flex items-center justify-center">
@@ -178,6 +211,98 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
       .nav-btn { transition: none; }
       .nav-btn:hover:not(:disabled) { transform: none; }
     }
+
+    /* Layer-Steuerung (rechts oben) */
+    .layer-controls {
+      position: absolute;
+      top: 0.4rem;
+      right: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 40;
+    }
+    .layer-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      color: #374151;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .layer-btn:hover {
+      background: #f9fafb;
+      border-color: #9ca3af;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .layer-btn.highlighted {
+      background: #dc2626;
+      border-color: #b91c1c;
+      color: white;
+    }
+    .layer-btn.highlighted:hover {
+      background: #b91c1c;
+      border-color: #991b1b;
+    }
+    .layer-icon { font-size: 1.25rem; width: 1.25rem; height: 1.25rem; }
+    .layer-label { white-space: nowrap; }
+
+    /* Toolbar (unten mittig) */
+    .toolbar-controls {
+      position: absolute;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: rgba(255,255,255,0.9);
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      backdrop-filter: blur(4px);
+    }
+    .edit-tools-hidden { display: none; }
+    .edit-tools-visible { display: flex; gap: 0.5rem; }
+    .tool-btn {
+      width: 40px; height: 40px;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      font-size: 1.25rem;
+    }
+    .tool-btn:hover:not(:disabled) {
+      background: #f9fafb;
+      border-color: #9ca3af;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .tool-btn.highlighted { background: #3b82f6; border-color: #2563eb; color: white; }
+    .toolbar-divider { width: 1px; background: #e5e7eb; margin: 0 0.25rem; }
+    .save-btn { background: #16a34a; color: white; border-color: #15803d; }
+    .save-btn:hover:not(:disabled) { background: #15803d; }
+    .cancel-btn { background: #dc2626; color: white; border-color: #b91c1c; }
+    .cancel-btn:hover:not(:disabled) { background: #b91c1c; }
+
+    @media (max-width: 768px) {
+      .layer-controls { top: 3rem; right: 0.5rem; }
+      .layer-btn { padding: 0.375rem 0.5rem; font-size: 0.75rem; }
+      .layer-icon { font-size: 1rem; width: 1rem; height: 1rem; }
+      .layer-label { display: none; }
+      .toolbar-controls { bottom: 0.5rem; padding: 0.375rem; }
+      .tool-btn { width: 36px; height: 36px; font-size: 1.125rem; }
+    }
   </style>
 
   <script>
@@ -194,9 +319,11 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
     import GeoJSON from 'ol/format/GeoJSON';
     import VectorSource from 'ol/source/Vector';
     import VectorLayer from 'ol/layer/Vector';
+    import TileLayer from 'ol/layer/Tile';
+    import TileWMS from 'ol/source/TileWMS';
     import Overlay from 'ol/Overlay';
     import { Style, Stroke, Fill } from 'ol/style';
-    import { Select } from 'ol/interaction';
+    import { Select, Translate, Modify, Interaction } from 'ol/interaction';
     import { click } from 'ol/events/condition';
     import { getArea } from 'ol/sphere';
     import { transformExtent } from 'ol/proj';
@@ -491,11 +618,25 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
         select.on('select', async (e) => {
           const selected = e.selected[0];
 
-          // ── Deselektiert → Grabflure ausblenden ──
+          // ── Deselektiert → Grabflure ausblenden (außer Klick war auf Grabflur) ──
           if (!selected) {
+            // Prüfen ob der Klick auf einer Grabflur war (dann nicht eingreifen)
+            const evt = e.mapBrowserEvent;
+            let hitGrabflure = false;
+            if (grabflureLayer.getVisible() && evt) {
+              map.forEachFeatureAtPixel(evt.pixel, (f, layer) => {
+                if (layer === grabflureLayer) { hitGrabflure = true; return true; }
+              });
+            }
+            if (hitGrabflure) return;
+
             grabflureSource.clear();
             grabflureLayer.setVisible(false);
             currentCemeteryId = null;
+            // Edit-Mode beenden falls aktiv
+            setActiveTool(null);
+            document.getElementById('edit-tools-container')?.classList.remove('edit-tools-visible');
+            document.getElementById('edit-tools-container')?.classList.add('edit-tools-hidden');
             console.log('[Grabflur-Editor] Grabflure ausgeblendet');
             return;
           }
@@ -519,6 +660,11 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
               duration: 500,
             });
           }
+
+          // Edit-Mode beenden (neuer Cemetery ausgewählt)
+          setActiveTool(null);
+          document.getElementById('edit-tools-container')?.classList.remove('edit-tools-visible');
+          document.getElementById('edit-tools-container')?.classList.add('edit-tools-hidden');
 
           // ── Grabflure für diesen Friedhof laden ──
           try {
@@ -579,6 +725,239 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
             grabflureLayer.setVisible(false);
           }
         });
+
+        // ─── 6b. Grabflur-Doppelklick: 1× Zoomen, 2× Edit-Mode ───
+        let lastClickedGrabflureId: string | null = null;
+        let lastGrabflureClickTime = 0;
+
+        map.on('click', (evt) => {
+          if (!grabflureLayer.getVisible()) return;
+
+          let hitFeature: any = null;
+          map.forEachFeatureAtPixel(evt.pixel, (f, layer) => {
+            if (layer === grabflureLayer) { hitFeature = f; return true; }
+          });
+          if (!hitFeature) return;
+
+          const featureId = hitFeature.get('p2d2_uuid') || hitFeature.get('flur_nr') || '';
+          const now = Date.now();
+
+          if (featureId && featureId === lastClickedGrabflureId && (now - lastGrabflureClickTime < 600)) {
+            // Doppelklick → Edit-Mode
+            lastClickedGrabflureId = null;
+            lastGrabflureClickTime = 0;
+            enterGrabflureEditMode(hitFeature);
+            return;
+          }
+
+          // Erster Klick → auf Grabflur zoomen
+          const extent = hitFeature.getGeometry()?.getExtent();
+          const mapSize = map.getSize();
+          if (extent && mapSize && extent.every(Number.isFinite)) {
+            viewHistory.pushState();
+            map.getView().fit(extent, {
+              size:    mapSize,
+              padding: [50, 50, 50, 50],
+              maxZoom: 20,
+              duration: 400,
+            });
+          }
+
+          lastClickedGrabflureId = featureId;
+          lastGrabflureClickTime = now;
+        });
+
+        function enterGrabflureEditMode(feature: any): void {
+          const container = document.getElementById('edit-tools-container');
+          container?.classList.remove('edit-tools-hidden');
+          container?.classList.add('edit-tools-visible');
+
+          // Select-Tool aktivieren
+          setActiveTool('select');
+          document.querySelectorAll('[data-tool]').forEach((b) => b.classList.remove('highlighted'));
+          document.querySelector('[data-tool="select"]')?.classList.add('highlighted');
+
+          console.log(`[Editor] 🖊️ Edit-Mode für Grabflur: ${feature.get('name') || feature.get('flur_nr') || 'unbenannt'}`);
+        }
+
+        // ─── 7. Editor-Werkzeuge & Layer-Steuerung ───
+
+        // Hilfslayer: Luftbild (WMS) und basemap.de (WMS)
+        const luftbildLayer = new TileLayer({
+          source: new TileWMS({
+            url: 'https://geoportal.stadt-koeln.de/wss/service/luftbilder_2024_wms/guest',
+            params: { LAYERS: 'luftbilder_2024_23', FORMAT: 'image/png', TILED: true },
+            projection: projection,
+            crossOrigin: 'anonymous',
+          }),
+          zIndex: 7,
+          visible: false,
+        });
+        map.addLayer(luftbildLayer);
+
+        const basemapLayer = new TileLayer({
+          source: new TileWMS({
+            url: 'https://sgx.geodatenzentrum.de/wms_basemapde',
+            params: { LAYERS: 'de_basemapde_web_raster_farbe', FORMAT: 'image/png', TRANSPARENT: 'true', TILED: true },
+            projection: 'EPSG:3857',
+            crossOrigin: 'anonymous',
+          }),
+          zIndex: 15,
+          visible: false,
+        });
+        map.addLayer(basemapLayer);
+
+        // Layer-Toggle-Handler
+        function toggleBaseLayer(layerName: string): void {
+          let layer: VectorLayer | TileLayer<any> | null = null;
+          if (layerName === 'luftbild') layer = luftbildLayer;
+          else if (layerName === 'basemap') layer = basemapLayer;
+          else { console.warn('[Editor] Unbekannter Layer:', layerName); return; }
+
+          const newVis = !layer.getVisible();
+          layer.setVisible(newVis);
+          const btn = document.querySelector(`[data-layer-toggle="${layerName}"]`);
+          btn?.classList.toggle('highlighted', newVis);
+          try { localStorage.setItem(`${layerName}Visible`, String(newVis)); } catch {}
+        }
+
+        document.addEventListener('click', (e) => {
+          const btn = (e.target as HTMLElement).closest('[data-layer-toggle]') as HTMLElement;
+          if (btn) toggleBaseLayer(btn.dataset.layerToggle || '');
+        });
+
+        // Editor-Interaktionen für Grabflure
+        let activeTool: string | null = null;
+        let editInteractions: Interaction[] = [];
+
+        function setActiveTool(toolName: string | null): void {
+          // Alte Interaktionen entfernen
+          editInteractions.forEach((i) => map.removeInteraction(i));
+          editInteractions = [];
+
+          if (!toolName) { activeTool = null; return; }
+
+          const grabflureOnlyFilter = (f: any, layer: any) => layer === grabflureLayer;
+
+          switch (toolName) {
+            case 'select': {
+              const si = new Select({
+                layers: [grabflureLayer],
+                style: new Style({
+                  stroke: new Stroke({ color: '#3B82F6', width: 3 }),
+                  fill:   new Fill({ color: 'rgba(59, 130, 246, 0.2)' }),
+                }),
+              });
+              si.on('select', (evt) => {
+                const hasSelection = evt.selected.length > 0;
+                (document.getElementById('tool-save') as HTMLButtonElement).disabled = !hasSelection;
+              });
+              map.addInteraction(si);
+              editInteractions.push(si);
+              break;
+            }
+            case 'move': {
+              const tr = new Translate({ layers: [grabflureLayer], hitTolerance: 8 });
+              tr.on('translatestart', () => {
+                (document.getElementById('tool-save') as HTMLButtonElement).disabled = false;
+              });
+              map.addInteraction(tr);
+              editInteractions.push(tr);
+              break;
+            }
+            case 'modify': {
+              const md = new Modify({ source: grabflureSource, pixelTolerance: 6 });
+              md.on('modifystart', () => {
+                (document.getElementById('tool-save') as HTMLButtonElement).disabled = false;
+              });
+              map.addInteraction(md);
+              editInteractions.push(md);
+              break;
+            }
+          }
+          activeTool = toolName;
+        }
+
+        // Tool-Buttons verdrahten
+        document.addEventListener('click', (e) => {
+          const btn = (e.target as HTMLElement).closest('[data-tool]') as HTMLElement;
+          if (!btn) return;
+          const tool = btn.dataset.tool;
+          if (!tool) return;
+
+          // Tool-Auswahl (select, move, modify)
+          if (['select', 'move', 'modify'].includes(tool)) {
+            if (activeTool === tool) return; // bereits aktiv
+            setActiveTool(tool);
+            document.querySelectorAll('[data-tool]').forEach((b) => b.classList.remove('highlighted'));
+            btn.classList.add('highlighted');
+            // Edit-Tools sichtbar schalten
+            document.getElementById('edit-tools-container')?.classList.remove('edit-tools-hidden');
+            document.getElementById('edit-tools-container')?.classList.add('edit-tools-visible');
+            return;
+          }
+
+          // Speichern
+          if (tool === 'save') {
+            console.log('[Editor] 💾 Speichern gestartet – WFS-T folgt');
+            // TODO: WFS-T Save
+            (document.getElementById('tool-save') as HTMLButtonElement).disabled = true;
+            return;
+          }
+
+          // Abbrechen
+          if (tool === 'cancel') {
+            if (confirm('Bearbeitung abbrechen? Nicht gespeicherte Änderungen gehen verloren.')) {
+              setActiveTool(null);
+              activeTool = null;
+              grabflureSource.clear();
+              grabflureLayer.setVisible(false);
+              document.getElementById('edit-tools-container')?.classList.remove('edit-tools-visible');
+              document.getElementById('edit-tools-container')?.classList.add('edit-tools-hidden');
+              document.querySelectorAll('[data-tool]').forEach((b) => b.classList.remove('highlighted'));
+              // Tool-Select wieder hervorheben
+              const selBtn = document.querySelector('[data-tool="select"]');
+              selBtn?.classList.add('highlighted');
+            }
+            return;
+          }
+        });
+
+        // Keyboard-Shortcuts für Werkzeuge
+        document.addEventListener('keydown', (e) => {
+          if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+          const mapEl = document.getElementById('grabflur-map');
+          if (!mapEl || !document.contains(mapEl)) return;
+
+          switch (e.key.toLowerCase()) {
+            case 's':
+              e.preventDefault();
+              (document.querySelector('[data-tool="select"]') as HTMLElement)?.click();
+              break;
+            case 'm':
+              e.preventDefault();
+              (document.querySelector('[data-tool="move"]') as HTMLElement)?.click();
+              break;
+            case 'e':
+              e.preventDefault();
+              (document.querySelector('[data-tool="modify"]') as HTMLElement)?.click();
+              break;
+          }
+        });
+
+        // Initialen Button-Status (Select vorausgewählt)
+        document.querySelector('[data-tool="select"]')?.classList.add('highlighted');
+
+        // Layer-Zustände aus localStorage wiederherstellen
+        try {
+          ['luftbild', 'basemap'].forEach((ln) => {
+            const saved = localStorage.getItem(`${ln}Visible`) === 'true';
+            if (ln === 'luftbild') luftbildLayer.setVisible(saved);
+            if (ln === 'basemap') basemapLayer.setVisible(saved);
+            const btn = document.querySelector(`[data-layer-toggle="${ln}"]`);
+            if (saved) btn?.classList.add('highlighted');
+          });
+        } catch {}
 
       } catch (err) {
         console.error('[Grabflur-Editor] Initialisierungsfehler:', err);
