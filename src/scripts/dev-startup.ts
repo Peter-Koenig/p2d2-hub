@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: Dev-Server-Startup: initiale OSM-Synchronisation beim Hochfahren
 // Development Startup Script - Auto-starts file watcher with Astro dev server
 import { KommuneWatcher } from "./kommune-watcher.mjs";
 

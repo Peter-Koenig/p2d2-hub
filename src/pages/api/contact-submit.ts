@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: Kontaktformular-Submit: SMTP-Versand mit Nodemailer
 import type { APIRoute } from "astro";
 import { verifySolution } from "altcha-lib";
 import nodemailer from "nodemailer";

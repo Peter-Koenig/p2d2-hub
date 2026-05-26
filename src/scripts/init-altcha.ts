@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: ALTCHA-HMAC-Key-Initialisierung für Captcha-Dienst
 /**
  * ALTCHA Web Component Import
  * Muss als separate Datei existieren, damit Vite den bare import auflösen kann.

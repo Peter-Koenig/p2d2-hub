@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: Test-Script: Polygon-Synchronisation für einzelne Kommunen
 import { KommuneWatcher } from "./kommune-watcher.mjs";
 
 // Test script to verify polygon sync functionality

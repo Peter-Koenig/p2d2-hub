@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: Tab-Persistenz: Kommunen/Kategorien-Tab-Status im localStorage
 /**
  * Tab State Persistence Utilities
  * Manages selected tab state across page reloads

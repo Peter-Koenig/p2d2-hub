@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
+// p2d2: Logger: strukturiertes Logging mit levels und Formatierung
 import type { AstroIntegrationLogger } from "astro";
 
 // Simple logger that can work with Astro's logger or fallback to console
