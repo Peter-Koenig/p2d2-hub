@@ -12,81 +12,95 @@ if (!session.isAuthenticated || !session.roles.includes('verwaltung')) {
   return Astro.redirect('/');
 }
 
-// Kommune aus Benutzer-Metadaten ableiten
-const kommuneMembership = session.memberships?.find(
-  (m) => m.type === 'kommune',
-);
+const kommuneMembership = session.memberships?.find((m) => m.type === 'kommune');
 const kommuneSlug =
   kommuneMembership?.key ?? session.preferences?.homeKommuneSlug ?? null;
 const kommune = kommuneSlug ? await getKommuneBySlug(kommuneSlug) : null;
 
-const wpName = kommune?.wpName ?? '';
-const extent = kommune?.map?.extent ?? null;
-const center = kommune?.map?.center ?? null;
+const wpName     = kommune?.wpName ?? '';
+const extent     = kommune?.map?.extent ?? null;
+const center     = kommune?.map?.center ?? null;
 const projection = kommune?.map?.projection ?? 'EPSG:3857';
-const zoom = kommune?.map?.zoom ?? 12;
+const zoom       = kommune?.map?.zoom ?? 12;
 const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
 ---
 
-<BaseLayout
-  title={`Grabflur-Editor – ${kommuneTitle} | p2d2`}
-  showFooter={false}
->
-    <!-- Editor-Header (via slot – überschreibt den Standard-Header) -->
-    <header slot="header" class="feature-editor-header">
-      <div class="logo-container">
-        <img src="/images/logo.svg" alt="p2d2 Logo" class="logo" />
-        <span class="brand-name">p2d2</span>
-      </div>
-      <h1 class="editor-title">Grabflur-Editor: {kommuneTitle}</h1>
-      <button id="close-editor-btn" class="close-btn" aria-label="Editor schließen">Schließen</button>
-    </header>
+<BaseLayout title={`Grabflur-Editor – ${kommuneTitle} | p2d2`} showFooter={false}>
 
-  <div class="grabflur-editor-layout h-screen flex flex-col">
-    <!-- Hauptbereich -->
-    <div class="flex flex-1 overflow-hidden">
+  <!-- Editor-Header via slot -->
+  <header slot="header" class="feature-editor-header">
+    <div class="logo-container">
+      <img src="/images/logo.svg" alt="p2d2 Logo" class="logo" />
+      <span class="brand-name">p2d2</span>
+    </div>
+    <h1 class="editor-title">Grabflur-Editor: {kommuneTitle}</h1>
+    <button id="close-editor-btn" class="close-btn" aria-label="Editor schließen">
+      Schließen
+    </button>
+  </header>
+
+  <!-- Layout: nutzt feature-editor.css-Klassen für korrekte Darstellung mit abgerundeten Ecken -->
+  <div class="feature-editor-container">
+    <div class="editor-content">
       {kommune ? (
-        <>
-          <!-- Kartencontainer -->
-          <div class="flex-1 relative">
-            <div
-              id="grabflur-map"
-              class="w-full h-full"
-              data-wp-name={wpName}
-              data-extent={extent ? JSON.stringify(extent) : ''}
-              data-center={center ? JSON.stringify(center) : ''}
-              data-projection={projection}
-              data-zoom={zoom}
-            ></div>
-          </div>
-
-          <!-- Info-Panel -->
+        <div class="map-container">
           <div
-            id="feature-info"
-            class="w-72 bg-white border-l border-gray-200 overflow-y-auto p-4 flex flex-col gap-4"
-          >
-            <div class="text-center py-8 text-gray-400">
-              <svg
-                class="w-12 h-12 mx-auto mb-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="1.5"
-                  d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
-                />
+            id="grabflur-map"
+            class="w-full h-full"
+            data-wp-name={wpName}
+            data-extent={extent ? JSON.stringify(extent) : ''}
+            data-center={center ? JSON.stringify(center) : ''}
+            data-projection={projection}
+            data-zoom={zoom}
+          ></div>
+          <!-- Navigation-Vor/Zurück -->
+          <div class="nav-controls">
+            <button id="nav-back" class="nav-btn" title="Zurück (Alt+←)" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
               </svg>
-              <p class="text-sm">
-                Klicke auf ein Grabflur-Polygon, um Informationen anzuzeigen.
-              </p>
+            </button>
+            <button id="nav-forward" class="nav-btn" title="Vor (Alt+→)" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </button>
+          </div>
+          <!-- Layer-Steuerung -->
+          <div class="layer-controls">
+            <button id="toggle-luftbild" class="layer-btn" data-layer-toggle="luftbild" title="Luftbild 2024 ein-/ausblenden">
+              <span class="layer-icon">🕊️</span>
+              <span class="layer-label">Luftbild 2024</span>
+            </button>
+            <button id="toggle-basemap" class="layer-btn" data-layer-toggle="basemap" title="basemap.de ein-/ausblenden">
+              <span class="layer-icon">🗺️</span>
+              <span class="layer-label">basemap.de</span>
+            </button>
+
+          </div>
+          <!-- Editier-Werkzeuge (Toolbar) -->
+          <div class="toolbar-controls" id="toolbar-controls">
+            <div id="edit-tools-container" class="edit-tools-hidden">
+              <button id="tool-select" class="tool-btn highlighted" data-tool="select" title="Auswählen (S)">
+                <span>👆</span>
+              </button>
+              <button id="tool-move" class="tool-btn" data-tool="move" title="Verschieben (M)">
+                <span>↔️</span>
+              </button>
+              <button id="tool-modify" class="tool-btn" data-tool="modify" title="Punkte bearbeiten (E)">
+                <span>✍️</span>
+              </button>
+              <div class="toolbar-divider"></div>
+              <button id="tool-save" class="tool-btn save-btn" data-tool="save" title="Speichern" disabled>
+                <span>💾</span>
+              </button>
+              <button id="tool-cancel" class="tool-btn cancel-btn" data-tool="cancel" title="Abbrechen">
+                <span>❌</span>
+              </button>
             </div>
           </div>
-        </>
+        </div>
       ) : (
-        <!-- Fallback: Keine Kommune -->
         <div class="flex-1 flex items-center justify-center">
           <div class="text-center max-w-md mx-auto p-8">
             <h2 class="font-poppins font-bold text-2xl text-gray-900 mb-4">
@@ -109,129 +123,210 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
   </div>
 
   <style>
-    /* Editor-Header – konsistent zum FeatureEditorHeader */
     .feature-editor-header {
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        align-items: center;
-        padding: 1rem 1.5rem;
-        background: rgba(240, 253, 244, 0.9);
-        border-bottom: 1px solid #bbf7d0;
-        gap: 1rem;
-        position: relative;
-        z-index: 50;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      background: rgba(240, 253, 244, 0.9);
+      border-bottom: 1px solid #bbf7d0;
+      gap: 1rem;
+      position: relative;
+      z-index: 50;
     }
-
-    .logo-container {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
+    .logo-container { display: flex; align-items: center; gap: 0.75rem; }
+    .logo           { height: 2rem; width: auto; }
+    .brand-name     { font-size: 1.5rem; font-weight: 700; color: #14532d; }
+    .editor-title   {
+      font-size: 1.25rem; font-weight: 600; color: #14532d;
+      text-align: center; margin: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-
-    .logo {
-        height: 2rem;
-        width: auto;
-    }
-
-    .brand-name {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #14532d;
-    }
-
-    .editor-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #14532d;
-        text-align: center;
-        margin: 0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
     .close-btn {
-        padding: 0.5rem 1rem;
-        background: #dc2626;
-        color: white;
-        border: none;
-        border-radius: 0.375rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background 0.2s;
-        font-size: 0.875rem;
-        white-space: nowrap;
+      padding: 0.5rem 1rem; background: #dc2626; color: white;
+      border: none; border-radius: 0.375rem; font-weight: 500;
+      cursor: pointer; transition: background 0.2s; font-size: 0.875rem;
+      white-space: nowrap;
     }
-
-    .close-btn:hover {
-        background: #b91c1c;
-    }
-
-    .close-btn:active {
-        transform: scale(0.98);
-    }
+    .close-btn:hover  { background: #b91c1c; }
+    .close-btn:active { transform: scale(0.98); }
 
     @media (max-width: 768px) {
-        .feature-editor-header {
-            grid-template-columns: 1fr;
-            grid-template-rows: auto auto;
-            padding: 0.75rem 1rem;
-            gap: 0.75rem;
-        }
+      .feature-editor-header {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        padding: 0.75rem 1rem;
+        gap: 0.5rem;
+      }
+      .logo-container { grid-column: 1; grid-row: 1; }
+      .close-btn      { grid-column: 1; grid-row: 1; justify-self: end; align-self: center; padding: 0.375rem 0.75rem; }
+      .editor-title   { grid-column: 1; grid-row: 2; font-size: 1rem; }
+      .logo           { height: 1.5rem; }
+      .brand-name     { font-size: 1.25rem; }
+    }
+    /* Navigations-Buttons (vor/zurück) */
+    .nav-controls {
+      position: absolute;
+      top: 0.5rem;
+      left: 2.5rem;
+      display: flex;
+      gap: 0.5rem;
+      z-index: 40;
+    }
+    .nav-btn {
+      width: 20px;
+      height: 20px;
+      background: white;
+      border: none;
+      border-radius: 0.25rem;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: #dc2626;
+      color: white;
+      transform: scale(1.05);
+    }
+    .nav-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .nav-btn svg {
+      width: 10px;
+      height: 10px;
+    }
+    @media (max-width: 768px) {
+      .nav-controls { top: 0.75rem; left: 0.75rem; }
+      .nav-btn { width: 18px; height: 18px; }
+      .nav-btn svg { width: 9px; height: 9px; }
+    }
+    @media (prefers-contrast: high) {
+      .nav-btn { border: 1px solid #374151; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .nav-btn { transition: none; }
+      .nav-btn:hover:not(:disabled) { transform: none; }
+    }
 
-        .logo-container {
-            grid-column: 1;
-            grid-row: 1;
-        }
+    /* Layer-Steuerung (rechts oben) */
+    .layer-controls {
+      position: absolute;
+      top: 0.4rem;
+      right: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 40;
+    }
+    .layer-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      color: #374151;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .layer-btn:hover {
+      background: #f9fafb;
+      border-color: #9ca3af;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .layer-btn.highlighted {
+      background: #dc2626;
+      border-color: #b91c1c;
+      color: white;
+    }
+    .layer-btn.highlighted:hover {
+      background: #b91c1c;
+      border-color: #991b1b;
+    }
+    .layer-icon { font-size: 1.25rem; width: 1.25rem; height: 1.25rem; }
+    .layer-label { white-space: nowrap; }
 
-        .close-btn {
-            grid-column: 1;
-            grid-row: 1;
-            justify-self: end;
-            align-self: center;
-            padding: 0.375rem 0.75rem;
-        }
+    /* Toolbar (unten mittig) */
+    .toolbar-controls {
+      position: absolute;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: rgba(255,255,255,0.9);
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      backdrop-filter: blur(4px);
+    }
+    .edit-tools-hidden { display: none; }
+    .edit-tools-visible { display: flex; gap: 0.5rem; }
+    .tool-btn {
+      width: 40px; height: 40px;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      font-size: 1.25rem;
+    }
+    .tool-btn:hover:not(:disabled) {
+      background: #f9fafb;
+      border-color: #9ca3af;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .tool-btn.highlighted { background: #3b82f6; border-color: #2563eb; color: white; }
+    .toolbar-divider { width: 1px; background: #e5e7eb; margin: 0 0.25rem; }
+    .save-btn { background: #16a34a; color: white; border-color: #15803d; }
+    .save-btn:hover:not(:disabled) { background: #15803d; }
+    .cancel-btn { background: #dc2626; color: white; border-color: #b91c1c; }
+    .cancel-btn:hover:not(:disabled) { background: #b91c1c; }
 
-        .editor-title {
-            grid-column: 1;
-            grid-row: 2;
-            font-size: 1rem;
-        }
-
-        .logo {
-            height: 1.5rem;
-        }
-
-        .brand-name {
-            font-size: 1.25rem;
-        }
+    @media (max-width: 768px) {
+      .layer-controls { top: 3rem; right: 0.5rem; }
+      .layer-btn { padding: 0.375rem 0.5rem; font-size: 0.75rem; }
+      .layer-icon { font-size: 1rem; width: 1rem; height: 1rem; }
+      .layer-label { display: none; }
+      .toolbar-controls { bottom: 0.5rem; padding: 0.375rem; }
+      .tool-btn { width: 36px; height: 36px; font-size: 1.125rem; }
     }
   </style>
 
-  <!-- Schließen-Button Script -->
   <script>
-    document
-      .getElementById("close-editor-btn")
-      ?.addEventListener("click", () => {
-        // Keine Dirty-Prüfung im Grabflur-Editor (keine Persistenz vorhanden)
-        window.close();
-        if (!window.closed) {
-          window.history.back();
-        }
-      });
+    document.getElementById('close-editor-btn')?.addEventListener('click', () => {
+      window.close();
+      if (!window.closed) window.history.back();
+    });
   </script>
 
   <script>
     import { MapManager } from '../../components/feature-editor/MapManager';
     import { wfsAuthClient } from '../../utils/wfs-auth';
+    import { initializeCrossWindowBridge } from '../../utils/cross-window-events';
     import GeoJSON from 'ol/format/GeoJSON';
     import VectorSource from 'ol/source/Vector';
     import VectorLayer from 'ol/layer/Vector';
-    import { Style, Stroke, Fill, Text } from 'ol/style';
-    import { Select } from 'ol/interaction';
+    import TileLayer from 'ol/layer/Tile';
+    import TileWMS from 'ol/source/TileWMS';
+    import Overlay from 'ol/Overlay';
+    import { Style, Stroke, Fill } from 'ol/style';
+    import { Select, Translate, Modify, Interaction } from 'ol/interaction';
     import { click } from 'ol/events/condition';
     import { getArea } from 'ol/sphere';
-    import { fromLonLat } from 'ol/proj';
+    import { transformExtent } from 'ol/proj';
 
     function domReady(callback: () => void): void {
       if (document.readyState === 'loading') {
@@ -242,229 +337,640 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
     }
 
     domReady(async () => {
+      // Cross-Window-Bridge initialisieren (für EventConsole Cross-Window-Logging)
+      initializeCrossWindowBridge();
+
       const container = document.getElementById('grabflur-map');
       if (!container) return;
 
-      const wpName = container.dataset.wpName || '';
-      const extentRaw = container.dataset.extent || '';
-      const centerRaw = container.dataset.center || '';
+      const wpName     = container.dataset.wpName || '';
       const projection = container.dataset.projection || 'EPSG:3857';
-      const zoom = parseInt(container.dataset.zoom || '12', 10);
+      const extentRaw  = container.dataset.extent || '';
+      const centerRaw  = container.dataset.center || '';
+      const zoom       = parseInt(container.dataset.zoom || '12', 10);
 
       try {
-        // -------------------------------------------------------
-        // 1. MapManager initialisieren – erzeugt OSM + View + Controls
-        // -------------------------------------------------------
+        // 1. MapManager initialisieren
         const mapManager = new MapManager('grabflur-map', projection);
         const map = mapManager.getMap();
 
-        // -------------------------------------------------------
-        // 2. Karte auf Kommune-Extent ausrichten
-        // -------------------------------------------------------
-        let initialExtent: number[] | null = null;
-        if (extentRaw) {
-          try {
-            initialExtent = JSON.parse(extentRaw);
-          } catch {
-            /* ungültiges JSON ignorieren */
-          }
-        }
+        // ViewHistory für Vor/Zurück-Navigation
+        const viewHistory = mapManager.getViewHistory();
 
-        if (initialExtent && initialExtent.length === 4) {
-          mapManager.fitToInitialExtent(initialExtent);
-        } else if (centerRaw) {
-          // Fallback: nur Zentrum + Zoom
-          try {
-            const centerArr = JSON.parse(centerRaw);
-            if (Array.isArray(centerArr) && centerArr.length === 2) {
-              map.getView().setCenter(fromLonLat(centerArr));
-              map.getView().setZoom(zoom);
-            }
-          } catch {
-            /* kein gültiges Zentrum */
-          }
-        }
+        // Navigations-Buttons verdrahten
+        const backBtn = document.getElementById('nav-back') as HTMLButtonElement;
+        const fwdBtn  = document.getElementById('nav-forward') as HTMLButtonElement;
 
-        // -------------------------------------------------------
-        // 3. Grabflur-WFS-Layer anlegen (initiale Style-Definition)
-        // -------------------------------------------------------
-        const grabfurSource = new VectorSource();
-        const grabfurLayer = new VectorLayer({
-          source: grabfurSource,
+        backBtn?.addEventListener('click', () => viewHistory.back());
+        fwdBtn?.addEventListener('click', () => viewHistory.forward());
+
+        // Button-Status via subscribe
+        viewHistory.subscribe((state) => {
+          if (backBtn) backBtn.disabled = !state.canGoBack;
+          if (fwdBtn)  fwdBtn.disabled  = !state.canGoForward;
+        });
+
+        // Initialen Button-Status setzen
+        const initState = viewHistory.getState();
+        if (backBtn) backBtn.disabled = !initState.canGoBack;
+        if (fwdBtn)  fwdBtn.disabled  = !initState.canGoForward;
+
+        // Keyboard-Shortcuts: Alt+← / Alt+→
+        document.addEventListener('keydown', (e) => {
+          if (e.altKey && e.key === 'ArrowLeft')  { e.preventDefault(); viewHistory.back(); }
+          if (e.altKey && e.key === 'ArrowRight') { e.preventDefault(); viewHistory.forward(); }
+        });
+
+        // 2. Friedhofs-WFS-Layer vorbereiten (Layer vor postrender hinzufügen)
+        const friedhofSource = new VectorSource();
+        const friedhofLayer = new VectorLayer({
+          source: friedhofSource,
+          zIndex: 20,
           style: new Style({
-            stroke: new Stroke({ color: '#dc2626', width: 2 }),
-            fill: new Fill({ color: 'rgba(234, 88, 12, 0.2)' }),
+            stroke: new Stroke({ color: '#FF6900', width: 2 }),
+            fill:   new Fill({ color: 'rgba(255, 105, 0, 0.1)' }),
           }),
         });
-        map.addLayer(grabfurLayer);
+        map.addLayer(friedhofLayer);
 
-        // -------------------------------------------------------
-        // 4. Grabflur-Daten per WFS laden
-        // -------------------------------------------------------
-        if (wpName) {
+        // 2b. Grabflur-WFS-Layer (zunächst unsichtbar, wird bei Klick auf Friedhof geladen)
+        const grabflureSource = new VectorSource();
+        const grabflureLayer = new VectorLayer({
+          source: grabflureSource,
+          zIndex: 21,
+          visible: false,
+          style: new Style({
+            stroke: new Stroke({ color: '#FF6900', width: 1.5 }),
+            fill:   new Fill({ color: 'rgba(255, 105, 0, 0.08)' }),
+          }),
+        });
+        map.addLayer(grabflureLayer);
+
+        // Hover-Popup vorbereiten
+        const popupElement = document.createElement('div');
+        popupElement.className = 'grabflur-hover-popup';
+        popupElement.style.cssText =
+          'display:none;position:absolute;background:white;border:1px solid #FF6900;border-radius:6px;padding:6px 10px;font-size:13px;pointer-events:none;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.15);';
+        document.body.appendChild(popupElement);
+
+        const hoverPopup = new Overlay({
+          element: popupElement,
+          positioning: 'bottom-center',
+          offset: [0, -10],
+          stopEvent: false,
+        });
+        map.addOverlay(hoverPopup);
+
+        // 3. FIX Race Condition: WFS-Load NACH erstem postrender
+        //    → Map hat dann garantiert eine echte Größe (nicht [0,0])
+        map.once('postrender', async () => {
+          map.updateSize();
+
+          // 4. WFS-Daten laden
+          if (!wpName) return;
+
           try {
-            const wfsUrl = wfsAuthClient.buildWFSURL('geo-containers', {
-              CQL_FILTER: `osm_admin_level=10 AND wp_name='${wpName}'`,
-            });
+            const baseUrl = wfsAuthClient.buildWFSURL('geo-containers');
+            const cqlFilter = `container_type='cemetery' AND osm_admin_level=8 AND wp_name='${wpName}'`;
+            const wfsUrl = `${baseUrl}&CQL_FILTER=${encodeURIComponent(cqlFilter)}`;
 
             const response = await wfsAuthClient.fetchWFS(wfsUrl);
-            if (!response.ok) {
-              throw new Error(
-                `WFS-Fehler: ${response.status} ${response.statusText}`,
-              );
-            }
+            if (!response.ok) throw new Error(`WFS ${response.status} ${response.statusText}`);
 
-            const geojson = await response.json();
-
-            const format = new GeoJSON();
+            const geojson  = await response.json();
+            const format   = new GeoJSON();
             const features = format.readFeatures(geojson, {
               dataProjection: 'EPSG:4326',
               featureProjection: projection,
             });
 
-            // Namen aus den Rohdaten in die Feature-Properties übernehmen
             if (geojson.features) {
               geojson.features.forEach((raw: any, i: number) => {
                 if (features[i]) {
-                  const rawName =
-                    raw.properties?.name || raw.properties?.title || '';
-                  features[i].set('name', rawName);
-                  features[i].set(
-                    'containerType',
-                    raw.properties?.container_type || '',
-                  );
+                  features[i].set('name', raw.properties?.name || 'Unbenannt');
+                  features[i].set('container_type', raw.properties?.container_type || '');
                 }
               });
             }
 
-            grabfurSource.addFeatures(features);
 
-            // Fallback: Auf WFS-Feature-Extent zoomen, wenn kein Content-Collection-Extent vorhanden ist
-            if (!initialExtent && features.length > 0) {
-              const wfsExtent = grabfurSource.getExtent();
-              if (wfsExtent && !isNaN(wfsExtent[0]) && !isNaN(wfsExtent[1])) {
-                map.getView().fit(wfsExtent, {
-                  size: map.getSize(),
+
+            friedhofSource.addFeatures(features);
+
+            // ─── DIAGNOSE 1: Feature-Validierung ───
+            /* DIAG */ console.log('--- DIAGNOSE [Grabflur-Editor] ---');
+            /* DIAG */ console.log('[DIAG] Features im Source:', friedhofSource.getFeatures().length);
+            /* DIAG */ const firstFeat = features[0];
+            /* DIAG */ if (firstFeat) {
+            /* DIAG */   const geom = firstFeat.getGeometry();
+            /* DIAG */   const coords = geom ? (geom as any).getFirstCoordinate() : undefined;
+            /* DIAG */   console.log('[DIAG] Erstes Feature – Typ:', geom?.getType(), '| erste Koordinate:', coords);
+            /* DIAG */   console.log('[DIAG]   → Erwarte UTM-Werte (z.B. [354000, 5645000]) – sind es lat/lon?');
+            /* DIAG */ }
+            /* DIAG */ const srcExtent = friedhofSource.getExtent();
+            /* DIAG */ console.log('[DIAG] Source-Extent:', srcExtent);
+            /* DIAG */ console.log('[DIAG] Extent ist valide (nicht Infinity)?', srcExtent.every((v: number) => Number.isFinite(v)));
+            /* DIAG */ console.log('[DIAG] View-Projektion:', map.getView().getProjection().getCode());
+            /* DIAG */ console.log('[DIAG] featureProjection beim readFeatures:', projection);
+            /* DIAG */ console.log('--- ENDE DIAGNOSE 1 ---');
+
+            // Auf geladene Features zoomen
+            if (features.length > 0) {
+              const loadedExtent = friedhofSource.getExtent();
+              const mapSize      = map.getSize();
+              console.log('[Grabflur-Editor] 🔍 fit() Aufruf:', { loadedExtent, mapSize });
+              if (mapSize && mapSize[0] > 0 && loadedExtent.every(Number.isFinite)) {
+                map.getView().fit(loadedExtent, {
+                  size:    mapSize,
                   padding: [50, 50, 50, 50],
                   maxZoom: 16,
                 });
+                viewHistory.pushState(); // Initialen Übersichts-Zoom speichern
+                console.log('[Grabflur-Editor] ✅ fit() ausgeführt, Center:', map.getView().getCenter());
               }
             }
 
-            // Dynamischer Style mit Labels – nach dem Laden anwenden
-            grabfurLayer.setStyle((feature) => {
-              const name = feature.get('name') || '';
-              // Letzten Teil nach dem letzten '-' als Label nutzen (Grabflur-Nummer)
-              const parts = name.split('-');
-              const label = parts.length > 1 ? parts[parts.length - 1] : '';
+            console.log(`[Grabflur-Editor] ✅ ${features.length} Friedhöfe geladen`);
 
-              return new Style({
-                stroke: new Stroke({ color: '#dc2626', width: 2 }),
-                fill: new Fill({ color: 'rgba(234, 88, 12, 0.2)' }),
-                text: label
-                  ? new Text({
-                      text: label,
-                      font: 'bold 12px Inter, sans-serif',
-                      fill: new Fill({ color: '#dc2626' }),
-                      stroke: new Stroke({ color: '#ffffff', width: 3 }),
-                      overflow: true,
-                    })
-                  : undefined,
-              });
-            });
+            // ─── DIAGNOSE 2: Render-Check nach dem durch fit() getriggerten Render ───
+            /* DIAG */ map.once('postrender', () => {
+            /* DIAG */   console.log('--- DIAGNOSE 2 [Grabflur-Editor] nach fit()-Render ---');
+            /* DIAG */   const centerCoord = map.getView().getCenter();
+            /* DIAG */   const centerPixel = centerCoord ? map.getPixelFromCoordinate(centerCoord) : null;
+            /* DIAG */   console.log('[DIAG2] View-Center (Koordinate):', centerCoord);
+            /* DIAG */   console.log('[DIAG2] View-Center (Pixel):', centerPixel);
+            /* DIAG */   console.log('[DIAG2] Map-Size:', map.getSize());
+            /* DIAG */   console.log('[DIAG2] View-Zoom:', map.getView().getZoom());
+            /* DIAG */   console.log('[DIAG2] Layer sichtbar?:', friedhofLayer.getVisible());
+            /* DIAG */   console.log('[DIAG2] Layer-ZIndex:', friedhofLayer.getZIndex());
+            /* DIAG */   console.log('[DIAG2] Feature-Anzahl Source:', friedhofSource.getFeatures().length);
+            /* DIAG */   console.log('[DIAG2] Layer-Liste:',
+            /* DIAG */     map.getLayers().getArray().map((l: any, i: number) =>
+            /* DIAG */       `${i}:${l instanceof VectorLayer ? 'Vector' : 'Tile'} z=${l.getZIndex()}`
+            /* DIAG */     ).join(' | ')
+            /* DIAG */   );
+            /* DIAG */   // Prüfe Features an 9 gleichmäßig verteilten Pixeln (3×3 Raster)
+            /* DIAG */   if (centerPixel) {
+            /* DIAG */     const mapSize = map.getSize()!;
+            /* DIAG */     const pixelsToCheck = [
+            /* DIAG */       { label: 'Zentrum', px: centerPixel[0], py: centerPixel[1] },
+            /* DIAG */       { label: 'oben-links', px: 50, py: 50 },
+            /* DIAG */       { label: 'oben-rechts', px: mapSize[0] - 50, py: 50 },
+            /* DIAG */       { label: 'unten-links', px: 50, py: mapSize[1] - 50 },
+            /* DIAG */       { label: 'unten-rechts', px: mapSize[0] - 50, py: mapSize[1] - 50 },
+            /* DIAG */       { label: 'oben-Mitte', px: Math.round(mapSize[0] / 2), py: 50 },
+            /* DIAG */       { label: 'unten-Mitte', px: Math.round(mapSize[0] / 2), py: mapSize[1] - 50 },
+            /* DIAG */       { label: 'Mitte-links', px: 50, py: Math.round(mapSize[1] / 2) },
+            /* DIAG */       { label: 'Mitte-rechts', px: mapSize[0] - 50, py: Math.round(mapSize[1] / 2) },
+            /* DIAG */     ];
+            /* DIAG */     let totalFound = 0;
+            /* DIAG */     for (const p of pixelsToCheck) {
+            /* DIAG */       const features = map.getFeaturesAtPixel([p.px, p.py], { hitTolerance: 5 });
+            /* DIAG */       if (features && features.length > 0) {
+            /* DIAG */         totalFound += features.length;
+            /* DIAG */         console.log('[DIAG2] ✅ Pixel', p.label, `(${p.px},${p.py}):`, features.length, 'Feature(s)');
+            /* DIAG */         features.forEach((f: any) => console.log('[DIAG2]   →', f.get('name') || 'unbenannt'));
+            /* DIAG */       } else {
+            /* DIAG */         console.log('[DIAG2] ❌ Pixel', p.label, `(${p.px},${p.py}):`, '0 Features');
+            /* DIAG */       }
+            /* DIAG */     }
+            /* DIAG */     console.log('[DIAG2] Features insgesamt an 9 Pixeln:', totalFound);
+            /* DIAG */     if (totalFound === 0) {
+            /* DIAG */       console.log('[DIAG2] 🚨 KEIN EINZIGES Feature an 9 Pixeln gefunden – Layer wird NICHT gerendert!');
+            /* DIAG */       console.log('[DIAG2] Mögliche Ursachen: Layer unsichtbar, WebGL-Fehler, Z-Index-Konflikt, Canvas nicht im DOM');
+            /* DIAG */     }
+            /* DIAG */   }
+            /* DIAG */   console.log('--- ENDE DIAGNOSE 2 ---');
+            /* DIAG */ });
+            // ─── ENDE DIAGNOSE 2 ───
 
-            console.log(
-              `[Grabflur-Editor] ${features.length} Grabflure geladen`,
-            );
           } catch (err) {
-            console.error(
-              '[Grabflur-Editor] Fehler beim Laden der Grabflure:',
-              err,
-            );
-            // Fehler im UI anzeigen
-            const infoPanel = document.getElementById('feature-info');
-            if (infoPanel) {
-              infoPanel.innerHTML = `
-                <div class="p-4 text-center">
-                  <p class="text-red-600 text-sm font-medium mb-2">Fehler beim Laden der Grabflure</p>
-                  <p class="text-gray-500 text-xs">${err instanceof Error ? err.message : 'Unbekannter Fehler'}</p>
-                </div>
-              `;
+            console.error('[Grabflur-Editor] WFS-Fehler:', err);
+            const mapEl = document.getElementById('grabflur-map');
+            if (mapEl) {
+              const errDiv = document.createElement('div');
+              errDiv.className = 'absolute inset-0 flex items-center justify-center bg-white/80 z-50';
+              errDiv.innerHTML = `<p class="text-red-600 font-medium">Fehler beim Laden der Friedhöfe:<br>
+                <span class="text-sm font-normal">${err instanceof Error ? err.message : 'Unbekannter Fehler'}</span></p>`;
+              mapEl.style.position = 'relative';
+              mapEl.appendChild(errDiv);
             }
           }
-        }
+        }); // Ende map.once('postrender')
 
-        // -------------------------------------------------------
-        // 5. Klick-Interaktion: Feature selektieren + Info anzeigen
-        // -------------------------------------------------------
-        const select = new Select({ condition: click });
+        // 5. Hover-Interaktion
+        let hoverFeature: any = null;
+        let hoverFeatureType = '';
+        let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
+        const HOVER_STYLE = new Style({
+          stroke: new Stroke({ color: '#CC5500', width: 3 }),
+          fill:   new Fill({ color: 'rgba(255, 105, 0, 0.35)' }),
+        });
+
+        map.on('pointermove', (evt) => {
+          if (evt.dragging) return;
+          let featureAtPixel: any = null;
+          let featureLayer = '';
+          map.forEachFeatureAtPixel(evt.pixel, (f, layer) => {
+            if (layer === grabflureLayer) { featureAtPixel = f; featureLayer = 'grabflure'; return true; }
+            if (layer === friedhofLayer)  { featureAtPixel = f; featureLayer = 'friedhof';  return true; }
+            return false;
+          });
+
+          if (featureAtPixel !== hoverFeature) {
+            if (hoverTimeout) clearTimeout(hoverTimeout);
+            if (hoverFeature) hoverFeature.setStyle(undefined);
+            hoverFeature = featureAtPixel;
+            hoverFeatureType = featureLayer;
+
+            if (!featureAtPixel) {
+              popupElement.style.display = 'none';
+              hoverPopup.setPosition(undefined);
+              return;
+            }
+
+            featureAtPixel.setStyle(HOVER_STYLE);
+            hoverTimeout = setTimeout(() => {
+              const name = featureAtPixel.get('name') || 'Unbenannt';
+              const label = hoverFeatureType === 'grabflure' ? 'Grabflur' : 'Friedhof';
+              popupElement.innerHTML = `
+                <div style="font-weight:600;color:#FF6900;">${label}</div>
+                <div style="color:#374151;font-size:12px;">${name}</div>`;
+              popupElement.style.display = 'block';
+              hoverPopup.setPosition(evt.coordinate);
+            }, 600);
+          }
+        });
+
+        // 6. Klick-Selektion + Zoom + Grabflur-Ladung
+        const select = new Select({
+          condition: click,
+          style: new Style({
+            stroke: new Stroke({ color: '#CC5500', width: 3 }),
+            fill:   new Fill({ color: 'rgba(255, 105, 0, 0.25)' }),
+          }),
+        });
         map.addInteraction(select);
 
-        const infoPanel = document.getElementById('feature-info');
-        select.on('select', (e) => {
-          if (!infoPanel) return;
+        // Aktuell geladener Cemetery (für Grabflur-Race-Condition)
+        let currentCemeteryId: string | null = null;
 
+        select.on('select', async (e) => {
           const selected = e.selected[0];
+
+          // ── Deselektiert → Grabflure ausblenden (außer Klick war auf Grabflur) ──
           if (!selected) {
-            // Deselektiert → Platzhalter anzeigen
-            infoPanel.innerHTML = `
-              <div class="text-center py-8 text-gray-400">
-                <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
-                </svg>
-                <p class="text-sm">Klicke auf ein Grabflur-Polygon, um Informationen anzuzeigen.</p>
-              </div>
-            `;
+            // Prüfen ob der Klick auf einer Grabflur war (dann nicht eingreifen)
+            const evt = e.mapBrowserEvent;
+            let hitGrabflure = false;
+            if (grabflureLayer.getVisible() && evt) {
+              map.forEachFeatureAtPixel(evt.pixel, (f, layer) => {
+                if (layer === grabflureLayer) { hitGrabflure = true; return true; }
+              });
+            }
+            if (hitGrabflure) return;
+
+            grabflureSource.clear();
+            grabflureLayer.setVisible(false);
+            currentCemeteryId = null;
+            // Edit-Mode beenden falls aktiv
+            setActiveTool(null);
+            document.getElementById('edit-tools-container')?.classList.remove('edit-tools-visible');
+            document.getElementById('edit-tools-container')?.classList.add('edit-tools-hidden');
+            console.log('[Grabflur-Editor] Grabflure ausgeblendet');
             return;
           }
 
           const name = selected.get('name') || 'Unbenannt';
-          const id = String(selected.getId() ?? '');
-          const area = getArea(selected.getGeometry()!, { projection });
-          const areaHa = (area / 10000).toFixed(2);
-          const areaM2 = area.toFixed(0);
+          const cemeteryId = selected.getId() || name;
+          currentCemeteryId = cemeteryId;
+          console.log(`[Grabflur-Editor] Zoom auf Friedhof: ${name}`);
 
-          infoPanel.innerHTML = `
-            <div>
-              <h3 class="font-poppins font-bold text-base text-gray-900 mb-4">Grabflur-Details</h3>
-              <dl class="space-y-3 text-sm">
-                <div class="border-b border-gray-100 pb-2">
-                  <dt class="text-gray-500 text-xs uppercase tracking-wide">Name</dt>
-                  <dd class="font-medium text-gray-900 mt-0.5">${name}</dd>
-                </div>
-                <div class="border-b border-gray-100 pb-2">
-                  <dt class="text-gray-500 text-xs uppercase tracking-wide">ID</dt>
-                  <dd class="font-mono text-xs text-gray-700 mt-0.5 break-all">${id}</dd>
-                </div>
-                <div class="border-b border-gray-100 pb-2">
-                  <dt class="text-gray-500 text-xs uppercase tracking-wide">Fläche</dt>
-                  <dd class="font-medium text-gray-900 mt-0.5">${areaHa} ha <span class="text-gray-400 font-normal">(${areaM2} m²)</span></dd>
-                </div>
-              </dl>
-            </div>
-            <div class="mt-4 pt-3 border-t border-gray-100">
-              <p class="text-xs text-gray-400 italic">Weitere Bearbeitungsfunktionen folgen in Kürze.</p>
-            </div>
-          `;
+          const geom = selected.getGeometry();
+          if (!geom) return;
+
+          const extent = geom.getExtent();
+          const mapSize = map.getSize();
+          if (mapSize && extent && extent.every(Number.isFinite)) {
+            viewHistory.pushState(); // Aktuelle Position vor Zoom speichern
+            map.getView().fit(extent, {
+              size:    mapSize,
+              padding: [100, 100, 100, 100],
+              maxZoom: 19,
+              duration: 500,
+            });
+          }
+
+          // Edit-Mode beenden (neuer Cemetery ausgewählt)
+          setActiveTool(null);
+          document.getElementById('edit-tools-container')?.classList.remove('edit-tools-visible');
+          document.getElementById('edit-tools-container')?.classList.add('edit-tools-hidden');
+
+          // ── Grabflure für diesen Friedhof laden ──
+          try {
+            // Cemetery-Extent von UTM nach WGS84 transformieren (für WFS-Filter)
+            const extentWGS84 = transformExtent(extent, projection, 'EPSG:4326');
+            const bboxFilter = `${extentWGS84[0]},${extentWGS84[1]},${extentWGS84[2]},${extentWGS84[3]},EPSG:4326`;
+
+            const grabflureUrl = wfsAuthClient.buildWFSURL('grabflure', {
+              bbox: bboxFilter,
+            });
+
+            const response = await wfsAuthClient.fetchWFS(grabflureUrl);
+            if (!response.ok) throw new Error(`WFS ${response.status}`);
+
+            const geojson = await response.json();
+            const format = new GeoJSON();
+            const grabflureFeatures = format.readFeatures(geojson, {
+              dataProjection: 'EPSG:4326',
+              featureProjection: projection,
+            });
+
+            // Attribute aus GeoJSON-Properties übernehmen
+            if (geojson.features) {
+              geojson.features.forEach((raw: any, i: number) => {
+                if (grabflureFeatures[i]) {
+                  const p = raw.properties || {};
+                  grabflureFeatures[i].set('p2d2_uuid', p.p2d2_uuid || '');
+                  grabflureFeatures[i].set('fh_nr', p.fh_nr || '');
+                  grabflureFeatures[i].set('fh_name', p.fh_name || '');
+                  grabflureFeatures[i].set('flur_nr', p.flur_nr || '');
+                  grabflureFeatures[i].set('wp_name', p.wp_name || '');
+                  grabflureFeatures[i].set('workflow_status', p.workflow_status || '');
+                  // Anzeigename für Hover-Popup
+                  const label = p.flur_nr ? `Flur ${p.flur_nr}` : (p.fh_name || 'Unbenannt');
+                  grabflureFeatures[i].set('name', label);
+                }
+              });
+            }
+
+            // Nur anwenden, wenn seit dem Request kein anderer Cemetery geklickt wurde
+            if (currentCemeteryId !== cemeteryId) {
+              console.log('[Grabflur-Editor] ⏭️ Grabflure veraltet (anderer Cemetery gewählt)');
+              return;
+            }
+
+            grabflureSource.clear();
+            if (grabflureFeatures.length > 0) {
+              grabflureSource.addFeatures(grabflureFeatures);
+              grabflureLayer.setVisible(true);
+              const sample = grabflureFeatures[0].get('flur_nr') || grabflureFeatures[0].get('fh_name') || '';
+              console.log(`[Grabflur-Editor] 🗺️ ${grabflureFeatures.length} Grabflure geladen für "${name}" (z.B. Flur ${sample})`);
+            } else {
+              grabflureLayer.setVisible(false);
+              console.log(`[Grabflur-Editor] 🗺️ Keine Grabflure gefunden für "${name}"`);
+            }
+          } catch (err) {
+            console.error('[Grabflur-Editor] Grabflur-Fehler:', err);
+            grabflureLayer.setVisible(false);
+          }
         });
 
-        console.log('[Grabflur-Editor] ✅ Initialisierung abgeschlossen');
+        // ─── 6b. Grabflur-Doppelklick: 1× Zoomen, 2× Edit-Mode ───
+        let lastClickedGrabflureId: string | null = null;
+        let lastGrabflureClickTime = 0;
+
+        map.on('click', (evt) => {
+          if (!grabflureLayer.getVisible()) return;
+
+          let hitFeature: any = null;
+          map.forEachFeatureAtPixel(evt.pixel, (f, layer) => {
+            if (layer === grabflureLayer) { hitFeature = f; return true; }
+          });
+          if (!hitFeature) return;
+
+          const featureId = hitFeature.get('p2d2_uuid') || hitFeature.get('flur_nr') || '';
+          const now = Date.now();
+
+          if (featureId && featureId === lastClickedGrabflureId && (now - lastGrabflureClickTime < 600)) {
+            // Doppelklick → Edit-Mode
+            lastClickedGrabflureId = null;
+            lastGrabflureClickTime = 0;
+            enterGrabflureEditMode(hitFeature);
+            return;
+          }
+
+          // Erster Klick → auf Grabflur zoomen
+          const extent = hitFeature.getGeometry()?.getExtent();
+          const mapSize = map.getSize();
+          if (extent && mapSize && extent.every(Number.isFinite)) {
+            viewHistory.pushState();
+            map.getView().fit(extent, {
+              size:    mapSize,
+              padding: [50, 50, 50, 50],
+              maxZoom: 20,
+              duration: 400,
+            });
+          }
+
+          lastClickedGrabflureId = featureId;
+          lastGrabflureClickTime = now;
+        });
+
+        function enterGrabflureEditMode(feature: any): void {
+          const container = document.getElementById('edit-tools-container');
+          container?.classList.remove('edit-tools-hidden');
+          container?.classList.add('edit-tools-visible');
+
+          // Select-Tool aktivieren
+          setActiveTool('select');
+          document.querySelectorAll('[data-tool]').forEach((b) => b.classList.remove('highlighted'));
+          document.querySelector('[data-tool="select"]')?.classList.add('highlighted');
+
+          console.log(`[Editor] 🖊️ Edit-Mode für Grabflur: ${feature.get('name') || feature.get('flur_nr') || 'unbenannt'}`);
+        }
+
+        // ─── 7. Editor-Werkzeuge & Layer-Steuerung ───
+
+        // Hilfslayer: Luftbild (WMS) und basemap.de (WMS)
+        const luftbildLayer = new TileLayer({
+          source: new TileWMS({
+            url: 'https://geoportal.stadt-koeln.de/wss/service/luftbilder_2024_wms/guest',
+            params: { LAYERS: 'luftbilder_2024_23', FORMAT: 'image/png', TILED: true },
+            projection: projection,
+            crossOrigin: 'anonymous',
+          }),
+          zIndex: 7,
+          visible: false,
+        });
+        map.addLayer(luftbildLayer);
+
+        const basemapLayer = new TileLayer({
+          source: new TileWMS({
+            url: 'https://sgx.geodatenzentrum.de/wms_basemapde',
+            params: { LAYERS: 'de_basemapde_web_raster_farbe', FORMAT: 'image/png', TRANSPARENT: 'true', TILED: true },
+            projection: 'EPSG:3857',
+            crossOrigin: 'anonymous',
+          }),
+          zIndex: 15,
+          visible: false,
+        });
+        map.addLayer(basemapLayer);
+
+        // Layer-Toggle-Handler
+        function toggleBaseLayer(layerName: string): void {
+          let layer: VectorLayer | TileLayer<any> | null = null;
+          if (layerName === 'luftbild') layer = luftbildLayer;
+          else if (layerName === 'basemap') layer = basemapLayer;
+          else { console.warn('[Editor] Unbekannter Layer:', layerName); return; }
+
+          const newVis = !layer.getVisible();
+          layer.setVisible(newVis);
+          const btn = document.querySelector(`[data-layer-toggle="${layerName}"]`);
+          btn?.classList.toggle('highlighted', newVis);
+          try { localStorage.setItem(`${layerName}Visible`, String(newVis)); } catch {}
+        }
+
+        document.addEventListener('click', (e) => {
+          const btn = (e.target as HTMLElement).closest('[data-layer-toggle]') as HTMLElement;
+          if (btn) toggleBaseLayer(btn.dataset.layerToggle || '');
+        });
+
+        // Editor-Interaktionen für Grabflure
+        let activeTool: string | null = null;
+        let editInteractions: Interaction[] = [];
+
+        function setActiveTool(toolName: string | null): void {
+          // Alte Interaktionen entfernen
+          editInteractions.forEach((i) => map.removeInteraction(i));
+          editInteractions = [];
+
+          if (!toolName) { activeTool = null; return; }
+
+          const grabflureOnlyFilter = (f: any, layer: any) => layer === grabflureLayer;
+
+          switch (toolName) {
+            case 'select': {
+              const si = new Select({
+                layers: [grabflureLayer],
+                style: new Style({
+                  stroke: new Stroke({ color: '#3B82F6', width: 3 }),
+                  fill:   new Fill({ color: 'rgba(59, 130, 246, 0.2)' }),
+                }),
+              });
+              si.on('select', (evt) => {
+                const hasSelection = evt.selected.length > 0;
+                (document.getElementById('tool-save') as HTMLButtonElement).disabled = !hasSelection;
+              });
+              map.addInteraction(si);
+              editInteractions.push(si);
+              break;
+            }
+            case 'move': {
+              const tr = new Translate({ layers: [grabflureLayer], hitTolerance: 8 });
+              tr.on('translatestart', () => {
+                (document.getElementById('tool-save') as HTMLButtonElement).disabled = false;
+              });
+              map.addInteraction(tr);
+              editInteractions.push(tr);
+              break;
+            }
+            case 'modify': {
+              const md = new Modify({ source: grabflureSource, pixelTolerance: 6 });
+              md.on('modifystart', () => {
+                (document.getElementById('tool-save') as HTMLButtonElement).disabled = false;
+              });
+              map.addInteraction(md);
+              editInteractions.push(md);
+              break;
+            }
+          }
+          activeTool = toolName;
+        }
+
+        // Tool-Buttons verdrahten
+        document.addEventListener('click', (e) => {
+          const btn = (e.target as HTMLElement).closest('[data-tool]') as HTMLElement;
+          if (!btn) return;
+          const tool = btn.dataset.tool;
+          if (!tool) return;
+
+          // Tool-Auswahl (select, move, modify)
+          if (['select', 'move', 'modify'].includes(tool)) {
+            if (activeTool === tool) return; // bereits aktiv
+            setActiveTool(tool);
+            document.querySelectorAll('[data-tool]').forEach((b) => b.classList.remove('highlighted'));
+            btn.classList.add('highlighted');
+            // Edit-Tools sichtbar schalten
+            document.getElementById('edit-tools-container')?.classList.remove('edit-tools-hidden');
+            document.getElementById('edit-tools-container')?.classList.add('edit-tools-visible');
+            return;
+          }
+
+          // Speichern
+          if (tool === 'save') {
+            console.log('[Editor] 💾 Speichern gestartet – WFS-T folgt');
+            // TODO: WFS-T Save
+            (document.getElementById('tool-save') as HTMLButtonElement).disabled = true;
+            return;
+          }
+
+          // Abbrechen
+          if (tool === 'cancel') {
+            if (confirm('Bearbeitung abbrechen? Nicht gespeicherte Änderungen gehen verloren.')) {
+              setActiveTool(null);
+              activeTool = null;
+              grabflureSource.clear();
+              grabflureLayer.setVisible(false);
+              document.getElementById('edit-tools-container')?.classList.remove('edit-tools-visible');
+              document.getElementById('edit-tools-container')?.classList.add('edit-tools-hidden');
+              document.querySelectorAll('[data-tool]').forEach((b) => b.classList.remove('highlighted'));
+              // Tool-Select wieder hervorheben
+              const selBtn = document.querySelector('[data-tool="select"]');
+              selBtn?.classList.add('highlighted');
+            }
+            return;
+          }
+        });
+
+        // Keyboard-Shortcuts für Werkzeuge
+        document.addEventListener('keydown', (e) => {
+          if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+          const mapEl = document.getElementById('grabflur-map');
+          if (!mapEl || !document.contains(mapEl)) return;
+
+          switch (e.key.toLowerCase()) {
+            case 's':
+              e.preventDefault();
+              (document.querySelector('[data-tool="select"]') as HTMLElement)?.click();
+              break;
+            case 'm':
+              e.preventDefault();
+              (document.querySelector('[data-tool="move"]') as HTMLElement)?.click();
+              break;
+            case 'e':
+              e.preventDefault();
+              (document.querySelector('[data-tool="modify"]') as HTMLElement)?.click();
+              break;
+          }
+        });
+
+        // Initialen Button-Status (Select vorausgewählt)
+        document.querySelector('[data-tool="select"]')?.classList.add('highlighted');
+
+        // Layer-Zustände aus localStorage wiederherstellen
+        try {
+          ['luftbild', 'basemap'].forEach((ln) => {
+            const saved = localStorage.getItem(`${ln}Visible`) === 'true';
+            if (ln === 'luftbild') luftbildLayer.setVisible(saved);
+            if (ln === 'basemap') basemapLayer.setVisible(saved);
+            const btn = document.querySelector(`[data-layer-toggle="${ln}"]`);
+            if (saved) btn?.classList.add('highlighted');
+          });
+        } catch {}
+
       } catch (err) {
-        console.error(
-          '[Grabflur-Editor] Fehler bei der Initialisierung:',
-          err,
-        );
-        const containerEl = document.getElementById('grabflur-map');
-        if (containerEl && !containerEl.querySelector('.error-message')) {
-          const errorDiv = document.createElement('div');
-          errorDiv.className =
-            'error-message absolute inset-0 flex items-center justify-center bg-white/80';
-          errorDiv.innerHTML =
-            '<p class="text-red-600 font-medium">Fehler beim Initialisieren der Karte.</p>';
-          containerEl.style.position = 'relative';
-          containerEl.appendChild(errorDiv);
+        console.error('[Grabflur-Editor] Initialisierungsfehler:', err);
+        const mapEl = document.getElementById('grabflur-map');
+        if (mapEl) {
+          const errDiv = document.createElement('div');
+          errDiv.className = 'absolute inset-0 flex items-center justify-center bg-white/80';
+          errDiv.innerHTML = '<p class="text-red-600 font-medium">Fehler beim Initialisieren der Karte.</p>';
+          mapEl.style.position = 'relative';
+          mapEl.appendChild(errDiv);
         }
       }
     });
   </script>
+
 </BaseLayout>
