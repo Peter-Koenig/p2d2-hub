@@ -53,6 +53,19 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
             data-projection={projection}
             data-zoom={zoom}
           ></div>
+          <!-- Navigation-Vor/Zurück -->
+          <div class="nav-controls">
+            <button id="nav-back" class="nav-btn" title="Zurück (Alt+←)" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+            </button>
+            <button id="nav-forward" class="nav-btn" title="Vor (Alt+→)" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </button>
+          </div>
         </div>
       ) : (
         <div class="flex-1 flex items-center justify-center">
@@ -118,6 +131,53 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
       .logo           { height: 1.5rem; }
       .brand-name     { font-size: 1.25rem; }
     }
+    /* Navigations-Buttons (vor/zurück) */
+    .nav-controls {
+      position: absolute;
+      top: 0.5rem;
+      left: 2.5rem;
+      display: flex;
+      gap: 0.5rem;
+      z-index: 40;
+    }
+    .nav-btn {
+      width: 20px;
+      height: 20px;
+      background: white;
+      border: none;
+      border-radius: 0.25rem;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: #dc2626;
+      color: white;
+      transform: scale(1.05);
+    }
+    .nav-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .nav-btn svg {
+      width: 10px;
+      height: 10px;
+    }
+    @media (max-width: 768px) {
+      .nav-controls { top: 0.75rem; left: 0.75rem; }
+      .nav-btn { width: 18px; height: 18px; }
+      .nav-btn svg { width: 9px; height: 9px; }
+    }
+    @media (prefers-contrast: high) {
+      .nav-btn { border: 1px solid #374151; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .nav-btn { transition: none; }
+      .nav-btn:hover:not(:disabled) { transform: none; }
+    }
   </style>
 
   <script>
@@ -167,6 +227,33 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
         const mapManager = new MapManager('grabflur-map', projection);
         const map = mapManager.getMap();
 
+        // ViewHistory für Vor/Zurück-Navigation
+        const viewHistory = mapManager.getViewHistory();
+
+        // Navigations-Buttons verdrahten
+        const backBtn = document.getElementById('nav-back') as HTMLButtonElement;
+        const fwdBtn  = document.getElementById('nav-forward') as HTMLButtonElement;
+
+        backBtn?.addEventListener('click', () => viewHistory.back());
+        fwdBtn?.addEventListener('click', () => viewHistory.forward());
+
+        // Button-Status via subscribe
+        viewHistory.subscribe((state) => {
+          if (backBtn) backBtn.disabled = !state.canGoBack;
+          if (fwdBtn)  fwdBtn.disabled  = !state.canGoForward;
+        });
+
+        // Initialen Button-Status setzen
+        const initState = viewHistory.getState();
+        if (backBtn) backBtn.disabled = !initState.canGoBack;
+        if (fwdBtn)  fwdBtn.disabled  = !initState.canGoForward;
+
+        // Keyboard-Shortcuts: Alt+← / Alt+→
+        document.addEventListener('keydown', (e) => {
+          if (e.altKey && e.key === 'ArrowLeft')  { e.preventDefault(); viewHistory.back(); }
+          if (e.altKey && e.key === 'ArrowRight') { e.preventDefault(); viewHistory.forward(); }
+        });
+
         // 2. Friedhofs-WFS-Layer vorbereiten (Layer vor postrender hinzufügen)
         const friedhofSource = new VectorSource();
         const friedhofLayer = new VectorLayer({
@@ -178,6 +265,19 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
           }),
         });
         map.addLayer(friedhofLayer);
+
+        // 2b. Grabflur-WFS-Layer (zunächst unsichtbar, wird bei Klick auf Friedhof geladen)
+        const grabflureSource = new VectorSource();
+        const grabflureLayer = new VectorLayer({
+          source: grabflureSource,
+          zIndex: 21,
+          visible: false,
+          style: new Style({
+            stroke: new Stroke({ color: '#FF6900', width: 1.5 }),
+            fill:   new Fill({ color: 'rgba(255, 105, 0, 0.08)' }),
+          }),
+        });
+        map.addLayer(grabflureLayer);
 
         // Hover-Popup vorbereiten
         const popupElement = document.createElement('div');
@@ -236,7 +336,7 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
             /* DIAG */ const firstFeat = features[0];
             /* DIAG */ if (firstFeat) {
             /* DIAG */   const geom = firstFeat.getGeometry();
-            /* DIAG */   const coords = geom?.getFirstCoordinate();
+            /* DIAG */   const coords = geom ? (geom as any).getFirstCoordinate() : undefined;
             /* DIAG */   console.log('[DIAG] Erstes Feature – Typ:', geom?.getType(), '| erste Koordinate:', coords);
             /* DIAG */   console.log('[DIAG]   → Erwarte UTM-Werte (z.B. [354000, 5645000]) – sind es lat/lon?');
             /* DIAG */ }
@@ -258,6 +358,7 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
                   padding: [50, 50, 50, 50],
                   maxZoom: 16,
                 });
+                viewHistory.pushState(); // Initialen Übersichts-Zoom speichern
                 console.log('[Grabflur-Editor] ✅ fit() ausgeführt, Center:', map.getView().getCenter());
               }
             }
@@ -332,6 +433,7 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
 
         // 5. Hover-Interaktion
         let hoverFeature: any = null;
+        let hoverFeatureType = '';
         let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
         const HOVER_STYLE = new Style({
           stroke: new Stroke({ color: '#CC5500', width: 3 }),
@@ -341,14 +443,18 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
         map.on('pointermove', (evt) => {
           if (evt.dragging) return;
           let featureAtPixel: any = null;
+          let featureLayer = '';
           map.forEachFeatureAtPixel(evt.pixel, (f, layer) => {
-            if (layer === friedhofLayer) { featureAtPixel = f; return true; }
+            if (layer === grabflureLayer) { featureAtPixel = f; featureLayer = 'grabflure'; return true; }
+            if (layer === friedhofLayer)  { featureAtPixel = f; featureLayer = 'friedhof';  return true; }
+            return false;
           });
 
           if (featureAtPixel !== hoverFeature) {
             if (hoverTimeout) clearTimeout(hoverTimeout);
             if (hoverFeature) hoverFeature.setStyle(undefined);
             hoverFeature = featureAtPixel;
+            hoverFeatureType = featureLayer;
 
             if (!featureAtPixel) {
               popupElement.style.display = 'none';
@@ -359,8 +465,9 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
             featureAtPixel.setStyle(HOVER_STYLE);
             hoverTimeout = setTimeout(() => {
               const name = featureAtPixel.get('name') || 'Unbenannt';
+              const label = hoverFeatureType === 'grabflure' ? 'Grabflur' : 'Friedhof';
               popupElement.innerHTML = `
-                <div style="font-weight:600;color:#FF6900;">Friedhof</div>
+                <div style="font-weight:600;color:#FF6900;">${label}</div>
                 <div style="color:#374151;font-size:12px;">${name}</div>`;
               popupElement.style.display = 'block';
               hoverPopup.setPosition(evt.coordinate);
@@ -368,16 +475,108 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
           }
         });
 
-        // 6. Klick-Selektion
-        const select = new Select({ condition: click });
+        // 6. Klick-Selektion + Zoom + Grabflur-Ladung
+        const select = new Select({
+          condition: click,
+          style: new Style({
+            stroke: new Stroke({ color: '#CC5500', width: 3 }),
+            fill:   new Fill({ color: 'rgba(255, 105, 0, 0.25)' }),
+          }),
+        });
         map.addInteraction(select);
 
-        select.on('select', (e) => {
+        // Aktuell geladener Cemetery (für Grabflur-Race-Condition)
+        let currentCemeteryId: string | null = null;
+
+        select.on('select', async (e) => {
           const selected = e.selected[0];
-          // Kein Info-Panel mehr – bei Bedarf hier einen kompakten Toast/Overlay einbauen
-          if (selected) {
-            const name = selected.get('name') || 'Unbenannt';
-            console.log(`[Grabflur-Editor] Ausgewählt: ${name}`);
+
+          // ── Deselektiert → Grabflure ausblenden ──
+          if (!selected) {
+            grabflureSource.clear();
+            grabflureLayer.setVisible(false);
+            currentCemeteryId = null;
+            console.log('[Grabflur-Editor] Grabflure ausgeblendet');
+            return;
+          }
+
+          const name = selected.get('name') || 'Unbenannt';
+          const cemeteryId = selected.getId() || name;
+          currentCemeteryId = cemeteryId;
+          console.log(`[Grabflur-Editor] Zoom auf Friedhof: ${name}`);
+
+          const geom = selected.getGeometry();
+          if (!geom) return;
+
+          const extent = geom.getExtent();
+          const mapSize = map.getSize();
+          if (mapSize && extent && extent.every(Number.isFinite)) {
+            viewHistory.pushState(); // Aktuelle Position vor Zoom speichern
+            map.getView().fit(extent, {
+              size:    mapSize,
+              padding: [100, 100, 100, 100],
+              maxZoom: 19,
+              duration: 500,
+            });
+          }
+
+          // ── Grabflure für diesen Friedhof laden ──
+          try {
+            // Cemetery-Extent von UTM nach WGS84 transformieren (für WFS-Filter)
+            const extentWGS84 = transformExtent(extent, projection, 'EPSG:4326');
+            const bboxFilter = `${extentWGS84[0]},${extentWGS84[1]},${extentWGS84[2]},${extentWGS84[3]},EPSG:4326`;
+
+            const grabflureUrl = wfsAuthClient.buildWFSURL('grabflure', {
+              bbox: bboxFilter,
+            });
+
+            const response = await wfsAuthClient.fetchWFS(grabflureUrl);
+            if (!response.ok) throw new Error(`WFS ${response.status}`);
+
+            const geojson = await response.json();
+            const format = new GeoJSON();
+            const grabflureFeatures = format.readFeatures(geojson, {
+              dataProjection: 'EPSG:4326',
+              featureProjection: projection,
+            });
+
+            // Attribute aus GeoJSON-Properties übernehmen
+            if (geojson.features) {
+              geojson.features.forEach((raw: any, i: number) => {
+                if (grabflureFeatures[i]) {
+                  const p = raw.properties || {};
+                  grabflureFeatures[i].set('p2d2_uuid', p.p2d2_uuid || '');
+                  grabflureFeatures[i].set('fh_nr', p.fh_nr || '');
+                  grabflureFeatures[i].set('fh_name', p.fh_name || '');
+                  grabflureFeatures[i].set('flur_nr', p.flur_nr || '');
+                  grabflureFeatures[i].set('wp_name', p.wp_name || '');
+                  grabflureFeatures[i].set('workflow_status', p.workflow_status || '');
+                  // Anzeigename für Hover-Popup
+                  const label = p.flur_nr ? `Flur ${p.flur_nr}` : (p.fh_name || 'Unbenannt');
+                  grabflureFeatures[i].set('name', label);
+                }
+              });
+            }
+
+            // Nur anwenden, wenn seit dem Request kein anderer Cemetery geklickt wurde
+            if (currentCemeteryId !== cemeteryId) {
+              console.log('[Grabflur-Editor] ⏭️ Grabflure veraltet (anderer Cemetery gewählt)');
+              return;
+            }
+
+            grabflureSource.clear();
+            if (grabflureFeatures.length > 0) {
+              grabflureSource.addFeatures(grabflureFeatures);
+              grabflureLayer.setVisible(true);
+              const sample = grabflureFeatures[0].get('flur_nr') || grabflureFeatures[0].get('fh_name') || '';
+              console.log(`[Grabflur-Editor] 🗺️ ${grabflureFeatures.length} Grabflure geladen für "${name}" (z.B. Flur ${sample})`);
+            } else {
+              grabflureLayer.setVisible(false);
+              console.log(`[Grabflur-Editor] 🗺️ Keine Grabflure gefunden für "${name}"`);
+            }
+          } catch (err) {
+            console.error('[Grabflur-Editor] Grabflur-Fehler:', err);
+            grabflureLayer.setVisible(false);
           }
         });
 
