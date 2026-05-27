@@ -4,14 +4,15 @@
 //        Stellt eine wiederverwendbare sql-Instanz bereit.
 //        Verbindungsparameter kommen aus astro:env/server.
 
-import postgres from 'postgres';
+import postgres from "postgres";
 import {
+  APP_DEBUG,
   DB_HOST,
   DB_PORT,
   DB_NAME,
   DB_USER,
   DB_PASSWORD,
-} from 'astro:env/server';
+} from "astro:env/server";
 
 let sql: postgres.Sql<{}> | null = null;
 
@@ -34,6 +35,8 @@ export function getDb(): postgres.Sql<{}> {
       idle_timeout: 30,
       // Max. 60s Verbindungsaufbau
       connect_timeout: 60,
+      // Query-Logging (nur bei APP_DEBUG=true)
+      debug: APP_DEBUG,
     });
   }
   return sql;
