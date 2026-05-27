@@ -3,7 +3,7 @@
 // p2d2: API-Endpunkt für manuelle OSM-Polygon-Synchronisation
 //
 // Stage-spezifische WFS-T-Credentials werden aus der aufgerufenen URL
-// abgeleitet (resolveStageFromUrl()) und per import.meta.env dynamisch
+// abgeleitet (resolveStageFromUrl()) und per process.env dynamisch
 // geladen – identisch zum Vorgehen in POST /api/workflow/session.
 import { syncKommunePolygons } from "../../utils/polygon-wfst-sync";
 import { WFST_WORKSPACE, WFST_NAMESPACE } from "astro:env/server";
@@ -28,15 +28,9 @@ export async function POST({ request }: { request: Request }) {
     const stage = resolveStageFromUrl(hostname).stage;
     const stageKey = stage.toUpperCase();
 
-    const endpoint = import.meta.env[`WFST_ENDPOINT_${stageKey}`] as
-      | string
-      | undefined;
-    const username = import.meta.env[`WFST_USER_${stageKey}`] as
-      | string
-      | undefined;
-    const password = import.meta.env[`WFST_PW_${stageKey}`] as
-      | string
-      | undefined;
+    const endpoint = process.env[`WFST_ENDPOINT_${stageKey}`] ?? "";
+    const username = process.env[`WFST_USER_${stageKey}`] ?? "";
+    const password = process.env[`WFST_PW_${stageKey}`] ?? "";
 
     if (!endpoint || !username || !password) {
       return new Response(
