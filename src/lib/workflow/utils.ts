@@ -60,7 +60,7 @@ export function resolveVersionTable(featureType: string): string {
  * Systemspalten der Quelltabelle – diese werden NICHT als Domain-Spalten
  * betrachtet. Der FK in der Versionentabelle heisst `${featureType}_id`.
  */
-const SOURCE_SYSTEM_COLS = ["p2d2_uuid", "geom"];
+const SOURCE_SYSTEM_COLS = ["p2d2_uuid", "geom", "created_at", "updated_at"];
 
 /**
  * Liefert alle Domain-Spalten der Quelltabelle (alles außer System-Spalten).
@@ -82,7 +82,7 @@ export async function getDomainFields(
     FROM information_schema.columns
     WHERE table_schema = ${schema}
       AND table_name   = ${sourceTable}
-      AND column_name NOT IN (${"p2d2_uuid"}, ${"geom"})
+      AND column_name NOT IN (${"p2d2_uuid"}, ${"geom"}, ${"created_at"}, ${"updated_at"})
     ORDER BY ordinal_position
   `;
 
