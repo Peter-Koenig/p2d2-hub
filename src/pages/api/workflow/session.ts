@@ -241,7 +241,7 @@ export const POST: APIRoute = async ({ request }) => {
 
       try {
         await sql`
-          UPDATE ${sql(schema, "wf_sessions")}
+          UPDATE ${sql(schema)}.${sql("wf_sessions")}
           SET state = 'error'
           WHERE id = ${sessionId}
         `;
@@ -306,7 +306,7 @@ export const POST: APIRoute = async ({ request }) => {
       // Session auf 'error' setzen als Fallback
       try {
         await sql`
-          UPDATE ${sql(schema, "wf_sessions")}
+          UPDATE ${sql(schema)}.${sql("wf_sessions")}
           SET state = 'error'
           WHERE id = ${sessionId}
         `;

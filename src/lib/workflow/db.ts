@@ -61,7 +61,7 @@ export async function ensureVersion0(
   // -------------------------------------------------------------------
   const [existing] = await tx`
     SELECT version_id
-    FROM ${tx(schema, versionTable)}
+    FROM ${tx(schema)}.${tx(versionTable)}
     WHERE ${tx(fkCol)} = ${featureUuid}
       AND version_nr  = 0
     LIMIT 1
@@ -158,7 +158,7 @@ export async function openSession(
 ): Promise<number> {
   try {
     const [row] = await tx`
-      INSERT INTO ${tx(schema, "wf_sessions")} (
+      INSERT INTO ${tx(schema)}.${tx("wf_sessions")} (
         feature_type,
         feature_set_id,
         state,
@@ -222,7 +222,7 @@ export async function setFeatureStatus(
   sessionId: number,
 ): Promise<void> {
   await tx`
-    INSERT INTO ${tx(schema, "wf_feature_status")} (
+    INSERT INTO ${tx(schema)}.${tx("wf_feature_status")} (
       feature_type,
       feature_id,
       state,
@@ -273,7 +273,7 @@ export async function finalizeSnapshot(
   // snapshot_no ermitteln
   const [maxRow] = await tx`
     SELECT COALESCE(MAX(snapshot_no), 0) + 1 AS next_no
-    FROM ${tx(schema, "wf_snapshots")}
+    FROM ${tx(schema)}.${tx("wf_snapshots")}
     WHERE session_id = ${sessionId}
   `;
   const snapshotNo: number = maxRow?.next_no ?? 1;
@@ -282,7 +282,7 @@ export async function finalizeSnapshot(
   const versionTable = resolveVersionTable(featureType);
 
   const [row] = await tx`
-    INSERT INTO ${tx(schema, "wf_snapshots")} (
+    INSERT INTO ${tx(schema)}.${tx("wf_snapshots")} (
       session_id,
       feature_type,
       version_table,
@@ -337,7 +337,7 @@ export async function closeSession(
 ): Promise<void> {
   // Session schließen
   await tx`
-    UPDATE ${tx(schema, "wf_sessions")}
+    UPDATE ${tx(schema)}.${tx("wf_sessions")}
     SET state    = 'completed',
         ended_by = ${userEmail},
         ended_at = now()
@@ -346,7 +346,7 @@ export async function closeSession(
 
   // Feature-Status auf QS1 setzen
   await tx`
-    UPDATE ${tx(schema, "wf_feature_status")}
+    UPDATE ${tx(schema)}.${tx("wf_feature_status")}
     SET state           = 'qs1_ausstehend',
         last_session_id = ${sessionId},
         updated_at      = now()
