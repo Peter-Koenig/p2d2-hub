@@ -20,6 +20,7 @@ import type {
 
 import { getDb } from "../../../lib/db";
 import { resolveStageFromUrl } from "../../../lib/workflow/utils";
+import { hasPermission } from "../../../config/roles";
 import { openSession } from "../../../lib/workflow/db";
 import type { OpenSessionParams } from "../../../lib/workflow/db";
 
@@ -117,8 +118,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
       "Kein authentifizierter Benutzer",
     );
   }
-  if (!locals.user?.roles?.includes("editor")) {
-    return errorResponse(403, "FORBIDDEN", "Keine editor-Rolle");
+  if (!hasPermission(locals.user?.roles ?? [], "openSession")) {
+    return errorResponse(
+      403,
+      "FORBIDDEN",
+      "Keine Berechtigung für openSession",
+    );
   }
 
   const userEmail = locals.user.email;

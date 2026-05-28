@@ -31,6 +31,29 @@ import {
 import type { DbClient } from "./utils";
 
 // =============================================================================
+// Hilfsfunktion: BigInt/Number sicher konvertieren
+// =============================================================================
+// PostgreSQL BIGSERIAL-Spalten liefern JavaScript-BigInt-Werte, die
+// JSON.stringify als String serialisiert. Die API-Spezifikation fordert
+// aber number für id-Felder. toSafeId() konvertiert explizit und prüft
+// auf Überschreitung von Number.MAX_SAFE_INTEGER (ca. 9 Billiarden).
+//
+// Sollten jemals IDs grösser als 2^53-1 vorkommen, muss das Format auf
+// string umgestellt werden (dann toSafeId entfernen).
+// ---------------------------------------------------------------------------
+
+function toSafeId(value: unknown): number {
+  const num = typeof value === "bigint" ? Number(value) : Number(value);
+  if (!Number.isSafeInteger(num)) {
+    throw new Error(
+      `ID ${String(value)} überschreitet Number.MAX_SAFE_INTEGER – ` +
+        "Umstellung auf string-Format erforderlich",
+    );
+  }
+  return num;
+}
+
+// =============================================================================
 // ÖFFENTLICHE PARAMETER-INTERFACES
 // =============================================================================
 
@@ -284,7 +307,7 @@ export async function insertSessionRecord(
       )
       RETURNING id
     `;
-    return row.id as number;
+    return toSafeId(row.id);
   } catch (err: unknown) {
     if (
       err &&
@@ -379,7 +402,7 @@ export async function insertSnapshotRecord(
     RETURNING id
   `;
 
-  return row.id as number;
+  return toSafeId(row.id);
 }
 
 /**

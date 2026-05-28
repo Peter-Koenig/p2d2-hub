@@ -78,3 +78,4 @@ __pycache__/*
 .venv/*
 src/scripts/__pycache__/
 src/utils/geo/__pycache__/*
+.env.test

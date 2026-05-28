@@ -31,6 +31,7 @@ import {
   resolveStageFromUrl,
   resolveVersionTable,
 } from "../../../../lib/workflow/utils";
+import { hasPermission } from "../../../../config/roles";
 import { closeSession } from "../../../../lib/workflow/db";
 import type { CloseSessionParams } from "../../../../lib/workflow/db";
 
@@ -68,8 +69,12 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
       "Kein authentifizierter Benutzer",
     );
   }
-  if (!locals.user?.roles?.includes("editor")) {
-    return errorResponse(403, "FORBIDDEN", "Keine editor-Rolle");
+  if (!hasPermission(locals.user?.roles ?? [], "closeSession")) {
+    return errorResponse(
+      403,
+      "FORBIDDEN",
+      "Keine Berechtigung für closeSession",
+    );
   }
 
   const userEmail = locals.user.email;

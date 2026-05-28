@@ -16,6 +16,8 @@
     "build:fv": "astro build --mode fv",
     "preview": "astro preview",
     "astro": "astro",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "kommune-watcher": "cross-env NODE_ENV=development tsx src/scripts/kommune-watcher.ts",
     "manual-sync": "cross-env NODE_ENV=development tsx src/scripts/manual-sync.ts",
     "test-polygon-sync": "cross-env NODE_ENV=development tsx src/scripts/test-polygon-sync.ts"
@@ -38,7 +40,6 @@
     "ol-rotate-feature": "^3.3.0",
     "openid-client": "^6.8.4",
     "osmtogeojson": "^3.0.0-beta.5",
-    "postgres": "^3.4.5",
     "proj4": "^2.17.0",
     "tailwindcss": "^4.1.7",
     "vue": "^3.5.14"
@@ -52,7 +53,9 @@
     "concurrently": "^8.2.2",
     "cross-env": "^10.0.0",
     "dotenv": "^17.2.2",
+    "postgres": "^3.4.9",
     "tsx": "^4.20.5",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.7"
   }
 }
