@@ -31,8 +31,6 @@ Beide sollen gleichwertig, transparent und souverän miteinander interagieren. D
 - [Entwicklungsseite zum testen: https://dev.data-dna.eu](https://dev.data-dna.eu)
 - [Dokumentations-Webseite: https://doc.data-dna.eu](https://doc.data-dna.eu)
 
-***
-
 ### Installation & Nutzung
 
 #### Voraussetzungen
@@ -64,7 +62,6 @@ npm run build
 # Produktion lokal testen
 npm run preview
 ```
-
 
 #### Kollaboration
 
