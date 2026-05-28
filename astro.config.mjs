@@ -27,17 +27,7 @@ export default defineConfig({
       WFST_WORKSPACE: envField.string({ context: "server", access: "secret" }),
       WFST_NAMESPACE: envField.string({ context: "server", access: "secret" }),
 
-      // WFS-T Credentials — stage-spezifisch (dynamisch per process.env zur Laufzeit)
-      // WFST_ENDPOINT_DE1 / WFST_USER_DE1 / WFST_PW_DE1 sind Pflichtfelder für Stage de1.
-      // Weitere Stages (de2, fv, develop, main) werden absichtlich NICHT hier validiert,
-      // da sie nicht in jedem Branch/Deployment gesetzt sein müssen.
-      // Die tatsächliche Auflösung erfolgt zur Laufzeit über process.env[`WFST_${KEY}_${stage}`].
-      WFST_ENDPOINT_DE1: envField.string({
-        context: "server",
-        access: "secret",
-      }),
-      WFST_USER_DE1: envField.string({ context: "server", access: "secret" }),
-      WFST_PW_DE1: envField.string({ context: "server", access: "secret" }),
+      // WFS-T-Credentials stage-spezifisch: process.env[WFST_ENDPOINT_<STAGE>] zur Laufzeit
 
       DEFAULT_CATEGORY_ICON: envField.string({
         context: "server",
