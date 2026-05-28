@@ -25,8 +25,6 @@ Beide sollen gleichwertig, transparent und souverän miteinander interagieren. D
 - Strikte Open Source-Orientierung (EUPL-1.2) – Offen, transparent, erweiterbar
 - Fokus auf Community-Beiträge: Mitmachen statt nur Zuschauen
 
-***
-
 ### Wichtige Live-Adressen:
 
 - [Webseite: https://www.data-dna.eu](https://www.data-dna.eu)
