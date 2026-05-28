@@ -277,13 +277,9 @@ See `CONTRIBUTING.md`.
 - Code reviews: `.github/CODEREVIEWGUIDE.md`
 - Branch merge policy: `.github/MERGEPOLICY.md`
 
-***
-
 ### License
 
 This project is licensed under the **European Union Public Licence v1.2 (EUPL-1.2)** – see `LICENSE`.
-
-***
 
 ### Contact \& Community
 
