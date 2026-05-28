@@ -25,10 +25,9 @@ export default defineConfig({
 
       // GIS / WFS-T
       WFST_WORKSPACE: envField.string({ context: "server", access: "secret" }),
-      WFST_ENDPOINT: envField.string({ context: "server", access: "secret" }),
-      WFST_USERNAME: envField.string({ context: "server", access: "secret" }),
-      WFST_PASSWORD: envField.string({ context: "server", access: "secret" }),
       WFST_NAMESPACE: envField.string({ context: "server", access: "secret" }),
+
+      // WFS-T-Credentials stage-spezifisch: process.env[WFST_ENDPOINT_<STAGE>] zur Laufzeit
 
       DEFAULT_CATEGORY_ICON: envField.string({
         context: "server",

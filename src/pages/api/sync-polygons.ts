@@ -1,14 +1,13 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
 // p2d2: API-Endpunkt für manuelle OSM-Polygon-Synchronisation
+//
+// Stage-spezifische WFS-T-Credentials werden aus der aufgerufenen URL
+// abgeleitet (resolveStageFromUrl()) und per process.env dynamisch
+// geladen – identisch zum Vorgehen in POST /api/workflow/session.
 import { syncKommunePolygons } from "../../utils/polygon-wfst-sync";
-import {
-  WFST_ENDPOINT,
-  WFST_WORKSPACE,
-  WFST_NAMESPACE,
-  WFST_USERNAME,
-  WFST_PASSWORD,
-} from "astro:env/server";
+import { WFST_WORKSPACE, WFST_NAMESPACE } from "astro:env/server";
+import { resolveStageFromUrl } from "../../lib/workflow/utils";
 
 export async function POST({ request }: { request: Request }) {
   try {
@@ -24,12 +23,34 @@ export async function POST({ request }: { request: Request }) {
       );
     }
 
+    // Stage aus der aufgerufenen URL ableiten
+    const hostname = new URL(request.url).hostname;
+    const stage = resolveStageFromUrl(hostname).stage;
+    const stageKey = stage.toUpperCase();
+
+    const endpoint = process.env[`WFST_ENDPOINT_${stageKey}`] ?? "";
+    const username = process.env[`WFST_USER_${stageKey}`] ?? "";
+    const password = process.env[`WFST_PW_${stageKey}`] ?? "";
+
+    if (!endpoint || !username || !password) {
+      return new Response(
+        JSON.stringify({
+          error: "CONFIG_ERROR",
+          message: `Stage '${stage}' hat keine WFS-T-Konfiguration`,
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
     const wfstConfig = {
-      endpoint: WFST_ENDPOINT,
+      endpoint,
       workspace: WFST_WORKSPACE,
       namespace: WFST_NAMESPACE,
-      username: WFST_USERNAME,
-      password: WFST_PASSWORD,
+      username,
+      password,
     };
 
     const result = await syncKommunePolygons(

@@ -1,57 +1,307 @@
 src/components/CallToAction.astro: <!-- p2d2: Call-to-Action-Banner: Mitmach-Aufruf -->
 src/components/CommunityBenefits.astro: <!-- p2d2: Community-Vorteile: Auflistung von Nutzen für Mitwirkende -->
 src/components/CommunitySection.astro: <!-- p2d2: Community-Bereich: Vorstellung der Community-Gruppen -->
+---
+// src/components/CommunitySection.astro
+---
+
+<section class="community-section py-8 px-4 bg-white text-center">
+    <h2 class="text-xl font-semibold mb-4">Gemeinsam sind wir stark</h2>
+    <p class="mb-2">
 src/components/EventConsole.ts: // p2d2: Entwickler-Debug-Konsole für Cross-Window-Events
+/**
+ * Event Console for debugging P2D2 events
+ * Shows live event logs in a visual overlay
+ */
+
+interface LogEntry {
+  id: string;
 src/components/Footer.astro: <!-- p2d2: Seiten-Footer: Links, Copyright und Logos -->
+---
+import { getCollection, getEntryBySlug } from "astro:content";
+
+const socialmedia = await getCollection("socialmedia");
+const intern = await getCollection("intern");
+const resources = await getCollection("resources");
+const repositories = await getCollection("repositories");
 src/components/Header.astro: <!-- p2d2: Hauptnavigation: Menü, Login/Logout, rollenabhängige Einträge -->
+---
+import { getUserSession } from '../lib/auth/session';
+const userSession = getUserSession(Astro.locals);
+const canShowVerwaltung =
+  userSession.isAuthenticated &&
+  userSession.roles.includes("verwaltung");
+const canShowOsm =
 src/components/HeroSection.astro: <!-- p2d2: Hero-Bereich der Startseite mit Logo und Claim -->
+---
+import { Content as HeroContent } from "../content/hero.md";
+---
+
+<style>
+    :global(.hero-section h1) {
+        font-family: "Poppins", sans-serif;
 src/components/Kategorien.astro: <!-- p2d2: Kategorien-Abschnitt der Startseite -->
+---
+import Modal from "./Modal.astro";
+
+const { title, icon, description, id, slug } = Astro.props;
+---
+
+<button
 src/components/KategorienGrid.astro: <!-- p2d2: Rasteransicht der Themenkategorien -->
+---
+import { getCollection } from "astro:content";
+import Kategorien from "./Kategorien.astro";
+
+const kategorien = await getCollection("kategorien");
+const sorted = kategorien.sort(
+    (a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),
 src/components/KommunenGrid.astro: <!-- p2d2: Rasteransicht der teilnehmenden Kommunen -->
+---
+import { getCollection } from "astro:content";
+import KommunenClickHandler from "../utils/kommunen-click-handler";
+
+const kommunen = await getCollection("kommunen");
+const sorted = kommunen.sort(
+    (a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),
 src/components/MapCanvas.astro: <!-- p2d2: Karten-Canvas-Container für OpenLayers -->
+---
+/// <reference types="vite/client" />
+import "../styles/feature-popup.css";
+---
+
+<div class="w-full h-full flex justify-center items-center p-4 md:p-6">
+    <!-- Äußerer Container für Shadow und Border -->
 src/components/MissionStatement.astro: <!-- p2d2: Leitbild-Abschnitt: Mission und Vision von p2d2 -->
+---
+import { getEntry } from "astro:content";
+
+const mission = await getEntry("intern", "mission");
+const rendered = mission ? await mission.render() : null;
+const { Content } = rendered ?? { Content: null };
+---
 src/components/Mitmachmöglichkeiten.astro: <!-- p2d2: Mitmach-Möglichkeiten: Übersicht der Beteiligungsformen -->
 src/components/Modal.astro: <!-- p2d2: Modales Dialog-Fenster für Popups -->
+---
+const { id, open, children } = Astro.props;
+---
+
+<button
+    onclick={`document.getElementById('${id}').showModal()`}
+    class="w-full text-left px-4 py-2 rounded bg-primary-100 hover:bg-primary-200 mt-4 font-semibold"
 src/components/OpenLayersMap.astro: <!-- p2d2: OpenLayers-Kartenkomponente für die Startseite -->
+---
+import MapCanvas from "./MapCanvas.astro";
+---
+
+<div class="w-full mb-section">
+    <h2
+        id="kommune-kategorie-header"
 src/components/Prose.astro: <!-- p2d2: Markdown-Prose-Container für Inhaltsseiten -->
+---
+// Prose component for styled markdown content
+---
+
+<div
+    class="prose prose-lg max-w-none prose-headings:font-poppins prose-headings:font-bold prose-p:font-inter prose-p:text-gray-700 prose-a:text-primary-600 hover:prose-a:text-primary-500 transition-colors"
+>
 src/components/TailwindTest.astro: <!-- p2d2: Testseite für Tailwind-CSS-Komponenten -->
+---
+import '../styles/global.css';
+---
+
+<div class="p-8 bg-gradient-to-r from-blue-500 to-green-400 rounded-lg shadow-lg text-white text-center">
+  <h2 class="text-3xl font-bold mb-4">Tailwind Test-Komponente</h2>
+  <p class="text-lg mb-2">Wenn du diese Box farbig und abgerundet siehst, funktioniert Tailwind!</p>
 src/components/TestimonialCard.astro: <!-- p2d2: Erfahrungsbericht-Karte für Testimonials -->
 src/components/TestimonialsSection.astro: <!-- p2d2: Testimonials-Abschnitt: Erfahrungsberichte von Nutzern -->
 src/components/ThemenbereichCard.astro: <!-- p2d2: Themenbereich-Karte für die Übersichtsseite -->
 src/components/ThemenbereicheOverview.astro: <!-- p2d2: Themenbereichs-Übersicht mit Kategorien-Karten -->
+---
+// src/components/ThemenbereicheOverview.astro
+---
+
+<section class="themenbereiche-overview py-8 px-4 bg-gray-50 text-center">
+    <h2 class="text-xl font-semibold mb-4">Entdecke unsere Themenbereiche</h2>
+    <p class="mb-4">
 src/components/Werte.astro: <!-- p2d2: Werte-Abschnitt der Startseite -->
+---
+import TransparenzIcon from "./icons/TransparenzIcon.astro";
+import GemeinschaftIcon from "./icons/GemeinschaftIcon.astro";
+import OffeneDatenIcon from "./icons/OffeneDatenIcon.astro";
+const { title, icon, description } = Astro.props;
+---
 src/components/WerteGrid.astro: <!-- p2d2: Werte-Raster: Transparenz, Gemeinschaft, Offene Daten -->
+---
+import { getCollection } from "astro:content";
+import Werte from "./Werte.astro";
+
+const werte = await getCollection("werte");
+const sorted = werte.sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0));
+---
 src/components/feature-editor/EditorApp.ts: // p2d2: Editor-Hauptklasse: orchestriert alle Sub-Module
+import { EditorState } from "./EditorState";
+import type { Feature } from "ol";
+import { MapManager } from "./MapManager";
+import { EditorLayerManager } from "./EditorLayerManager";
+import { EditorDataManager } from "./EditorDataManager";
+import { EditorInteractionManager } from "./EditorInteractionManager";
+import { EditorUIManager } from "./EditorUIManager";
 src/components/feature-editor/EditorDataManager.ts: // p2d2: Editor-Datenmanager: WFS-Laden, Caching, uMap-Speichern
+import type { Feature } from "ol";
+import type { Geometry } from "ol/geom";
+import GeoJSON from "ol/format/GeoJSON";
+import { WFSAuthClient } from "@/utils/wfs-auth";
+import type { EditorState } from "./EditorState";
+import type { EditorLayerManager } from "./EditorLayerManager";
+import { transformExtent } from "ol/proj";
 src/components/feature-editor/EditorInteractionManager.ts: // p2d2: Editor-Interaktionen: Select, Modify, Hover, Werkzeuge
+import type { Map as OLMap } from "ol";
+import { Feature } from "ol";
+import type { Geometry } from "ol/geom";
+import Overlay from "ol/Overlay";
+import { Style, Stroke, Fill, Text } from "ol/style";
+import Select from "ol/interaction/Select";
+import Modify from "ol/interaction/Modify";
 src/components/feature-editor/EditorLayerManager.ts: // p2d2: Editor-Layer-Manager: Basis-Layer, Feature-Layer, Grabflur-Styles
+import type { Map as OLMap } from "ol";
+import TileLayer from "ol/layer/Tile";
+import VectorLayer from "ol/layer/Vector";
+import ImageLayer from "ol/layer/Image";
+import TileWMS from "ol/source/TileWMS";
+import ImageWMS from "ol/source/ImageWMS";
+import VectorSource from "ol/source/Vector";
 src/components/feature-editor/EditorState.ts: // p2d2: Editor-Statusverwaltung mit reaktivem State und Dirty-Tracking
+import type { Feature } from "ol";
+import type { Geometry } from "ol/geom";
+import {
+  dispatchCrossWindowEvent,
+  getWindowId,
+} from "../../utils/cross-window-events";
+import { P2D2EventType } from "../../utils/events";
 src/components/feature-editor/EditorUIManager.ts: // p2d2: Editor-UI-Manager: Toolbar, Navigation, Layer-Controls
+import type { ViewHistoryManager } from "@/utils/view-history-manager";
+import type { EditorLayerManager } from "./EditorLayerManager";
+import type { EditorInteractionManager } from "./EditorInteractionManager";
+import { LayerInteractionManager } from "@/utils/layer-interaction";
+import type TileLayer from "ol/layer/Tile";
+import type ImageLayer from "ol/layer/Image";
+import type { EditorState } from "./EditorState";
 src/components/feature-editor/FeatureEditorHeader.astro: <!-- p2d2: Editor-Header: Logo, Titel, Schließen-Button -->
+---
+interface Props {
+    friedhofName?: string;
+}
+
+const { friedhofName = "Unbekannter Friedhof" } = Astro.props;
 src/components/feature-editor/IconButton.astro: <!-- p2d2: Icon-Button-Komponente für die Editor-Toolbar -->
+---
+interface Props {
+    id?: string;
+    icon: string;
+    title: string;
+    tooltip?: string;
+    disabled?: boolean;
 src/components/feature-editor/LayerControls.astro: <!-- p2d2: Layer-Controls: Sichtbarkeit von Kartenebenen umschalten -->
+---
+// Props
+// Props can be added later if needed for customization
+// No props needed for now, component handles its own state
+---
+
+<div class="layer-controls">
 src/components/feature-editor/MapManager.ts: // p2d2: OpenLayers-Karteninitialisierung mit Projektions-Registrierung
+import { Map as OLMap, View } from "ol";
+import TileLayer from "ol/layer/Tile";
+import OSM from "ol/source/OSM";
+import { defaults } from "ol/control/defaults";
+import FullScreen from "ol/control/FullScreen";
+import { defaults as defaultInteractions } from "ol/interaction";
+// KORREKTUR: 'get' importieren
 src/components/feature-editor/NavigationControls.astro: <!-- p2d2: Karten-Navigations-Controls: Zurück, Vor, Zentrieren -->
+---
+interface Props {
+    // Props can be added later if needed for customization
+}
+---
+
+<div class="nav-controls">
 src/components/feature-editor/Toolbar.astro: <!-- p2d2: Editor-Toolbar: Werkzeug-Auswahl (Select, Edit, etc.) -->
+---
+import IconButton from "./IconButton.astro";
+---
+
+<div class="toolbar-controls">
+    <div id="edit-tools-container" class="edit-tools-hidden">
+        <IconButton
 src/components/icons/Abfallbehaelter.svg: 
 src/components/icons/Baeume.svg: 
 src/components/icons/BlumenbeetIcon.astro: <!-- p2d2: Blumenbeet-Icon für die Kategorien-Darstellung -->
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="#B4F7D3"
+    class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+>
 src/components/icons/Fahnenmasten.svg: 
 src/components/icons/Fahrradstaender.svg: 
 src/components/icons/FriedhofIcon.astro: <!-- p2d2: Friedhof-Icon für die Kategorien-Darstellung -->
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="#B4F7D3"
+    class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+>
 src/components/icons/GemeinschaftIcon.astro: <!-- p2d2: Gemeinschafts-Icon für die Werte-Darstellung -->
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="#B4F7D3"
+    class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+>
 src/components/icons/LaternenIcon.astro: <!-- p2d2: Laternen-Icon für die Kategorien-Darstellung -->
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="#B4F7D3"
+    class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+>
 src/components/icons/OffeneDatenIcon.astro: <!-- p2d2: Offene-Daten-Icon für die Werte-Darstellung -->
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="#B4F7D3"
+    class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+>
 src/components/icons/Pflanzenbehaelter.svg: 
 src/components/icons/Spielsandkisten.svg: 
 src/components/icons/Sportrasen.svg: 
 src/components/icons/Stege.svg: 
 src/components/icons/Strassenlaternen.svg: 
 src/components/icons/TransparenzIcon.astro: <!-- p2d2: Transparenz-Icon für die Werte-Darstellung -->
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="#B4F7D3"
+    class="w-8 h-8 bg-[#D6FFEA] rounded p-1"
+>
 src/components/icons/Tribuenen.svg: 
 src/components/icons/blumenbeet.svg: 
 src/components/icons/friedhof.svg: 
 src/config/map-config.ts: // p2d2: OpenLayers-Kartenkonfiguration (Center, Zoom, Layer-Z-Indizes)
+/**
+ * Centralized Map Configuration
+ * Provides consistent configuration across all map components
+ */
+
+export const MAP_CONFIG = {
+  // Projection settings
 src/content/copyright/copyright.md: 
 src/content/hero.md: 
 src/content/intern/BMWSB.png: 
@@ -59,10 +309,17 @@ src/content/intern/KOE_VM_Logo.jpg:
 src/content/intern/KfW.png: 
 src/content/intern/Unbox_Logo.png: 
 src/content/intern/hintergrund.md: 
-src/content/intern/partner.md: 
+src/content/intern/partner.md: description: "Die Partner von p2d2"
+---
+# Unsere Partner
+
+Wir bedanken und bei unseren Partnern:
 src/content/intern/status.md: 
 src/content/intern/umsetzung.md: 
-src/content/intern/ziel.md: 
+src/content/intern/ziel.md: description: "Unsere Mission und langfristigen Ziele für p2d2"
+---
+
+# Was wir erreichen wollen
 src/content/kategorien/abfallbehaelter.md: 
 src/content/kategorien/baume.md: 
 src/content/kategorien/blumenbeete.md: 
@@ -71,7 +328,7 @@ src/content/kategorien/fahrradstaender.md:
 src/content/kategorien/friedhoefe.md: 
 src/content/kategorien/oeffentlicherRaum.md: 
 src/content/kategorien/pflanzenbehaelter.md: 
-src/content/kategorien/spielsandkisten.md: 
+src/content/kategorien/spielsandkisten.md: Wo ist die nächste Spielsandkiste? Gab es vielleicht mal Probleme? Wie gut, wenn man unzweideutig weiß, von welcher man redet, ohne umständlich beschreiben zu müssen, wo sie ist! Dank p2d2 und OpenStreetMap vielleicht?
 src/content/kategorien/sportrasen.md: 
 src/content/kategorien/stege.md: 
 src/content/kategorien/strassenlaternen.md: 
@@ -87,13 +344,17 @@ src/content/kommunen/hangzhou.md:
 src/content/kommunen/kiel.md: 
 src/content/kommunen/koeln.md: 
 src/content/kommunen/san-francisco.md: 
-src/content/legal/datenschutz.md: 
-src/content/legal/impressum.md: 
+src/content/legal/datenschutz.md: Wir freuen uns über dein Interesse an p2d2 (https://opn.data-dna.eu). Der Schutz deiner persönlichen Daten ist uns ein wichtiges Anliegen.
+
+## Verantwortlicher
+src/content/legal/impressum.md: Projekt p2d2 – Public-Public Data-DNA
 src/content/legal/lizenzen.md: 
 src/content/mission.md: 
 src/content/mitmachmoeglichkeiten.md: 
 src/content/repositories/github.md: url: https://github.com/Peter-Koenig/p2d2-hub.git
+---
 src/content/repositories/opencode.md: url: https://gitlab.opencode.de/OC000028072444/p2d2
+---
 src/content/resources/api.md: 
 src/content/socialmedia/friendica.md: 
 src/content/socialmedia/mastodon.md: 
@@ -103,73 +364,531 @@ src/content/werte/gemeinschaft.md:
 src/content/werte/offene-daten.md: 
 src/content/werte/transparenz.md: 
 src/content.config.ts: // p2d2: Astro-Content-Collection-Definitionen (Kategorien, Kommunen, Intern, Legal)
+import { defineCollection, z } from "astro:content";
+
+const socialmedia = defineCollection({
+  schema: z.object({
+    name: z.string(),
+    url: z.string().url(),
+    icon: z.string(),
 src/env.d.ts: // p2d2: TypeScript-Typen für Astro.locals (User, Session, Authentifizierung)
+/// <reference path="../.astro/types.d.ts" />
+
+declare namespace App {
+  interface Locals {
+    user: {
+      id: string;
+      name: string;
 src/examples/feature-popup-demo.md: # Feature Popup Demo - p2d2 Cemetery Feature Handler
+
+## Übersicht
+
+Dieses Dokument beschreibt die Implementierung des Feature-Popup-Systems für Friedhofs-Polygone in der p2d2 AstroJS-Anwendung.
+
+## Implementierte Funktionalität
 src/integrations/polygon-sync-plugin.mjs: 
 src/layouts/BaseLayout.astro: <!-- p2d2: Zentrales Seiten-Layout: Header, Content und Footer -->
+---
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import "../styles/global.css";
+
+// --- HINZUFÜGEN START ---
+interface Props {
 src/lib/auth/metadata-parser.ts: // p2d2: Defensiver Parser für Zitadel-User-Metadaten (Memberships, Preferences)
+
+/**
+ * Defensiver Parser für Zitadel-User-Metadaten.
+ *
+ * Bekannte Keys (nur "p2d2."-Namespace des Zitadel-Metadaten-Claims):
+ *   - p2d2.memberships
+ *   - p2d2.preferences.default_topic_key
 src/lib/auth/oidc-client.ts: // p2d2: OIDC-Client-Singleton via Zitadel-Discovery-Endpoint
+import {
+  discovery,
+  ClientSecretBasic,
+  type Configuration,
+} from "openid-client";
+import {
+  ZITADEL_ISSUER,
 src/lib/auth/origin-helper.ts: // p2d2: Ermittlung der externen Origin aus PUBLIC_SITE_URL für Reverse-Proxy-Setups
+
+/**
+ * Ermittelt den korrekten Origin für OIDC-Redirects.
+ * Nutzt PUBLIC_SITE_URL aus .env als Single Source of Truth,
+ * da OPNSense Caddy die X-Forwarded-*-Header nicht zuverlässig setzt.
+ */
+export function getOrigin(): string {
 src/lib/auth/session.ts: // p2d2: Session-Verschlüsselung, Cookie-Handling und UserSession-Factory
+import { SESSION_SECRET } from "astro:env/server";
+import type { Membership, UserPreferences } from "./metadata-parser";
+
+// Types
+export interface SessionData {
+  userId: string;
+  userName: string;
+src/lib/db.ts: // p2d2: PostgreSQL-Connection-Singleton (postgres npm package)
+//        Stellt eine wiederverwendbare sql-Instanz bereit.
+//        Verbindungsparameter kommen aus astro:env/server.
+
+import postgres from "postgres";
+import {
+  APP_DEBUG,
+  DB_HOST,
+src/lib/workflow/db.ts: // p2d2: Generische Datenbank-Workflow-Funktionen für den Session-Workflow.
+//
+// PUBLIC API (managen eigene Transaktionen):
+//   openSession(params)  – Schritte 1–3: Version 0, Session, Feature-Status
+//   closeSession(params) – Schritte 5–6: Snapshot, Session schliessen, QS1
+//
+// INTERNE HELPER (brauchen ein tx-Objekt aus einer bereits offenen Transaktion):
+//   ensureVersion0, insertSessionRecord, setFeatureStatusInProgress,
+src/lib/workflow/utils.ts: // p2d2: Hilfsfunktionen für den generischen Session-Workflow.
+//
+// Resolved Tabellen- und Spaltennamen dynamisch anhand von feature_type.
+// Dies ist der EINZIGE Ort im Code, an dem feature_type auf konkrete
+// DB-Namen gemappt wird.
+
+import type postgres from "postgres";
+import type { FeatureData } from "../../types/workflow";
+src/lib/workflow/wfst.ts: // p2d2: Generischer WFS-T-Insert für den Session-Workflow.
+//
+// Baut dynamisch ein WFS-T-Transaction-XML (WFS 2.0.0) und sendet es
+// an den GeoServer. Die Payload enthält:
+//   - System-Spalten (FK, version_nr, session_id, …)
+//   - Domain-Attribute (dynamisch aus FeatureData.attributes)
+//   - Geometrie als GML 3.2 (EPSG:4326)
+//
 src/middleware.ts: // p2d2: Astro-Middleware: Session-Lesung, User-Kontext, anonyme Fallbacks
+import { defineMiddleware } from "astro/middleware";
+import {
+  getSession,
+  applySessionCookie,
+  clearSession,
+} from "./lib/auth/session";
 src/pages/api/altcha/challenge.ts: // p2d2: ALTCHA-Captcha-Challenge-API für Kontaktformular
+import type { APIRoute } from "astro";
+import { createChallenge } from "altcha-lib";
+import { ALTCHA_HMAC_KEY, APP_DEBUG } from "astro:env/server";
+
+export const GET: APIRoute = async () => {
+  try {
+    // Get HMAC key from environment (required)
 src/pages/api/auth/callback.ts: // p2d2: OIDC-Callback: Token-Exchange, Session-Aufbau, Request-Normalisierung
+import type { APIRoute } from "astro";
+import { authorizationCodeGrant } from "openid-client";
+import { getOrigin } from "../../../lib/auth/origin-helper";
+import { getOidcConfig } from "../../../lib/auth/oidc-client";
+import { applySessionCookie, deleteCookie } from "../../../lib/auth/session";
+import { parseMetadata } from "../../../lib/auth/metadata-parser";
+import { ZITADEL_PROJECT_ID } from "astro:env/server";
 src/pages/api/auth/login.ts: // p2d2: OIDC-Login: PKCE-Challenge, Authorization-Request, Scope-Definition
+import type { APIRoute } from "astro";
+import { getOidcConfig } from "../../../lib/auth/oidc-client";
+import { getOrigin } from "../../../lib/auth/origin-helper";
+import { setCookie } from "../../../lib/auth/session";
+import { buildAuthorizationUrl } from "openid-client";
+import { ZITADEL_PROJECT_ID } from "astro:env/server";
 src/pages/api/auth/logout.ts: // p2d2: OIDC-Logout: End-Session, Cookie-Löschung, client_id-Parameter
+import type { APIRoute } from "astro";
+import { getOrigin } from "../../../lib/auth/origin-helper";
+import { getSession, clearSession } from "../../../lib/auth/session";
+import { ZITADEL_ISSUER, ZITADEL_CLIENT_ID } from "astro:env/server";
+
+export const GET: APIRoute = async ({ request, redirect }) => {
+  const session = await getSession(request);
 src/pages/api/contact-submit.ts: // p2d2: Kontaktformular-Submit: SMTP-Versand mit Nodemailer
+import type { APIRoute } from "astro";
+import { verifySolution } from "altcha-lib";
+import nodemailer from "nodemailer";
+import {
+  ALTCHA_HMAC_KEY,
+  SMTP_HOST,
+  SMTP_PORT,
 src/pages/api/save-for-umap.ts: // p2d2: GeoJSON-Speicher-API für uMap-Export aus dem Feature-Editor
+import type { APIRoute } from "astro";
+import { promises as fs } from "fs";
+import path from "path";
+
+// Definiert den Pfad, unter dem die uMap-Daten öffentlich erreichbar sein sollen.
+const PUBLIC_DATA_PATH = "data"; // -> /public/data/
+const FILENAME = "umap_pre_alpha.geojson"; // -> /public/data/umap_pre_alpha.geojson
 src/pages/api/sync-polygons.ts: // p2d2: API-Endpunkt für manuelle OSM-Polygon-Synchronisation
+//
+// Stage-spezifische WFS-T-Credentials werden aus der aufgerufenen URL
+// abgeleitet (resolveStageFromUrl()) und per process.env dynamisch
+// geladen – identisch zum Vorgehen in POST /api/workflow/session.
+import { syncKommunePolygons } from "../../utils/polygon-wfst-sync";
+import { WFST_WORKSPACE, WFST_NAMESPACE } from "astro:env/server";
+import { resolveStageFromUrl } from "../../lib/workflow/utils";
 src/pages/api/wfs-proxy.ts: // p2d2: WFS-Proxy: Server-seitiger WFS-Request mit Auth-Forwarding
-src/pages/auth-error.astro: 
+import type { APIRoute } from "astro";
+
+/**
+ * WFS Proxy for CORS bypass
+ *
+ * Read access (GET): Anonymous - no credentials required
+ * Write access (POST with body): Requires explicit credentials in request
+src/pages/api/workflow/session/[id].ts: 
+src/pages/api/workflow/session.ts: 
+src/pages/auth-error.astro: // p2d2: Fehlerseite für fehlgeschlagene Authentifizierung
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const reason = Astro.url.searchParams.get("reason") ?? "";
+
+interface ErrorInfo {
+  title: string;
 src/pages/community.astro: <!-- p2d2: Community-Seite: Gruppen, Mitmach-Formate und Engagement -->
-src/pages/feature-editor/[featureId].astro: <!-- p2d2: Feature-Editor: Friedhofs-Grabflur-Editor mit Karte -->
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Community | p2d2 - Public-Public Data-DNA"
+  description="Lerne unsere vielfältige Community kennen und werde Teil der p2d2-Bewegung."
+src/pages/feature-editor/[featureId].astro: <!-- p2d2: Feature-Editor: generischer Geodaten-Editor für alle Container-Typen -->
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+import "../../styles/feature-popup.css";
+import "../../styles/feature-editor.css";
+import FeatureEditorHeader from "../../components/feature-editor/FeatureEditorHeader.astro";
+import NavigationControls from "../../components/feature-editor/NavigationControls.astro";
 src/pages/index.astro: <!-- p2d2: Startseite mit Karte, Kategorien- und Kommunen-Grids -->
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import HeroSection from "../components/HeroSection.astro";
+import Footer from "../components/Footer.astro";
+// Weitere Komponenten kannst du hier importieren, wenn sie bereit sind
+// import MissionStatement from '../components/MissionStatement.astro';
+// import CommunitySection from '../components/CommunitySection.astro';
 src/pages/kontakt.astro: <!-- p2d2: Kontaktseite mit Formular und ALTCHA-Captcha -->
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+    title="Kontakt | p2d2 - Public-Public Data-DNA"
+    description="Kontaktiere das p2d2-Team und erfahre, wie du Teil der Community werden kannst."
 src/pages/legal/[slug].astro: <!-- p2d2: Rechtsseiten: Impressum, Datenschutz, Lizenzen (dynamisch) -->
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Prose from "../../components/Prose.astro";
+import { getCollection, render } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+
+const { slug } = Astro.params;
 src/pages/mitmachen.astro: <!-- p2d2: Mitmach-Seite: Wege zur Beteiligung an p2d2 -->
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Mitmachen">
+  <section class="w-full max-w-6xl mx-auto px-6 py-12">
+    <div class="text-center mb-16">
 src/pages/osm.astro: <!-- p2d2: OSM-Community-Seite: geschützter Bereich für Rolle "osm" -->
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getUserSession } from '../lib/auth/session';
+
+const session = getUserSession(Astro.locals);
+
+if (!session.isAuthenticated || !session.roles.includes("osm")) {
 src/pages/themenbereiche.astro: <!-- p2d2: Themenbereichs-Übersichtsseite mit Kategorien -->
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ThemenbereicheOverview from '../components/ThemenbereicheOverview.astro';
+---
+
+<BaseLayout
+  title="Themenbereiche | p2d2 - Public-Public Data-DNA"
 src/pages/ueber/hintergrund.astro: <!-- p2d2: Über p2d2: Hintergrund, Motivation und Data-DNA-Konzept -->
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Prose from "../../components/Prose.astro";
+import { getCollection, render } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+
+const entries: CollectionEntry<"intern">[] = await getCollection("intern");
 src/pages/ueber/status.astro: <!-- p2d2: Über p2d2: Entwicklungsstand und Roadmap -->
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Prose from "../../components/Prose.astro";
+import { getCollection, render } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+
+const entries: CollectionEntry<"intern">[] = await getCollection("intern");
 src/pages/ueber/testen.astro: <!-- p2d2: MeetUp-Seite: Community-Testing von p2d2 -->
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+    title="MeetUp Nr. 6: Community-Testing p2d2"
+    description="Teste p2d2 mit der User-Journey von Olaf Rochko, der vom Sofa aus Gräber digitalisiert."
 src/pages/ueber/umsetzung.astro: <!-- p2d2: Über p2d2: Technische Umsetzung und Architektur -->
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Prose from "../../components/Prose.astro";
+import { getCollection, render } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+
+const internEntries: CollectionEntry<"intern">[] = await getCollection("intern");
 src/pages/ueber/ziel.astro: <!-- p2d2: Über p2d2: Ziele, Mission und langfristige Vision 2030 -->
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Prose from "../../components/Prose.astro";
+import { getCollection, render } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+
+const internEntries: CollectionEntry<"intern">[] = await getCollection("intern");
 src/pages/verwaltung/grabflur-editor.astro: <!-- p2d2: Grabflur-Editor: Karte + Klick-Info für Verwaltungsnutzer -->
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getUserSession } from '../../lib/auth/session';
+import { getKommuneBySlug } from '../../utils/kommune-utils';
+import '../../styles/feature-editor.css';
+
+const session = getUserSession(Astro.locals);
 src/pages/verwaltung.astro: <!-- p2d2: Verwaltungsbereich: geschützte Startseite für Rolle "verwaltung" -->
-src/scripts/__pycache__/fetch-cemeteries.cpython-313.pyc: 
-src/scripts/__pycache__/fetch_admin_polygons.cpython-313.pyc: 
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getUserSession } from '../lib/auth/session';
+
+const session = getUserSession(Astro.locals);
+
+if (!session.isAuthenticated || !session.roles.includes("verwaltung")) {
 src/scripts/dev-startup.ts: // p2d2: Dev-Server-Startup: initiale OSM-Synchronisation beim Hochfahren
+// Development Startup Script - Auto-starts file watcher with Astro dev server
+import { KommuneWatcher } from "./kommune-watcher.mjs";
+
+async function startDevEnvironment() {
+  console.log(
+    "[dev-startup] Starting development environment with file watching...",
+  );
 src/scripts/fetch-cemeteries.py: 
 src/scripts/fetch_admin_polygons.py: 
 src/scripts/init-altcha.ts: // p2d2: ALTCHA-HMAC-Key-Initialisierung für Captcha-Dienst
+/**
+ * ALTCHA Web Component Import
+ * Muss als separate Datei existieren, damit Vite den bare import auflösen kann.
+ */
+import "altcha";
+
+console.log("✅ ALTCHA Web Component geladen");
 src/scripts/kommune-watcher.mjs: 
 src/scripts/manual-sync.ts: // p2d2: Manuelles OSM-Polygon-Sync-Script für Verwaltungsgrenzen
+// Manual Sync CLI Script - Command line interface for admin polygon synchronization
+
+// Set NODE_ENV to development for proper credential selection
+process.env.NODE_ENV = process.env.NODE_ENV || "development";
+
+// Debug environment variables
+console.log("[manual-sync] Environment check:");
 src/scripts/test-polygon-sync.ts: // p2d2: Test-Script: Polygon-Synchronisation für einzelne Kommunen
+import { KommuneWatcher } from "./kommune-watcher.mjs";
+
+// Test script to verify polygon sync functionality
+async function testPolygonSync() {
+  console.log("Starting polygon sync test...");
+
+  // Test with different configurations
 src/styles/feature-editor.css: /* p2d2: Feature-Editor-Styling: Map-Container, Toolbar, Karten-Overlays */
+/**
+ * Feature Editor Styles
+ * Centralized CSS for feature editor components
+ */
+
+/* Feature Editor Container */
+.feature-editor-container {
 src/styles/feature-popup.css: /* p2d2: Popup-Styling: Cemetery- und Grabflur-Info-Dialog */
+/* Feature Popup - Finales Mobile & Desktop Design */
+
+/* Container */
+.popup-container {
+  padding: 0;
+  font-family:
+    system-ui,
 src/styles/global.css: /* p2d2: Globales Styling: Tailwind-Theme, Fonts, Hintergrund, UI-Komponenten */
+@import "ol/ol.css";
+@import "tailwindcss";
+@source "../**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  /* Primary Colors */
 src/types/admin-polygon.ts: // p2d2: TypeScript-Typen für Verwaltungs-Polygon-Synchronisation
+// TypeScript interfaces for Admin Polygon Sync functionality
+export type { GeoJSON } from "geojson";
+
+export interface OSMPolygonFeature extends GeoJSON.Feature {
+  id: number;
+  properties: {
+    name: string;
+src/types/workflow.ts: // p2d2: Generische TypeScript-Typen für den Session-Workflow
+//        Keine themenspezifischen Namen – feature_type kommt aus dem Body.
+
+/**
+ * Themenabhängiger Kontext der Session.
+ * Wird unverändert in wf_sessions.context_{key,label,value} gespeichert.
+ * Die API hat kein Wissen über die Bedeutung der Felder.
+ */
 src/utils/admin-polygon-sync.ts: // p2d2: Admin-Polygon-Sync-Manager: Bulk-Synchronisation aller Kommunen
+import { syncKommunePolygons } from "./polygon-wfst-sync";
+import { WFSAuthClient } from "./wfs-auth";
+import { getAllKommunen as getAllKommunenFromFS } from "./kommune-utils";
+
+interface SyncOptions {
+  dryRun?: boolean;
+  verbose?: boolean;
 src/utils/cross-window-events.ts: // p2d2: Cross-Window-Event-Bridge zwischen Haupt- und Editor-Fenster
+/**
+ * Cross-Window Event Bridge für p2d2
+ *
+ * Ermöglicht Event-Kommunikation zwischen Hauptfenster und Editor-Fenster.
+ * Nutzt window.opener für Child->Parent und window.postMessage für bidirektionale Kommunikation.
+ */
 src/utils/crs.ts: // p2d2: Koordinatenreferenzsystem: UTM-Zonen-Registrierung für OpenLayers
+import proj4 from "proj4";
+import type { Map } from "ol";
+import { register } from "ol/proj/proj4";
+import { getPointResolution, transform, transformExtent } from "ol/proj";
+import View from "ol/View";
+
+// Default projections
 src/utils/events.ts: // p2d2: Event-System: typisierte Cross-Window-Events für p2d2
+/**
+ * Robust Event Handling with Retry Mechanism
+ * Provides reliable event dispatching for p2d2 kommune focus events
+ */
+
+// Event queue for retry mechanism
+interface QueuedEvent {
 src/utils/feature-popup-handler.ts: // p2d2: Feature-Popup: Klick-Interaktion auf Friedhofs-Features
+/**
+ * Feature Popup Handler for p2d2 OpenLayers Map
+ * Handles cemetery feature clicks, popup display, and WFS data integration
+ */
+
+import { Map as OLMap } from "ol";
+import { Feature } from "ol";
 src/utils/geo/__init__.py: 
 src/utils/geo/gml_converter.py: 
 src/utils/geo/overpass_downloader.py: 
 src/utils/kategorie-utils.ts: // p2d2: Kategorie-Utilities: Daten aus Content-Collection lesen
+import { getCollection } from "astro:content";
+
+// Cache for category mappings to avoid repeated content collection calls
+let categoryMappingsCache: Map<string, string> | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_DURATION_MS = 30000; // 30 seconds cache
 src/utils/kommune-utils.ts: // p2d2: Kommune-Utilities: Daten aus Content-Collection lesen
+import { readFileSync, readdirSync } from "fs";
+import { join, extname } from "path";
+import matter from "gray-matter";
+
+// erkennt zur Laufzeit, ob Astro-Runtime verfügbar ist
+async function loadCollection() {
+  try {
 src/utils/kommunen-click-handler.ts: 
 src/utils/layer-interaction.ts: // p2d2: Layer-Interaktion: Hover- und Klick-Events auf Geodaten
+/**
+ * Layer Interaction Manager
+ * Handles long-press opacity adjustment for WMS layers
+ *
+ * WICHTIG:
+ * - KEINE globalen Variablen außerhalb der Klasse
+ * - State-Isolierung durch Map<string, State>
 src/utils/layer-manager.ts: // p2d2: Zentraler Layer-Manager: Themen- und Kommunen-Layer auf Startseite
+/**
+ * Layer Management Module for Feature Editor
+ * Centralizes layer creation, toggling, and control initialization
+ */
+
+import TileLayer from "ol/layer/Tile";
+import TileWMS from "ol/source/TileWMS";
 src/utils/logger.ts: // p2d2: Logger: strukturiertes Logging mit levels und Formatierung
+import type { AstroIntegrationLogger } from "astro";
+
+// Simple logger that can work with Astro's logger or fallback to console
+// Note: AstroIntegrationLogger is only available during integration runtime
+export interface Logger {
+  info(message: string, data?: any): void;
+  warn(message: string, data?: any): void;
 src/utils/map-initializer.ts: // p2d2: Karten-Initialisierung: OpenLayers-Map-Erstellung und Layer-Setup
+/**
+ * Map Initializer Module for Feature Editor
+ * Centralizes map creation with proper configuration
+ */
+
+import { MAP_CONFIG } from "../config/map-config";
 src/utils/map-navigation.ts: // p2d2: Karten-Navigation: Zoom, Pan und Extent-Fit
+/**
+ * Map Navigation Utilities for Feature Editor
+ * Provides functions for zoom, reset, and navigation controls
+ * Compatible with existing ViewHistoryManager implementation
+ */
+
+import type { Map as OLMap } from "ol";
 src/utils/map-state.ts: // p2d2: Globaler Karten-Status: Projektion, Center, Zoom, Layer
+/**
+ * Map State Management
+ * Centralized state management for map-related data
+ */
+
+export interface MapState {
+  activeCRS: string;
 src/utils/polygon-wfst-sync.ts: // p2d2: Polygon-Synchronisation: WFS-T-Import von OSM-Verwaltungsgrenzen
+import { spawn } from "child_process";
+import { WFSAuthClient } from "./wfs-auth";
+
+interface SyncResult {
+  success: boolean;
+  processedLevels: number[];
+  insertedPolygons: number;
 src/utils/tab-persistence.ts: // p2d2: Tab-Persistenz: Kommunen/Kategorien-Tab-Status im localStorage
+/**
+ * Tab State Persistence Utilities
+ * Manages selected tab state across page reloads
+ */
+
+const TAB_STORAGE_KEY = "p2d2_selected_tab";
 src/utils/utm-resolutions.ts: // p2d2: UTM-Auflösungen: Zoomstufen für OpenLayers-View in UTM-Projektion
+/**
+ * UTM Projection Resolutions Utility
+ *
+ * Provides correct resolutions for ALL UTM projections (EPSG:25832, EPSG:25833, etc.)
+ * to avoid OpenLayers fallback to EPSG:3857 (Mercator) resolutions.
+ *
+ * @module utm-resolutions
 src/utils/view-history-manager.ts: // p2d2: View-History: Zurück/Vor-Navigation in der Kartenansicht
+import type { View } from "ol";
+
+interface ViewState {
+  center: number[];
+  zoom: number;
+  timestamp: number;
+}
 src/utils/wfs-auth.ts: // p2d2: WFS-Auth-Client: authentifizierte GeoServer-Anfragen
+/**
+ * WFS Client
+ * Handles WFS requests with support for both anonymous (read) and authenticated (WFS-T) access.
+ *
+ * Read access: Anonymous (no credentials required)
+ * - Primary read endpoint is derived from PUBLIC_WFST_ENDPOINT + PUBLIC_WFST_WORKSPACE
+ *   Example: https://wfs.data-dna.eu/geoserver/ows + Verwaltungsdaten_de1
 src/utils/wfs-layer-manager.ts: // p2d2: WFS-Layer-Manager: dynamische Layer aus GeoServer für Hauptkarte
+/**
+ * WFS Layer Manager - Complete corrected version
+ * State-of-the-Art WFS Layer Management für p2d2
+ *
+ * Uses anonymous WFS read access (no credentials required).
+ */
 src/utils/wfs-read-config.ts: // p2d2: WFS-Konfiguration: Layer-Definitionen für GeoServer-Integration
+/**
+ * WFS Read Configuration Helper
+ *
+ * Derives the stage-specific WFS read endpoint from public environment variables.
+ *
+ * Read access is anonymous - no credentials required.
+ *

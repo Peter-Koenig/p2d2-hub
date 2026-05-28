@@ -25,15 +25,11 @@ Beide sollen gleichwertig, transparent und souverän miteinander interagieren. D
 - Strikte Open Source-Orientierung (EUPL-1.2) – Offen, transparent, erweiterbar
 - Fokus auf Community-Beiträge: Mitmachen statt nur Zuschauen
 
-***
-
 ### Wichtige Live-Adressen:
 
 - [Webseite: https://www.data-dna.eu](https://www.data-dna.eu)
 - [Entwicklungsseite zum testen: https://dev.data-dna.eu](https://dev.data-dna.eu)
 - [Dokumentations-Webseite: https://doc.data-dna.eu](https://doc.data-dna.eu)
-
-***
 
 ### Installation & Nutzung
 
@@ -66,7 +62,6 @@ npm run build
 # Produktion lokal testen
 npm run preview
 ```
-
 
 #### Kollaboration
 
@@ -106,7 +101,7 @@ Folgende Branches wurden angelegt, Webseiten und Prozessimplementierung stehen a
 - **develop**: Integration neuer Features, automatisch nach `dev.data-dna.eu`
 - **main**: produktionsreifer Code, Deployment auf `www.data-dna.eu`
 - **release**: Staging \& finale Tests vor Veröffentlichung
-- **feature/team-name**: Neue Features, getrennt nach Teams
+- **feature/team-name**: Neue Features, getrennt nach Teams, aktuell de1, de2 und fv
 
 Siehe `MERGEPOLICY.md` für Details.
 
@@ -279,13 +274,9 @@ See `CONTRIBUTING.md`.
 - Code reviews: `.github/CODEREVIEWGUIDE.md`
 - Branch merge policy: `.github/MERGEPOLICY.md`
 
-***
-
 ### License
 
 This project is licensed under the **European Union Public Licence v1.2 (EUPL-1.2)** – see `LICENSE`.
-
-***
 
 ### Contact \& Community
 
