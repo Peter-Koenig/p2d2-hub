@@ -2,20 +2,26 @@
 // SPDX-License-Identifier: EUPL-1.2
 // p2d2: Generische Datenbank-Workflow-Funktionen für den Session-Workflow.
 //
+// PUBLIC API (managen eigene Transaktionen):
+//   openSession(params)  – Schritte 1–3: Version 0, Session, Feature-Status
+//   closeSession(params) – Schritte 5–6: Snapshot, Session schliessen, QS1
+//
+// INTERNE HELPER (brauchen ein tx-Objekt aus einer bereits offenen Transaktion):
+//   ensureVersion0, insertSessionRecord, setFeatureStatusInProgress,
+//   finalizeSnapshot, updateSessionCompleted, updateFeatureStatusQs1
+//
 // Alle Funktionen arbeiten themenunabhängig: Tabellen- und Spaltennamen
 // werden aus dem Parameter `featureType` abgeleitet (via utils.ts).
-// Die aufrufende Route (POST /api/workflow/session) übergibt die Werte
-// aus dem Request-Body – die API hat kein Wissen über deren fachliche
-// Bedeutung.
-//
-// Wichtige Einschränkung:
-//   Schritte 1–3 und 5–6 laufen in einer DB-Transaktion (sql.begin()).
-//   Schritt 4 (WFS-T) ist ein HTTP-Aufruf und liegt konzeptionell
-//   außerhalb der DB-Transaktion – GeoServer-Seiteneffekte sind nicht
-//   rollbackbar.
+// Schritt 4 (WFS-T) liegt ausserhalb – der Browser sendet ihn direkt an
+// den GeoServer, nachdem POST /api/workflow/session die Session geöffnet hat.
 
+import type postgres from "postgres";
 import type { WorkflowSessionRequest } from "../../types/workflow";
 import { SessionConflictError } from "../../types/workflow";
+import type {
+  SessionOpenResult,
+  SessionCloseResponse,
+} from "../../types/workflow";
 import {
   resolveSourceTable,
   resolveVersionTable,
@@ -25,25 +31,153 @@ import {
 import type { DbClient } from "./utils";
 
 // =============================================================================
-// Schritt 1: Version 0 idempotent anlegen
+// ÖFFENTLICHE PARAMETER-INTERFACES
+// =============================================================================
+
+export interface OpenSessionParams {
+  /** Pool-Connection (kein tx – die Funktion startet selbst eine Transaktion) */
+  sql: postgres.Sql<{}>;
+  /** DB-Schema (z. B. "p2d2_de1") */
+  schema: string;
+  /** Vollständiger Request-Body aus POST /api/workflow/session */
+  body: WorkflowSessionRequest;
+  /** E-Mail des authentifizierten Benutzers */
+  userEmail: string;
+}
+
+export interface CloseSessionParams {
+  /** Pool-Connection */
+  sql: postgres.Sql<{}>;
+  /** DB-Schema */
+  schema: string;
+  /** ID der zu schliessenden Session */
+  sessionId: number;
+  /** UUID der via WFS-T angelegten Version 1 */
+  versionId: string;
+  /** Themen-Schlüssel (z. B. "grabflur") – wird aus dem Session-Record gelesen */
+  featureType: string;
+  /** UUID des Fachobjekts (p2d2_uuid) – wird aus der Versionentabelle gelesen */
+  featureUuid: string;
+  /** E-Mail des schliessenden Benutzers */
+  userEmail: string;
+}
+
+// =============================================================================
+// PUBLIC API  –  jede Funktion managt ihre eigene DB-Transaktion
+// =============================================================================
+
+/**
+ * Öffnet eine neue Workflow-Session (Schritte 1–3 in einer Transaktion).
+ *
+ * 1. Version 0 idempotent anlegen
+ * 2. Session-Record in wf_sessions (state = 'active')
+ * 3. Feature-Status auf 'in_bearbeitung' setzen (UPSERT)
+ *
+ * @returns SessionOpenResult mit session_id und workflow_status
+ * @throws { code: 'SESSION_CONFLICT' }  bei 23505 (aktive Session existiert)
+ * @throws { code: 'INTERNAL_ERROR', cause }  bei sonstigen DB-Fehlern
+ */
+export async function openSession(
+  params: OpenSessionParams,
+): Promise<SessionOpenResult> {
+  try {
+    return await params.sql.begin(async (tx) => {
+      // Schritt 1: Version 0 (idempotent)
+      await ensureVersion0(
+        tx,
+        params.schema,
+        params.body.feature_type,
+        params.body.feature_uuid,
+      );
+
+      // Schritt 2: Session öffnen
+      const sessionId: number = await insertSessionRecord(
+        tx,
+        params.schema,
+        params.body,
+        params.userEmail,
+      );
+
+      // Schritt 3: Feature-Status → 'in_bearbeitung'
+      await setFeatureStatusInProgress(
+        tx,
+        params.schema,
+        params.body.feature_type,
+        params.body.feature_uuid,
+        sessionId,
+      );
+
+      return {
+        session_id: sessionId,
+        workflow_status: "in_bearbeitung" as const,
+      };
+    });
+  } catch (err: unknown) {
+    if (err instanceof SessionConflictError) {
+      throw { code: "SESSION_CONFLICT" as const, cause: err };
+    }
+    throw { code: "INTERNAL_ERROR" as const, cause: err };
+  }
+}
+
+/**
+ * Schliesst eine aktive Workflow-Session (Schritte 5–6 in einer Transaktion).
+ *
+ * 5. Snapshot-Eintrag in wf_snapshots (is_final=true, kind='manual')
+ * 6. Session auf 'completed' setzen + Feature-Status auf 'qs1_ausstehend'
+ *
+ * @returns SessionCloseResponse mit session_id, version_id, snapshot_id, workflow_status
+ * @throws { code: 'INTERNAL_ERROR', cause }  bei DB-Fehlern
+ */
+export async function closeSession(
+  params: CloseSessionParams,
+): Promise<SessionCloseResponse> {
+  try {
+    return await params.sql.begin(async (tx) => {
+      // Schritt 5: Snapshot finalisieren
+      const snapshotId: number = await insertSnapshotRecord(
+        tx,
+        params.schema,
+        params.featureType,
+        params.sessionId,
+        params.featureUuid,
+        params.versionId,
+        params.userEmail,
+      );
+
+      // Schritt 6: Session + Feature-Status abschliessen
+      await updateSessionCompleted(
+        tx,
+        params.schema,
+        params.sessionId,
+        params.featureType,
+        params.featureUuid,
+        params.userEmail,
+      );
+
+      return {
+        session_id: params.sessionId,
+        version_id: params.versionId,
+        snapshot_id: snapshotId,
+        workflow_status: "qs1_ausstehend" as const,
+      };
+    });
+  } catch (err: unknown) {
+    throw { code: "INTERNAL_ERROR" as const, cause: err };
+  }
+}
+
+// =============================================================================
+// INTERNE HELPER  –  benötigen ein tx-Objekt (laufende Transaktion)
 // =============================================================================
 
 /**
  * Legt Version 0 in der Versionentabelle an (idempotent).
  *
  * Kopiert sämtliche Domain-Attribute aus der Quelltabelle in die
- * Versionentabelle und setzt die System-Spalten auf die Initialwerte:
- *   - session_id = NULL, version_nr = 0, is_session_boundary = false
- *   - created_by = 'system:import'
- *   - edit_comment = 'Ausgangsversion aus Import'
+ * Versionentabelle und setzt die System-Spalten auf die Initialwerte.
+ * Falls Version 0 bereits existiert, wird sie nicht erneut angelegt.
  *
- * Falls Version 0 bereits existiert, wird sie nicht erneut angelegt
- * und die vorhandene version_id zurückgegeben.
- *
- * @param tx          – Aktive Transaktion
- * @param schema      – DB-Schema (z. B. "p2d2_de1")
- * @param featureType – Themen-Schlüssel (z. B. "grabflur")
- * @param featureUuid – p2d2_uuid des Quell-Objekts
  * @returns version_id der Version 0 (UUID)
  * @throws Error wenn das Feature in der Quelltabelle nicht existiert
  */
@@ -56,9 +190,7 @@ export async function ensureVersion0(
   const fkCol = `${featureType}_id`;
   const versionTable = resolveVersionTable(featureType);
 
-  // -------------------------------------------------------------------
   // Prüfen: Existiert bereits Version 0? (Idempotenz)
-  // -------------------------------------------------------------------
   const [existing] = await tx`
     SELECT version_id
     FROM ${tx(schema)}.${tx(versionTable)}
@@ -68,30 +200,11 @@ export async function ensureVersion0(
   `;
   if (existing) return existing.version_id;
 
-  // -------------------------------------------------------------------
-  // Domain-Spalten dynamisch ermitteln (information_schema)
-  // -------------------------------------------------------------------
+  // Domain-Spalten dynamisch ermitteln
   const domainFields = await getCachedDomainFields(tx, schema, featureType);
   const sourceTable = resolveSourceTable(featureType);
 
-  // -------------------------------------------------------------------
-  // INSERT dynamisch bauen
-  //
-  // Die Spaltennamen stammen aus information_schema (trusted source),
-  // daher ist sql.unsafe() für den Struktur-Teil akzeptabel.
-  // Der featureUuid-Parameter wird via $1 gebunden.
-  //
-  // System-Spalten werden mit festen Werten belegt:
-  //   ${fkCol}          ← src.p2d2_uuid
-  //   version_nr        ← 0
-  //   session_id        ← NULL
-  //   is_session_boundary ← false
-  //   created_by        ← 'system:import'
-  //   edit_comment      ← 'Ausgangsversion aus Import'
-  //   geom              ← src.geom
-  //
-  // Domain-Spalten werden 1:1 aus der Quelltabelle übernommen.
-  // -------------------------------------------------------------------
+  // System-Spalten + Domain-Spalten im INSERT
   const insertCols = [
     quoteIdent(fkCol),
     quoteIdent("version_nr"),
@@ -114,7 +227,6 @@ export async function ensureVersion0(
     ...domainFields.map((c) => `src.${quoteIdent(c)}`),
   ];
 
-  // language=PostgreSQL
   const insertSql = `
     INSERT INTO ${quoteIdent(schema)}.${quoteIdent(versionTable)} (
       ${insertCols.join(",\n      ")}
@@ -135,22 +247,13 @@ export async function ensureVersion0(
   return result.version_id;
 }
 
-// =============================================================================
-// Schritt 2: Session öffnen
-// =============================================================================
-
 /**
- * Öffnet eine neue Session in der Tabelle wf_sessions.
+ * Erzeugt einen neuen Session-Eintrag in wf_sessions (state = 'active').
  *
- * @param tx        – Aktive Transaktion
- * @param schema    – DB-Schema
- * @param body      – Der Request-Body (WorkflowSessionRequest)
- * @param userEmail – E-Mail des angemeldeten Benutzers (x-user-email Header)
- * @returns session_id (Integer) der neu angelegten Session
- * @throws SessionConflictError wenn für feature_set_id bereits eine aktive
- *         Session existiert (Unique-Constraint 23505)
+ * @returns session_id der neu angelegten Session
+ * @throws SessionConflictError bei unique_violation (23505)
  */
-export async function openSession(
+export async function insertSessionRecord(
   tx: DbClient,
   schema: string,
   body: WorkflowSessionRequest,
@@ -183,7 +286,6 @@ export async function openSession(
     `;
     return row.id as number;
   } catch (err: unknown) {
-    // PostgreSQL unique_violation
     if (
       err &&
       typeof err === "object" &&
@@ -198,23 +300,10 @@ export async function openSession(
   }
 }
 
-// =============================================================================
-// Schritt 3: Feature-Status setzen → 'in_bearbeitung'
-// =============================================================================
-
 /**
- * Setzt den Status eines Features in wf_feature_status auf 'in_bearbeitung'.
- *
- * Nutzt UPSERT (INSERT … ON CONFLICT DO UPDATE), damit der Status
- * sowohl für neue als auch bereits existierende Einträge gesetzt wird.
- *
- * @param tx          – Aktive Transaktion
- * @param schema      – DB-Schema
- * @param featureType – Themen-Schlüssel
- * @param featureUuid – UUID des Fachobjekts
- * @param sessionId   – ID der aktuellen Session
+ * Setzt den Feature-Status auf 'in_bearbeitung' (UPSERT).
  */
-export async function setFeatureStatus(
+export async function setFeatureStatusInProgress(
   tx: DbClient,
   schema: string,
   featureType: string,
@@ -241,27 +330,12 @@ export async function setFeatureStatus(
   `;
 }
 
-// =============================================================================
-// Schritt 5: Snapshot finalisieren
-// =============================================================================
-
 /**
- * Erzeugt einen Eintrag in wf_snapshots mit is_final=true.
+ * Erzeugt einen Snapshot-Eintrag in wf_snapshots (is_final=true, kind='manual').
  *
- * snapshot_no wird automatisch als MAX(snapshot_no) + 1 für die
- * aktuelle Session bestimmt. Version 1 wird durch den WFS-T-Insert
- * erzeugt – diese Funktion persistiert lediglich den Verweis darauf.
- *
- * @param tx          – Aktive Transaktion
- * @param schema      – DB-Schema
- * @param featureType – Themen-Schlüssel
- * @param sessionId   – ID der aktuellen Session
- * @param featureUuid – UUID des Fachobjekts
- * @param versionId   – version_id aus der WFS-T-Response
- * @param userEmail   – E-Mail des Bearbeiters
- * @returns snapshot_id (Integer) des neu angelegten Snapshots
+ * @returns snapshot_id des neu angelegten Snapshots
  */
-export async function finalizeSnapshot(
+export async function insertSnapshotRecord(
   tx: DbClient,
   schema: string,
   featureType: string,
@@ -278,7 +352,6 @@ export async function finalizeSnapshot(
   `;
   const snapshotNo: number = maxRow?.next_no ?? 1;
 
-  // Versionstabelle als String für wf_snapshots.version_table
   const versionTable = resolveVersionTable(featureType);
 
   const [row] = await tx`
@@ -309,33 +382,17 @@ export async function finalizeSnapshot(
   return row.id as number;
 }
 
-// =============================================================================
-// Schritt 6: Session schliessen + Feature-Status → 'qs1_ausstehend'
-// =============================================================================
-
 /**
- * Schließt die Session und setzt den Feature-Status auf 'qs1_ausstehend'.
- *
- * Führt zwei UPDATE-Statements in der Reihenfolge aus:
- *   1. wf_sessions.state = 'completed'
- *   2. wf_feature_status.state = 'qs1_ausstehend'
- *
- * @param tx          – Aktive Transaktion
- * @param schema      – DB-Schema
- * @param featureType – Themen-Schlüssel
- * @param sessionId   – ID der zu schließenden Session
- * @param featureUuid – UUID des Fachobjekts
- * @param userEmail   – E-Mail des Bearbeiters (wird in ended_by gespeichert)
+ * Setzt wf_sessions auf 'completed' und wf_feature_status auf 'qs1_ausstehend'.
  */
-export async function closeSession(
+export async function updateSessionCompleted(
   tx: DbClient,
   schema: string,
-  featureType: string,
   sessionId: number,
+  featureType: string,
   featureUuid: string,
   userEmail: string,
 ): Promise<void> {
-  // Session schließen
   await tx`
     UPDATE ${tx(schema)}.${tx("wf_sessions")}
     SET state    = 'completed',
@@ -344,7 +401,6 @@ export async function closeSession(
     WHERE id = ${sessionId}
   `;
 
-  // Feature-Status auf QS1 setzen
   await tx`
     UPDATE ${tx(schema)}.${tx("wf_feature_status")}
     SET state           = 'qs1_ausstehend',

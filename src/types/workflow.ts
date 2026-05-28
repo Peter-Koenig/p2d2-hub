@@ -53,24 +53,60 @@ export interface WorkflowSessionRequest {
 }
 
 /**
- * Erfolgreiche Antwort von POST /api/workflow/session.
+ * Erfolgreiche Antwort von POST /api/workflow/session (Session öffnen).
+ * Nach Schritt 3 ist die Session aktiv, aber noch nicht abgeschlossen.
  */
-export interface WorkflowSessionResponse {
+export interface SessionOpenResult {
   /** ID aus wf_sessions */
   session_id: number;
-  /** UUID der angelegten Version (aus WFS-T-Response) */
+  /** Workflow-Status nach dem Öffnen */
+  workflow_status: "in_bearbeitung";
+}
+
+// ---------------------------------------------------------------------------
+// PATCH /api/workflow/session/:id – Session schließen
+// ---------------------------------------------------------------------------
+
+/**
+ * Request-Body für PATCH /api/workflow/session/:id (Session schließen).
+ *
+ * @example
+ * {
+ *   "version_id": "682eb22f-06f6-4c42-bb05-bb0cf8f103af",
+ *   "edit_comment": "Geometrie korrigiert"
+ * }
+ */
+export interface SessionCloseRequest {
+  /** UUID der durch WFS-T angelegten Version (p2d2_*_versionen.version_id) */
   version_id: string;
-  /** ID aus wf_snapshots */
-  snapshot_id: number;
-  /** Workflow-Status nach erfolgreichem Abschluss */
-  workflow_status: 'qs1_ausstehend';
+  /** Optionaler abschließender Bearbeitungskommentar */
+  edit_comment?: string;
 }
 
 /**
- * Fehlerantwort von POST /api/workflow/session.
+ * Erfolgreiche Antwort von PATCH /api/workflow/session/:id (Session schließen).
+ * Nach Schritt 6 ist die Session completed und wartet auf QS1.
+ */
+export interface SessionCloseResponse {
+  /** ID aus wf_sessions */
+  session_id: number;
+  /** UUID der abgeschlossenen Version */
+  version_id: string;
+  /** ID aus wf_snapshots */
+  snapshot_id: number;
+  /** Workflow-Status nach dem Schließen */
+  workflow_status: "qs1_ausstehend";
+}
+
+// ---------------------------------------------------------------------------
+// Fehlerantworten (beide Routen)
+// ---------------------------------------------------------------------------
+
+/**
+ * Fehlerantwort von POST /api/workflow/session oder PATCH /api/workflow/session/:id.
  */
 export interface WorkflowSessionError {
-  /** Maschinenlesbarer Fehlercode (z. B. "SESSION_CONFLICT") */
+  /** Maschinenlesbarer Fehlercode (z. B. "SESSION_CONFLICT", "SESSION_NOT_ACTIVE") */
   error: string;
   /** Menschenlesbare Fehlerbeschreibung */
   message: string;
@@ -83,9 +119,13 @@ export interface WorkflowSessionError {
 export class SessionConflictError extends Error {
   constructor(msg: string) {
     super(msg);
-    this.name = 'SessionConflictError';
+    this.name = "SessionConflictError";
   }
 }
+
+// ---------------------------------------------------------------------------
+// Interne Hilfstypen
+// ---------------------------------------------------------------------------
 
 /**
  * Struktur der Daten, die für den WFS-T-Export aus der DB gelesen werden.
