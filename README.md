@@ -101,7 +101,7 @@ Folgende Branches wurden angelegt, Webseiten und Prozessimplementierung stehen a
 - **develop**: Integration neuer Features, automatisch nach `dev.data-dna.eu`
 - **main**: produktionsreifer Code, Deployment auf `www.data-dna.eu`
 - **release**: Staging \& finale Tests vor Veröffentlichung
-- **feature/team-name**: Neue Features, getrennt nach Teams
+- **feature/team-name**: Neue Features, getrennt nach Teams, aktuell de1, de2 und fv
 
 Siehe `MERGEPOLICY.md` für Details.
 
