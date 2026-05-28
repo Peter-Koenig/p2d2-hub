@@ -27,7 +27,10 @@ import type {
 } from "../../../../types/workflow";
 
 import { getDb } from "../../../../lib/db";
-import { resolveStageFromUrl, resolveVersionTable } from "../../../../lib/workflow/utils";
+import {
+  resolveStageFromUrl,
+  resolveVersionTable,
+} from "../../../../lib/workflow/utils";
 import { closeSession } from "../../../../lib/workflow/db";
 import type { CloseSessionParams } from "../../../../lib/workflow/db";
 
@@ -35,7 +38,11 @@ import type { CloseSessionParams } from "../../../../lib/workflow/db";
 // Error-Response-Helfer
 // ---------------------------------------------------------------------------
 
-function errorResponse(status: number, error: string, message?: string): Response {
+function errorResponse(
+  status: number,
+  error: string,
+  message?: string,
+): Response {
   const body: WorkflowSessionError = { error, message: message ?? error };
   return new Response(JSON.stringify(body), {
     status,
@@ -53,6 +60,13 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
   // -----------------------------------------------------------------------
   if (!locals.isAuthenticated) {
     return errorResponse(401, "UNAUTHORIZED", "Nicht authentisiert");
+  }
+  if (!locals.user?.email) {
+    return errorResponse(
+      401,
+      "UNAUTHORIZED",
+      "Kein authentifizierter Benutzer",
+    );
   }
   if (!locals.user?.roles?.includes("editor")) {
     return errorResponse(403, "FORBIDDEN", "Keine editor-Rolle");
@@ -80,7 +94,11 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
   }
 
   if (!body.version_id || typeof body.version_id !== "string") {
-    return errorResponse(400, "BAD_REQUEST", "version_id (string) ist erforderlich");
+    return errorResponse(
+      400,
+      "BAD_REQUEST",
+      "version_id (string) ist erforderlich",
+    );
   }
 
   // -----------------------------------------------------------------------
@@ -106,7 +124,11 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
   }
 
   if (session.started_by !== userEmail) {
-    return errorResponse(403, "FORBIDDEN", "Session gehoert einem anderen Benutzer");
+    return errorResponse(
+      403,
+      "FORBIDDEN",
+      "Session gehoert einem anderen Benutzer",
+    );
   }
 
   if (session.state !== "active") {

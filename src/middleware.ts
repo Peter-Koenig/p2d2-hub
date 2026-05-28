@@ -25,7 +25,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
       memberships: session.memberships,
       preferences: session.preferences,
     };
-    locals.isAuthenticated = true;
+    if (locals.user.email) {
+      locals.isAuthenticated = true;
+    }
   }
 
   if (!locals.user) {

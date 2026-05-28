@@ -110,6 +110,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.isAuthenticated) {
     return errorResponse(401, "UNAUTHORIZED", "Nicht authentisiert");
   }
+  if (!locals.user?.email) {
+    return errorResponse(
+      401,
+      "UNAUTHORIZED",
+      "Kein authentifizierter Benutzer",
+    );
+  }
   if (!locals.user?.roles?.includes("editor")) {
     return errorResponse(403, "FORBIDDEN", "Keine editor-Rolle");
   }
