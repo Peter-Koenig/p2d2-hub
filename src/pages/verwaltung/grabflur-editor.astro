@@ -53,6 +53,7 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
             data-center={center ? JSON.stringify(center) : ''}
             data-projection={projection}
             data-zoom={zoom}
+            data-municipality={kommuneSlug ?? ''}
           ></div>
           <!-- Navigation-Vor/Zurück -->
           <div class="nav-controls">
@@ -316,7 +317,8 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
   <script>
     import { MapManager } from '../../components/feature-editor/MapManager';
     import { wfsAuthClient } from '../../utils/wfs-auth';
-    import { initializeCrossWindowBridge } from '../../utils/cross-window-events';
+    import { initializeCrossWindowBridge, dispatchCrossWindowEvent, getWindowId } from '../../utils/cross-window-events';
+    import { P2D2EventType } from '../../utils/events';
     import GeoJSON from 'ol/format/GeoJSON';
     import VectorSource from 'ol/source/Vector';
     import VectorLayer from 'ol/layer/Vector';
@@ -325,7 +327,7 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
     import Overlay from 'ol/Overlay';
     import { Style, Stroke, Fill } from 'ol/style';
     import { Select, Translate, Modify, Interaction } from 'ol/interaction';
-    import { click } from 'ol/events/condition';
+    import { click, never } from 'ol/events/condition';
     import { getArea } from 'ol/sphere';
     import { transformExtent } from 'ol/proj';
 
@@ -354,6 +356,13 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
         // 1. MapManager initialisieren
         const mapManager = new MapManager('grabflur-map', projection);
         const map = mapManager.getMap();
+
+        // OpenLayers-eigenen DblClick-Zoom deaktivieren (stört Doppelklick-Erkennung)
+        map.getInteractions().forEach((interaction) => {
+          if (interaction.constructor.name === "DoubleClickZoom") {
+            interaction.setActive(false);
+          }
+        });
 
         // ViewHistory für Vor/Zurück-Navigation
         const viewHistory = mapManager.getViewHistory();
@@ -728,11 +737,12 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
         });
 
         // ─── 6b. Grabflur-Doppelklick: 1× Zoomen, 2× Edit-Mode ───
-        let lastClickedGrabflureId: string | null = null;
-        let lastGrabflureClickTime = 0;
+        let lastClickedGrabflureUuid: string | null = null;
 
-        map.on('click', (evt) => {
+        map.on('click', async (evt) => {
           if (!grabflureLayer.getVisible()) return;
+          // Während einer aktiven Session Klicks ignorieren
+          if (currentSessionId !== null) return;
 
           let hitFeature: any = null;
           map.forEachFeatureAtPixel(evt.pixel, (f, layer) => {
@@ -740,18 +750,49 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
           });
           if (!hitFeature) return;
 
-          const featureId = hitFeature.get('p2d2_uuid') || hitFeature.get('flur_nr') || '';
-          const now = Date.now();
+          const uuid = hitFeature.get('p2d2_uuid');
+          if (!uuid) return; // kein UUID → kein Edit-Mode möglich
 
-          if (featureId && featureId === lastClickedGrabflureId && (now - lastGrabflureClickTime < 600)) {
-            // Doppelklick → Edit-Mode
-            lastClickedGrabflureId = null;
-            lastGrabflureClickTime = 0;
-            enterGrabflureEditMode(hitFeature);
+          if (uuid === lastClickedGrabflureUuid) {
+            // 2. Klick auf dieselbe Grabflur → Session öffnen, dann Edit-Mode
+            lastClickedGrabflureUuid = null;
+            try {
+              const resp = await fetch('/api/workflow/session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  feature_type: 'grabflur',
+                  feature_uuid: hitFeature.get('p2d2_uuid'),
+                  feature_set_id: 'fh_' + hitFeature.get('fh_nr'),
+                  context: {
+                    key: 'fh_nr',
+                    label: hitFeature.get('fh_name'),
+                    value: String(hitFeature.get('fh_nr'))
+                  },
+                  wpname: hitFeature.get('wp_name'),
+                  municipality: container.dataset.municipality || '',
+                  edit_comment: ''
+                })
+              });
+              if (resp.status === 201) {
+                const data = await resp.json();
+                currentSessionId = data.session_id;
+                enterGrabflureEditMode(hitFeature);
+              } else if (resp.status === 409) {
+                alert('Dieser Friedhof wird gerade bearbeitet.');
+              } else {
+                console.error('[Editor] Session-Start fehlgeschlagen:', resp.status, await resp.text());
+                alert('Session konnte nicht geöffnet werden.');
+              }
+            } catch (err) {
+              console.error('[Editor] Netzwerkfehler beim Session-Start:', err);
+              alert('Session konnte nicht geöffnet werden.');
+            }
             return;
           }
 
-          // Erster Klick → auf Grabflur zoomen
+          // 1. Klick → UUID merken + auf Grabflur zoomen
+          lastClickedGrabflureUuid = uuid;
           const extent = hitFeature.getGeometry()?.getExtent();
           const mapSize = map.getSize();
           if (extent && mapSize && extent.every(Number.isFinite)) {
@@ -763,9 +804,6 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
               duration: 400,
             });
           }
-
-          lastClickedGrabflureId = featureId;
-          lastGrabflureClickTime = now;
         });
 
         function enterGrabflureEditMode(feature: any): void {
@@ -779,6 +817,13 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
           document.querySelector('[data-tool="select"]')?.classList.add('highlighted');
 
           console.log(`[Editor] 🖊️ Edit-Mode für Grabflur: ${feature.get('name') || feature.get('flur_nr') || 'unbenannt'}`);
+
+          dispatchCrossWindowEvent(P2D2EventType.EDITOR_MODE_CHANGE, {
+            mode: 'edit',
+            previousMode: 'navigate',
+            windowId: getWindowId(),
+            timestamp: Date.now(),
+          });
         }
 
         // ─── 7. Editor-Werkzeuge & Layer-Steuerung ───
@@ -830,31 +875,47 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
         // Editor-Interaktionen für Grabflure
         let activeTool: string | null = null;
         let editInteractions: Interaction[] = [];
+        // Aktuelle Session-ID (nach erfolgreichem POST /api/workflow/session)
+        let currentSessionId: number | null = null;
+        // Persistenter Select (bleibt beim Werkzeugwechsel erhalten)
+        let grabflureSelect: any = null;
 
         function setActiveTool(toolName: string | null): void {
           // Alte Interaktionen entfernen
           editInteractions.forEach((i) => map.removeInteraction(i));
           editInteractions = [];
 
-          if (!toolName) { activeTool = null; return; }
+          if (!toolName) {
+            // Beim Verlassen des Edit-Modes auch persistenten Select entfernen
+            if (grabflureSelect) {
+              map.removeInteraction(grabflureSelect);
+              grabflureSelect = null;
+            }
+            activeTool = null;
+            return;
+          }
 
           const grabflureOnlyFilter = (f: any, layer: any) => layer === grabflureLayer;
 
           switch (toolName) {
-            case 'select': {
-              const si = new Select({
-                layers: [grabflureLayer],
-                style: new Style({
-                  stroke: new Stroke({ color: '#3B82F6', width: 3 }),
-                  fill:   new Fill({ color: 'rgba(59, 130, 246, 0.2)' }),
-                }),
-              });
-              si.on('select', (evt) => {
-                const hasSelection = evt.selected.length > 0;
-                (document.getElementById('tool-save') as HTMLButtonElement).disabled = !hasSelection;
-              });
-              map.addInteraction(si);
-              editInteractions.push(si);
+            case "select": {
+              if (!grabflureSelect) {
+                grabflureSelect = new Select({
+                  layers: [grabflureLayer],
+                  style: new Style({
+                    stroke: new Stroke({ color: "#3B82F6", width: 3 }),
+                    fill: new Fill({ color: "rgba(59, 130, 246, 0.2)" }),
+                  }),
+                });
+                grabflureSelect.on("select", (evt) => {
+                  const hasSelection = evt.selected.length > 0;
+                  (document.getElementById("tool-save") as HTMLButtonElement).disabled =
+                    !hasSelection;
+                });
+                map.addInteraction(grabflureSelect);
+              } else {
+                grabflureSelect.setActive(true); // Select reaktivieren (nach Modify)
+              }
               break;
             }
             case 'move': {
@@ -866,8 +927,14 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
               editInteractions.push(tr);
               break;
             }
-            case 'modify': {
-              const md = new Modify({ source: grabflureSource, pixelTolerance: 6 });
+            case "modify": {
+              if (!grabflureSelect) break;
+              grabflureSelect.setActive(false); // Select pausieren, damit Modify hover/click nicht stört
+              const md = new Modify({
+                features: grabflureSelect.getFeatures(),
+                pixelTolerance: 6,
+                insertVertexCondition: never,
+              });
               md.on('modifystart', () => {
                 (document.getElementById('tool-save') as HTMLButtonElement).disabled = false;
               });
@@ -879,8 +946,28 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
           activeTool = toolName;
         }
 
+        function exitEditMode(): void {
+          setActiveTool(null);
+          activeTool = null;
+          grabflureSource.clear();
+          grabflureLayer.setVisible(false);
+          document.getElementById('edit-tools-container')?.classList.remove('edit-tools-visible');
+          document.getElementById('edit-tools-container')?.classList.add('edit-tools-hidden');
+          document.querySelectorAll('[data-tool]').forEach((b) => b.classList.remove('highlighted'));
+          const selBtn = document.querySelector('[data-tool="select"]');
+          selBtn?.classList.add('highlighted');
+          lastClickedGrabflureUuid = null;
+
+          dispatchCrossWindowEvent(P2D2EventType.EDITOR_MODE_CHANGE, {
+            mode: 'navigate',
+            previousMode: 'edit',
+            windowId: getWindowId(),
+            timestamp: Date.now(),
+          });
+        }
+
         // Tool-Buttons verdrahten
-        document.addEventListener('click', (e) => {
+        document.addEventListener('click', async (e) => {
           const btn = (e.target as HTMLElement).closest('[data-tool]') as HTMLElement;
           if (!btn) return;
           const tool = btn.dataset.tool;
@@ -900,15 +987,103 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
 
           // Speichern
           if (tool === 'save') {
-            console.log('[Editor] 💾 Speichern gestartet – WFS-T folgt');
-            // TODO: WFS-T Save
             (document.getElementById('tool-save') as HTMLButtonElement).disabled = true;
+
+            if (currentSessionId === null) {
+              console.log('[Editor] Keine aktive Session – Edit-Modus beenden');
+              exitEditMode();
+              return;
+            }
+
+            if (!grabflureSelect || grabflureSelect.getFeatures().getLength() === 0) {
+              console.warn('[Editor] Kein Feature selektiert');
+              (document.getElementById('tool-save') as HTMLButtonElement).disabled = false;
+              return;
+            }
+
+            const selectedFeature = grabflureSelect.getFeatures().item(0);
+            const geometry = selectedFeature.getGeometry();
+            if (!geometry) {
+              console.warn('[Editor] Feature hat keine Geometrie');
+              (document.getElementById('tool-save') as HTMLButtonElement).disabled = false;
+              return;
+            }
+
+            try {
+              const geojsonFormat = new GeoJSON();
+              const geojsonStr = geojsonFormat.writeGeometry(geometry, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: projection,
+              });
+              const geojsonGeom = JSON.parse(geojsonStr);
+
+              console.log('[Editor] 💾 Sende Geometrie an Commit-Endpoint...');
+              const resp = await fetch(`/api/workflow/session/${currentSessionId}/commit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  geometry: geojsonGeom,
+                  edit_comment: '',
+                }),
+              });
+
+              if (resp.ok) {
+                const result = await resp.json();
+                console.log('[Editor] ✅ Session gespeichert:', result);
+                alert('Grabflur gespeichert.');
+                currentSessionId = null;
+                exitEditMode();
+              } else if (resp.status === 422) {
+                const err = await resp.json();
+                console.error('[Editor] Session nicht aktiv:', err);
+                alert('Session ist nicht mehr aktiv – Änderungen konnten nicht gespeichert werden.');
+                currentSessionId = null;
+                exitEditMode();
+              } else {
+                const errText = await resp.text();
+                console.error('[Editor] Speichern fehlgeschlagen:', resp.status, errText);
+                (document.getElementById('tool-save') as HTMLButtonElement).disabled = false;
+                if (confirm('Fehler beim Speichern. Erneut versuchen?')) {
+                  document.querySelector('[data-tool="save"]')?.dispatchEvent(new Event('click'));
+                } else {
+                  currentSessionId = null;
+                  exitEditMode();
+                }
+              }
+            } catch (err) {
+              console.error('[Editor] Netzwerkfehler beim Speichern:', err);
+              (document.getElementById('tool-save') as HTMLButtonElement).disabled = false;
+              if (confirm('Netzwerkfehler beim Speichern. Erneut versuchen?')) {
+                document.querySelector('[data-tool="save"]')?.dispatchEvent(new Event('click'));
+              } else {
+                currentSessionId = null;
+                exitEditMode();
+              }
+            }
             return;
           }
 
           // Abbrechen
           if (tool === 'cancel') {
             if (confirm('Bearbeitung abbrechen? Nicht gespeicherte Änderungen gehen verloren.')) {
+              // Session schliessen falls offen (ohne version_id → aborted)
+              if (currentSessionId !== null) {
+                try {
+                  const closeResp = await fetch(`/api/workflow/session/${currentSessionId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ edit_comment: '' })
+                  });
+                  if (!closeResp.ok) {
+                    console.error('[Editor] Session-Schliessen fehlgeschlagen:', closeResp.status, await closeResp.text());
+                  } else {
+                    console.log('[Editor] Session geschlossen:', currentSessionId);
+                  }
+                } catch (err) {
+                  console.error('[Editor] Netzwerkfehler beim Session-Schliessen:', err);
+                }
+                currentSessionId = null;
+              }
               setActiveTool(null);
               activeTool = null;
               grabflureSource.clear();
