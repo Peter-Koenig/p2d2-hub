@@ -49,6 +49,7 @@ export default class GrabflurEditorApp {
   /** Aus data-Attributen gelesene Konfiguration */
   private wpName = "";
   private projection = "EPSG:3857";
+  private municipality = "";
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -67,6 +68,7 @@ export default class GrabflurEditorApp {
       // 1. Config aus data-Attributen lesen
       this.wpName = this.container.dataset.wpName || "";
       this.projection = this.container.dataset.projection || "EPSG:3857";
+      this.municipality = this.container.dataset.municipality || "";
 
       if (!this.wpName) {
         console.warn(
@@ -103,6 +105,7 @@ export default class GrabflurEditorApp {
         this.sessionManager,
         viewHistory,
         this.projection,
+        this.municipality,
       );
 
       // 8. UIManager (UI-Controls, Keyboard)

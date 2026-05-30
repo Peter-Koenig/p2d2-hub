@@ -73,6 +73,9 @@ export default class GrabflurInteractionManager {
   private activeTool: string | null = null;
   private editInteractions: Interaction[] = [];
 
+  // -- Konfiguration --
+  private municipality: string;
+
   constructor(
     map: OLMap,
     layerManager: GrabflurLayerManager,
@@ -80,6 +83,7 @@ export default class GrabflurInteractionManager {
     sessionManager: GrabflurSessionManager,
     viewHistory: ViewHistoryManager,
     projection: string,
+    municipality: string,
   ) {
     this.map = map;
     this.viewHistory = viewHistory;
@@ -87,6 +91,7 @@ export default class GrabflurInteractionManager {
     this.dataManager = dataManager;
     this.sessionManager = sessionManager;
     this.projection = projection;
+    this.municipality = municipality;
 
     // 1. Hover-Interaktion (pointermove)
     this.initHoverInteraction();
@@ -274,9 +279,7 @@ export default class GrabflurInteractionManager {
       // 2. Klick auf dieselbe Grabflur → Session öffnen, dann Edit-Mode
       this.lastClickedGrabflureUuid = null;
       try {
-        const municipality =
-          document.getElementById("grabflur-map")?.dataset.municipality ?? "";
-        await this.sessionManager.openSession(hitFeature, municipality);
+        await this.sessionManager.openSession(hitFeature, this.municipality);
         this.enterEditMode(hitFeature);
       } catch {
         // SessionConflictError / SessionOpenError behandeln bereits
