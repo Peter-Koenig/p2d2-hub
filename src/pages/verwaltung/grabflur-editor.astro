@@ -330,6 +330,10 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
     import { click, never } from 'ol/events/condition';
     import { getArea } from 'ol/sphere';
     import { transformExtent } from 'ol/proj';
+    import WorkflowSessionManager, {
+      SessionConflictError,
+      RecoveryRequiredError,
+    } from '../../components/feature-editor/WorkflowSessionManager';
 
     function domReady(callback: () => void): void {
       if (document.readyState === 'loading') {
@@ -351,6 +355,8 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
       const extentRaw  = container.dataset.extent || '';
       const centerRaw  = container.dataset.center || '';
       const zoom       = parseInt(container.dataset.zoom || '12', 10);
+
+      const sessionMgr = new WorkflowSessionManager();
 
       try {
         // 1. MapManager initialisieren
@@ -665,7 +671,7 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
         map.on('click', async (evt) => {
           if (!grabflureLayer.getVisible()) return;
           // Während einer aktiven Session Klicks ignorieren
-          if (currentSessionId !== null) return;
+          if (sessionMgr.isActive()) return;
 
           let hitFeature: any = null;
           map.forEachFeatureAtPixel(evt.pixel, (f, layer) => {
@@ -680,36 +686,15 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
             // 2. Klick auf dieselbe Grabflur → Session öffnen, dann Edit-Mode
             lastClickedGrabflureUuid = null;
             try {
-              const resp = await fetch('/api/workflow/session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  feature_type: 'grabflur',
-                  feature_uuid: hitFeature.get('p2d2_uuid'),
-                  feature_set_id: 'fh_' + hitFeature.get('fh_nr'),
-                  context: {
-                    key: 'fh_nr',
-                    label: hitFeature.get('fh_name'),
-                    value: String(hitFeature.get('fh_nr'))
-                  },
-                  wpname: hitFeature.get('wp_name'),
-                  municipality: container.dataset.municipality || '',
-                  edit_comment: ''
-                })
-              });
-              if (resp.status === 201) {
-                const data = await resp.json();
-                currentSessionId = data.session_id;
-                enterGrabflureEditMode(hitFeature);
-              } else if (resp.status === 409) {
+              await sessionMgr.openSession(hitFeature, container.dataset.municipality ?? '');
+              enterGrabflureEditMode(hitFeature);
+            } catch (e) {
+              if (e instanceof SessionConflictError) {
                 alert('Dieser Friedhof wird gerade bearbeitet.');
               } else {
-                console.error('[Editor] Session-Start fehlgeschlagen:', resp.status, await resp.text());
+                console.error('[Editor] Session-Start fehlgeschlagen:', e);
                 alert('Session konnte nicht geöffnet werden.');
               }
-            } catch (err) {
-              console.error('[Editor] Netzwerkfehler beim Session-Start:', err);
-              alert('Session konnte nicht geöffnet werden.');
             }
             return;
           }
@@ -798,8 +783,7 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
         // Editor-Interaktionen für Grabflure
         let activeTool: string | null = null;
         let editInteractions: Interaction[] = [];
-        // Aktuelle Session-ID (nach erfolgreichem POST /api/workflow/session)
-        let currentSessionId: number | null = null;
+
         // Persistenter Select (bleibt beim Werkzeugwechsel erhalten)
         let grabflureSelect: any = null;
 
@@ -912,12 +896,6 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
           if (tool === 'save') {
             (document.getElementById('tool-save') as HTMLButtonElement).disabled = true;
 
-            if (currentSessionId === null) {
-              console.log('[Editor] Keine aktive Session – Edit-Modus beenden');
-              exitEditMode();
-              return;
-            }
-
             if (!grabflureSelect || grabflureSelect.getFeatures().getLength() === 0) {
               console.warn('[Editor] Kein Feature selektiert');
               (document.getElementById('tool-save') as HTMLButtonElement).disabled = false;
@@ -933,54 +911,21 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
             }
 
             try {
-              const geojsonFormat = new GeoJSON();
-              const geojsonStr = geojsonFormat.writeGeometry(geometry, {
-                dataProjection: 'EPSG:4326',
-                featureProjection: projection,
-              });
-              const geojsonGeom = JSON.parse(geojsonStr);
-
-              console.log('[Editor] 💾 Sende Geometrie an Commit-Endpoint...');
-              const resp = await fetch(`/api/workflow/session/${currentSessionId}/commit`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  geometry: geojsonGeom,
-                  edit_comment: '',
-                }),
-              });
-
-              if (resp.ok) {
-                const result = await resp.json();
-                console.log('[Editor] ✅ Session gespeichert:', result);
-                alert('Grabflur gespeichert.');
-                currentSessionId = null;
-                exitEditMode();
-              } else if (resp.status === 422) {
-                const err = await resp.json();
-                console.error('[Editor] Session nicht aktiv:', err);
-                alert('Session ist nicht mehr aktiv – Änderungen konnten nicht gespeichert werden.');
-                currentSessionId = null;
-                exitEditMode();
+              await sessionMgr.commitAndClose(selectedFeature, projection, '');
+              console.log('[Editor] ✅ Session gespeichert');
+              alert('Grabflur gespeichert.');
+              exitEditMode();
+            } catch (e) {
+              if (e instanceof RecoveryRequiredError) {
+                console.error('[Editor] WFS-T endgültig fehlgeschlagen, Session-ID:', e.sessionId);
+                alert(`Fehler beim Speichern. Session-ID: ${e.sessionId}\nBitte Administrator informieren.`);
+                await sessionMgr.abortSession('recovery-required');
               } else {
-                const errText = await resp.text();
-                console.error('[Editor] Speichern fehlgeschlagen:', resp.status, errText);
+                console.error('[Editor] Speichern fehlgeschlagen:', e);
                 (document.getElementById('tool-save') as HTMLButtonElement).disabled = false;
                 if (confirm('Fehler beim Speichern. Erneut versuchen?')) {
                   document.querySelector('[data-tool="save"]')?.dispatchEvent(new Event('click'));
-                } else {
-                  currentSessionId = null;
-                  exitEditMode();
                 }
-              }
-            } catch (err) {
-              console.error('[Editor] Netzwerkfehler beim Speichern:', err);
-              (document.getElementById('tool-save') as HTMLButtonElement).disabled = false;
-              if (confirm('Netzwerkfehler beim Speichern. Erneut versuchen?')) {
-                document.querySelector('[data-tool="save"]')?.dispatchEvent(new Event('click'));
-              } else {
-                currentSessionId = null;
-                exitEditMode();
               }
             }
             return;
@@ -989,23 +934,9 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
           // Abbrechen
           if (tool === 'cancel') {
             if (confirm('Bearbeitung abbrechen? Nicht gespeicherte Änderungen gehen verloren.')) {
-              // Session schliessen falls offen (ohne version_id → aborted)
-              if (currentSessionId !== null) {
-                try {
-                  const closeResp = await fetch(`/api/workflow/session/${currentSessionId}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ edit_comment: '' })
-                  });
-                  if (!closeResp.ok) {
-                    console.error('[Editor] Session-Schliessen fehlgeschlagen:', closeResp.status, await closeResp.text());
-                  } else {
-                    console.log('[Editor] Session geschlossen:', currentSessionId);
-                  }
-                } catch (err) {
-                  console.error('[Editor] Netzwerkfehler beim Session-Schliessen:', err);
-                }
-                currentSessionId = null;
+              if (sessionMgr.isActive()) {
+                await sessionMgr.abortSession('');
+                console.log('[Editor] Session abgebrochen');
               }
               setActiveTool(null);
               activeTool = null;
