@@ -156,13 +156,14 @@ export default class GrabflurSessionManager {
 
       if (resp.status === 409) {
         this.state = "conflict";
-        const text = await resp.text().catch(() => "");
+        const name = feature.get("fh_name") || "unbekannt";
+        const nr = feature.get("fh_nr") || "??";
+        await resp.text().catch(() => ""); // drain body
         alert(
-          text ||
-            "Dieses Objekt wird bereits von einem anderen Nutzer bearbeitet.",
+          `Leider wird der Friedhof '${name}(${nr})' aktuell schon bearbeitet. Bitte versuchen Sie es später nochmals.`,
         );
         throw new SessionConflictError(
-          text || "Session-Konflikt: bereits in Bearbeitung",
+          `Session-Konflikt für Friedhof '${name}(${nr})': bereits in Bearbeitung`,
         );
       }
 

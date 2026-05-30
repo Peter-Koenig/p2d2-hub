@@ -99,6 +99,7 @@ export default class GrabflurInteractionManager {
     // 2. Friedhof-Select-Interaction (Klick auf Cemetery)
     this.friedhofSelect = new Select({
       condition: click,
+      layers: [this.layerManager.getFriedhofLayer()],
       style: new Style({
         stroke: new Stroke({ color: "#CC5500", width: 3 }),
         fill: new Fill({ color: "rgba(255, 105, 0, 0.25)" }),
@@ -176,6 +177,8 @@ export default class GrabflurInteractionManager {
     // ── Deselektiert → Grabflure ausblenden (außer Klick war auf Grabflur) ──
     if (!selected) {
       if (this.wasClickOnGrabflure(e)) return;
+      // Session-Kontext während aktiver Edit-Session nicht verlieren
+      if (this.sessionManager.isSessionActive()) return;
 
       this.layerManager.clearGrabflure();
       this.layerManager.setGrabflureVisible(false);
@@ -205,6 +208,9 @@ export default class GrabflurInteractionManager {
     }
 
     // Edit-Mode beenden (neuer Cemetery ausgewählt)
+    // Während aktiver Edit-Session keinen Kontextwechsel erzwingen –
+    // der Nutzer muss zuerst speichern oder abbrechen.
+    if (this.sessionManager.isSessionActive()) return;
     this.exitEditMode();
 
     // ── Grabflure für diesen Friedhof laden ──
