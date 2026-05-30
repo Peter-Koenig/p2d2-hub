@@ -467,28 +467,10 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
 
             friedhofSource.addFeatures(features);
 
-            // ─── DIAGNOSE 1: Feature-Validierung ───
-            /* DIAG */ console.log('--- DIAGNOSE [Grabflur-Editor] ---');
-            /* DIAG */ console.log('[DIAG] Features im Source:', friedhofSource.getFeatures().length);
-            /* DIAG */ const firstFeat = features[0];
-            /* DIAG */ if (firstFeat) {
-            /* DIAG */   const geom = firstFeat.getGeometry();
-            /* DIAG */   const coords = geom ? (geom as any).getFirstCoordinate() : undefined;
-            /* DIAG */   console.log('[DIAG] Erstes Feature – Typ:', geom?.getType(), '| erste Koordinate:', coords);
-            /* DIAG */   console.log('[DIAG]   → Erwarte UTM-Werte (z.B. [354000, 5645000]) – sind es lat/lon?');
-            /* DIAG */ }
-            /* DIAG */ const srcExtent = friedhofSource.getExtent();
-            /* DIAG */ console.log('[DIAG] Source-Extent:', srcExtent);
-            /* DIAG */ console.log('[DIAG] Extent ist valide (nicht Infinity)?', srcExtent.every((v: number) => Number.isFinite(v)));
-            /* DIAG */ console.log('[DIAG] View-Projektion:', map.getView().getProjection().getCode());
-            /* DIAG */ console.log('[DIAG] featureProjection beim readFeatures:', projection);
-            /* DIAG */ console.log('--- ENDE DIAGNOSE 1 ---');
-
             // Auf geladene Features zoomen
             if (features.length > 0) {
               const loadedExtent = friedhofSource.getExtent();
               const mapSize      = map.getSize();
-              console.log('[Grabflur-Editor] 🔍 fit() Aufruf:', { loadedExtent, mapSize });
               if (mapSize && mapSize[0] > 0 && loadedExtent.every(Number.isFinite)) {
                 map.getView().fit(loadedExtent, {
                   size:    mapSize,
@@ -496,63 +478,8 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
                   maxZoom: 16,
                 });
                 viewHistory.pushState(); // Initialen Übersichts-Zoom speichern
-                console.log('[Grabflur-Editor] ✅ fit() ausgeführt, Center:', map.getView().getCenter());
               }
             }
-
-            console.log(`[Grabflur-Editor] ✅ ${features.length} Friedhöfe geladen`);
-
-            // ─── DIAGNOSE 2: Render-Check nach dem durch fit() getriggerten Render ───
-            /* DIAG */ map.once('postrender', () => {
-            /* DIAG */   console.log('--- DIAGNOSE 2 [Grabflur-Editor] nach fit()-Render ---');
-            /* DIAG */   const centerCoord = map.getView().getCenter();
-            /* DIAG */   const centerPixel = centerCoord ? map.getPixelFromCoordinate(centerCoord) : null;
-            /* DIAG */   console.log('[DIAG2] View-Center (Koordinate):', centerCoord);
-            /* DIAG */   console.log('[DIAG2] View-Center (Pixel):', centerPixel);
-            /* DIAG */   console.log('[DIAG2] Map-Size:', map.getSize());
-            /* DIAG */   console.log('[DIAG2] View-Zoom:', map.getView().getZoom());
-            /* DIAG */   console.log('[DIAG2] Layer sichtbar?:', friedhofLayer.getVisible());
-            /* DIAG */   console.log('[DIAG2] Layer-ZIndex:', friedhofLayer.getZIndex());
-            /* DIAG */   console.log('[DIAG2] Feature-Anzahl Source:', friedhofSource.getFeatures().length);
-            /* DIAG */   console.log('[DIAG2] Layer-Liste:',
-            /* DIAG */     map.getLayers().getArray().map((l: any, i: number) =>
-            /* DIAG */       `${i}:${l instanceof VectorLayer ? 'Vector' : 'Tile'} z=${l.getZIndex()}`
-            /* DIAG */     ).join(' | ')
-            /* DIAG */   );
-            /* DIAG */   // Prüfe Features an 9 gleichmäßig verteilten Pixeln (3×3 Raster)
-            /* DIAG */   if (centerPixel) {
-            /* DIAG */     const mapSize = map.getSize()!;
-            /* DIAG */     const pixelsToCheck = [
-            /* DIAG */       { label: 'Zentrum', px: centerPixel[0], py: centerPixel[1] },
-            /* DIAG */       { label: 'oben-links', px: 50, py: 50 },
-            /* DIAG */       { label: 'oben-rechts', px: mapSize[0] - 50, py: 50 },
-            /* DIAG */       { label: 'unten-links', px: 50, py: mapSize[1] - 50 },
-            /* DIAG */       { label: 'unten-rechts', px: mapSize[0] - 50, py: mapSize[1] - 50 },
-            /* DIAG */       { label: 'oben-Mitte', px: Math.round(mapSize[0] / 2), py: 50 },
-            /* DIAG */       { label: 'unten-Mitte', px: Math.round(mapSize[0] / 2), py: mapSize[1] - 50 },
-            /* DIAG */       { label: 'Mitte-links', px: 50, py: Math.round(mapSize[1] / 2) },
-            /* DIAG */       { label: 'Mitte-rechts', px: mapSize[0] - 50, py: Math.round(mapSize[1] / 2) },
-            /* DIAG */     ];
-            /* DIAG */     let totalFound = 0;
-            /* DIAG */     for (const p of pixelsToCheck) {
-            /* DIAG */       const features = map.getFeaturesAtPixel([p.px, p.py], { hitTolerance: 5 });
-            /* DIAG */       if (features && features.length > 0) {
-            /* DIAG */         totalFound += features.length;
-            /* DIAG */         console.log('[DIAG2] ✅ Pixel', p.label, `(${p.px},${p.py}):`, features.length, 'Feature(s)');
-            /* DIAG */         features.forEach((f: any) => console.log('[DIAG2]   →', f.get('name') || 'unbenannt'));
-            /* DIAG */       } else {
-            /* DIAG */         console.log('[DIAG2] ❌ Pixel', p.label, `(${p.px},${p.py}):`, '0 Features');
-            /* DIAG */       }
-            /* DIAG */     }
-            /* DIAG */     console.log('[DIAG2] Features insgesamt an 9 Pixeln:', totalFound);
-            /* DIAG */     if (totalFound === 0) {
-            /* DIAG */       console.log('[DIAG2] 🚨 KEIN EINZIGES Feature an 9 Pixeln gefunden – Layer wird NICHT gerendert!');
-            /* DIAG */       console.log('[DIAG2] Mögliche Ursachen: Layer unsichtbar, WebGL-Fehler, Z-Index-Konflikt, Canvas nicht im DOM');
-            /* DIAG */     }
-            /* DIAG */   }
-            /* DIAG */   console.log('--- ENDE DIAGNOSE 2 ---');
-            /* DIAG */ });
-            // ─── ENDE DIAGNOSE 2 ───
 
           } catch (err) {
             console.error('[Grabflur-Editor] WFS-Fehler:', err);
@@ -647,14 +574,13 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
             setActiveTool(null);
             document.getElementById('edit-tools-container')?.classList.remove('edit-tools-visible');
             document.getElementById('edit-tools-container')?.classList.add('edit-tools-hidden');
-            console.log('[Grabflur-Editor] Grabflure ausgeblendet');
+
             return;
           }
 
           const name = selected.get('name') || 'Unbenannt';
           const cemeteryId = selected.getId() || name;
           currentCemeteryId = cemeteryId;
-          console.log(`[Grabflur-Editor] Zoom auf Friedhof: ${name}`);
 
           const geom = selected.getGeometry();
           if (!geom) return;
@@ -716,7 +642,7 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
 
             // Nur anwenden, wenn seit dem Request kein anderer Cemetery geklickt wurde
             if (currentCemeteryId !== cemeteryId) {
-              console.log('[Grabflur-Editor] ⏭️ Grabflure veraltet (anderer Cemetery gewählt)');
+
               return;
             }
 
@@ -724,11 +650,8 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
             if (grabflureFeatures.length > 0) {
               grabflureSource.addFeatures(grabflureFeatures);
               grabflureLayer.setVisible(true);
-              const sample = grabflureFeatures[0].get('flur_nr') || grabflureFeatures[0].get('fh_name') || '';
-              console.log(`[Grabflur-Editor] 🗺️ ${grabflureFeatures.length} Grabflure geladen für "${name}" (z.B. Flur ${sample})`);
             } else {
               grabflureLayer.setVisible(false);
-              console.log(`[Grabflur-Editor] 🗺️ Keine Grabflure gefunden für "${name}"`);
             }
           } catch (err) {
             console.error('[Grabflur-Editor] Grabflur-Fehler:', err);
