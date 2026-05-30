@@ -327,6 +327,7 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
     import Overlay from 'ol/Overlay';
     import { Style, Stroke, Fill } from 'ol/style';
     import { Select, Translate, Modify, Interaction } from 'ol/interaction';
+    import type { SelectEvent } from 'ol/interaction/Select';
     import { click, never } from 'ol/events/condition';
     import { getArea } from 'ol/sphere';
     import { transformExtent } from 'ol/proj';
@@ -814,7 +815,7 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
                     fill: new Fill({ color: "rgba(59, 130, 246, 0.2)" }),
                   }),
                 });
-                grabflureSelect.on("select", (evt) => {
+                grabflureSelect.on("select", (evt: SelectEvent) => {
                   const hasSelection = evt.selected.length > 0;
                   (document.getElementById("tool-save") as HTMLButtonElement).disabled =
                     !hasSelection;
