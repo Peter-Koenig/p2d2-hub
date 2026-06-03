@@ -55,6 +55,7 @@ const kategorien = defineCollection({
     order: z.number(),
     description: z.string(),
     containerType: z.string().optional(),
+    image_version: z.string().default("001"),
   }),
 });
 
@@ -74,6 +75,7 @@ const kommunen = defineCollection({
     osm_refinement: z.string().optional(),
     icon: z.string().optional(),
     order: z.number().optional(),
+    image_version: z.string().default("001"),
     map: z.object({
       center: z.tuple([z.number(), z.number()]).optional(), // [lon, lat] WGS84
       zoom: z.number().optional(),

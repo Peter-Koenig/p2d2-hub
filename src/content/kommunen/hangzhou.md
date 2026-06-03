@@ -9,6 +9,7 @@ map:
   zoom: 11
   projection: "EPSG:32650"
 order: 40
+image_version: "001"
 ---
 
-Hangzhou, bekannt für den Westsee und als wichtiger Technologiestandort in China, bietet innovative Ansätze für bürgerschaftliches Engagement und digitale Partizipation. Die Stadt verbindet traditionelle Kultur mit moderner Technologieentwicklung und ist Hauptsitz der Firma DeepSeek.
+

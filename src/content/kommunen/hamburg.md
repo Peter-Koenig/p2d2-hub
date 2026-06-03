@@ -3,6 +3,7 @@ title: "Hamburg"
 slug: "hamburg"
 colorStripe: "#FF6900"
 order: 32
+image_version: "001"
 osmAdminLevels: [4,9,10]
 wp_name: "de-Hamburg"
 map:
@@ -11,4 +12,3 @@ map:
   projection: "EPSG:25832"
 ---
 
-Hamburg, die zweitgrößte Stadt Deutschlands, ist eine bedeutende Hafenstadt mit lebendiger Kultur- und Wirtschaftsszene. Als Stadtstaat bietet Hamburg vielfältige Möglichkeiten für bürgerschaftliches Engagement, innovative Stadtentwicklung und digitale Partizipation.

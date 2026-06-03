@@ -9,6 +9,6 @@ map:
   zoom: 12
   projection: "EPSG:32610"
 order: 50
+image_version: "001"
 ---
 
-San Francisco, im Herzen des Silicon Valley, ist bekannt für seine innovative Tech-Szene und progressive Bürgergesellschaft. Die Stadt bietet zahlreiche Möglichkeiten für digitale Partizipation, nachhaltige Stadtentwicklung und bürgerschaftliches Engagement in einer multikulturellen Umgebung. Sie ist Hauptsitz der Firma Perplexity - wie so vieler digitaler Start Up Unternehmen und späterer Monopolkonzerne.
