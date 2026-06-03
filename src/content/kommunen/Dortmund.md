@@ -9,5 +9,5 @@ map:
   zoom: 11
   projection: "EPSG:25832"
 order: 25
+image_version: "001"
 ---
-Dortmund steht für einen erfolgreichen Strukturwandel, innovative Stadtentwicklung und engagierte Bürgerschaft. Mit der gezielten Einrichtung einer Koordinierungsstelle für Digitale Souveränität und Open Source zeigt Dortmund etzt neue Maßstäbe für die öffentliche IT-Infrastruktur.

@@ -1,25 +1,116 @@
 <!-- SPDX-FileCopyrightText: 2026-2026 Peter König <peter.koenig@data-dna.eu> -->
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
-<!-- p2d2: Über p2d2: Entwicklungsstand und Roadmap -->
+<!-- p2d2: Status: Aktueller Entwicklungsstand und Roadmap -->
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import Prose from "../../components/Prose.astro";
-import { getCollection, render } from "astro:content";
-import type { CollectionEntry } from "astro:content";
-
-const entries: CollectionEntry<"intern">[] = await getCollection("intern");
-const entry = entries.find((e) => e.slug === "status");
-if (!entry) {
-    throw new Error('Kein Eintrag mit Slug "status" in Collection "intern" gefunden.');
-}
-const { Content } = await render(entry);
-const pageTitle = entry.data.name ?? "p2d2";
 ---
 
-<BaseLayout title={pageTitle}>
-    <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
-        <Prose>
-            <Content />
-        </Prose>
-    </main>
+<BaseLayout
+  title="Status | p2d2"
+  description="Aktueller Entwicklungsstand und Roadmap"
+>
+  <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
+    <div
+      class="prose prose-lg max-w-none prose-headings:font-poppins prose-headings:font-bold prose-p:font-inter prose-p:text-gray-700 prose-a:text-primary-600 hover:prose-a:text-primary-500 transition-colors"
+    >
+      <h1>Wo wir stehen</h1>
+      <p>
+        p2d2 befindet sich in der aktiven Entwicklungsphase mit ersten
+        produktiven Einsätzen. Hier der aktuelle Status unserer Komponenten:
+      </p>
+
+      <h2>✅ Implementiert & Produktiv</h2>
+
+      <h3>Grundlegende Infrastruktur</h3>
+      <ul>
+        <li>
+          <strong>Geodatenserver</strong>: WFS/WMS-Services über GeoServer
+          verfügbar
+        </li>
+        <li>
+          <strong>Kartendarstellung</strong>: OpenLayers-Integration mit
+          Multi-CRS-Support
+        </li>
+        <li>
+          <strong>Content Management</strong>: AstroJS mit Markdown-basierten
+          Inhalten
+        </li>
+        <li>
+          <strong>CI/CD Pipeline</strong>: Automatisches Deployment über GitLab
+        </li>
+      </ul>
+
+      <h3>Datenerfassung</h3>
+      <ul>
+        <li>
+          <strong>WFS-Anbindung</strong>: Live-Daten aus PostGIS-Datenbank
+        </li>
+        <li>
+          <strong>Administrative Grenzen</strong>: Automatischer Import von
+          OSM-Daten via Overpass-Turbo
+        </li>
+        <li>
+          <strong>Container-System</strong>: Einheitliches Datenmodell für alle
+          Objekttypen
+        </li>
+      </ul>
+
+      <h2>🚧 In Entwicklung</h2>
+
+      <h3>WFS-T Integration</h3>
+      <ul>
+        <li>
+          <strong>Live-Editing</strong>: Direkte Geometrie-Bearbeitung in der
+          Karte
+        </li>
+        <li>
+          <strong>Batch-Import</strong>: Massenimport von Geodaten aus
+          verschiedenen Quellen
+        </li>
+        <li>
+          <strong>Conflict Resolution</strong>: Behandlung konkurrierender
+          Änderungen
+        </li>
+      </ul>
+
+      <h2>📋 Geplant (Q4 2025 - Q1 2026)</h2>
+
+      <h3>Community-Features</h3>
+      <ul>
+        <li>
+          <strong>User-Accounts</strong>: Registrierung und Authentifizierung
+        </li>
+        <li>
+          <strong>Contribution-Tracking</strong>: Bewertung und Anerkennung von
+          Beiträgen
+        </li>
+        <li>
+          <strong>Notification-System</strong>: Updates über Änderungen in
+          interessanten Bereichen
+        </li>
+      </ul>
+
+      <h3>API-Erweiterungen</h3>
+      <ul>
+        <li>
+          <strong>GraphQL-Endpoint</strong>: Flexible Datenabfragen für
+          Entwickler
+        </li>
+        <li>
+          <strong>Webhook-Support</strong>: Event-basierte Benachrichtigungen
+        </li>
+        <li>
+          <strong>Rate-Limiting</strong>: Schutz vor Missbrauch der öffentlichen
+          APIs
+        </li>
+      </ul>
+
+      <p>
+        <em
+          >Stand heute sind die Grundlagen gelegt – jetzt bauen wir die
+          Community auf!</em
+        >
+      </p>
+    </div>
+  </main>
 </BaseLayout>

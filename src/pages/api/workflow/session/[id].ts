@@ -98,14 +98,6 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     return errorResponse(400, "INVALID_JSON", "Body ist kein gueltiges JSON");
   }
 
-  if (!body.version_id || typeof body.version_id !== "string") {
-    return errorResponse(
-      400,
-      "BAD_REQUEST",
-      "version_id (string) ist erforderlich",
-    );
-  }
-
   // -----------------------------------------------------------------------
   // 4. Stage aus URL ableiten + DB-Verbindung
   // -----------------------------------------------------------------------
@@ -145,56 +137,82 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
   }
 
   // -----------------------------------------------------------------------
-  // 5b. Version-Record validieren + feature_uuid extrahieren
+  // 5b. Branch: Session mit oder ohne version_id abschliessen
   // -----------------------------------------------------------------------
   const featureType = session.feature_type as string;
-  const versionTable = resolveVersionTable(featureType);
-  const fkCol = `${featureType}_id`;
 
-  const [version] = await sql`
-    SELECT ${sql(fkCol)} AS feature_uuid
-    FROM ${sql(schema)}.${sql(versionTable)}
-    WHERE version_id = ${body.version_id}
-      AND session_id = ${sessionId}
-    LIMIT 1
-  `;
+  if (body.version_id) {
+    // ------ Mit version_id: Vollständiger Close (Snapshot + completed) ------
+    const versionTable = resolveVersionTable(featureType);
+    const fkCol = `${featureType}_id`;
 
-  if (!version) {
-    return errorResponse(
-      422,
-      "VERSION_NOT_FOUND",
-      `version_id ${body.version_id} in ${versionTable} nicht gefunden`,
-    );
-  }
+    const [version] = await sql`
+      SELECT ${sql(fkCol)} AS feature_uuid
+      FROM ${sql(schema)}.${sql(versionTable)}
+      WHERE version_id = ${body.version_id}
+        AND session_id = ${sessionId}
+      LIMIT 1
+    `;
 
-  const featureUuid = version.feature_uuid as string;
+    if (!version) {
+      return errorResponse(
+        422,
+        "VERSION_NOT_FOUND",
+        `version_id ${body.version_id} in ${versionTable} nicht gefunden`,
+      );
+    }
 
-  // -----------------------------------------------------------------------
-  // 6. Session schliessen (Schritte 5–6 in einer Transaktion)
-  // -----------------------------------------------------------------------
-  try {
-    const params: CloseSessionParams = {
-      sql,
-      schema,
-      sessionId,
-      versionId: body.version_id,
-      featureType,
-      featureUuid,
-      userEmail,
-    };
+    const featureUuid = version.feature_uuid as string;
 
-    const result: SessionCloseResponse = await closeSession(params);
+    try {
+      const params: CloseSessionParams = {
+        sql,
+        schema,
+        sessionId,
+        versionId: body.version_id,
+        featureType,
+        featureUuid,
+        userEmail,
+      };
 
-    return new Response(JSON.stringify(result), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (err: unknown) {
-    const apiErr = err as { code?: string; cause?: Error };
-    const msg =
-      apiErr.cause instanceof Error
-        ? apiErr.cause.message
-        : String(apiErr.cause ?? err);
-    return errorResponse(500, "INTERNAL_ERROR", msg.slice(0, 1000));
+      const result: SessionCloseResponse = await closeSession(params);
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (err: unknown) {
+      const apiErr = err as { code?: string; cause?: Error };
+      const msg =
+        apiErr.cause instanceof Error
+          ? apiErr.cause.message
+          : String(apiErr.cause ?? err);
+      return errorResponse(500, "INTERNAL_ERROR", msg.slice(0, 1000));
+    }
+  } else {
+    // ------ Ohne version_id: Session abbrechen (aborted) ------
+    try {
+      await sql`
+        UPDATE ${sql(schema)}.${sql("wf_sessions")}
+        SET state = 'aborted',
+            ended_by = ${userEmail},
+            ended_at = now()
+        WHERE id = ${sessionId}
+      `;
+
+      return new Response(
+        JSON.stringify({
+          session_id: sessionId,
+          workflow_status: "cancelled",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return errorResponse(500, "INTERNAL_ERROR", msg.slice(0, 1000));
+    }
   }
 };

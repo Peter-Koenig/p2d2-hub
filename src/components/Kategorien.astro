@@ -1,45 +1,62 @@
 <!-- SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu> -->
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
-<!-- p2d2: Kategorien-Abschnitt der Startseite -->
+<!-- p2d2: Kategorien-Hero-Card mit Foto und Gradient -->
 ---
-import Modal from "./Modal.astro";
 
-const { title, icon, description, id, slug } = Astro.props;
+interface Props {
+  title: string;
+  icon: string;
+  description: string;
+  id: string;
+  slug: string;
+  imageVersion?: string;
+}
+const { title, icon, description, id, slug, imageVersion = "001" } = Astro.props;
+
+const imgSrc = `/images/kategorien/${slug}_${imageVersion}.jpg`;
 ---
 
 <button
     type="button"
-    class="kategorie-card relative bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group text-left w-full h-full"
-    style="max-width: 100%"
+    class="kategorie-card relative bg-white rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group text-left w-full h-[280px]"
     data-category-slug={slug}
     aria-label={`Kategorie ${title} auswählen`}
 >
-    <!-- Permanent Glow-Overlay -->
-    <div class="absolute -inset-2 z-0 pointer-events-none">
-        <div
-            class="w-full h-full mx-auto opacity-30 blur-lg filter bg-gradient-to-r from-gray-200 to-gray-50"
-        >
-        </div>
+    <!-- Foto als Hintergrund -->
+    <div class="absolute inset-0 z-0">
+        <img
+            src={imgSrc}
+            alt={title}
+            class="w-full h-full object-cover object-center"
+            loading="lazy"
+            decoding="async"
+            onerror="this.style.display='none'; this.parentElement.style.background='#2a2a2a'"
+        />
+    </div>
+
+    <!-- Gradient: transparent → dunkle Farbe -->
+    <div
+        class="absolute inset-0 z-10"
+        style="background: linear-gradient(to bottom, transparent 30%, #074220f5 70%)"
+    >
     </div>
 
     <!-- Grüner Streifen oben -->
-    <div class="absolute top-0 left-0 w-full h-1.5 bg-[#0FF078] z-10"></div>
+    <div class="absolute top-0 left-0 w-full h-1.5 bg-[#0FF078] z-20"></div>
 
-    <!-- Content - Button nimmt volle Höhe, Inhalt oben ausgerichtet -->
-    <div
-        class="relative z-10 p-6 pt-6 h-full flex flex-col items-start justify-start"
-    >
-        <h3 class="font-poppins font-bold text-xl leading-tight mb-3">
+    <!-- Titel + Beschreibung unten -->
+    <div class="absolute bottom-0 left-0 right-0 z-20 p-5">
+        <h3 class="font-poppins font-bold text-2xl text-white uppercase tracking-wide leading-tight mb-1">
             {title}
         </h3>
-        <div class="font-inter text-base text-gray-700 leading-tight flex-1">
+        <p class="font-inter text-sm text-gray-300 leading-tight line-clamp-2">
             {description}
-        </div>
+        </p>
     </div>
 
-    <!-- Optional zusätzlicher Glow auf Hover -->
+    <!-- Hover-Glow -->
     <div
-        class="absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 group-hover:shadow-[0_32px_4px_#D6FFEA] z-10"
+        class="absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 group-hover:shadow-[0_0_32px_4px_#0a6630] z-30"
     >
     </div>
 </button>

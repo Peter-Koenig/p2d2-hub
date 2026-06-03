@@ -9,6 +9,6 @@ map:
   zoom: 11
   projection: "EPSG:25832" # center/extent in EPSG:4326 (lon,lat)
 order: 10
+image_version: "001"
 ---
 
-Köln ist eine der größten Städte Deutschlands und bekannt für ihren Dom sowie ihre lebendige Kultur- und Wirtschaftsszene. Die Stadt bietet zahlreiche Möglichkeiten für bürgerschaftliches Engagement und innovative Projekte.

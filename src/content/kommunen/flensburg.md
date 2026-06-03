@@ -9,5 +9,6 @@ map:
   zoom: 11
   projection: "EPSG:25832"
 order: 20
+image_version: "001"
 ---
-Flensburg ist eine kreisfreie Stadt in Schleswig-Holstein und liegt an der Ostsee nahe der dänischen Grenze.
+
