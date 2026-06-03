@@ -1,0 +1,58 @@
+# openCode Badge-API Konfiguration für p2d2
+# Doku: https://badges.opencode.de/references/configuration/
+# Öffentliche Instanz — kein gitClients-Block erforderlich
+
+personalEmailDomains:
+  - gmail.com
+  - yahoo.com
+  - hotmail.com
+  - web.de
+  - gmx.de
+  - gmx.net
+  - t-online.de
+
+badges:
+  - id: maintained
+    description: Prüft ob p2d2 aktiv gepflegt wird.
+    levels:
+      - name: bronze
+        notNecessaryForNextHigherLevel: true
+        svgUrl: https://gitlab.opencode.de/open-code/badgebackend/badge-api/-/raw/main/assets/MAINTAINED-1.svg
+        checks:
+          - type: COMMITS
+            description: Mindestens 5 Commits in den letzten 6 Monaten.
+            threshold:
+              timeRangeInMonths: 6
+              min: 5
+      - name: silver
+        svgUrl: https://gitlab.opencode.de/open-code/badgebackend/badge-api/-/raw/main/assets/MAINTAINED-2.svg
+        checks:
+          - type: ISSUE_REACTION_TIME
+            description: Durchschnittliche Issue-Reaktionszeit unter 14 Tagen.
+            threshold:
+              timeRangeInMonths: 3
+              max: 14
+          - type: CONTRIBUTOR_ABSENCE_FACTOR
+            description: Mehrere aktive Maintainer.
+            threshold:
+              timeRangeInMonths: 6
+              min: 1
+          - type: CI_PIPELINES
+            description: Mindestens 3 erfolgreiche CI-Pipelines in den letzten 6 Monaten.
+            threshold:
+              timeRangeInMonths: 6
+              min: 3
+      - name: gold
+        svgUrl: https://gitlab.opencode.de/open-code/badgebackend/badge-api/-/raw/main/assets/MAINTAINED-3.svg
+        checks:
+          - type: RELEASES
+            description: Mindestens 1 Release in den letzten 6 Monaten.
+            threshold:
+              timeRangeInMonths: 6
+              min: 1
+          - type: ELEPHANT_FACTOR
+            description: Mehrere Organisationen beteiligt.
+            threshold:
+              timeRangeInMonths: 6
+              min: 1
+
