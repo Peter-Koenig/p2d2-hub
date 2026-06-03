@@ -2,7 +2,6 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- p2d2: Kategorien-Hero-Card mit Foto und Gradient -->
 ---
-import Modal from "./Modal.astro";
 
 interface Props {
   title: string;
@@ -29,6 +28,8 @@ const imgSrc = `/images/kategorien/${slug}_${imageVersion}.jpg`;
             src={imgSrc}
             alt={title}
             class="w-full h-full object-cover object-center"
+            loading="lazy"
+            decoding="async"
             onerror="this.style.display='none'; this.parentElement.style.background='#2a2a2a'"
         />
     </div>

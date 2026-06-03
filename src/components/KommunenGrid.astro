@@ -78,6 +78,8 @@ kommunen.forEach((kommune) => {
                             src={imgSrc}
                             alt={entry.data.title}
                             class="w-full h-full object-cover object-center"
+                            loading="lazy"
+                            decoding="async"
                             onerror="this.style.display='none'; this.parentElement.style.background='#2a2a2a'"
                         />
                     </div>
@@ -85,7 +87,7 @@ kommunen.forEach((kommune) => {
                     <!-- Gradient: transparent → colorStripe -->
                     <div
                         class="absolute inset-0 z-10"
-                        style="background: linear-gradient(to bottom, transparent 30%, #430e00f5 70%)"
+                        style={`background: linear-gradient(to bottom, transparent 50%, color-mix(in oklch, ${colorStripe} 35%, black) 85%)`}
                     />
 
                     <!-- Farbstreifen oben -->
