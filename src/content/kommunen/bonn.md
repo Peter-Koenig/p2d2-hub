@@ -9,6 +9,7 @@ map:
   zoom: 12
   projection: "EPSG:25832"
 order: 20
+image_version: "002"
 ---
 
-Bonn, die ehemalige Bundeshauptstadt, ist heute eine bedeutende UN-Stadt und Wissenschaftsstandort. Die Stadt am Rhein bietet vielfältige Möglichkeiten für bürgerschaftliches Engagement und nachhaltige Stadtentwicklung.
+

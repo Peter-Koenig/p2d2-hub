@@ -9,6 +9,6 @@ map:
   zoom: 14
   projection: "EPSG:25832"
 order: 95
+image_version: "001"
 ---
 
-Kronshagen ist kein Stadtteil von Kiel, sondern eine eigenständige Gemeinde ;-)

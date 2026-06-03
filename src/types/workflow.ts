@@ -77,8 +77,12 @@ export interface SessionOpenResult {
  * }
  */
 export interface SessionCloseRequest {
-  /** UUID der durch WFS-T angelegten Version (p2d2_*_versionen.version_id) */
-  version_id: string;
+  /**
+   * UUID der durch WFS-T angelegten Version (p2d2_*_versionen.version_id).
+   * Kann null oder undefined sein – dann wird die Session auf 'aborted'
+   * gesetzt (z. B. bei Benutzerabbruch ohne Änderungen).
+   */
+  version_id?: string | null;
   /** Optionaler abschließender Bearbeitungskommentar */
   edit_comment?: string;
 }

@@ -3,6 +3,7 @@ title: "Kiel"
 slug: "kiel"
 colorStripe: "#FF6900"
 order: 50
+image_version: "002"
 osmAdminLevels: [6,10]
 wp_name: "de-Kiel"
 map:
@@ -11,4 +12,4 @@ map:
   projection: "EPSG:25832"
 ---
 
-Kiel, die Landeshauptstadt Schleswig-Holsteins, ist eine maritime Stadt an der Ostsee mit starkem Bezug zum Meer. Die Stadt bietet Möglichkeiten für nachhaltige Stadtentwicklung, Wissenschaft und bürgerschaftliches Engagement in einer modernen Küstenmetropole.
+

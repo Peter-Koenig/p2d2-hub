@@ -9,6 +9,6 @@ map:
   zoom: 13
   projection: "EPSG:25832"
 order: 60
+image_version: "001"
 ---
 
-Bornheim, eine lebendige Stadt im Rhein-Sieg-Kreis, zeichnet sich durch ihr starkes bürgerschaftliches Engagement und innovative Ansätze in der kommunalen Entwicklung aus. Die Stadt bietet vielfältige Möglichkeiten für Mitgestaltung und nachhaltige Projekte in einer wachsenden Gemeinschaft.

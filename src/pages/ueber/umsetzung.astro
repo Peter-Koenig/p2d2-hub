@@ -3,25 +3,93 @@
 <!-- p2d2: Über p2d2: Technische Umsetzung und Architektur -->
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import Prose from "../../components/Prose.astro";
-import { getCollection, render } from "astro:content";
-import type { CollectionEntry } from "astro:content";
-
-const internEntries: CollectionEntry<"intern">[] = await getCollection("intern");
-const entry = internEntries.find(
-  (item): item is CollectionEntry<"intern"> => item.slug === "umsetzung",
-);
-if (!entry) {
-  throw new Error('Eintrag mit Slug "umsetzung" in Collection "intern" nicht gefunden.');
-}
-const { Content } = await render(entry);
-const pageTitle = entry.data.name ?? "Umsetzung";
 ---
 
-<BaseLayout title={pageTitle}>
+<BaseLayout title="Umsetzung | p2d2" description="Technische Architektur und Implementierungsstrategie">
     <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
-        <Prose>
-            <Content />
-        </Prose>
+        <div class="prose prose-lg max-w-none prose-headings:font-poppins prose-headings:font-bold prose-p:font-inter prose-p:text-gray-700 prose-a:text-primary-600 hover:prose-a:text-primary-500 transition-colors">
+            <h1>Wie wir es umsetzen</h1>
+            <p>"Die technische Umsetzung von p2d2 folgt bewährten Open-Source-Prinzipien und modernen Web-Standards. Unsere Architektur ist darauf ausgelegt, skalierbar, wartbar und erweiterbar zu sein."</p>
+
+            <h2>Technologie-Stack</h2>
+
+            <h3>Frontend</h3>
+            <ul>
+                <li><strong>AstroJS</strong>: Static Site Generation mit optimaler Performance</li>
+                <li><strong>OpenLayers</strong>: Bewährte Open-Source-Kartenbibliothek</li>
+                <li><strong>TypeScript</strong>: Typisierte Entwicklung für höhere Codequalität</li>
+                <li><strong>Tailwind CSS</strong>: Utility-First CSS für konsistentes Design</li>
+            </ul>
+
+            <h3>Backend &amp; Daten</h3>
+            <ul>
+                <li><strong>PostgreSQL/PostGIS</strong>: Räumliche Datenbank mit GIS-Erweiterungen</li>
+                <li><strong>GeoServer</strong>: OGC-konforme Geodatenserver-Lösung</li>
+                <li><strong>WFS-T</strong>: Transaktionale Web Feature Services für Live-Editing</li>
+                <li><strong>Python</strong>: Datenverarbeitung und Automatisierung</li>
+            </ul>
+
+            <h2>Entwicklungsprozess</h2>
+
+            <h3>Agile Methodik</h3>
+            <p>"Wir arbeiten in zweiwöchigen Sprints mit festen Rollen:"</p>
+            <ul>
+                <li><strong>Team DE1</strong>: Core-Entwicklung und Infrastruktur</li>
+                <li><strong>Team DE2</strong>: Externe Beauftragungen beim GIS-Partner</li>
+                <li><strong>Team FV1</strong>: Externe Beauftragungen im AstroJS-Umfeld</li>
+            </ul>
+
+            <h3>Branch-Strategie</h3>
+            <pre><code> main            ← Stabile Entwicklung
+develop         ← Feature-Integration
+feature/team-*  ← Aktive Entwicklung</code></pre>
+
+            <h3>CI/CD Pipeline</h3>
+            <ul>
+                <li><strong>Develop-Branch</strong> → automatisches Deployment auf <code>dev.data-dna.eu</code></li>
+                <li><strong>Main-Branch</strong> → automatisches Deployment auf <code>www.data-dna.eu</code></li>
+                <li><strong>Release-Tags</strong> → versionierte Releases mit Changelog</li>
+            </ul>
+
+            <h3>Datenmodell</h3>
+
+            <h4>Container-Konzept</h4>
+            <p>"Alle räumlichen Objekte werden als 'Container' mit einheitlichen Eigenschaften erfasst:"</p>
+            <pre><code>interface Container &#123;
+  id: string;
+  containerType: 'cemetery' | 'park' | 'public' | 'administrative';
+  name: string;
+  municipality: string;
+  geometry: Polygon | MultiPolygon;
+  createdAt: Date;
+  updatedAt: Date;
+  contributors: string[];
+&#125;</code></pre>
+
+            <h3>Qualitätssicherung</h3>
+            <ul>
+                <li><strong>Automatische Validierung</strong> von Geometrien und Attributen</li>
+                <li><strong>Community-Reviews</strong> für kritische Änderungen</li>
+                <li><strong>Historisierung</strong> aller Datenänderungen mit Rollback-Funktion</li>
+            </ul>
+
+            <h2>Deployment-Infrastruktur</h2>
+
+            <h3>Hosting</h3>
+            <ul>
+                <li><strong>Proxmox VE</strong>: Virtualisierte Server-Infrastruktur</li>
+                <li><strong>OPNsense</strong>: Firewall und Netzwerk-Management</li>
+                <li><strong>GitLab CI</strong>: Automatisierte Builds und Tests</li>
+            </ul>
+
+            <h3>Monitoring</h3>
+            <ul>
+                <li><strong>Uptime-Monitoring</strong>: 24/7 Überwachung aller Services</li>
+                <li><strong>Performance-Metrics</strong>: Response-Zeiten und Ressourcenverbrauch</li>
+                <li><strong>Error-Tracking</strong>: Automatische Benachrichtigungen bei Problemen</li>
+            </ul>
+
+            <p><em>Durch diese durchdachte technische Basis schaffen wir eine zukunftssichere Plattform für die nächsten Jahre.</em></p>
+        </div>
     </main>
 </BaseLayout>
