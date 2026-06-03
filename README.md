@@ -253,8 +253,6 @@ The following branches were created, websites and process implementation are pen
 
 See `MERGEPOLICY.md` for details.
 
-***
-
 ### Contributing
 
 We welcome contributions of all kinds:
