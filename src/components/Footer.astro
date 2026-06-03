@@ -6,7 +6,6 @@ import { getCollection, getEntryBySlug } from "astro:content";
 
 const socialmedia = await getCollection("socialmedia");
 const intern = await getCollection("intern");
-const resources = await getCollection("resources");
 const repositories = await getCollection("repositories");
 const legal = await getCollection("legal");
 const copyrightEntry = await getCollection("copyright");
@@ -35,6 +34,25 @@ const copyright = copyrightEntry[0]?.data.text ?? "";
                 Öffentlichkeit und öffentlicher Verwaltung: P2D2 schafft dafür
                 die Infrastruktur.
             </p>
+            <div class="flex gap-3 space-y-2 mt-4">
+                {
+                    socialmedia.map((entry) => (
+                        <a
+                            href={entry.data.url}
+                            class="hover:text-green-400 transition"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            <span class="sr-only">{entry.data.name}</span>
+                            <img
+                                src={`/images/icons/${entry.data.icon}.svg`}
+                                alt={entry.data.name}
+                                class="h-6 w-6"
+                            />
+                        </a>
+                    ))
+                }
+            </div>
         </div>
         <!-- Mitte: Interne Links -->
         <div class="mt-4 md:mt-4 md:ml-24">
@@ -74,7 +92,7 @@ const copyright = copyrightEntry[0]?.data.text ?? "";
             </ul>
         </div>
         <!-- Rechts: Ressourcen & Social Media -->
-        <div class="mt-4 md:mt-4 flex flex-col h-full">
+        <div class="mt-4 md:mt-4 flex flex-col">
             <div>
                 <h3 class="font-poppins text-xl font-bold mb-4">Ressourcen</h3>
                 <ul class="space-y-2 mb-4">
@@ -98,38 +116,7 @@ const copyright = copyrightEntry[0]?.data.text ?? "";
                             ))
                         }
                     </li>
-                    {
-                        resources.map((entry) => (
-                            <li>
-                                <a
-                                    href={entry.data.url}
-                                    class="hover:text-green-400 transition"
-                                >
-                                    {entry.data.name}
-                                </a>
-                            </li>
-                        ))
-                    }
                 </ul>
-            </div>
-            <div class="flex gap-3 space-y-2 mt-4">
-                {
-                    socialmedia.map((entry) => (
-                        <a
-                            href={entry.data.url}
-                            class="hover:text-green-400 transition"
-                            target="_blank"
-                            rel="noopener"
-                        >
-                            <span class="sr-only">{entry.data.name}</span>
-                            <img
-                                src={`/images/icons/${entry.data.icon}.svg`}
-                                alt={entry.data.name}
-                                class="h-6 w-6"
-                            />
-                        </a>
-                    ))
-                }
             </div>
             <div class="space-y-2">
                 <h3 class="font-semibold">
@@ -141,9 +128,16 @@ const copyright = copyrightEntry[0]?.data.text ?? "";
                 </h3>
                 <a href="/ueber/partner">
                     <img
+                        src="/images/PTF_BMFTR.png"
+                        alt="Protottype Fund und BMFTR"
+                        class="block w-full max-w-[300px] mb-2"
+                    />
+                </a>
+                <a href="/ueber/partner">
+                    <img
                         src={`/images/FoerderPartner.png`}
-                        alt="Förderpartner"
-                        class="h-3/4 w-3/4"
+                        alt="un:box Cologne, BMWSB"
+                        class="block w-full max-w-[300px]"
                     />
                 </a>
             </div>

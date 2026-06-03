@@ -3,23 +3,128 @@
 <!-- p2d2: Über p2d2: Ziele, Mission und langfristige Vision 2030 -->
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import Prose from "../../components/Prose.astro";
-import { getCollection, render } from "astro:content";
-import type { CollectionEntry } from "astro:content";
-
-const internEntries: CollectionEntry<"intern">[] = await getCollection("intern");
-const entry = internEntries.find(
-    (item): item is CollectionEntry<"intern"> => item.slug === "ziel",
-);
-if (!entry) throw new Error("Eintrag 'ziel' in Collection 'intern' nicht gefunden.");
-const { Content } = await render(entry);
-const pageTitle = entry.data.name ?? "Ziel";
 ---
 
-<BaseLayout title={pageTitle}>
+<BaseLayout
+    title="Ziel | p2d2"
+    description="Unsere Mission und langfristigen Ziele für p2d2"
+>
     <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
-        <Prose>
-            <Content />
-        </Prose>
+        <div
+            class="prose prose-lg max-w-none prose-headings:font-poppins prose-headings:font-bold prose-p:font-inter prose-p:text-gray-700 prose-a:text-primary-600 hover:prose-a:text-primary-500 transition-colors"
+        >
+            <h1>Ziele</h1>
+            <h2>Was wir erreichen wollen</h2>
+
+            <p>
+                p2d2 verfolgt das ambitionierte Ziel, eine dezentrale,
+                gemeinschaftlich gepflegte Geodateninfrastruktur für den
+                öffentlichen Raum zu schaffen. Dabei stehen drei Kernziele im
+                Mittelpunkt:
+            </p>
+
+            <h3>1. Vollständige Transparenz</h3>
+
+            <p>
+                <strong
+                    >Jeder Quadratmeter öffentlicher Raum soll digital erfasst
+                    und öffentlich zugänglich sein.</strong
+                >
+            </p>
+
+            <ul>
+                <li>
+                    Systematische Dokumentation von Friedhöfen, Parks, Plätzen
+                    und Grünflächen
+                </li>
+                <li>
+                    Erfassung des Zustands und der Nutzung öffentlicher
+                    Infrastruktur
+                </li>
+                <li>
+                    Nachvollziehbare Historie aller Änderungen durch
+                    Versionierung
+                </li>
+            </ul>
+
+            <h3>2. Aktive Bürgerbeteiligung</h3>
+
+            <p>
+                <strong
+                    >Bürger werden von Datenkonsumenten zu aktiven
+                    Mitwirkenden.</strong
+                >
+            </p>
+
+            <ul>
+                <li>
+                    Einfache Tools zur Datenerfassung vor Ort über mobile
+                    Geräte
+                </li>
+                <li>
+                    Gamification-Elemente zur Motivation langfristiger
+                    Teilnahme
+                </li>
+                <li>
+                    Anerkennung und Sichtbarkeit für besonders engagierte
+                    Beitragende
+                </li>
+            </ul>
+
+            <h3>3. Technologische Innovation</h3>
+
+            <p>
+                <strong
+                    >Moderne Standards und offene Protokolle für maximale
+                    Interoperabilität.</strong
+                >
+            </p>
+
+            <ul>
+                <li>
+                    Verwendung von OGC-Standards (WFS, WMS, WCS) für nahtlose
+                    Integration
+                </li>
+                <li>
+                    RESTful APIs für einfache Anbindung durch
+                    Drittanwendungen
+                </li>
+            </ul>
+
+            <h2>Langfristige Vision 2030</h2>
+
+            <p>
+                Bis 2030 kann p2d2 eine führende Plattform zur Integration
+                offener Verwaltungsdaten in die Infrastruktur der Öffentlichkeit.
+            </p>
+
+            <ul>
+                <li>
+                    <strong>30 Kommunen</strong> nutzen p2d2 aktiv für ihre
+                    Geodateninfrastruktur
+                </li>
+                <li>
+                    <strong>3.000 Bürger</strong> tragen regelmäßig zu
+                    Datenerfassung und -pflege bei
+                </li>
+                <li>
+                    <strong>Standardisierung</strong> von p2d2-Datenmodellen in
+                    kommunalen GIS-Systemen
+                </li>
+                <li>
+                    <strong>Integration</strong> in bestehende
+                    E-Government-Plattformen auf Landes- und Bundesebene durch
+                    Kompatibilität zu Masterportal
+                </li>
+            </ul>
+
+            <p>
+                <em
+                    >Gemeinsam schaffen wir den "offenen digitalen Zwilling"
+                    unserer Städte – transparent, partizipativ und
+                    nachhaltig.</em
+                >
+            </p>
+        </div>
     </main>
 </BaseLayout>
