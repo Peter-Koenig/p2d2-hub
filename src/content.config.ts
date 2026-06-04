@@ -28,12 +28,7 @@ const repositories = defineCollection({
     url: z.string().url(),
   }),
 });
-const legal = defineCollection({
-  schema: z.object({
-    name: z.string(),
-    url: z.string(),
-  }),
-});
+
 const copyright = defineCollection({
   schema: z.object({
     text: z.string(),
@@ -93,7 +88,6 @@ export const collections = {
   intern,
   resources,
   repositories,
-  legal,
   copyright,
   kategorien,
   werte,
