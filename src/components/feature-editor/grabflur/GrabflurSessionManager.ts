@@ -135,6 +135,7 @@ export default class GrabflurSessionManager {
 
     const body = {
       feature_type: "grabflur",
+      featureuuid: feature.get('p2d2_uuid'),
       feature_set_id: "fh_" + fhNr,
       context: {
         key: "fh_nr",
