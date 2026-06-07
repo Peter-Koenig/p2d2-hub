@@ -287,6 +287,7 @@ export async function insertSessionRecord(
       INSERT INTO ${tx(schema)}.${tx("wf_sessions")} (
         feature_type,
         feature_set_id,
+        feature_uuid,
         state,
         started_by,
         wpname,
@@ -297,6 +298,7 @@ export async function insertSessionRecord(
       ) VALUES (
         ${body.feature_type},
         ${body.feature_set_id},
+        ${body.feature_uuid},
         'active',
         ${userEmail},
         ${body.wpname},
