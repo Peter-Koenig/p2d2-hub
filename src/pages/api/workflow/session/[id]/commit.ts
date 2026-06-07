@@ -197,7 +197,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   const geometryJson = JSON.stringify(body.geometry);
 
   const [gmlRow] = await sql`
-    SELECT ST_AsGML(3, ST_GeomFromGeoJSON(${geometryJson}), 6, 1) AS geom_gml
+    SELECT ST_AsGML(3, ST_GeomFromGeoJSON(${geometryJson}), 6, 0) AS geom_gml
   `;
 
   if (!gmlRow || !gmlRow.geom_gml) {
