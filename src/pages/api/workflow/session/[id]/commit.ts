@@ -271,11 +271,11 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   } catch (wfstError: unknown) {
     const msg =
       wfstError instanceof Error ? wfstError.message : String(wfstError);
-    // Session auf error setzen (Kompensation)
+    // Session auf aborted setzen (Kompensation – 'error' existiert nicht im Enum)
     try {
       await sql`
         UPDATE ${sql(schema)}.${sql("wf_sessions")}
-        SET state = 'error'
+        SET state = 'aborted'
         WHERE id = ${sessionId}
       `;
     } catch {
@@ -311,11 +311,11 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
     try {
       await sql`
         UPDATE ${sql(schema)}.${sql("wf_sessions")}
-        SET state = 'error'
+        SET state = 'aborted'
         WHERE id = ${sessionId}
       `;
     } catch {
-      // Nicht kritisch
+      // Nicht kritisch – Session bleibt 'active' und wird durch Cleanup-Job bereinigt
     }
     return errorResponse(
       500,
