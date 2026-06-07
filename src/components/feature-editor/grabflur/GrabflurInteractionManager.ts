@@ -76,6 +76,9 @@ export default class GrabflurInteractionManager {
   // -- Konfiguration --
   private municipality: string;
 
+  // -- Modified-Tracking (Container-Versionen) --
+  private modifiedUuids: Set<string> = new Set();
+
   constructor(
     map: OLMap,
     layerManager: GrabflurLayerManager,
@@ -282,11 +285,19 @@ export default class GrabflurInteractionManager {
     if (!uuid) return; // kein UUID → kein Edit-Mode möglich
 
     if (uuid === this.lastClickedGrabflureUuid) {
-      // 2. Klick auf dieselbe Grabflur → Session öffnen, dann Edit-Mode
+      // 2. Klick auf dieselbe Grabflur → Session für Friedhof öffnen, dann Edit-Mode
       this.lastClickedGrabflureUuid = null;
       try {
-        await this.sessionManager.openSession(hitFeature, this.municipality);
-        this.enterEditMode(hitFeature);
+        const fhNr = hitFeature.get("fh_nr");
+        const fhName = hitFeature.get("fh_name");
+        const wpName = hitFeature.get("wp_name");
+        await this.sessionManager.openSession(
+          fhNr,
+          fhName,
+          wpName,
+          this.municipality,
+        );
+        this.enterEditMode();
       } catch {
         // SessionConflictError / SessionOpenError behandeln bereits
         // alert() in GrabflurSessionManager – hier nichts weiter tun
@@ -316,8 +327,12 @@ export default class GrabflurInteractionManager {
   /**
    * Schaltet in den Edit-Mode: zeigt die Edit-Toolbar, aktiviert
    * das Select-Werkzeug und dispatcht ein EDITOR_MODE_CHANGE-Event.
+   *
+   * (Ruft clearModifiedTracking() auf, um das Modified-Tracking
+   * für die neue Edit-Session zurückzusetzen.)
    */
-  enterEditMode(feature: Feature<Geometry>): void {
+  enterEditMode(): void {
+    this.clearModifiedTracking();
     const container = document.getElementById("edit-tools-container");
     container?.classList.remove("edit-tools-hidden");
     container?.classList.add("edit-tools-visible");
@@ -330,9 +345,7 @@ export default class GrabflurInteractionManager {
       .querySelector('[data-tool="select"]')
       ?.classList.add("highlighted");
 
-    console.log(
-      `[Editor] 🖊️ Edit-Mode für Grabflur: ${feature.get("name") || feature.get("flur_nr") || "unbenannt"}`,
-    );
+    console.log("[Editor] 🖊️ Edit-Mode aktiviert");
 
     dispatchCrossWindowEvent(P2D2EventType.EDITOR_MODE_CHANGE, {
       mode: "edit",
@@ -364,6 +377,7 @@ export default class GrabflurInteractionManager {
       .querySelector('[data-tool="select"]')
       ?.classList.add("highlighted");
     this.lastClickedGrabflureUuid = null;
+    this.clearModifiedTracking();
 
     dispatchCrossWindowEvent(P2D2EventType.EDITOR_MODE_CHANGE, {
       mode: "navigate",
@@ -401,6 +415,7 @@ export default class GrabflurInteractionManager {
       .querySelector('[data-tool="select"]')
       ?.classList.add("highlighted");
     this.lastClickedGrabflureUuid = null;
+    this.clearModifiedTracking();
 
     dispatchCrossWindowEvent(P2D2EventType.EDITOR_MODE_CHANGE, {
       mode: "view",
@@ -420,6 +435,35 @@ export default class GrabflurInteractionManager {
    */
   getGrabflureSelect(): Select | null {
     return this.grabflureSelect;
+  }
+
+  // -----------------------------------------------------------------------
+  // Modified-Tracking (Container-Versionen)
+  // -----------------------------------------------------------------------
+
+  /**
+   * Gibt alle modifizierten Features als Array zurück (für commitAndClose).
+   *
+   * Iteriert über den grabflureSource und filtert die Features,
+   * deren p2d2_uuid in modifiedUuids enthalten ist.
+   */
+  getModifiedFeatures(): Array<{ uuid: string; geometry: any }> {
+    const result: Array<{ uuid: string; geometry: any }> = [];
+    this.layerManager
+      .getGrabflureSource()
+      .getFeatures()
+      .forEach((f: any) => {
+        const uuid = f.get("p2d2_uuid");
+        if (uuid && this.modifiedUuids.has(uuid)) {
+          result.push({ uuid, geometry: f.getGeometry() });
+        }
+      });
+    return result;
+  }
+
+  /** Setzt das Modified-Tracking zurück (nach Commit oder Abbruch). */
+  clearModifiedTracking(): void {
+    this.modifiedUuids.clear();
   }
 
   /**
@@ -469,7 +513,11 @@ export default class GrabflurInteractionManager {
           layers: [this.layerManager.getGrabflureLayer()],
           hitTolerance: 8,
         });
-        tr.on("translatestart", () => {
+        tr.on("translateend", (evt) => {
+          evt.features.forEach((f: any) => {
+            const uuid = f.get("p2d2_uuid");
+            if (uuid) this.modifiedUuids.add(uuid);
+          });
           (document.getElementById("tool-save") as HTMLButtonElement).disabled =
             false;
         });
@@ -485,7 +533,11 @@ export default class GrabflurInteractionManager {
           pixelTolerance: 6,
           insertVertexCondition: never,
         });
-        md.on("modifystart", () => {
+        md.on("modifyend", (evt) => {
+          evt.features.forEach((f: any) => {
+            const uuid = f.get("p2d2_uuid");
+            if (uuid) this.modifiedUuids.add(uuid);
+          });
           (document.getElementById("tool-save") as HTMLButtonElement).disabled =
             false;
         });

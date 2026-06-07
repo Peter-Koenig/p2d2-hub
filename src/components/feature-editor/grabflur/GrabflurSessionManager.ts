@@ -79,9 +79,9 @@ export class RecoveryRequiredError extends Error {
  * @example
  * ```typescript
  * const sessionMgr = new GrabflurSessionManager();
- * await sessionMgr.openSession(hitFeature, municipality);
+ * await sessionMgr.openSession("33", "Melaten", "WP-01", municipality);
  * // ... bearbeiten ...
- * await sessionMgr.commitAndClose(selectedFeature.getGeometry(), projection);
+ * await sessionMgr.commitAndClose([{ uuid, geometry }], projection);
  * ```
  */
 export default class GrabflurSessionManager {
@@ -111,30 +111,37 @@ export default class GrabflurSessionManager {
   }
 
   /**
-   * Öffnet eine Session für eine Grabflur (2. Klick).
+   * Öffnet eine Session für einen Friedhof (2. Klick auf eine Grabflur).
    *
-   * Ruft POST /api/workflow/session auf mit den Attributen des
-   * OpenLayers-Features (p2d2_uuid, fh_nr, fh_name, wp_name).
+   * Ruft POST /api/workflow/session auf. Die Session wird für den
+   * gesamten Friedhof geöffnet (Container-Version), nicht für eine
+   * einzelne Grabflur.
    *
-   * @param feature     OpenLayers-Feature der Grabflur (muss get() unterstützen)
+   * @param fhNr         Friedhofsnummer (z. B. "33")
+   * @param fhName       Friedhofsname (z. B. "Melaten")
+   * @param wpName       Wahlurnenbezirk (z. B. "WP-01")
    * @param municipality Kommune-Kürzel (z. B. "koeln")
    *
    * @throws {SessionConflictError} bei HTTP 409 (bereits in Bearbeitung)
    * @throws {SessionOpenError}     bei Netzwerkfehlern oder anderen HTTP-Status
    */
-  async openSession(feature: any, municipality: string): Promise<void> {
+  async openSession(
+    fhNr: string,
+    fhName: string,
+    wpName: string,
+    municipality: string,
+  ): Promise<void> {
     this.state = "opening";
 
     const body = {
       feature_type: "grabflur",
-      feature_uuid: feature.get("p2d2_uuid"),
-      feature_set_id: "fh_" + feature.get("fh_nr"),
+      feature_set_id: "fh_" + fhNr,
       context: {
         key: "fh_nr",
-        label: feature.get("fh_name"),
-        value: String(feature.get("fh_nr")),
+        label: fhName,
+        value: fhNr,
       },
-      wpname: feature.get("wp_name"),
+      wpname: wpName,
       municipality,
       edit_comment: "",
     };
@@ -156,8 +163,8 @@ export default class GrabflurSessionManager {
 
       if (resp.status === 409) {
         this.state = "conflict";
-        const name = feature.get("fh_name") || "unbekannt";
-        const nr = feature.get("fh_nr") || "??";
+        const name = fhName || "unbekannt";
+        const nr = fhNr || "??";
         await resp.text().catch(() => ""); // drain body
         alert(
           `Leider wird der Friedhof '${name}(${nr})' aktuell schon bearbeitet. Bitte versuchen Sie es später nochmals.`,
@@ -236,7 +243,7 @@ export default class GrabflurSessionManager {
   }
 
   /**
-   * Speichert die modifizierte Geometrie UND schließt die Session.
+   * Speichert die modifizierten Geometrien UND schließt die Session.
    *
    * Ruft POST /api/workflow/session/:id/commit auf. Der API-Endpoint
    * führt intern WFS-T + Session-Close aus – KEIN nachfolgender
@@ -249,15 +256,15 @@ export default class GrabflurSessionManager {
    *   → Bei 422 SESSION_NOT_ACTIVE: sofortiger Abbruch
    *   → Nach 3 Fehlversuchen: RecoveryRequiredError
    *
-   * @param geometry   OpenLayers-Geometry der Grabflur (in Projektion)
-   * @param projection Aktive Kartenprojektion (z. B. "EPSG:3857")
-   * @param editcomment Optionaler Bearbeitungskommentar
+   * @param modifiedFeatures Array von { uuid, geometry } der modifizierten Grabfluren
+   * @param projection       Aktive Kartenprojektion (z. B. "EPSG:3857")
+   * @param editcomment      Optionaler Bearbeitungskommentar
    *
    * @throws {SessionOpenError}      bei 422 (Session nicht mehr aktiv)
    * @throws {RecoveryRequiredError} nach 3 fehlgeschlagenen Commit-Versuchen
    */
   async commitAndClose(
-    geometry: any,
+    modifiedFeatures: Array<{ uuid: string; geometry: any }>,
     projection: string,
     editcomment?: string,
   ): Promise<void> {
@@ -272,14 +279,20 @@ export default class GrabflurSessionManager {
 
     this.state = "saving";
 
-    // --- Geometrie nach EPSG:4326 konvertieren ---
+    // --- Alle Geometrien nach EPSG:4326 konvertieren ---
     const GeoJSONFormat = (await import("ol/format/GeoJSON")).default;
     const geojsonFormat = new GeoJSONFormat();
-    const geojsonStr = geojsonFormat.writeGeometry(geometry, {
-      dataProjection: "EPSG:4326",
-      featureProjection: projection,
+
+    const features = modifiedFeatures.map((f) => {
+      const geojsonStr = geojsonFormat.writeGeometry(f.geometry, {
+        dataProjection: "EPSG:4326",
+        featureProjection: projection,
+      });
+      return {
+        feature_uuid: f.uuid,
+        geometry: JSON.parse(geojsonStr),
+      };
     });
-    const geojsonGeom = JSON.parse(geojsonStr);
 
     const comment = editcomment ?? "";
     const maxAttempts = 3; // Erstversuch + 2 Retries
@@ -298,7 +311,7 @@ export default class GrabflurSessionManager {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              geometry: geojsonGeom,
+              features,
               edit_comment: comment,
             }),
           },
