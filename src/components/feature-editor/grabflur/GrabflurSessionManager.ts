@@ -121,6 +121,7 @@ export default class GrabflurSessionManager {
    * @param fhName       Friedhofsname (z. B. "Melaten")
    * @param wpName       Wahlurnenbezirk (z. B. "WP-01")
    * @param municipality Kommune-Kürzel (z. B. "koeln")
+   * @param featureUuid  UUID der angeklickten Grabflur (p2d2_uuid)
    *
    * @throws {SessionConflictError} bei HTTP 409 (bereits in Bearbeitung)
    * @throws {SessionOpenError}     bei Netzwerkfehlern oder anderen HTTP-Status
@@ -130,12 +131,13 @@ export default class GrabflurSessionManager {
     fhName: string,
     wpName: string,
     municipality: string,
+    featureUuid: string,
   ): Promise<void> {
     this.state = "opening";
 
     const body = {
       feature_type: "grabflur",
-      feature_uuid: feature.get("p2d2_uuid"),
+      feature_uuid: featureUuid,
       feature_set_id: "fh_" + fhNr,
       context: {
         key: "fh_nr",

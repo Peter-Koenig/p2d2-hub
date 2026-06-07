@@ -296,6 +296,7 @@ export default class GrabflurInteractionManager {
           fhName,
           wpName,
           this.municipality,
+          uuid,
         );
         this.enterEditMode();
       } catch {
