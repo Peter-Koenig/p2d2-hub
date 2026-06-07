@@ -254,8 +254,8 @@ export interface EditorToolSwitchDetail {
 }
 
 export interface EditorModeChangeDetail {
-  mode: "navigate" | "edit";
-  previousMode: "navigate" | "edit";
+  mode: "navigate" | "edit" | "view";
+  previousMode: "navigate" | "edit" | "view";
   windowId: string;
   timestamp: number;
 }

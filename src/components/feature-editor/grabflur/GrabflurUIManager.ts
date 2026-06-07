@@ -231,7 +231,7 @@ export default class GrabflurUIManager {
       await this.sessionManager.commitAndClose(geometry, this.projection, "");
       console.log("[GrabflurUIManager] ✅ Session gespeichert");
       alert("Grabflur gespeichert.");
-      this.interactionManager.exitEditMode();
+      this.interactionManager.exitEditModeKeepFeatures();
     } catch (e: unknown) {
       if (e instanceof RecoveryRequiredError) {
         // alert wird hier gezeigt (einzige Stelle – SessionManager wirft nur den Error)

@@ -26,6 +26,7 @@ import { getDb } from "../../../../../lib/db";
 import {
   resolveStageFromUrl,
   resolveSourceTable,
+  resolveVersionTable,
   getDomainFields,
   quoteIdent,
 } from "../../../../../lib/workflow/utils";
@@ -145,35 +146,36 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   }
 
   const featureType = session.feature_type as string;
-  const featureSetId = session.feature_set_id as string;
 
   // -----------------------------------------------------------------------
-  // 6. Feature-UUID aus der Quelltabelle ermitteln
-  //    (anhand der fh_nr aus feature_set_id = "fh_33")
+  // 6. Feature-UUID aus der Version-0-Tabelle ermitteln
+  //    (generisch: FK-Spalte aus featureType + session_id ohne Domänenwissen)
   // -----------------------------------------------------------------------
-  const sourceTable = resolveSourceTable(featureType);
-  const fhNr = featureSetId.replace(/^fh_/, "");
+  const versionTable = resolveVersionTable(featureType);
+  const fkCol = `${featureType}_id`;
 
-  const [sourceRow] = await sql`
-    SELECT p2d2_uuid
-    FROM ${sql(schema)}.${sql(sourceTable)}
-    WHERE fh_nr = ${fhNr}
+  const [versionRow] = await sql`
+    SELECT ${sql(fkCol)} AS feature_uuid
+    FROM ${sql(schema)}.${sql(versionTable)}
+    WHERE session_id = ${sessionId}
+      AND version_nr = 0
     LIMIT 1
   `;
 
-  if (!sourceRow) {
+  if (!versionRow) {
     return errorResponse(
       500,
       "INTERNAL_ERROR",
-      "Feature nicht in Quelltabelle gefunden",
+      "Version 0 in Versionentabelle nicht gefunden",
     );
   }
 
-  const featureUuid = sourceRow.p2d2_uuid as string;
+  const featureUuid = versionRow.feature_uuid as string;
 
   // -----------------------------------------------------------------------
   // 7. Feature-Attribute aus DB lesen (Domain-Felder ohne Geometrie)
   // -----------------------------------------------------------------------
+  const sourceTable = resolveSourceTable(featureType);
   const domainFields = await getDomainFields(sql, schema, featureType);
   const domainColList = domainFields
     .map((c: string) => quoteIdent(c))
@@ -227,9 +229,16 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   // 9. WFS-T-Config aus Umgebungsvariablen
   // -----------------------------------------------------------------------
   const stageKey = stage.toUpperCase();
+  let wfstEndpoint =
+    process.env[`WFST_ENDPOINT_${stageKey}`] ?? process.env.WFST_ENDPOINT ?? "";
+  // Workspace-spezifischen Endpoint sicherstellen
+  // (/geoserver/ows → /geoserver/{geoPrefix}/ows)
+  wfstEndpoint = wfstEndpoint.replace(
+    "/geoserver/ows",
+    `/geoserver/${geoPrefix}/ows`,
+  );
   const wfstConfig: WfstConfig = {
-    endpoint:
-      process.env[`WFST_ENDPOINT_${stageKey}`] ?? process.env.WFST_ENDPOINT ?? "",
+    endpoint: wfstEndpoint,
     username:
       process.env[`WFST_USER_${stageKey}`] ?? process.env.WFST_USERNAME ?? "",
     password:
@@ -260,7 +269,8 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
       wfstConfig,
     );
   } catch (wfstError: unknown) {
-    const msg = wfstError instanceof Error ? wfstError.message : String(wfstError);
+    const msg =
+      wfstError instanceof Error ? wfstError.message : String(wfstError);
     // Session auf error setzen (Kompensation)
     try {
       await sql`
@@ -296,7 +306,8 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
     });
   } catch (closeError: unknown) {
     // WFS-T war erfolgreich, aber Session-Finalisierung fehlgeschlagen
-    const msg = closeError instanceof Error ? closeError.message : String(closeError);
+    const msg =
+      closeError instanceof Error ? closeError.message : String(closeError);
     try {
       await sql`
         UPDATE ${sql(schema)}.${sql("wf_sessions")}

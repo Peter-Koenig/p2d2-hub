@@ -373,6 +373,43 @@ export default class GrabflurInteractionManager {
     });
   }
 
+  /**
+   * Beendet den Edit-Mode, aber BEHÄLT die Grabflur-Features sichtbar.
+   *
+   * Wie exitEditMode, jedoch OHNE:
+   *   - layerManager.clearGrabflure()
+   *   - layerManager.setGrabflureVisible(false)
+   *
+   * Der Nutzer sieht nach dem Speichern weiterhin die Grabflur-Features
+   * im Read-Only-Modus, bevor er zur nächsten Grabflur wechselt.
+   * Das Event wird mit mode: 'view' (statt 'navigate') dispatchet,
+   * damit die UI weiss, dass Features sichtbar bleiben sollen.
+   */
+  exitEditModeKeepFeatures(): void {
+    this.setActiveTool(null);
+    this.activeTool = null;
+    document
+      .getElementById("edit-tools-container")
+      ?.classList.remove("edit-tools-visible");
+    document
+      .getElementById("edit-tools-container")
+      ?.classList.add("edit-tools-hidden");
+    document
+      .querySelectorAll("[data-tool]")
+      .forEach((b) => b.classList.remove("highlighted"));
+    document
+      .querySelector('[data-tool="select"]')
+      ?.classList.add("highlighted");
+    this.lastClickedGrabflureUuid = null;
+
+    dispatchCrossWindowEvent(P2D2EventType.EDITOR_MODE_CHANGE, {
+      mode: "view",
+      previousMode: "edit",
+      windowId: getWindowId(),
+      timestamp: Date.now(),
+    });
+  }
+
   // -----------------------------------------------------------------------
   // Werkzeug-Steuerung
   // -----------------------------------------------------------------------
