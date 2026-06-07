@@ -26,7 +26,6 @@ import { getDb } from "../../../../../lib/db";
 import {
   resolveStageFromUrl,
   resolveSourceTable,
-  resolveVersionTable,
   getDomainFields,
   quoteIdent,
 } from "../../../../../lib/workflow/utils";
@@ -119,7 +118,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   // 5. Session-Record abrufen und validieren
   // -----------------------------------------------------------------------
   const [session] = await sql`
-    SELECT feature_type, feature_set_id, state, started_by
+    SELECT feature_type, feature_set_id, feature_uuid, state, started_by
     FROM ${sql(schema)}.${sql("wf_sessions")}
     WHERE id = ${sessionId}
     LIMIT 1
@@ -148,29 +147,18 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   const featureType = session.feature_type as string;
 
   // -----------------------------------------------------------------------
-  // 6. Feature-UUID aus der Version-0-Tabelle ermitteln
-  //    (generisch: FK-Spalte aus featureType + session_id ohne Domänenwissen)
+  // 6. Feature-UUID direkt aus dem Session-Record lesen
+  //    (wird seit DB-Migration in wf_sessions.feature_uuid persistiert)
   // -----------------------------------------------------------------------
-  const versionTable = resolveVersionTable(featureType);
-  const fkCol = `${featureType}_id`;
+  const featureUuid = session.feature_uuid as string;
 
-  const [versionRow] = await sql`
-    SELECT ${sql(fkCol)} AS feature_uuid
-    FROM ${sql(schema)}.${sql(versionTable)}
-    WHERE session_id = ${sessionId}
-      AND version_nr = 0
-    LIMIT 1
-  `;
-
-  if (!versionRow) {
+  if (!featureUuid) {
     return errorResponse(
       500,
       "INTERNAL_ERROR",
-      "Version 0 in Versionentabelle nicht gefunden",
+      "feature_uuid fehlt im Session-Record (veraltete Session?)",
     );
   }
-
-  const featureUuid = versionRow.feature_uuid as string;
 
   // -----------------------------------------------------------------------
   // 7. Feature-Attribute aus DB lesen (Domain-Felder ohne Geometrie)
