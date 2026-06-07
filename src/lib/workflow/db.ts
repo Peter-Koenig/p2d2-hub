@@ -5,9 +5,12 @@
 // PUBLIC API (managen eigene Transaktionen):
 //   openSession(params)  – Schritte 1–3: Version 0, Session, Feature-Status
 //   closeSession(params) – Schritte 5–6: Snapshot, Session schliessen, QS1
+//   commitContainerVersion(params) – Container-Version finalisieren
 //
 // INTERNE HELPER (brauchen ein tx-Objekt aus einer bereits offenen Transaktion):
-//   ensureVersion0, insertSessionRecord, setFeatureStatusInProgress,
+//   ensureVersion0, ensureVersion0ForContainer,
+//   insertSessionRecord, setFeatureStatusInProgress,
+//   setContainerFeatureStatusInProgress,
 //   finalizeSnapshot, updateSessionCompleted, updateFeatureStatusQs1
 //
 // Alle Funktionen arbeiten themenunabhängig: Tabellen- und Spaltennamen
@@ -86,15 +89,49 @@ export interface CloseSessionParams {
 }
 
 // =============================================================================
+// CONTAINER-VERSION-PARAMETER
+// =============================================================================
+
+export interface CommitContainerParams {
+  /** Pool-Connection (kein tx – die Funktion startet selbst eine Transaktion) */
+  sql: postgres.Sql<{}>;
+  /** DB-Schema (z. B. "p2d2_de1") */
+  schema: string;
+  /** ID der zu schliessenden Session */
+  sessionId: number;
+  /** Themen-Schlüssel (z. B. "grabflur") */
+  featureType: string;
+  /** ID des Containers (z. B. "fh_33") */
+  featureSetId: string;
+  /** UUIDs der per WFS-T inserierten Features */
+  modifiedUuids: string[];
+  /** version_ids aus den WFS-T-Inserts */
+  insertedVersionIds: string[];
+  /** E-Mail des schliessenden Benutzers */
+  userEmail: string;
+  /** Bearbeitungskommentar */
+  editComment: string;
+}
+
+export interface CommitContainerResult extends SessionCloseResponse {
+  /** Fortlaufende Versionsnummer innerhalb des Containers */
+  version_nr: number;
+  /** Anzahl der per WFS-T inserierten Features */
+  features_saved: number;
+  /** Anzahl der per SQL kopierten (unveränderten) Features */
+  features_copied: number;
+}
+
+// =============================================================================
 // PUBLIC API  –  jede Funktion managt ihre eigene DB-Transaktion
 // =============================================================================
 
 /**
  * Öffnet eine neue Workflow-Session (Schritte 1–3 in einer Transaktion).
  *
- * 1. Version 0 idempotent anlegen
+ * 1. Version 0 idempotent anlegen (für ALLE Features des Containers)
  * 2. Session-Record in wf_sessions (state = 'active')
- * 3. Feature-Status auf 'in_bearbeitung' setzen (UPSERT)
+ * 3. Feature-Status auf 'in_bearbeitung' setzen (für alle Container-Features)
  *
  * @returns SessionOpenResult mit session_id und workflow_status
  * @throws { code: 'SESSION_CONFLICT' }  bei 23505 (aktive Session existiert)
@@ -105,12 +142,12 @@ export async function openSession(
 ): Promise<SessionOpenResult> {
   try {
     return await params.sql.begin(async (tx) => {
-      // Schritt 1: Version 0 (idempotent)
-      await ensureVersion0(
+      // Schritt 1: Version 0 für alle Container-Features (idempotent)
+      await ensureVersion0ForContainer(
         tx,
         params.schema,
         params.body.feature_type,
-        params.body.feature_uuid,
+        params.body.feature_set_id,
       );
 
       // Schritt 2: Session öffnen
@@ -121,12 +158,13 @@ export async function openSession(
         params.userEmail,
       );
 
-      // Schritt 3: Feature-Status → 'in_bearbeitung'
-      await setFeatureStatusInProgress(
+      // Schritt 3: Feature-Status → 'in_bearbeitung' für alle Container-Features
+      const fhNr = params.body.feature_set_id.replace(/^fh_/, "");
+      await setContainerFeatureStatusInProgress(
         tx,
         params.schema,
         params.body.feature_type,
-        params.body.feature_uuid,
+        fhNr,
         sessionId,
       );
 
@@ -270,6 +308,37 @@ export async function ensureVersion0(
   return result.version_id;
 }
 
+// ---------------------------------------------------------------------------
+// Container-Helfer
+// ---------------------------------------------------------------------------
+
+/**
+ * Legt Version 0 für ALLE Features eines Containers an (idempotent).
+ *
+ * Parst fh_nr aus feature_set_id ("fh_33" → "33") und selektiert
+ * alle p2d2_uuid-Werte der Quelltabelle WHERE fh_nr = fhNr.
+ * Für jede UUID wird ensureVersion0() aufgerufen (bestehende überspringen).
+ *
+ * @throws Error wenn eines der Features in der Quelltabelle nicht existiert
+ */
+export async function ensureVersion0ForContainer(
+  tx: DbClient,
+  schema: string,
+  featureType: string,
+  featureSetId: string,
+): Promise<void> {
+  const fhNr = featureSetId.replace(/^fh_/, "");
+  const sourceTable = resolveSourceTable(featureType);
+  const uuids = await tx`
+    SELECT p2d2_uuid
+    FROM ${tx(schema)}.${tx(sourceTable)}
+    WHERE fh_nr = ${fhNr}
+  `;
+  for (const row of uuids) {
+    await ensureVersion0(tx, schema, featureType, row.p2d2_uuid);
+  }
+}
+
 /**
  * Erzeugt einen neuen Session-Eintrag in wf_sessions (state = 'active').
  *
@@ -298,7 +367,7 @@ export async function insertSessionRecord(
       ) VALUES (
         ${body.feature_type},
         ${body.feature_set_id},
-        ${body.feature_uuid},
+        ${body.feature_uuid ?? null},
         'active',
         ${userEmail},
         ${body.wpname},
@@ -347,6 +416,38 @@ export async function setFeatureStatusInProgress(
       'in_bearbeitung',
       ${sessionId}
     )
+    ON CONFLICT (feature_type, feature_id)
+    DO UPDATE SET
+      state           = 'in_bearbeitung',
+      last_session_id = ${sessionId},
+      updated_at      = now()
+  `;
+}
+
+/**
+ * Setzt den Feature-Status auf 'in_bearbeitung' für ALLE Features eines
+ * Containers (bestimmt durch fh_nr, z. B. "33").
+ *
+ * Führt ein INSERT ... SELECT mit ON CONFLICT UPSERT aus – idempotent.
+ */
+export async function setContainerFeatureStatusInProgress(
+  tx: DbClient,
+  schema: string,
+  featureType: string,
+  fhNr: string,
+  sessionId: number,
+): Promise<void> {
+  const sourceTable = resolveSourceTable(featureType);
+  await tx`
+    INSERT INTO ${tx(schema)}.${tx("wf_feature_status")} (
+      feature_type,
+      feature_id,
+      state,
+      last_session_id
+    )
+    SELECT ${featureType}, p2d2_uuid, 'in_bearbeitung', ${sessionId}
+    FROM ${tx(schema)}.${tx(sourceTable)}
+    WHERE fh_nr = ${fhNr}
     ON CONFLICT (feature_type, feature_id)
     DO UPDATE SET
       state           = 'in_bearbeitung',
@@ -434,4 +535,178 @@ export async function updateSessionCompleted(
     WHERE feature_type = ${featureType}
       AND feature_id   = ${featureUuid}
   `;
+}
+
+// =============================================================================
+// CONTAINER-VERSION: Commit finalisieren
+// =============================================================================
+
+/**
+ * Finalisiert eine Container-Version in einer DB-Transaktion.
+ *
+ * 1. version_nr ermitteln: MAX(version_nr) + 1 über alle Features des Containers
+ * 2. version_nr auf alle WFS-T-Inserts setzen (UPDATE WHERE version_id = ANY(...))
+ * 3. Unmodifizierte Features des Containers kopieren (INSERT ... SELECT)
+ * 4. Snapshot + Session schliessen (wf_sessions + wf_feature_status)
+ *
+ * @returns CommitContainerResult mit session_id, version_nr, features_saved, features_copied
+ * @throws { code: 'INTERNAL_ERROR', cause }  bei DB-Fehlern
+ */
+export async function commitContainerVersion(
+  params: CommitContainerParams,
+): Promise<CommitContainerResult> {
+  const {
+    sql,
+    schema,
+    sessionId,
+    featureType,
+    featureSetId,
+    modifiedUuids,
+    insertedVersionIds,
+    userEmail,
+    editComment,
+  } = params;
+
+  const sourceTable = resolveSourceTable(featureType);
+  const versionTable = resolveVersionTable(featureType);
+  const fkCol = `${featureType}_id`;
+  const fhNr = featureSetId.replace(/^fh_/, "");
+
+  try {
+    return await sql.begin(async (tx) => {
+      // -------------------------------------------------------------------
+      // Schritt 1: version_nr ermitteln
+      // -------------------------------------------------------------------
+      const [maxRow] = await tx`
+        SELECT COALESCE(MAX(version_nr), 0) + 1 AS next_nr
+        FROM ${tx(schema)}.${tx(versionTable)}
+        WHERE ${tx(fkCol)} IN (
+          SELECT p2d2_uuid
+          FROM ${tx(schema)}.${tx(sourceTable)}
+          WHERE fh_nr = ${fhNr}
+        )
+        AND version_id != ALL(${insertedVersionIds})
+      `;
+      const newVersionNr: number = maxRow?.next_nr ?? 1;
+
+      // -------------------------------------------------------------------
+      // Schritt 2: version_nr der WFS-T-Inserts aktualisieren
+      // -------------------------------------------------------------------
+      await tx`
+        UPDATE ${tx(schema)}.${tx(versionTable)}
+        SET version_nr = ${newVersionNr}
+        WHERE version_id = ANY(${insertedVersionIds})
+      `;
+
+      // -------------------------------------------------------------------
+      // Schritt 3: Unmodifizierte Features kopieren
+      // -------------------------------------------------------------------
+      const domainFields = await getCachedDomainFields(tx, schema, featureType);
+      const domainColList = domainFields.map(quoteIdent).join(", ");
+      const domainSelectList = domainFields
+        .map((c) => `latest.${quoteIdent(c)}`)
+        .join(", ");
+
+      const copySql = `
+        INSERT INTO ${quoteIdent(schema)}.${quoteIdent(versionTable)} (
+          ${quoteIdent(fkCol)},
+          version_nr,
+          session_id,
+          is_session_boundary,
+          created_by,
+          edit_comment,
+          geom,
+          ${domainColList}
+        )
+        SELECT
+          latest.${quoteIdent(fkCol)},
+          $1,
+          $2,
+          false,
+          $3,
+          $4,
+          latest.geom,
+          ${domainSelectList}
+        FROM ${quoteIdent(schema)}.${quoteIdent(versionTable)} AS latest
+        WHERE latest.${quoteIdent(fkCol)} IN (
+          SELECT p2d2_uuid
+          FROM ${quoteIdent(schema)}.${quoteIdent(sourceTable)}
+          WHERE fh_nr = $5
+        )
+        AND latest.${quoteIdent(fkCol)} != ALL($6)
+        AND latest.version_nr = (
+          SELECT MAX(v2.version_nr)
+          FROM ${quoteIdent(schema)}.${quoteIdent(versionTable)} v2
+          WHERE v2.${quoteIdent(fkCol)} = latest.${quoteIdent(fkCol)}
+            AND v2.version_id != ALL($7)
+        )
+      `;
+      const copyResult = await tx.unsafe(copySql, [
+        newVersionNr,
+        sessionId,
+        userEmail,
+        editComment,
+        fhNr,
+        modifiedUuids,
+        insertedVersionIds,
+      ]);
+      const featuresCopied = copyResult.count ?? 0;
+
+      // -------------------------------------------------------------------
+      // Schritt 4: Snapshot + Session schliessen
+      // -------------------------------------------------------------------
+      const representativeVersionId = insertedVersionIds[0];
+
+      // Alle Container-UUIDs für wf_feature_status
+      const allUuidsRows = await tx`
+        SELECT p2d2_uuid
+        FROM ${tx(schema)}.${tx(sourceTable)}
+        WHERE fh_nr = ${fhNr}
+      `;
+      const containerUuids = allUuidsRows.map(
+        (r: any) => r.p2d2_uuid as string,
+      );
+
+      const snapshotId: number = await insertSnapshotRecord(
+        tx,
+        schema,
+        featureType,
+        sessionId,
+        representativeVersionId,
+        representativeVersionId,
+        userEmail,
+      );
+
+      // wf_sessions schliessen
+      await tx`
+        UPDATE ${tx(schema)}.${tx("wf_sessions")}
+        SET state    = 'completed',
+            ended_by = ${userEmail},
+            ended_at = now()
+        WHERE id = ${sessionId}
+      `;
+
+      // wf_feature_status für alle Container-UUIDs auf qs1_ausstehend
+      await tx`
+        UPDATE ${tx(schema)}.${tx("wf_feature_status")}
+        SET state           = 'qs1_ausstehend',
+            last_session_id = ${sessionId},
+            updated_at      = now()
+        WHERE feature_type = ${featureType}
+          AND feature_id   = ANY(${containerUuids})
+      `;
+
+      return {
+        session_id: sessionId,
+        version_id: representativeVersionId,
+        snapshot_id: snapshotId,
+        workflow_status: "qs1_ausstehend" as const,
+        version_nr: newVersionNr,
+        features_saved: insertedVersionIds.length,
+        features_copied: Number(featuresCopied),
+      };
+    });
+  } catch (err: unknown) {
+    throw { code: "INTERNAL_ERROR" as const, cause: err };
+  }
 }

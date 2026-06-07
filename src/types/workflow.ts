@@ -38,8 +38,8 @@ export interface WorkflowSessionContext {
 export interface WorkflowSessionRequest {
   /** Themen-Schlüssel (z. B. "grabflur", "baum", "grab") */
   feature_type: string;
-  /** UUID des Fachobjekts (p2d2_uuid in der Quelltabelle) */
-  feature_uuid: string;
+  /** UUID des Fachobjekts (p2d2_uuid in der Quelltabelle). Optional seit Container-Versions-Modell (wird bei Friedhofs-Session nicht gesendet). */
+  feature_uuid?: string;
   /** ID des bearbeiteten Clusters (z. B. "fh_33") */
   feature_set_id: string;
   /** Themenabhängiger Session-Kontext */

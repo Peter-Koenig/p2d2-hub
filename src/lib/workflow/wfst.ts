@@ -120,6 +120,7 @@ function buildWfstPayload(
   editComment: string,
   featureUuid: string,
   featureData: FeatureData,
+  versionNr: number,
 ): string {
   const fkCol = `${featureType}_id`;
   const typeName = buildGeoServerTypeName(featureType);
@@ -131,7 +132,7 @@ function buildWfstPayload(
   // -----------------------------------------------------------------------
   const systemParts: string[] = [
     `<${geoPrefix}:${fkCol}>${xmlEscape(featureUuid)}</${geoPrefix}:${fkCol}>`,
-    `<${geoPrefix}:version_nr>1</${geoPrefix}:version_nr>`,
+    `<${geoPrefix}:version_nr>${versionNr}</${geoPrefix}:version_nr>`,
     `<${geoPrefix}:session_id>${sessionId}</${geoPrefix}:session_id>`,
     `<${geoPrefix}:is_session_boundary>true</${geoPrefix}:is_session_boundary>`,
     `<${geoPrefix}:created_at>${createdAt}</${geoPrefix}:created_at>`,
@@ -218,6 +219,7 @@ export async function insertVersionWfst(
   featureUuid: string,
   featureData: FeatureData,
   config: WfstConfig,
+  versionNr: number = 1,
 ): Promise<string> {
   // -----------------------------------------------------------------------
   // XML-Payload bauen
@@ -230,6 +232,7 @@ export async function insertVersionWfst(
     editComment,
     featureUuid,
     featureData,
+    versionNr,
   );
 
   // -----------------------------------------------------------------------
@@ -281,5 +284,69 @@ export async function insertVersionWfst(
       parseError instanceof Error ? parseError.message : String(parseError);
     // Debug: ersten 500 Zeichen der Response anhängen
     throw new Error(`${msg}. Response-Anfang: ${responseText.slice(0, 500)}`);
+  }
+}
+
+// ===========================================================================
+// WFS-T Rollback
+// ===========================================================================
+
+/**
+ * Löscht WFS-T-Versionseinträge per WFS-T-Delete (Rollback bei Fehler).
+ *
+ * Baut ein WFS 2.0.0 Transaction/Delete-Request mit ResourceId-Filtern
+ * f�r alle �bergebenen version_ids.
+ *
+ * @param geoPrefix   GeoServer-Namespace-Prefix (z. B. "de1")
+ * @param featureType Themen-Schl�ssel (z. B. "grabflur")
+ * @param versionIds  Array von UUIDs die gel�scht werden sollen
+ * @param config      GeoServer-Endpoint + Credentials
+ */
+export async function deleteVersionsWfst(
+  geoPrefix: string,
+  featureType: string,
+  versionIds: string[],
+  config: WfstConfig,
+): Promise<void> {
+  if (versionIds.length === 0) return;
+
+  const typeName = buildGeoServerTypeName(featureType);
+  const namespace = `urn:data-dna:govdata:${geoPrefix}`;
+
+  const resourceIds = versionIds
+    .map((id) => `<fes:ResourceId rid="${typeName}.${id}"/>`)
+    .join("\n      ");
+
+  const payload = `<?xml version="1.0" encoding="UTF-8"?>
+<wfs:Transaction
+    service="WFS" version="2.0.0"
+    xmlns:wfs="http://www.opengis.net/wfs/2.0"
+    xmlns:${geoPrefix}="${namespace}"
+    xmlns:fes="http://www.opengis.net/fes/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <wfs:Delete typeName="${geoPrefix}:${typeName}">
+    <fes:Filter>
+      ${resourceIds}
+    </fes:Filter>
+  </wfs:Delete>
+</wfs:Transaction>`;
+
+  const credentials = btoa(`${config.username}:${config.password}`);
+  const response = await fetch(config.endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/xml",
+      Authorization: `Basic ${credentials}`,
+    },
+    body: payload,
+    signal: AbortSignal.timeout(30_000),
+  });
+
+  // Fehler beim Rollback werden geloggt, aber nicht weiter geworfen
+  // (der eigentliche Fehler aus dem Insert-Flow hat Vorrang)
+  if (!response.ok) {
+    console.error(
+      `[WFS-T Rollback] DELETE fehlgeschlagen: ${response.status} ${response.statusText}`,
+    );
   }
 }
