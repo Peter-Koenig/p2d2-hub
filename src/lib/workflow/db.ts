@@ -672,7 +672,7 @@ export async function commitContainerVersion(
         schema,
         featureType,
         sessionId,
-        representativeVersionId,
+        modifiedUuids[0],
         representativeVersionId,
         userEmail,
       );

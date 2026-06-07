@@ -216,7 +216,6 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   // -----------------------------------------------------------------------
   const modifiedUuids: string[] = [];
   const insertedVersionIds: string[] = [];
-  let wfstFailed = false;
 
   for (const feat of body.features) {
     const featureUuid = feat.feature_uuid;
@@ -302,7 +301,6 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
       );
       insertedVersionIds.push(versionId);
     } catch (wfstError: unknown) {
-      wfstFailed = true;
       const msg =
         wfstError instanceof Error ? wfstError.message : String(wfstError);
 
