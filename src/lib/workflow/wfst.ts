@@ -308,7 +308,10 @@ export async function deleteVersionsWfst(
   versionIds: string[],
   config: WfstConfig,
 ): Promise<void> {
-  if (versionIds.length === 0) return;
+  if (versionIds.length === 0) {
+    console.log("[WFS-T Rollback] Keine versionIds zu löschen – überspringe");
+    return;
+  }
 
   const typeName = buildGeoServerTypeName(featureType);
   const namespace = `urn:data-dna:govdata:${geoPrefix}`;
@@ -332,6 +335,11 @@ export async function deleteVersionsWfst(
 </wfs:Transaction>`;
 
   const credentials = btoa(`${config.username}:${config.password}`);
+
+  console.log(
+    `[WFS-T Rollback] Sende DELETE an ${config.endpoint} (${versionIds.length} IDs)`,
+  );
+
   const response = await fetch(config.endpoint, {
     method: "POST",
     headers: {
@@ -345,8 +353,15 @@ export async function deleteVersionsWfst(
   // Fehler beim Rollback werden geloggt, aber nicht weiter geworfen
   // (der eigentliche Fehler aus dem Insert-Flow hat Vorrang)
   if (!response.ok) {
+    const respBody = await response.text().catch(() => "(kein Body)");
     console.error(
-      `[WFS-T Rollback] DELETE fehlgeschlagen: ${response.status} ${response.statusText}`,
+      `[WFS-T Rollback] DELETE fehlgeschlagen: HTTP ${response.status} ${response.statusText}`,
     );
+    console.error(
+      `[WFS-T Rollback] Response-Body (Auszug):`,
+      respBody.slice(0, 1000),
+    );
+  } else {
+    console.log("[WFS-T Rollback] DELETE erfolgreich");
   }
 }

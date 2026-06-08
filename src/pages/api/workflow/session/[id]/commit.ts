@@ -299,6 +299,14 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 
     // --- 8c. WFS-T-Insert an GeoServer senden ---
     try {
+      console.log(
+        "[commit] WFS-T-Insert: feature_uuid=" +
+          featureUuid +
+          " version_nr=" +
+          body.reserved_versionnr +
+          " session_id=" +
+          sessionId,
+      );
       const versionId = await insertVersionWfst(
         geoPrefix,
         featureType,
@@ -310,8 +318,15 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
         wfstConfig,
         body.reserved_versionnr,
       );
+      console.log("[commit] WFS-T-Insert erfolgreich: version_id=" + versionId);
       insertedVersionIds.push(versionId);
     } catch (wfstError: unknown) {
+      console.log(
+        "[commit] WFS-T-Fehler, Rollback von " +
+          insertedVersionIds.length +
+          " version_ids: " +
+          insertedVersionIds.join(", "),
+      );
       const msg =
         wfstError instanceof Error ? wfstError.message : String(wfstError);
 
@@ -346,6 +361,12 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   // 9. Container-Version finalisieren (DB-Transaktion)
   // -----------------------------------------------------------------------
   try {
+    console.log(
+      "[commit] Finalisiere Container-Version: version_nr=" +
+        body.reserved_versionnr +
+        " session_id=" +
+        sessionId,
+    );
     const commitParams: CommitContainerParams = {
       sql,
       schema,

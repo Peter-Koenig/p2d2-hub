@@ -599,6 +599,9 @@ export async function commitContainerVersion(
       // -------------------------------------------------------------------
       // Schritt 1: version_nr verifizieren
       // -------------------------------------------------------------------
+      console.log(
+        `[commitContainerVersion] prüfe version_nr=${versionNr} für ${insertedVersionIds.length} WFS-T-Zeile(n)`,
+      );
       // Prüfen, ob alle WFS-T-Inserts die korrekte reservedVersionNr tragen
       const [mismatch] = await tx`
         SELECT COUNT(*) AS cnt
@@ -607,10 +610,16 @@ export async function commitContainerVersion(
           AND version_nr <> ${versionNr}
       `;
       if (Number(mismatch?.cnt ?? 0) > 0) {
+        console.warn(
+          `[commitContainerVersion] ❌ ${mismatch.cnt} WFS-T-Zeile(n) haben falsche version_nr (erwartet ${versionNr})`,
+        );
         throw new Error(
           `WFS-T-Inserts tragen nicht durchgehend version_nr=${versionNr}`,
         );
       }
+      console.log(
+        `[commitContainerVersion] ✅ alle ${insertedVersionIds.length} WFS-T-Zeile(n) haben version_nr=${versionNr}`,
+      );
 
       // -------------------------------------------------------------------
       // Schritt 3: Unmodifizierte Features kopieren
