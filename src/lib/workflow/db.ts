@@ -111,6 +111,8 @@ export interface CommitContainerParams {
   userEmail: string;
   /** Bearbeitungskommentar */
   editComment: string;
+  /** Reservierte Versionsnummer (vor WFS-T-Insert ermittelt) */
+  versionNr: number;
 }
 
 export interface CommitContainerResult extends SessionCloseResponse {
@@ -132,8 +134,9 @@ export interface CommitContainerResult extends SessionCloseResponse {
  * 1. Version 0 idempotent anlegen (für ALLE Features des Containers)
  * 2. Session-Record in wf_sessions (state = 'active')
  * 3. Feature-Status auf 'in_bearbeitung' setzen (für alle Container-Features)
+ * 4. Nächste version_nr reservieren (SELECT MAX + 1)
  *
- * @returns SessionOpenResult mit session_id und workflow_status
+ * @returns SessionOpenResult mit session_id, workflow_status und version_nr
  * @throws { code: 'SESSION_CONFLICT' }  bei 23505 (aktive Session existiert)
  * @throws { code: 'INTERNAL_ERROR', cause }  bei sonstigen DB-Fehlern
  */
@@ -168,9 +171,24 @@ export async function openSession(
         sessionId,
       );
 
+      // Schritt 4: Nächste version_nr reservieren
+      const versionTable = resolveVersionTable(params.body.feature_type);
+      const fkCol = `${params.body.feature_type}_id`;
+      const [maxRow] = await tx`
+        SELECT COALESCE(MAX(version_nr), 0) + 1 AS next_nr
+        FROM ${tx(params.schema)}.${tx(versionTable)}
+        WHERE ${tx(fkCol)} IN (
+          SELECT p2d2_uuid
+          FROM ${tx(params.schema)}.${tx(resolveSourceTable(params.body.feature_type))}
+          WHERE fh_nr = ${fhNr}
+        )
+      `;
+      const reservedVersionNr: number = Number(maxRow?.next_nr ?? 1);
+
       return {
         session_id: sessionId,
         workflow_status: "in_bearbeitung" as const,
+        version_nr: reservedVersionNr,
       };
     });
   } catch (err: unknown) {
@@ -544,10 +562,9 @@ export async function updateSessionCompleted(
 /**
  * Finalisiert eine Container-Version in einer DB-Transaktion.
  *
- * 1. version_nr ermitteln: MAX(version_nr) + 1 über alle Features des Containers
- * 2. version_nr auf alle WFS-T-Inserts setzen (UPDATE WHERE version_id = ANY(...))
- * 3. Unmodifizierte Features des Containers kopieren (INSERT ... SELECT)
- * 4. Snapshot + Session schliessen (wf_sessions + wf_feature_status)
+ * 1. version_nr verifizieren (SELECT MAX + 1, Warnung bei Abweichung)
+ * 2. Unmodifizierte Features des Containers kopieren (INSERT ... SELECT)
+ * 3. Snapshot + Session schliessen (wf_sessions + wf_feature_status)
  *
  * @returns CommitContainerResult mit session_id, version_nr, features_saved, features_copied
  * @throws { code: 'INTERNAL_ERROR', cause }  bei DB-Fehlern
@@ -565,6 +582,7 @@ export async function commitContainerVersion(
     insertedVersionIds,
     userEmail,
     editComment,
+    versionNr,
   } = params;
 
   const sourceTable = resolveSourceTable(featureType);
@@ -575,7 +593,7 @@ export async function commitContainerVersion(
   try {
     return await sql.begin(async (tx) => {
       // -------------------------------------------------------------------
-      // Schritt 1: version_nr ermitteln
+      // Schritt 1: version_nr verifizieren
       // -------------------------------------------------------------------
       const [maxRow] = await tx`
         SELECT COALESCE(MAX(version_nr), 0) + 1 AS next_nr
@@ -587,16 +605,12 @@ export async function commitContainerVersion(
         )
         AND version_id != ALL(${insertedVersionIds})
       `;
-      const newVersionNr: number = maxRow?.next_nr ?? 1;
-
-      // -------------------------------------------------------------------
-      // Schritt 2: version_nr der WFS-T-Inserts aktualisieren
-      // -------------------------------------------------------------------
-      await tx`
-        UPDATE ${tx(schema)}.${tx(versionTable)}
-        SET version_nr = ${newVersionNr}
-        WHERE version_id = ANY(${insertedVersionIds})
-      `;
+      const currentMax = Number(maxRow?.next_nr ?? 1);
+      if (currentMax !== versionNr) {
+        console.warn(
+          `[commitContainerVersion] version_nr mismatch: expected ${versionNr}, found ${currentMax} (Race Condition?)`,
+        );
+      }
 
       // -------------------------------------------------------------------
       // Schritt 3: Unmodifizierte Features kopieren
@@ -642,7 +656,7 @@ export async function commitContainerVersion(
         )
       `;
       const copyResult = await tx.unsafe(copySql, [
-        newVersionNr,
+        versionNr,
         sessionId,
         userEmail,
         editComment,
@@ -701,7 +715,7 @@ export async function commitContainerVersion(
         version_id: representativeVersionId,
         snapshot_id: snapshotId,
         workflow_status: "qs1_ausstehend" as const,
-        version_nr: newVersionNr,
+        version_nr: versionNr,
         features_saved: insertedVersionIds.length,
         features_copied: Number(featuresCopied),
       };

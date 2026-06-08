@@ -61,6 +61,8 @@ export interface SessionOpenResult {
   session_id: number;
   /** Workflow-Status nach dem Öffnen */
   workflow_status: "in_bearbeitung";
+  /** Reservierte Versionsnummer für den bevorstehenden Commit */
+  version_nr: number;
 }
 
 // ---------------------------------------------------------------------------

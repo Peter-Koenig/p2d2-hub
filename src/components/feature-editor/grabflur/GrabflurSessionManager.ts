@@ -87,6 +87,7 @@ export class RecoveryRequiredError extends Error {
 export default class GrabflurSessionManager {
   private state: SessionState = "idle";
   private sessionId: number | null = null;
+  private reservedVersionNr: number | null = null;
 
   // -----------------------------------------------------------------------
   // Öffentliche API
@@ -157,9 +158,13 @@ export default class GrabflurSessionManager {
       });
 
       if (resp.status === 201) {
-        const data: { session_id: number; workflow_status: string } =
-          await resp.json();
+        const data: {
+          session_id: number;
+          workflow_status: string;
+          version_nr: number;
+        } = await resp.json();
         this.sessionId = data.session_id;
+        this.reservedVersionNr = data.version_nr;
         this.state = "editing";
         return;
       }

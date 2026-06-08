@@ -26,6 +26,7 @@ import { getDb } from "../../../../../lib/db";
 import {
   resolveStageFromUrl,
   resolveSourceTable,
+  resolveVersionTable,
   getDomainFields,
   quoteIdent,
 } from "../../../../../lib/workflow/utils";
@@ -212,7 +213,25 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   const qualifiedTable = `${quoteIdent(schema)}.${quoteIdent(sourceTable)}`;
 
   // -----------------------------------------------------------------------
-  // 8. WFS-T-Inserts für jedes modifizierte Feature
+  // 8. Nächste version_nr ermitteln (vor WFS-T-Inserts, unter DB-Connection)
+  // -----------------------------------------------------------------------
+  const versionTable = resolveVersionTable(featureType);
+  const fkCol = `${featureType}_id`;
+  const fhNr = featureSetId.replace(/^fh_/, "");
+
+  const [maxRow] = await sql`
+    SELECT COALESCE(MAX(version_nr), 0) + 1 AS next_nr
+    FROM ${sql(schema)}.${sql(versionTable)}
+    WHERE ${sql(fkCol)} IN (
+      SELECT p2d2_uuid
+      FROM ${sql(schema)}.${sql(sourceTable)}
+      WHERE fh_nr = ${fhNr}
+    )
+  `;
+  const versionNr = Number(maxRow?.next_nr ?? 1);
+
+  // -----------------------------------------------------------------------
+  // 9. WFS-T-Inserts für jedes modifizierte Feature
   // -----------------------------------------------------------------------
   const modifiedUuids: string[] = [];
   const insertedVersionIds: string[] = [];
@@ -297,7 +316,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
         featureUuid,
         featureData,
         wfstConfig,
-        1, // versionNr = 1 (Platzhalter, wird nach Commit per DB-Update überschrieben)
+        versionNr,
       );
       insertedVersionIds.push(versionId);
     } catch (wfstError: unknown) {
@@ -332,7 +351,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   }
 
   // -----------------------------------------------------------------------
-  // 9. Container-Version finalisieren (DB-Transaktion)
+  // 10. Container-Version finalisieren (DB-Transaktion)
   // -----------------------------------------------------------------------
   try {
     const commitParams: CommitContainerParams = {
@@ -345,6 +364,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
       insertedVersionIds,
       userEmail,
       editComment: body.edit_comment ?? "",
+      versionNr,
     };
 
     const result = await commitContainerVersion(commitParams);
