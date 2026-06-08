@@ -625,6 +625,17 @@ export async function commitContainerVersion(
       // Schritt 3: Unmodifizierte Features kopieren
       // -------------------------------------------------------------------
       const domainFields = await getCachedDomainFields(tx, schema, featureType);
+
+      // Count unmodified features for the log
+      const [unmodCount] = await tx`
+        SELECT COUNT(*) AS cnt
+        FROM ${tx(schema)}.${tx(sourceTable)}
+        WHERE fh_nr = ${fhNr}
+          AND p2d2_uuid != ALL(${modifiedUuids})
+      `;
+      console.log(
+        `[commitContainerVersion] kopiere ${unmodCount?.cnt ?? 0} unmodifizierte(s) Feature(s) mit version_nr=${versionNr}`,
+      );
       const domainColList = domainFields.map(quoteIdent).join(", ");
       const domainSelectList = domainFields
         .map((c) => `latest.${quoteIdent(c)}`)
@@ -674,11 +685,17 @@ export async function commitContainerVersion(
         insertedVersionIds,
       ]);
       const featuresCopied = copyResult.count ?? 0;
+      console.log(
+        `[commitContainerVersion] kopiert: ${featuresCopied} Zeile(n) eingefügt`,
+      );
 
       // -------------------------------------------------------------------
       // Schritt 4: Snapshot + Session schliessen
       // -------------------------------------------------------------------
       const representativeVersionId = insertedVersionIds[0];
+      console.log(
+        `[commitContainerVersion] erzeuge Snapshot für session_id=${sessionId} mit version_nr=${versionNr}`,
+      );
 
       // Alle Container-UUIDs für wf_feature_status
       const allUuidsRows = await tx`
@@ -700,6 +717,9 @@ export async function commitContainerVersion(
         userEmail,
         versionNr,
       );
+      console.log(
+        `[commitContainerVersion] Snapshot erzeugt: snapshot_id=${snapshotId}`,
+      );
 
       // wf_sessions schliessen
       await tx`
@@ -709,6 +729,9 @@ export async function commitContainerVersion(
             ended_at = now()
         WHERE id = ${sessionId}
       `;
+      console.log(
+        `[commitContainerVersion] Session completed: session_id=${sessionId}`,
+      );
 
       // wf_feature_status für alle Container-UUIDs auf qs1_ausstehend
       await tx`
@@ -719,6 +742,9 @@ export async function commitContainerVersion(
         WHERE feature_type = ${featureType}
           AND feature_id   = ANY(${containerUuids})
       `;
+      console.log(
+        `[commitContainerVersion] Feature-Status aktualisiert: feature_type=${featureType}`,
+      );
 
       return {
         session_id: sessionId,

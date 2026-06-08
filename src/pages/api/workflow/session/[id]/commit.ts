@@ -391,6 +391,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
     // → WFS-T-Inserts rückgängig machen
     const msg =
       closeError instanceof Error ? closeError.message : String(closeError);
+    console.error("[commit] commitContainerVersion fehlgeschlagen:", msg);
 
     try {
       await deleteVersionsWfst(
