@@ -101,6 +101,33 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
               </button>
             </div>
           </div>
+
+          <!-- Version Selection Modal -->
+          <div id="version-popup" class="version-popup-hidden">
+            <div class="version-popup-backdrop"></div>
+            <div class="version-popup-dialog">
+              <h2 class="version-popup-title">Version auswählen</h2>
+              <p class="version-popup-subtitle" id="version-popup-cemetery"></p>
+              <div class="version-popup-list">
+                <div class="version-item version-item-current">
+                  <span class="version-nr">Version 3</span>
+                  <span class="version-badge">aktuell</span>
+                </div>
+                <div class="version-item">
+                  <span class="version-nr">Version 2</span>
+                  <span class="version-date">25.05.2026</span>
+                </div>
+                <div class="version-item">
+                  <span class="version-nr">Version 1</span>
+                  <span class="version-date">20.05.2026</span>
+                </div>
+              </div>
+              <div class="version-popup-actions">
+                <button id="version-popup-start" class="version-btn-start">Starten</button>
+                <button id="version-popup-cancel" class="version-btn-cancel">Abbrechen</button>
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
         <div class="flex-1 flex items-center justify-center">
@@ -258,6 +285,61 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
     .layer-label { white-space: nowrap; }
 
     /* Toolbar (unten mittig) */
+    /* Version-Popup */
+    .version-popup-hidden { display: none; }
+    .version-popup-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      z-index: 1999; backdrop-filter: blur(2px);
+    }
+    .version-popup-dialog {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      z-index: 2000; background: white; border-radius: 0.75rem;
+      padding: 1.5rem; min-width: 320px; max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .version-popup-title {
+      font-size: 1.25rem; font-weight: 700; color: #14532d;
+      margin: 0 0 0.25rem 0;
+    }
+    .version-popup-subtitle {
+      font-size: 0.875rem; color: #6b7280; margin: 0 0 1rem 0;
+    }
+    .version-popup-list {
+      display: flex; flex-direction: column; gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .version-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.625rem 0.75rem; border-radius: 0.5rem;
+      border: 1px solid #e5e7eb; background: #f9fafb;
+      cursor: default;
+    }
+    .version-item-current {
+          border-color: #dc2626; background: #fef2f2;
+        }
+    .version-nr { font-weight: 600; color: #374151; font-size: 0.9375rem; }
+    .version-date { font-size: 0.8125rem; color: #9ca3af; }
+    .version-badge {
+          font-size: 0.75rem; font-weight: 600; color: #dc2626;
+          background: #fee2e2; padding: 0.125rem 0.5rem;
+          border-radius: 999px;
+        }
+    .version-popup-actions {
+      display: flex; gap: 0.75rem; justify-content: flex-end;
+    }
+    .version-btn-start {
+      padding: 0.5rem 1.25rem; background: #16a34a; color: white;
+      border: none; border-radius: 0.375rem; font-weight: 600;
+      cursor: pointer; font-size: 0.875rem;
+    }
+    .version-btn-start:hover { background: #15803d; }
+    .version-btn-cancel {
+      padding: 0.5rem 1.25rem; background: #f3f4f6; color: #374151;
+      border: 1px solid #d1d5db; border-radius: 0.375rem; font-weight: 500;
+      cursor: pointer; font-size: 0.875rem;
+    }
+    .version-btn-cancel:hover { background: #e5e7eb; }
+
     .toolbar-controls {
       position: absolute;
       bottom: 1rem;
@@ -331,6 +413,8 @@ const kommuneTitle = kommune?.title ?? 'unbekannte Kommune';
       const app = new GrabflurEditorApp(container);
       await app.init();
     });
+
+
   </script>
 
 </BaseLayout>

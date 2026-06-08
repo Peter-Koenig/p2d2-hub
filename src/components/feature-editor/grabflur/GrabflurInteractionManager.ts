@@ -79,6 +79,12 @@ export default class GrabflurInteractionManager {
   // -- Modified-Tracking (Container-Versionen) --
   private modifiedUuids: Set<string> = new Set();
 
+  // -- Pending (Popup-gesteuerter) Cemetery-Load --
+  private pendingCemeteryId: string | null = null;
+  private pendingExtent: number[] | null = null;
+  private pendingCemeteryName: string = "";
+  private pendingCemeteryFhNr: string = "";
+
   constructor(
     map: OLMap,
     layerManager: GrabflurLayerManager,
@@ -192,6 +198,7 @@ export default class GrabflurInteractionManager {
 
     const name = selected.get("name") || "Unbenannt";
     const cemeteryId = selected.getId() || name;
+    const fhNr = selected.get("fh_nr") ?? "";
     this.currentCemeteryId = cemeteryId;
 
     // Auf Friedhof zoomen
@@ -216,18 +223,74 @@ export default class GrabflurInteractionManager {
     if (this.sessionManager.isSessionActive()) return;
     this.exitEditMode();
 
-    // ── Grabflure für diesen Friedhof laden ──
+    // ── Version-Popup anzeigen (statt sofortigem Laden) ──
+    this.pendingCemeteryId = cemeteryId;
+    this.pendingExtent = extent;
+    this.pendingCemeteryName = name;
+    this.pendingCemeteryFhNr = fhNr;
+
+    // Grabflure zurücksetzen (vorherige ausblenden)
+    this.layerManager.clearGrabflure();
+    this.layerManager.setGrabflureVisible(false);
+
+    this.showVersionPopup(name);
+  }
+
+  // -----------------------------------------------------------------------
+  // Version-Popup
+  // -----------------------------------------------------------------------
+
+  /**
+   * Zeigt das Version-Auswahl-Popup für einen Friedhof.
+   * Aktuell rein visuell – die Versionen sind Platzhalter.
+   */
+  private showVersionPopup(fhName: string): void {
+    const el = document.getElementById("version-popup");
+    const subtitle = document.getElementById("version-popup-cemetery");
+    if (subtitle) subtitle.textContent = `Friedhof: ${fhName}`;
+    if (el) el.classList.remove("version-popup-hidden");
+  }
+
+  /** Versteckt das Version-Popup. */
+  hideVersionPopup(): void {
+    const el = document.getElementById("version-popup");
+    if (el) el.classList.add("version-popup-hidden");
+  }
+
+  /** Setzt die Friedhofs-Auswahl zurück (nach Popup-Abbruch). */
+  resetPendingCemeterySelection(): void {
+    this.currentCemeteryId = null;
+    this.pendingCemeteryId = null;
+    this.pendingExtent = null;
+  }
+
+  /**
+   * Wird aufgerufen, wenn der Nutzer im Version-Popup auf "Starten" klickt.
+   * Lädt die Grabflur-Features des zuvor ausgewählten Friedhofs.
+   */
+  async proceedWithCemeteryLoad(): Promise<void> {
+    this.hideVersionPopup();
+
+    const cemeteryId = this.pendingCemeteryId;
+    const extent = this.pendingExtent;
+
+    if (!cemeteryId || !extent) {
+      console.warn(
+        "[GrabflurInteractionManager] Kein ausstehender Cemetery-Load",
+      );
+      return;
+    }
+
+    // Race-Condition-Schutz
+    if (this.currentCemeteryId !== cemeteryId) return;
+
     try {
       const grabflureFeatures = await this.dataManager.loadGrabflureForFriedhof(
         extent,
         this.projection,
       );
 
-      // Race-Condition-Schutz: Nur anwenden, wenn kein anderer Cemetery
-      // zwischenzeitlich geklickt wurde
-      if (this.currentCemeteryId !== cemeteryId) {
-        return;
-      }
+      if (this.currentCemeteryId !== cemeteryId) return;
 
       this.layerManager.clearGrabflure();
       if (grabflureFeatures.length > 0) {
@@ -237,7 +300,7 @@ export default class GrabflurInteractionManager {
         this.layerManager.setGrabflureVisible(false);
       }
     } catch (err) {
-      console.error("[Grabflur-Editor] Grabflur-Fehler:", err);
+      console.error("[GrabflurInteractionManager] Grabflur-Ladefehler:", err);
       this.layerManager.setGrabflureVisible(false);
     }
   }
@@ -528,7 +591,7 @@ export default class GrabflurInteractionManager {
       }
       case "modify": {
         if (!this.grabflureSelect) break;
-        this.grabflureSelect.setActive(false);
+        // grabflureSelect bleibt aktiv, damit ein Feature-Wechsel per Klick möglich ist
         const md = new Modify({
           features: this.grabflureSelect.getFeatures(),
           pixelTolerance: 6,

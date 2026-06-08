@@ -52,6 +52,7 @@ export default class GrabflurUIManager {
   bindControls(): void {
     this.bindNavigation();
     this.bindLayerToggles();
+    this.bindVersionPopup();
     this.bindToolbar();
     this.bindKeyboard();
   }
@@ -146,6 +147,35 @@ export default class GrabflurUIManager {
     } catch {
       // localStorage nicht verfügbar
     }
+  }
+
+  // -----------------------------------------------------------------------
+  // Version-Popup (Auswahl der Container-Version beim Friedhofs-Klick)
+  // -----------------------------------------------------------------------
+
+  private bindVersionPopup(): void {
+    const startBtn = document.getElementById("version-popup-start");
+    const cancelBtn = document.getElementById("version-popup-cancel");
+    const popup = document.getElementById("version-popup");
+
+    startBtn?.addEventListener("click", () => {
+      this.interactionManager.proceedWithCemeteryLoad();
+    });
+
+    cancelBtn?.addEventListener("click", () => {
+      this.interactionManager.hideVersionPopup();
+      this.interactionManager.resetPendingCemeterySelection();
+    });
+
+    // Backdrop-Klick schließt Popup
+    popup?.addEventListener("click", (e) => {
+      if (
+        e.target === popup ||
+        (e.target as HTMLElement).classList.contains("version-popup-backdrop")
+      ) {
+        this.interactionManager.hideVersionPopup();
+      }
+    });
   }
 
   // -----------------------------------------------------------------------
