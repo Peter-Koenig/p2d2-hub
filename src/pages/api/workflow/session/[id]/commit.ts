@@ -228,8 +228,11 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   // -----------------------------------------------------------------------
   const modifiedUuids: string[] = [];
   const insertedVersionIds: string[] = [];
+  const totalFeatures = body.features.length;
 
-  for (const feat of body.features) {
+  for (let i = 0; i < totalFeatures; i++) {
+    const feat = body.features[i];
+    const isLast = i === totalFeatures - 1;
     const featureUuid = feat.feature_uuid;
     modifiedUuids.push(featureUuid);
 
@@ -317,18 +320,20 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
         featureData,
         wfstConfig,
         body.reserved_versionnr,
+        isLast,
       );
       console.log("[commit] WFS-T-Insert erfolgreich: version_id=" + versionId);
       insertedVersionIds.push(versionId);
     } catch (wfstError: unknown) {
+      const msg =
+        wfstError instanceof Error ? wfstError.message : String(wfstError);
+      console.error("[commit] WFS-T-Fehler:", msg);
       console.log(
-        "[commit] WFS-T-Fehler, Rollback von " +
+        "[commit] Rollback von " +
           insertedVersionIds.length +
           " version_ids: " +
           insertedVersionIds.join(", "),
       );
-      const msg =
-        wfstError instanceof Error ? wfstError.message : String(wfstError);
 
       // Rollback: bereits erfolgte WFS-T-Inserts rückgängig machen
       try {

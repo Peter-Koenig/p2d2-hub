@@ -121,6 +121,7 @@ function buildWfstPayload(
   featureUuid: string,
   featureData: FeatureData,
   versionNr: number,
+  isSessionBoundary: boolean = true,
 ): string {
   const fkCol = `${featureType}_id`;
   const typeName = buildGeoServerTypeName(featureType);
@@ -134,7 +135,7 @@ function buildWfstPayload(
     `<${geoPrefix}:${fkCol}>${xmlEscape(featureUuid)}</${geoPrefix}:${fkCol}>`,
     `<${geoPrefix}:version_nr>${versionNr}</${geoPrefix}:version_nr>`,
     `<${geoPrefix}:session_id>${sessionId}</${geoPrefix}:session_id>`,
-    `<${geoPrefix}:is_session_boundary>true</${geoPrefix}:is_session_boundary>`,
+    `<${geoPrefix}:is_session_boundary>${isSessionBoundary}</${geoPrefix}:is_session_boundary>`,
     `<${geoPrefix}:created_at>${createdAt}</${geoPrefix}:created_at>`,
     `<${geoPrefix}:created_by>${xmlEscape(userEmail)}</${geoPrefix}:created_by>`,
     `<${geoPrefix}:edit_comment>${xmlEscape(editComment)}</${geoPrefix}:edit_comment>`,
@@ -220,6 +221,7 @@ export async function insertVersionWfst(
   featureData: FeatureData,
   config: WfstConfig,
   versionNr: number = 999999,
+  isSessionBoundary: boolean = true,
 ): Promise<string> {
   // -----------------------------------------------------------------------
   // XML-Payload bauen
@@ -233,6 +235,7 @@ export async function insertVersionWfst(
     featureUuid,
     featureData,
     versionNr,
+    isSessionBoundary,
   );
 
   // -----------------------------------------------------------------------
