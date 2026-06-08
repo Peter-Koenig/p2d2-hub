@@ -219,7 +219,7 @@ export async function insertVersionWfst(
   featureUuid: string,
   featureData: FeatureData,
   config: WfstConfig,
-  versionNr: number = 1,
+  versionNr: number = -1,
 ): Promise<string> {
   // -----------------------------------------------------------------------
   // XML-Payload bauen
