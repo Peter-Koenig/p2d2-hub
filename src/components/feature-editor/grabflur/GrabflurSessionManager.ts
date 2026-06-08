@@ -103,6 +103,11 @@ export default class GrabflurSessionManager {
     return this.sessionId;
   }
 
+  /** Gibt die reservierte Versionsnummer zurück (null wenn idle/completed/error). */
+  getReservedVersionNr(): number | null {
+    return this.reservedVersionNr;
+  }
+
   /**
    * true, wenn eine Session aktiv ist und der Editor Klicks blockieren soll
    * (Zustände: editing | saving | closing).
@@ -284,6 +289,11 @@ export default class GrabflurSessionManager {
         `Session ist nicht im Zustand 'editing' (aktuell: ${this.state})`,
       );
     }
+    if (this.reservedVersionNr === null) {
+      throw new SessionOpenError(
+        "Keine reservierte Versionsnummer – Session ungültig",
+      );
+    }
 
     this.state = "saving";
 
@@ -321,6 +331,7 @@ export default class GrabflurSessionManager {
             body: JSON.stringify({
               features,
               edit_comment: comment,
+              reserved_versionnr: this.reservedVersionNr,
             }),
           },
         );
@@ -378,5 +389,6 @@ export default class GrabflurSessionManager {
   private reset(): void {
     this.state = "idle";
     this.sessionId = null;
+    this.reservedVersionNr = null;
   }
 }

@@ -476,6 +476,7 @@ export async function setContainerFeatureStatusInProgress(
 
 /**
  * Erzeugt einen Snapshot-Eintrag in wf_snapshots (is_final=true, kind='manual').
+ * Speichert optional die version_nr für die Wiederherstellung (Recovery).
  *
  * @returns snapshot_id des neu angelegten Snapshots
  */
@@ -487,6 +488,7 @@ export async function insertSnapshotRecord(
   featureUuid: string,
   versionId: string,
   userEmail: string,
+  versionNr: number = 0,
 ): Promise<number> {
   // snapshot_no ermitteln
   const [maxRow] = await tx`
@@ -504,6 +506,7 @@ export async function insertSnapshotRecord(
       feature_type,
       version_table,
       version_id,
+      version_nr,
       snapshot_no,
       is_final,
       kind,
@@ -514,6 +517,7 @@ export async function insertSnapshotRecord(
       ${featureType},
       ${versionTable},
       ${versionId},
+      ${versionNr || null},
       ${snapshotNo},
       true,
       'manual',
@@ -595,20 +599,16 @@ export async function commitContainerVersion(
       // -------------------------------------------------------------------
       // Schritt 1: version_nr verifizieren
       // -------------------------------------------------------------------
-      const [maxRow] = await tx`
-        SELECT COALESCE(MAX(version_nr), 0) + 1 AS next_nr
+      // Prüfen, ob alle WFS-T-Inserts die korrekte reservedVersionNr tragen
+      const [mismatch] = await tx`
+        SELECT COUNT(*) AS cnt
         FROM ${tx(schema)}.${tx(versionTable)}
-        WHERE ${tx(fkCol)} IN (
-          SELECT p2d2_uuid
-          FROM ${tx(schema)}.${tx(sourceTable)}
-          WHERE fh_nr = ${fhNr}
-        )
-        AND version_id != ALL(${insertedVersionIds})
+        WHERE version_id = ANY(${insertedVersionIds})
+          AND version_nr <> ${versionNr}
       `;
-      const currentMax = Number(maxRow?.next_nr ?? 1);
-      if (currentMax !== versionNr) {
-        console.warn(
-          `[commitContainerVersion] version_nr mismatch: expected ${versionNr}, found ${currentMax} (Race Condition?)`,
+      if (Number(mismatch?.cnt ?? 0) > 0) {
+        throw new Error(
+          `WFS-T-Inserts tragen nicht durchgehend version_nr=${versionNr}`,
         );
       }
 
@@ -689,6 +689,7 @@ export async function commitContainerVersion(
         modifiedUuids[0],
         representativeVersionId,
         userEmail,
+        versionNr,
       );
 
       // wf_sessions schliessen

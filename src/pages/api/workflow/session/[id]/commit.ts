@@ -3,10 +3,10 @@
 //
 // POST /api/workflow/session/:id/commit – Container-Version speichern + schliessen
 //
-// Empfängt ein Array von Features (GeoJSON-Geometrien + UUIDs), konvertiert
-// sie serverseitig einzeln in GML (via PostGIS ST_GeomFromGeoJSON + ST_AsGML),
-// schreibt sie per WFS-T in den GeoServer und finalisiert die Container-
-// Version in der Datenbank.
+// Empfängt ein Array von Features (GeoJSON-Geometrien + UUIDs) sowie die
+// reservierte Versionsnummer, konvertiert sie serverseitig einzeln in GML
+// (via PostGIS ST_GeomFromGeoJSON + ST_AsGML), schreibt sie per WFS-T in den
+// GeoServer und finalisiert die Container-Version in der Datenbank.
 //
 // Ablauf:
 //   1. Auth + Session validieren
@@ -26,7 +26,6 @@ import { getDb } from "../../../../../lib/db";
 import {
   resolveStageFromUrl,
   resolveSourceTable,
-  resolveVersionTable,
   getDomainFields,
   quoteIdent,
 } from "../../../../../lib/workflow/utils";
@@ -46,6 +45,7 @@ import type { CommitContainerParams } from "../../../../../lib/workflow/db";
 interface CommitBody {
   features: Array<{ feature_uuid: string; geometry: any }>;
   edit_comment?: string;
+  reserved_versionnr: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -116,6 +116,17 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
       400,
       "BAD_REQUEST",
       "features (Array) ist erforderlich und muss mindestens ein Element enthalten",
+    );
+  }
+
+  if (
+    typeof body.reserved_versionnr !== "number" ||
+    body.reserved_versionnr < 1
+  ) {
+    return errorResponse(
+      400,
+      "BAD_REQUEST",
+      "reserved_versionnr (number >= 1) ist erforderlich",
     );
   }
 
@@ -213,25 +224,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   const qualifiedTable = `${quoteIdent(schema)}.${quoteIdent(sourceTable)}`;
 
   // -----------------------------------------------------------------------
-  // 8. Nächste version_nr ermitteln (vor WFS-T-Inserts, unter DB-Connection)
-  // -----------------------------------------------------------------------
-  const versionTable = resolveVersionTable(featureType);
-  const fkCol = `${featureType}_id`;
-  const fhNr = featureSetId.replace(/^fh_/, "");
-
-  const [maxRow] = await sql`
-    SELECT COALESCE(MAX(version_nr), 0) + 1 AS next_nr
-    FROM ${sql(schema)}.${sql(versionTable)}
-    WHERE ${sql(fkCol)} IN (
-      SELECT p2d2_uuid
-      FROM ${sql(schema)}.${sql(sourceTable)}
-      WHERE fh_nr = ${fhNr}
-    )
-  `;
-  const versionNr = Number(maxRow?.next_nr ?? 1);
-
-  // -----------------------------------------------------------------------
-  // 9. WFS-T-Inserts für jedes modifizierte Feature
+  // 8. WFS-T-Inserts für jedes modifizierte Feature
   // -----------------------------------------------------------------------
   const modifiedUuids: string[] = [];
   const insertedVersionIds: string[] = [];
@@ -250,7 +243,6 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
 
     const [attrRow] = await sql.unsafe(attrQuery, [featureUuid]);
     if (!attrRow) {
-      // Feature existiert nicht in Quelltabelle → WFS-T-Rollback + Fehler
       await deleteVersionsWfst(
         geoPrefix,
         featureType,
@@ -316,7 +308,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
         featureUuid,
         featureData,
         wfstConfig,
-        versionNr,
+        body.reserved_versionnr,
       );
       insertedVersionIds.push(versionId);
     } catch (wfstError: unknown) {
@@ -351,7 +343,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   }
 
   // -----------------------------------------------------------------------
-  // 10. Container-Version finalisieren (DB-Transaktion)
+  // 9. Container-Version finalisieren (DB-Transaktion)
   // -----------------------------------------------------------------------
   try {
     const commitParams: CommitContainerParams = {
@@ -364,7 +356,7 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
       insertedVersionIds,
       userEmail,
       editComment: body.edit_comment ?? "",
-      versionNr,
+      versionNr: body.reserved_versionnr,
     };
 
     const result = await commitContainerVersion(commitParams);
