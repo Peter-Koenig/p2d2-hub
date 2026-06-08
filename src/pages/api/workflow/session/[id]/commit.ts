@@ -389,9 +389,20 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
   } catch (closeError: unknown) {
     // WFS-T war erfolgreich, aber DB-Finalisierung fehlgeschlagen
     // → WFS-T-Inserts rückgängig machen
+    const cause = (closeError as { cause?: unknown })?.cause;
     const msg =
-      closeError instanceof Error ? closeError.message : String(closeError);
-    console.error("[commit] commitContainerVersion fehlgeschlagen:", msg);
+      closeError instanceof Error
+        ? closeError.message
+        : cause instanceof Error
+          ? cause.message
+          : cause != null
+            ? String(cause)
+            : String(closeError);
+    console.error(
+      "[commit] commitContainerVersion fehlgeschlagen:",
+      msg,
+      "(code=" + ((closeError as { code?: string })?.code ?? "unknown") + ")",
+    );
 
     try {
       await deleteVersionsWfst(

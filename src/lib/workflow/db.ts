@@ -622,71 +622,21 @@ export async function commitContainerVersion(
       );
 
       // -------------------------------------------------------------------
-      // Schritt 3: Unmodifizierte Features kopieren
+      // Schritt 3: Vom Trigger kopierte Features zählen
       // -------------------------------------------------------------------
-      const domainFields = await getCachedDomainFields(tx, schema, featureType);
-
-      // Count unmodified features for the log
-      const [unmodCount] = await tx`
+      // Der DB-Trigger fn_container_mitversionen() kopiert automatisch alle
+      // unmodifizierten Features des Containers in die Versionentabelle.
+      // Wir zählen hier, wie viele Zeilen der Trigger angelegt hat.
+      const [copyCount] = await tx`
         SELECT COUNT(*) AS cnt
-        FROM ${tx(schema)}.${tx(sourceTable)}
-        WHERE fh_nr = ${fhNr}
-          AND p2d2_uuid != ALL(${modifiedUuids})
+        FROM ${tx(schema)}.${tx(versionTable)}
+        WHERE session_id = ${sessionId}
+          AND version_nr = ${versionNr}
+          AND is_session_boundary = FALSE
       `;
+      const featuresCopied = Number(copyCount?.cnt ?? 0);
       console.log(
-        `[commitContainerVersion] kopiere ${unmodCount?.cnt ?? 0} unmodifizierte(s) Feature(s) mit version_nr=${versionNr}`,
-      );
-      const domainColList = domainFields.map(quoteIdent).join(", ");
-      const domainSelectList = domainFields
-        .map((c) => `latest.${quoteIdent(c)}`)
-        .join(", ");
-
-      const copySql = `
-        INSERT INTO ${quoteIdent(schema)}.${quoteIdent(versionTable)} (
-          ${quoteIdent(fkCol)},
-          version_nr,
-          session_id,
-          is_session_boundary,
-          created_by,
-          edit_comment,
-          geom,
-          ${domainColList}
-        )
-        SELECT
-          latest.${quoteIdent(fkCol)},
-          $1,
-          $2,
-          false,
-          $3,
-          $4,
-          latest.geom,
-          ${domainSelectList}
-        FROM ${quoteIdent(schema)}.${quoteIdent(versionTable)} AS latest
-        WHERE latest.${quoteIdent(fkCol)} IN (
-          SELECT p2d2_uuid
-          FROM ${quoteIdent(schema)}.${quoteIdent(sourceTable)}
-          WHERE fh_nr = $5
-        )
-        AND latest.${quoteIdent(fkCol)} != ALL($6)
-        AND latest.version_nr = (
-          SELECT MAX(v2.version_nr)
-          FROM ${quoteIdent(schema)}.${quoteIdent(versionTable)} v2
-          WHERE v2.${quoteIdent(fkCol)} = latest.${quoteIdent(fkCol)}
-            AND v2.version_id != ALL($7)
-        )
-      `;
-      const copyResult = await tx.unsafe(copySql, [
-        versionNr,
-        sessionId,
-        userEmail,
-        editComment,
-        fhNr,
-        modifiedUuids,
-        insertedVersionIds,
-      ]);
-      const featuresCopied = copyResult.count ?? 0;
-      console.log(
-        `[commitContainerVersion] kopiert: ${featuresCopied} Zeile(n) eingefügt`,
+        `[commitContainerVersion] Trigger hat ${featuresCopied} unmodifizierte(s) Feature(s) kopiert`,
       );
 
       // -------------------------------------------------------------------
