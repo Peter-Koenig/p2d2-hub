@@ -11,8 +11,8 @@
 
 Das Projekt **p2d2 (Public-Public Data-DNA)** verfolgt das Ziel, die offenen Daten der öffentlichen Verwaltung mit den Daten der Öffentlichkeit (z. B. OpenStreetMap) zu verzahnen. So entstehen zwei unabhängige, aber synchrone Datenpools – wie die beiden Stränge einer DNA:
 
-1. Datenpool der Verwaltungen
-2. Datenpool der Öffentlichkeit
+Strang 1: Datenpool der Verwaltungen
+Strang 2: Datenpool der Öffentlichkeit
 
 Beide sollen gleichwertig, transparent und souverän miteinander interagieren. Dies fördert Teilhabe, Vertrauen, Innovation und Kooperation in der digitalen Infrastruktur von Städten und Kommunen.
 
