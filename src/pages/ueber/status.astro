@@ -1,13 +1,13 @@
 <!-- SPDX-FileCopyrightText: 2026-2026 Peter König <peter.koenig@data-dna.eu> -->
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
-<!-- p2d2: Status: Aktueller Entwicklungsstand und Roadmap -->
+<!-- p2d2: Status: Aktueller Entwicklungsstand -->
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout
   title="Status | p2d2"
-  description="Aktueller Entwicklungsstand und Roadmap"
+  description="Aktueller Entwicklungsstand der p2d2-Plattform: produktive Komponenten, aktive Entwicklung und Ausblick"
 >
   <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
     <div
@@ -15,102 +15,144 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     >
       <h1>Wo wir stehen</h1>
       <p>
-        p2d2 befindet sich in der aktiven Entwicklungsphase mit ersten
-        produktiven Einsätzen. Hier der aktuelle Status unserer Komponenten:
+        p2d2 ist ein Einzelentwickler-Projekt, gef&ouml;rdert durch un:box Cologne
+        (bis April 2026) und den Prototype Fund (BMBF, Phase 1, ab Juni 2026). Die
+        Entwicklung l&auml;uft seit Augist 2025, der Quellcode ist unter EUPL-1.2
+        ver&ouml;ffentlicht. Nachfolgend der Stand der einzelnen Komponenten.
       </p>
 
-      <h2>✅ Implementiert & Produktiv</h2>
+      <h2>Produktiv einsetzbar</h2>
 
-      <h3>Grundlegende Infrastruktur</h3>
-      <ul>
-        <li>
-          <strong>Geodatenserver</strong>: WFS/WMS-Services über GeoServer
-          verfügbar
-        </li>
-        <li>
-          <strong>Kartendarstellung</strong>: OpenLayers-Integration mit
-          Multi-CRS-Support
-        </li>
-        <li>
-          <strong>Content Management</strong>: AstroJS mit Markdown-basierten
-          Inhalten
-        </li>
-        <li>
-          <strong>CI/CD Pipeline</strong>: Automatisches Deployment über GitLab
-        </li>
-      </ul>
-
-      <h3>Datenerfassung</h3>
-      <ul>
-        <li>
-          <strong>WFS-Anbindung</strong>: Live-Daten aus PostGIS-Datenbank
-        </li>
-        <li>
-          <strong>Administrative Grenzen</strong>: Automatischer Import von
-          OSM-Daten via Overpass-Turbo
-        </li>
-        <li>
-          <strong>Container-System</strong>: Einheitliches Datenmodell für alle
-          Objekttypen
-        </li>
-      </ul>
-
-      <h2>🚧 In Entwicklung</h2>
-
-      <h3>WFS-T Integration</h3>
-      <ul>
-        <li>
-          <strong>Live-Editing</strong>: Direkte Geometrie-Bearbeitung in der
-          Karte
-        </li>
-        <li>
-          <strong>Batch-Import</strong>: Massenimport von Geodaten aus
-          verschiedenen Quellen
-        </li>
-        <li>
-          <strong>Conflict Resolution</strong>: Behandlung konkurrierender
-          Änderungen
-        </li>
-      </ul>
-
-      <h2>📋 Geplant (Q4 2025 - Q1 2026)</h2>
-
-      <h3>Community-Features</h3>
-      <ul>
-        <li>
-          <strong>User-Accounts</strong>: Registrierung und Authentifizierung
-        </li>
-        <li>
-          <strong>Contribution-Tracking</strong>: Bewertung und Anerkennung von
-          Beiträgen
-        </li>
-        <li>
-          <strong>Notification-System</strong>: Updates über Änderungen in
-          interessanten Bereichen
-        </li>
-      </ul>
-
-      <h3>API-Erweiterungen</h3>
-      <ul>
-        <li>
-          <strong>GraphQL-Endpoint</strong>: Flexible Datenabfragen für
-          Entwickler
-        </li>
-        <li>
-          <strong>Webhook-Support</strong>: Event-basierte Benachrichtigungen
-        </li>
-        <li>
-          <strong>Rate-Limiting</strong>: Schutz vor Missbrauch der öffentlichen
-          APIs
-        </li>
-      </ul>
-
+      <h3>Grundinfrastruktur</h3>
       <p>
-        <em
-          >Stand heute sind die Grundlagen gelegt – jetzt bauen wir die
-          Community auf!</em
-        >
+        Die Grundinfrastruktur l&auml;uft seit Anfang 2026 auf Entwicklungsniveau
+        auf f&uuml;nf unabh&auml;ngigen Stages. GeoServer stellt WFS- und
+        WFS-T-Schnittstellen bereit, PostgreSQL mit PostGIS h&auml;lt die
+        Daten in stage-getrennten Schemata. AstroJS liefert die Web-Anwendung
+        serverseitig aus, OpenLayers rendert die Karte im Browser, und GitLab
+        CI/CD rollt automatisch bei jedem "Push" of OpenCode auf die richtige
+        Stage (Feature-Entwicklungs-, Development- und Produktions-Webseite).
       </p>
+
+      <h3>Authentifizierung und Berechtigungen</h3>
+      <p>
+        Die Authentifizierung &uuml;ber Zitabel wurde vollst&auml;ndig
+        implementiert und ist produktiv. Nutzer melden sich per OIDC
+        Authorization Code Flow mit PKCE an; der Astro-Server setzt nach
+        erfolgreichem Login einen verschl&uuml;sselten Session-Cookie und
+        pr&uuml;ft bei jeder Anfrage die Berechtigung. Das System kennt vier
+        Rollen:
+      </p>
+      <ul>
+        <li>
+          <strong>editor</strong> - Darf Geodaten &ouml;ffnen, bearbeiten
+          und speichern
+        </li>
+        <li>
+          <strong>qs1_reviewer</strong> - Interne Qualit&auml;tssicherung
+          vor dem OSM-Export
+        </li>
+        <li>
+          <strong>qs2_reviewer</strong> - Feedback aus der OSM-Community
+          vor der Freigabe
+        </li>
+        <li>
+          <strong>export_admin</strong> - Darf OSM-Exporte ansto&szlig;en
+          und verwalten
+        </li>
+      </ul>
+      <p>
+        Die Zugangsdaten f&uuml;r GeoServer und Datenbank bleiben
+        ausschlie&szlig;lich auf dem Server - der Browser sieht sie nie.
+      </p>
+
+      <h3>Grabflur-Editor</h3>
+      <p>
+        Der Grabflur-Editor wurde vollst&auml;ndig umgesetzt und ist das
+        derzeit am weitesten entwickelte Werkzeug von p2d2. Der gesamte
+        Session-Lifecycle ist implementiert: &Ouml;ffnen einer Sitzung (mit
+        Sperre auf den gesamten Friedhof), Bearbeiten von Geometrien &uuml;ber
+        OpenLayers und WFS-T, Speichern mit automatischer Versionierung, und
+        Schlie&szlig;en der Sitzung. Jeder Commit erzeugt einen vollst&auml;ndigen
+        Satz von Versionseintr&auml;gen. Versucht ein zweiter Nutzer denselben
+        Friedhof zu bearbeiten, wird der Konflikt erkannt und als
+        verst&auml;ndliche Meldung angezeigt. Bei WFS-T-Fehlern werden bereits
+        geschriebene Eintr&auml;ge automatisch zur&uuml;ckgerollt. Ein
+        Datenbank-Trigger sorgt daf&uuml;r, dass unver&auml;nderte Objekte
+        desselben Friedhofs automatisch in die neue Version &uuml;bernommen
+        werden.
+      </p>
+
+      <h3>Workflow-Datenmodell</h3>
+      <p>
+        Das Datenmodell f&uuml;r den gesamten Qualit&auml;tssicherungsprozess
+        ist vollst&auml;ndig umgesetzt und produktiv. Es umfasst Sitzungen,
+        Wiederherstellungspunkte f&uuml;r abgebrochene Bearbeitungen und eine
+        Zustandsverwaltung pro Objekt, die den Weg von der Bearbeitung &uuml;ber
+        die interne Qualit&auml;tssicherung bis zur Freigabe abbildet.
+      </p>
+
+      <h2>In aktiver Entwicklung</h2>
+
+      <h3>Feature-Editor</h3>
+      <p>
+        Parallel zum Grabflur-Editor entsteht der Feature-Editor. Er bearbeitet
+        einzelne georeferenzierte Objekte innerhalb einer thematischen Kategorie
+        - zun&auml;chst Grabstellen innerhalb einer Grabflur, sp&auml;ter
+        auch Baumscheiben, Laternen oder andere Objekttypen. Der Feature-Editor
+        teilt sich das gesamte Fundament mit dem Grabflur-Editor: dasselbe
+        Session-Modell, denselben WFS-T-Workflow, dieselbe
+        Versionierungslogik.
+      </p>
+
+      <h3>Mobile Optimierung</h3>
+      <p>
+        Die Editor-Oberfl&auml;che wird f&uuml;r PCs entwickelt, aber immer auch
+        mit dem Gedanken an mobile Endger&auml;te: Tabletts und Smartphones sollen
+        auf jeden Fall nutzbar sein. Die Arbeiten laufen aktiv und betreffen
+        sowohl den Grabflur- als auch den Feature-Editor. Nach der Herstellung der
+        grundlegenden Funktionalität sollen Touch-Interaktion und responsive
+        Layouts im Vordergund stehen.
+      </p>
+
+      <h2>Ausblick (keine festen Termine)</h2>
+      <ul>
+        <li>
+          <strong>QS2-Review-Flow</strong> - Integration von
+          OSM-Community-Feedback in den Qualit&auml;tssicherungsprozess
+        </li>
+        <li>
+          <strong>Weitere thematische Kategorien</strong> - Die
+          Architektur ist f&uuml;r Baumscheiben, Stra&szlig;enlaternen und
+          andere kommunale Objekttypen vorbereitet. Die Aktivierung ist
+          abh&auml;ngig von Datenverf&uuml;gbarkeit und kommunalen Partnern.
+        </li>
+        <li>
+          <strong>Zitadel-zu-Keycloak-Migration</strong> - F&uuml;r die
+          Integration von p2d2 als Plugin in Civitas Core
+        </li>
+        <li>
+          <strong>p2d2 als Civitas-Core-Plugin</strong> - Die
+          Fachlogik als Plugin in die kommunale Open-Source-Datenplattform
+          einbinden
+        </li>
+      </ul>
+
+      <h2>Projektkontext</h2>
+      <ul>
+        <li>
+          Gef&ouml;rdert durch den <strong>Prototype Fund</strong> (BMBF,
+          Phase 1). Phase 2 (Umsetzung) ist ab Dezember 2026 beantragt.
+        </li>
+        <li>
+          Einzelentwickler-Projekt mit KI-Unterst&uuml;tzung - die
+          Entwicklung wird transparent dokumentiert, der gesamte Quellcode ist
+          &ouml;ffentlich einsehbar.
+        </li>
+        <li>
+          Lizenz: <strong>EUPL-1.2</strong> (European Union Public Licence).
+        </li>
+      </ul>
     </div>
   </main>
 </BaseLayout>

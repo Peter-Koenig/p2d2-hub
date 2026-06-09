@@ -5,32 +5,130 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout title="Hintergrund | p2d2" description="Woher kommt &apos;Public-Public Data-DNA?&apos;">
-    <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
-        <div class="prose prose-lg max-w-none prose-headings:font-poppins prose-headings:font-bold prose-p:font-inter prose-p:text-gray-700 prose-a:text-primary-600 hover:prose-a:text-primary-500 transition-colors">
-            <h1>Hintergrund</h1>
-            <p>Hintergrund des Projektes sind Arbeiten für die Stadt Köln, bei denen ein Prozess zur Erfassung von Gräbern erarbeitet wurde. Der Prozess eignet sich sehr gut, um ihn gemeinsam mit einer Gemeinschaft in der Öffentlichkeit durchzuführen:</p>
-            <ul>
-                <li>Die Daten der Verstorbenen fallen nicht mehr unter das Datenschutzrecht</li>
-                <li>die zur Erfassung eingesetzte Software ist komplett quelloffen und</li>
-                <li>der Prozess zur Erfassung ist fachlich mit überschaubarem Aufwand in ein Web-basiertes GIS-System übertragbar.</li>
-            </ul>
+<BaseLayout
+  title="Hintergrund | p2d2"
+  description="Woher kommt &apos;Public-Public Data-DNA&apos; – Hintergrund und Leitbild des Projekts"
+>
+  <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
+    <div
+      class="prose prose-lg max-w-none prose-headings:font-poppins prose-headings:font-bold prose-p:font-inter prose-p:text-gray-700 prose-a:text-primary-600 hover:prose-a:text-primary-500 transition-colors"
+    >
+      <h1>Hintergrund</h1>
+      <p>
+        Die Idee zu p2d2 entstand aus der Praxis. Bei Arbeiten für die Stadt
+        Köln wurde ein Prozess zur Erfassung von Friedhofsdaten entwickelt,
+        der sich als gut eignet, gemeinsam mit einer OSM-Community und der
+        Öffentlichkeit durchgeführt zu werden.
+        Diabei sind drei Eigenschaftenen relevant: Die Daten der Verstorbenen
+        fallen nicht mehr unter die DSGVO/GDPR, die eingesetzte Software
+        ist komplett quelloffen, und der Erfassungsprozess lässt sich mit
+        überschaubarem Aufwand in ein webbasiertes GIS-System übertragen. Und
+        so wurde der für die interne Verwaltung begonnene Prozess (QGIS)
+        ins Web übertragen und wird hoffentlich auf ganz viele Themen ausge
+        weitet - mit Blick auf WikiData vielleicht auch auf Daten ohne Geo-Bezug.
+      </p>
 
-            <h2>Motivation</h2>
-            <p>Die ausgehende Motivation war es, Bürgerinnen und Bürger am Prozess zu beteiligen: Friedhöfe sind Kultur- und Naturraum, der auch digital erschlossen werden sollte. Bürgerihnen und Bürgern nutzbaren Zugriff auf die Daten ihrer Räume zu geben, ermöglicht ihnen, diese Räume im Rahmen der gesetzlichen Möglichkeiten mitzugestalten, Synergien zu heben und die Verbindung zwischen Bürger:innen und Kommune zu festigen.</p>
-            <p>Darüber hinaus wurde die Möglichkeit gesehen, dass sich der Erfassunsprozess auf andere Kommunen übertragen lässt und somit als Blaupause oder als Startpunkt für interkommunale Kooperationen gesehen.</p>
+      <h2>Motivation</h2>
+      <p>
+        Friedhöfe sind Kultur- und Naturraum. Sie sind Orte der Erinnerung,
+        aber auch der Begegnung und der Biodiversität. Dass sie auch digital
+        erschlossen werden sollten, liegt nahe - doch wer erschließt sie,
+        und für wen? Die Motivation hinter p2d2 war von Anfang an,
+        B&uuml;rgerinnen und B&uuml;rgern einen nutzbaren Zugriff auf die Daten
+        ihrer R&auml;ume zu geben. Nicht, damit sie Daten konsumieren, sondern
+        damit sie diese R&auml;ume im Rahmen der gesetzlichen M&ouml;glichkeiten
+        mitgestalten k&ouml;nnen.
+      </p>
+      <p>
+        Hinzu kam eine zweite Einsicht: Der Erfassungsprozess l&auml;sst sich
+        von K&ouml;ln auf andere Kommunen &uuml;bertragen. Was als L&ouml;sung
+        f&uuml;r eine Stadt begann, kann als Blaupause f&uuml;r interkommunale
+        Kooperationen dienen - oder einfach als Startpunkt f&uuml;r
+        Kommunen, die eigene Wege gehen, aber nicht bei Null anfangen wollen.
+      </p>
 
-            <h2>Datenablage OpenStreetMap und Data-DNA Gedanke</h2>
-            <p>Grundgedanke war stets, die Friedhofsdaten in der OpenStreetMap abzulegen und in einem zweiten Schritt die Rück-Synchronisation der OpenStreetMap-Daten mit denen der Verwaltung zu ermöglichen. Beide Schritte müssen jeweils so erfolgen, dass Vorschläge zur Übernahme geänderter Daten gemacht werden. Es muss die souveräne Entscheidung beider Seiten bleiben, geänderte oder neue Daten nicht aufzunehmen.</p>
+      <h2>Datenablage in OpenStreetMap und der Data-DNA-Gedanke</h2>
+      <p>
+        Von Anfang an war klar, dass die Friedhofsdaten nicht in einem
+        weiteren isolierten System landen sollten. Sie geh&ouml;ren in die
+        OpenStreetMap - den gemeinsamen, von einer weltweiten Gemeinschaft
+        gepflegten Datenbestand. Der zweite Schritt war ebenso wichtig: die
+        M&ouml;glichkeit, die OSM-Daten zur&uuml;ck in die Verwaltung zu
+        synchronisieren. Beide Richtungen m&uuml;ssen so funktionieren, dass
+        Vorschl&auml;ge zur &Uuml;bernahme ge&auml;nderter Daten gemacht werden,
+        die Entscheidung aber auf beiden Seiten souver&auml;n bleibt. Keine
+        Seite wird gezwungen, Daten zu &uuml;bernehmen, die sie nicht
+        &uuml;bernehmen will.
+      </p>
 
-            <h3>Data-<a href="https://de.wikipedia.org/wiki/Desoxyribonukleins%C3%A4ure" target="_blank" rel="noopener">DNA</a></h3>
-            <p><img src="https://upload.wikimedia.org/wikipedia/commons/1/16/DNA_orbit_animated.gif" alt="Animierte DNA" class="float-right ml-4" style="width: 200px" /> Das Motiv der DNA (deutsch: DNS, &quot;Desoxyribonukleinsäure&quot;) wurde gewählt, weil sich nach der ersten Synchronisation zwei organisatorisch unabhängige, aber synchrone Daten-Pools gebildet haben. Wie die beiden Stränge der DNA verfügen beide Datenpools über die gleiche Information, sind aber vollständig souverän bei ihren Prozessen:</p>
-            <ol>
-                <li>Der Datenpool der öffentlichen Verwaltung</li>
-                <li>Der Datenpool der Öffentlichkeit</li>
-            </ol>
-            <p>Da beide wissen, dass es in einer gegebenen Situation jeweils um das gleiche Objekt geht, können Kooperationen und Synergien entstehen, von denen Bürger, die Verwaltung und dann auch Anbieter neuer Dienstleistungen profitieren.</p>
-            <p>Die DNA ist der Datenspeicher aller Lebewesen und besitzt dafür eine sehr hohe Stabilität der gespeicherten Information. Diese Stabilität stammt von der gegenseitigen &quot;Kontrolle&quot; der beiden DNA-Stränge: Die Information des einen Strangs ist komplementär bzw. &quot;umgekehrt identisch&quot; zum anderen Strang. Die Information ist also doppelt abgespeichert und kann auf dieser Weise bei Fehlern korrigiert werden.</p>
-        </div>
-    </main>
+      <h3>
+        Data-<a
+          href="https://de.wikipedia.org/wiki/Desoxyribonukleins%C3%A4ure"
+          target="_blank"
+          rel="noopener"
+          >DNA</a
+        >
+      </h3>
+      <p>
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/1/16/DNA_orbit_animated.gif"
+          alt="Animierte DNA"
+          class="float-right ml-4"
+          style="width: 200px"
+        />
+        Nach der ersten Synchronisation entstehen zwei organisatorisch
+        unabh&auml;ngige, aber inhaltlich synchrone Daten-Pools: den der
+        &ouml;ffentlichen Verwaltung und den der &Ouml;ffentlichkeit (OSM).
+        Das Motiv der DNA liegt nah - zwei Str&auml;nge, die dieselbe
+        Information tragen, aber vollst&auml;ndig souver&auml;n in ihren
+        Prozessen sind. Weil beide wissen, dass es um dasselbe Objekt geht,
+        entstehen Kooperationen und Synergien, von denen B&uuml;rger, die
+        Verwaltung und auch Anbieter neuer Dienstleistungen profitieren.
+      </p>
+      <p>
+        Die biologische DNA ist nicht zuf&auml;llig der stabilste
+        Datenspeicher, den die Natur hervorgebracht hat. Ihre Stabilit&auml;t
+        beruht auf der gegenseitigen Kontrolle der beiden Str&auml;nge: Die
+        Information des einen Strangs ist komplement&auml;r zum anderen,
+        Information liegt doppelt vor und kann bei Fehlern korrigiert werden.
+        Auf p2d2 &uuml;bertragen hei&szlig;t das: Verwalungsdaten und OSM-Daten
+        kontrollieren und korrigieren sich gegenseitig. Ein Fehler in einem
+        Strang f&auml;llt auf, weil der andere Strang ihn nicht best&auml;tigt.
+      </p>
+      <p>
+        Was aber h&auml;ufig &uuml;bersehen wird: DNA ist nicht nur stabil,
+        sondern auch evolutionsf&auml;hig. Es sind genau die kontrollierten
+        Abweichungen zwischen den Str&auml;ngen, die biologische
+        Weiterentwicklung erst erm&ouml;glichen. &Uuml;bertragen auf p2d2:
+        Beide Datenstr&auml;nge k&ouml;nnen sich unabh&auml;ngig
+        weiterentwickeln. Die Verwaltung kann neue Daten aus Fachverfahren
+        einspielen, die OSM-Community kann aus eigener Kenntnis erg&auml;nzen
+        und korrigieren. Das System ist stabil, weil es Fehler erkennt -
+        und anpassungsf&auml;hig, weil beide Seiten eigenst&auml;ndig handeln
+        k&ouml;nnen. Das ist der entscheidende Vorteil gegen&uuml;ber einer
+        zentralen Datenhaltung, die entweder stabil oder flexibel sein kann,
+        aber selten beides.
+      </p>
+
+      <h2>Thematische Offenheit</h2>
+      <p>
+        Friedh&ouml;fe waren der Ausgangspunkt - aber nicht die Grenze.
+        Der Prozess, der f&uuml;r Friedhofsdaten entwickelt wurde, l&auml;sst
+        sich auf andere kommunale Objekttypen &uuml;bertragen: Baumscheiben, die
+        von st&auml;dtischen Gr&uuml;nfl&auml;chen&auml;mtern verwaltet werden,
+        Stra&szlig;enlaternen, die bei den Stadtwerken in den B&uuml;chern stehen,
+        Spielpl&auml;tze, Denkm&auml;ler. Was diese Kategorien gemeinsam haben:
+        Sie sind r&auml;umlich verortbar, werden von &ouml;ffentlichen Stellen
+        verwaltet, k&ouml;nnen von B&uuml;rgerinnen wahrgenommen und bewertet
+        werden, und ihr Zustand ist f&uuml;r die &Ouml;ffentlichkeit von Belang.
+      </p>
+      <p>
+        p2d2 ist strukturell f&uuml;r diese Kategorien vorbereitet. Sie warten
+        auf Daten und auf die Kommunen, die sie einbringen wollen. Das ist kein
+        Versprechen, sondern eine Einladung: Wer Datens&auml;tze hat und sie
+        in diesen Prozess einbringen m&ouml;chte, findet eine Architektur vor,
+        die daf&uuml;r gemacht ist.
+      </p>
+    </div>
+  </main>
 </BaseLayout>

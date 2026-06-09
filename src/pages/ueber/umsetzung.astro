@@ -1,95 +1,198 @@
 <!-- SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu> -->
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
-<!-- p2d2: Über p2d2: Technische Umsetzung und Architektur -->
+<!-- p2d2: Technische Umsetzung und Architektur -->
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout title="Umsetzung | p2d2" description="Technische Architektur und Implementierungsstrategie">
-    <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
-        <div class="prose prose-lg max-w-none prose-headings:font-poppins prose-headings:font-bold prose-p:font-inter prose-p:text-gray-700 prose-a:text-primary-600 hover:prose-a:text-primary-500 transition-colors">
-            <h1>Wie wir es umsetzen</h1>
-            <p>"Die technische Umsetzung von p2d2 folgt bewährten Open-Source-Prinzipien und modernen Web-Standards. Unsere Architektur ist darauf ausgelegt, skalierbar, wartbar und erweiterbar zu sein."</p>
+<BaseLayout
+  title="Umsetzung | p2d2"
+  description="Technische Architektur von p2d2: Editoren, Authentifizierung, Workflow und Deployment-Infrastruktur"
+>
+  <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
+    <div
+      class="prose prose-lg max-w-none prose-headings:font-poppins prose-headings:font-bold prose-p:font-inter prose-p:text-gray-700 prose-a:text-primary-600 hover:prose-a:text-primary-500 transition-colors"
+    >
+      <h1>Wie wir es umsetzen</h1>
+      <p>
+        p2d2 ist eine Web-Anwendung zur browserbasierten Erfassung und
+        Bearbeitung von Geodaten f&uuml;r die OpenStreetMap. Statt Dateien zu
+        exportieren, um sie in Desktop-GIS zu bearbeiten, k&ouml;nnen Kommunen,
+        Friedhofsverwaltungen und ehrenamtliche Mapper direkt im Browser
+        editieren, versionieren und in einen OSM-Export &uuml;berf&uuml;hren.
+        Das System ist vollst&auml;ndig auf Open-Source-Komponenten aufgebaut.
+      </p>
 
-            <h2>Technologie-Stack</h2>
+      <h2>Zwei Editoren, ein System</h2>
+      <p>
+        p2d2 umfasst derzeit zwei Facheditoren, die auf demselben technischen
+        Fundament stehen. Der <strong>Grabflur-Editor</strong> bearbeitet die
+        Polygone ganzer Grabfelder. Der Nutzer klickt auf einen Friedhof, die
+        Karte zoomt heran, und mit einem Doppelklick auf eine Grabflur
+        &ouml;ffnet sich der Editier-Modus. Der Grabflur-Editor ist sehr weitgehend
+        umgesetzt und steht kurz vor dem produktiven Einsatz.
+      </p>
+      <p>
+        Der <strong>Feature-Editor</strong> bearbeitet einzelne georeferenzierte
+        Objekte innerhalb einer solchen Fl&auml;che - zum Beispiel
+        Grabstellen innerhalb einer Grabflur, aber k&uuml;nftig auch Baumscheiben
+        innerhalb eines Stadtbezirks oder Laternen innerhalb eines
+        Stra&szlig;enzugs. Der Name &bdquo;Feature&ldquo; ist bewusst gew&auml;hlt:
+        Die Architektur ist offen f&uuml;r beliebige Objekttypen, nicht nur f&uuml;r
+        Gr&auml;ber. Der Feature-Editor war die Basis des Grabflur-Editors und wurde
+        zugunsten des Grabflur-Editors etwas zurück gestellt und wird nach der
+        Fertigstellung des Grabflur-Editors an dessen Entwicklungsstand angepasst.
+      </p>
+      <p>
+        Beide Editoren nutzen <strong>OpenLayers</strong> als Kartenbibliothek
+        und kommunizieren per WFS-T (transaktionaler Web Feature Service) mit
+        dem GeoServer. Die Geometrien werden clientseitig als GeoJSON gehalten,
+        serverseitig in GML konvertiert und &uuml;ber eine WFS-Transaction an den
+        GeoServer gesendet. Für Zwischenspeicherungen (Snapshots) einer Editier-
+        Session werden differenzielle Geo-JSON Objekte direkt in die Datenbank
+        (Server-seitige Zugriffskontrolle) geschrieben, so dass bei einem
+        Verbindungsabbruch nach Time-Out ein Hintergrund-Prozess die einzelnen
+        Snapshots wieder zusammen setzen und als eine Version abspeichern kann,
+        die bei einer erneuten Editier-Vorgang als Version angeboten wird.
+      </p>
 
-            <h3>Frontend</h3>
-            <ul>
-                <li><strong>AstroJS</strong>: Static Site Generation mit optimaler Performance</li>
-                <li><strong>OpenLayers</strong>: Bewährte Open-Source-Kartenbibliothek</li>
-                <li><strong>TypeScript</strong>: Typisierte Entwicklung für höhere Codequalität</li>
-                <li><strong>Tailwind CSS</strong>: Utility-First CSS für konsistentes Design</li>
-            </ul>
+      <h2>Authentifizierung und Berechtigungen</h2>
+      <p>
+        Nutzer melden sich &uuml;ber <strong>Zitadel</strong> als Identity
+        Provider an. AstroJS &uuml;bernimmt den Login-Flow serverseitig, setzt
+        nach erfolgreichem Callback einen verschl&uuml;sselten Session-Cookie
+        und pr&uuml;ft bei jeder weiteren Anfrage, ob der Nutzer die
+        erforderliche Rolle mitbringt. Die GeoServer-Zugangsdaten bleiben
+        ausschlie&szlig;lich auf dem Server - der Browser sieht sie nie.
+        Das System kennt vier Rollen:
+      </p>
+      <ul>
+        <li>
+          <strong>editor</strong> - Darf Geodaten &ouml;ffnen, bearbeiten
+          und speichern
+        </li>
+        <li>
+          <strong>qs1_reviewer</strong> - Interne Qualit&auml;tssicherung
+          vor dem OSM-Export
+        </li>
+        <li>
+          <strong>qs2_reviewer</strong> - Feedback aus der OSM-Community
+          vor der Freigabe
+        </li>
+        <li>
+          <strong>export_admin</strong> - Darf OSM-Exporte ansto&szlig;en
+          und verwalten
+        </li>
+      </ul>
+      <p>
+        Das gesamte Authentifizierungssystem wurde vollst&auml;ndig implementiert
+        und ist produktiv. Die Berechtigungspr&uuml;fung erfolgt serverseitig in
+        jeder Route; die Zugangsdaten f&uuml;r GeoServer und Datenbank werden
+        pro Stage getrennt in Umgebungsvariablen vorgehalten.
+      </p>
 
-            <h3>Backend &amp; Daten</h3>
-            <ul>
-                <li><strong>PostgreSQL/PostGIS</strong>: Räumliche Datenbank mit GIS-Erweiterungen</li>
-                <li><strong>GeoServer</strong>: OGC-konforme Geodatenserver-Lösung</li>
-                <li><strong>WFS-T</strong>: Transaktionale Web Feature Services für Live-Editing</li>
-                <li><strong>Python</strong>: Datenverarbeitung und Automatisierung</li>
-            </ul>
+      <h2>Session-Workflow und Datenmodell</h2>
+      <p>
+        Jede Bearbeitung folgt einem klaren Ablauf, der sicherstellt, dass
+        &Auml;nderungen nachvollziehbar sind, keine Datenkonflikte entstehen und
+        jederzeit ein konsistenter Datensatz vorliegt. Der Ablauf ist:
+      </p>
+      <ol>
+        <li>
+          Der Nutzer klickt auf eine Grabflur und &ouml;ffnet eine
+          Bearbeitungssitzung. Der Server legt einen Sitzungseintrag an, setzt
+          eine Sperre auf den gesamten Friedhof (eine aktive Sitzung pro
+          Friedhof) und reserviert die n&auml;chste Versionsnummer.
+        </li>
+        <li>
+          Der Nutzer bearbeitet Geometrien &uuml;ber OpenLayers. &Auml;nderungen
+          werden clientseitig gesammelt, aber noch nicht persistiert.
+        </li>
+        <li>
+          Der Nutzer speichert die &Auml;nderungen. Der Server sendet jede
+          ge&auml;nderte Geometrie per WFS-T an den GeoServer, ein
+          Datenbank-Trigger sorgt daf&uuml;r, dass alle unver&auml;nderten
+          Objekte desselben Friedhofs automatisch in dieselbe Version
+          &uuml;bernommen werden, und die Sitzung wird geschlossen.
+        </li>
+      </ol>
+      <p>
+        Versucht ein zweiter Nutzer, denselben Friedhof zu bearbeiten, erh&auml;lt
+        er eine verst&auml;ndliche Meldung - kein technischer Fehler,
+        sondern ein erwarteter Zustand.
+      </p>
 
-            <h2>Entwicklungsprozess</h2>
+      <h3>Datenmodell</h3>
+      <p>
+        Das Datenbankschema unterscheidet drei Ebenen. Die
+        <strong>Stammdaten</strong> enthalten die urspr&uuml;nglichen Geometrien
+        aus dem Import; in sie wird nur beim Datenimport geschrieben. Die
+        <strong>Versionen</strong> speichern jeden historischen Zustand einer
+        Geometrie mit Versionsnummer, Zeitstempel, Bearbeiter und Kommentar.
+        Die <strong>Workflow-Tabellen</strong> steuern den Lebenszyklus jeder
+        editierbaren Einheit - vom Beginn der Bearbeitung &uuml;ber die
+        interne Qualit&auml;tssicherung bis zur Freigabe f&uuml;r den
+        OSM-Export. Eine kombinierte Sicht vereint Stammdaten und aktuelle
+        Versionen, sodass nachgelagerte Prozesse stets auf dem letzten Stand
+        arbeiten k&ouml;nnen. Dieses Datenmodell ist vollst&auml;ndig umgesetzt
+        und produktiv.
+      </p>
 
-            <h3>Agile Methodik</h3>
-            <p>"Wir arbeiten in zweiwöchigen Sprints mit festen Rollen:"</p>
-            <ul>
-                <li><strong>Team DE1</strong>: Core-Entwicklung und Infrastruktur</li>
-                <li><strong>Team DE2</strong>: Externe Beauftragungen beim GIS-Partner</li>
-                <li><strong>Team FV1</strong>: Externe Beauftragungen im AstroJS-Umfeld</li>
-            </ul>
+      <h2>Staging und Deployment</h2>
+      <p>
+        Die Grundinfrastruktur l&auml;uft stabil auf f&uuml;nf unabh&auml;ngigen
+        Stages, die sich von der Datenbank bis zum Webserver durchziehen:
+        Produktion, Entwicklung und drei parallele Feature-Stages f&uuml;r die
+        Arbeit von zwei Teams und einem externen Partner. Jede Stage hat ein
+        eigenes Datenbank-Schema, einen eigenen GeoServer-Workspace und eigene
+        Zugangsdaten. Die Schemata sind untereinander lesend sichtbar, aber nur
+        das eigene Schema darf beschrieben werden. Jeder Stage ist ein
+        Git-Branch zugeordnet; CI/CD-Deployments laufen automatisch bei Push.
+      </p>
 
-            <h3>Branch-Strategie</h3>
-            <pre><code> main            ← Stabile Entwicklung
-develop         ← Feature-Integration
-feature/team-*  ← Aktive Entwicklung</code></pre>
+      <h2>Infrastruktur</h2>
+      <p>
+        Die gesamte Infrastruktur ist open-source-basiert und wird auf eigener
+        Hardware betrieben. Proxmox VE virtualisiert die Server,
+        OPNsense &uuml;bernimmt Firewall und Netzwerk-Trennung, GitLab CI
+        steuert die automatisierten Builds und Deployments. Als Datenbank dient
+        PostgreSQL mit PostGIS; der GeoServer stellt die OGC-konformen WFS-
+        und WFS-T-Schnittstellen bereit. AstroJS im SSR-Modus liefert die
+        Web-Anwendung aus - serverseitig gerendert, mit eigenen
+        API-Routen und Middleware f&uuml;r Authentifizierung und
+        Berechtigungspr&uuml;fung.
+      </p>
 
-            <h3>CI/CD Pipeline</h3>
-            <ul>
-                <li><strong>Develop-Branch</strong> → automatisches Deployment auf <code>dev.data-dna.eu</code></li>
-                <li><strong>Main-Branch</strong> → automatisches Deployment auf <code>www.data-dna.eu</code></li>
-                <li><strong>Release-Tags</strong> → versionierte Releases mit Changelog</li>
-            </ul>
+      <h2>Mobilnutzung</h2>
+      <p>
+        Die Editor-Oberfl&auml;che wird derzeit f&uuml;r mobile Ger&auml;te
+        optimiert. Die Arbeiten laufen aktiv und betreffen sowohl den Grabflur-
+        als auch den Feature-Editor. Im Fokus stehen Touch-Interaktion
+        (Verschieben, Pinch-Zoom, Punktbearbeitung) und responsive Layouts
+        f&uuml;r Werkzeugleiste und Bedienelemente auf kleinen Bildschirmen.
+      </p>
 
-            <h3>Datenmodell</h3>
-
-            <h4>Container-Konzept</h4>
-            <p>"Alle räumlichen Objekte werden als 'Container' mit einheitlichen Eigenschaften erfasst:"</p>
-            <pre><code>interface Container &#123;
-  id: string;
-  containerType: 'cemetery' | 'park' | 'public' | 'administrative';
-  name: string;
-  municipality: string;
-  geometry: Polygon | MultiPolygon;
-  createdAt: Date;
-  updatedAt: Date;
-  contributors: string[];
-&#125;</code></pre>
-
-            <h3>Qualitätssicherung</h3>
-            <ul>
-                <li><strong>Automatische Validierung</strong> von Geometrien und Attributen</li>
-                <li><strong>Community-Reviews</strong> für kritische Änderungen</li>
-                <li><strong>Historisierung</strong> aller Datenänderungen mit Rollback-Funktion</li>
-            </ul>
-
-            <h2>Deployment-Infrastruktur</h2>
-
-            <h3>Hosting</h3>
-            <ul>
-                <li><strong>Proxmox VE</strong>: Virtualisierte Server-Infrastruktur</li>
-                <li><strong>OPNsense</strong>: Firewall und Netzwerk-Management</li>
-                <li><strong>GitLab CI</strong>: Automatisierte Builds und Tests</li>
-            </ul>
-
-            <h3>Monitoring</h3>
-            <ul>
-                <li><strong>Uptime-Monitoring</strong>: 24/7 Überwachung aller Services</li>
-                <li><strong>Performance-Metrics</strong>: Response-Zeiten und Ressourcenverbrauch</li>
-                <li><strong>Error-Tracking</strong>: Automatische Benachrichtigungen bei Problemen</li>
-            </ul>
-
-            <p><em>Durch diese durchdachte technische Basis schaffen wir eine zukunftssichere Plattform für die nächsten Jahre.</em></p>
-        </div>
-    </main>
+      <h2>Ausblick</h2>
+      <ul>
+        <li>
+          <strong>Feature-Editor</strong> - Die Editor-Oberfl&auml;che
+          wird fertiggestellt, das Datenmodell ist bereits angelegt.
+        </li>
+        <li>
+          <strong>OSM-Export</strong> - Gepr&uuml;fte und freigegebene
+          Daten nach OpenStreetMap exportieren.
+        </li>
+        <li>
+          <strong>Weitere Kategorien</strong> - Baumscheiben,
+          Stra&szlig;enlaternen und andere kommunale Objekttypen k&ouml;nnen
+          aktiviert werden, sobald Kommunen Datens&auml;tze einbringen. Die
+          Architektur ist daf&uuml;r vorbereitet.
+        </li>
+        <li>
+          <strong>Plugin-Integration</strong> - p2d2 als Plugin f&uuml;r
+          Civitas Core, einer kommunalen Open-Source-Datenplattform.
+        </li>
+      </ul>
+    </div>
+  </main>
 </BaseLayout>

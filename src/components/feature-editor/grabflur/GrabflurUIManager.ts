@@ -52,6 +52,7 @@ export default class GrabflurUIManager {
   bindControls(): void {
     this.bindNavigation();
     this.bindLayerToggles();
+    this.bindVersionPopup();
     this.bindToolbar();
     this.bindKeyboard();
   }
@@ -149,6 +150,35 @@ export default class GrabflurUIManager {
   }
 
   // -----------------------------------------------------------------------
+  // Version-Popup (Auswahl der Container-Version beim Friedhofs-Klick)
+  // -----------------------------------------------------------------------
+
+  private bindVersionPopup(): void {
+    const startBtn = document.getElementById("version-popup-start");
+    const cancelBtn = document.getElementById("version-popup-cancel");
+    const popup = document.getElementById("version-popup");
+
+    startBtn?.addEventListener("click", () => {
+      this.interactionManager.proceedWithCemeteryLoad();
+    });
+
+    cancelBtn?.addEventListener("click", () => {
+      this.interactionManager.hideVersionPopup();
+      this.interactionManager.resetPendingCemeterySelection();
+    });
+
+    // Backdrop-Klick schließt Popup
+    popup?.addEventListener("click", (e) => {
+      if (
+        e.target === popup ||
+        (e.target as HTMLElement).classList.contains("version-popup-backdrop")
+      ) {
+        this.interactionManager.hideVersionPopup();
+      }
+    });
+  }
+
+  // -----------------------------------------------------------------------
   // Toolbar (Werkzeug-Auswahl, Speichern, Abbrechen)
   // -----------------------------------------------------------------------
 
@@ -202,36 +232,31 @@ export default class GrabflurUIManager {
   /**
    * Speichern-Logik: Commit + Session schließen.
    *
-   * 1. Prüft, ob ein Feature im grabflureSelect selektiert ist
-   * 2. Extrahiert die Geometrie
-   * 3. Ruft sessionManager.commitAndClose() auf
-   * 4. Bei Erfolg: exitEditMode + Erfolgsmeldung
-   * 5. Bei Fehler: Dialog (Retry oder Abbruch)
+   * 1. Sammelt alle modifizierten Features via interactionManager.getModifiedFeatures()
+   * 2. Ruft sessionManager.commitAndClose() mit dem Array auf
+   * 3. Bei Erfolg: exitEditMode + Erfolgsmeldung
+   * 4. Bei Fehler: Dialog (Retry oder Abbruch)
    */
   private async handleSave(): Promise<void> {
     const saveBtn = document.getElementById("tool-save") as HTMLButtonElement;
     if (saveBtn) saveBtn.disabled = true;
 
-    const grabflureSelect = this.interactionManager.getGrabflureSelect();
-    if (!grabflureSelect || grabflureSelect.getFeatures().getLength() === 0) {
-      console.warn("[GrabflurUIManager] Kein Feature selektiert");
-      if (saveBtn) saveBtn.disabled = false;
-      return;
-    }
-
-    const selectedFeature = grabflureSelect.getFeatures().item(0);
-    const geometry = selectedFeature.getGeometry();
-    if (!geometry) {
-      console.warn("[GrabflurUIManager] Feature hat keine Geometrie");
+    const modifiedFeatures = this.interactionManager.getModifiedFeatures();
+    if (modifiedFeatures.length === 0) {
+      console.warn("[GrabflurUIManager] Keine modifizierten Features");
       if (saveBtn) saveBtn.disabled = false;
       return;
     }
 
     try {
-      await this.sessionManager.commitAndClose(geometry, this.projection, "");
+      await this.sessionManager.commitAndClose(
+        modifiedFeatures,
+        this.projection,
+        "",
+      );
       console.log("[GrabflurUIManager] ✅ Session gespeichert");
       alert("Grabflur gespeichert.");
-      this.interactionManager.exitEditMode();
+      this.interactionManager.exitEditModeKeepFeatures();
     } catch (e: unknown) {
       if (e instanceof RecoveryRequiredError) {
         // alert wird hier gezeigt (einzige Stelle – SessionManager wirft nur den Error)

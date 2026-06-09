@@ -5,9 +5,12 @@
 // PUBLIC API (managen eigene Transaktionen):
 //   openSession(params)  – Schritte 1–3: Version 0, Session, Feature-Status
 //   closeSession(params) – Schritte 5–6: Snapshot, Session schliessen, QS1
+//   commitContainerVersion(params) – Container-Version finalisieren
 //
 // INTERNE HELPER (brauchen ein tx-Objekt aus einer bereits offenen Transaktion):
-//   ensureVersion0, insertSessionRecord, setFeatureStatusInProgress,
+//   ensureVersion0, ensureVersion0ForContainer,
+//   insertSessionRecord, setFeatureStatusInProgress,
+//   setContainerFeatureStatusInProgress,
 //   finalizeSnapshot, updateSessionCompleted, updateFeatureStatusQs1
 //
 // Alle Funktionen arbeiten themenunabhängig: Tabellen- und Spaltennamen
@@ -86,17 +89,54 @@ export interface CloseSessionParams {
 }
 
 // =============================================================================
+// CONTAINER-VERSION-PARAMETER
+// =============================================================================
+
+export interface CommitContainerParams {
+  /** Pool-Connection (kein tx – die Funktion startet selbst eine Transaktion) */
+  sql: postgres.Sql<{}>;
+  /** DB-Schema (z. B. "p2d2_de1") */
+  schema: string;
+  /** ID der zu schliessenden Session */
+  sessionId: number;
+  /** Themen-Schlüssel (z. B. "grabflur") */
+  featureType: string;
+  /** ID des Containers (z. B. "fh_33") */
+  featureSetId: string;
+  /** UUIDs der per WFS-T inserierten Features */
+  modifiedUuids: string[];
+  /** version_ids aus den WFS-T-Inserts */
+  insertedVersionIds: string[];
+  /** E-Mail des schliessenden Benutzers */
+  userEmail: string;
+  /** Bearbeitungskommentar */
+  editComment: string;
+  /** Reservierte Versionsnummer (vor WFS-T-Insert ermittelt) */
+  versionNr: number;
+}
+
+export interface CommitContainerResult extends SessionCloseResponse {
+  /** Fortlaufende Versionsnummer innerhalb des Containers */
+  version_nr: number;
+  /** Anzahl der per WFS-T inserierten Features */
+  features_saved: number;
+  /** Anzahl der per SQL kopierten (unveränderten) Features */
+  features_copied: number;
+}
+
+// =============================================================================
 // PUBLIC API  –  jede Funktion managt ihre eigene DB-Transaktion
 // =============================================================================
 
 /**
  * Öffnet eine neue Workflow-Session (Schritte 1–3 in einer Transaktion).
  *
- * 1. Version 0 idempotent anlegen
+ * 1. Version 0 idempotent anlegen (für ALLE Features des Containers)
  * 2. Session-Record in wf_sessions (state = 'active')
- * 3. Feature-Status auf 'in_bearbeitung' setzen (UPSERT)
+ * 3. Feature-Status auf 'in_bearbeitung' setzen (für alle Container-Features)
+ * 4. Nächste version_nr reservieren (SELECT MAX + 1)
  *
- * @returns SessionOpenResult mit session_id und workflow_status
+ * @returns SessionOpenResult mit session_id, workflow_status und version_nr
  * @throws { code: 'SESSION_CONFLICT' }  bei 23505 (aktive Session existiert)
  * @throws { code: 'INTERNAL_ERROR', cause }  bei sonstigen DB-Fehlern
  */
@@ -105,12 +145,12 @@ export async function openSession(
 ): Promise<SessionOpenResult> {
   try {
     return await params.sql.begin(async (tx) => {
-      // Schritt 1: Version 0 (idempotent)
-      await ensureVersion0(
+      // Schritt 1: Version 0 für alle Container-Features (idempotent)
+      await ensureVersion0ForContainer(
         tx,
         params.schema,
         params.body.feature_type,
-        params.body.feature_uuid,
+        params.body.feature_set_id,
       );
 
       // Schritt 2: Session öffnen
@@ -121,18 +161,34 @@ export async function openSession(
         params.userEmail,
       );
 
-      // Schritt 3: Feature-Status → 'in_bearbeitung'
-      await setFeatureStatusInProgress(
+      // Schritt 3: Feature-Status → 'in_bearbeitung' für alle Container-Features
+      const fhNr = params.body.feature_set_id.replace(/^fh_/, "");
+      await setContainerFeatureStatusInProgress(
         tx,
         params.schema,
         params.body.feature_type,
-        params.body.feature_uuid,
+        fhNr,
         sessionId,
       );
+
+      // Schritt 4: Nächste version_nr reservieren
+      const versionTable = resolveVersionTable(params.body.feature_type);
+      const fkCol = `${params.body.feature_type}_id`;
+      const [maxRow] = await tx`
+        SELECT COALESCE(MAX(version_nr), 0) + 1 AS next_nr
+        FROM ${tx(params.schema)}.${tx(versionTable)}
+        WHERE ${tx(fkCol)} IN (
+          SELECT p2d2_uuid
+          FROM ${tx(params.schema)}.${tx(resolveSourceTable(params.body.feature_type))}
+          WHERE fh_nr = ${fhNr}
+        )
+      `;
+      const reservedVersionNr: number = Number(maxRow?.next_nr ?? 1);
 
       return {
         session_id: sessionId,
         workflow_status: "in_bearbeitung" as const,
+        version_nr: reservedVersionNr,
       };
     });
   } catch (err: unknown) {
@@ -270,6 +326,37 @@ export async function ensureVersion0(
   return result.version_id;
 }
 
+// ---------------------------------------------------------------------------
+// Container-Helfer
+// ---------------------------------------------------------------------------
+
+/**
+ * Legt Version 0 für ALLE Features eines Containers an (idempotent).
+ *
+ * Parst fh_nr aus feature_set_id ("fh_33" → "33") und selektiert
+ * alle p2d2_uuid-Werte der Quelltabelle WHERE fh_nr = fhNr.
+ * Für jede UUID wird ensureVersion0() aufgerufen (bestehende überspringen).
+ *
+ * @throws Error wenn eines der Features in der Quelltabelle nicht existiert
+ */
+export async function ensureVersion0ForContainer(
+  tx: DbClient,
+  schema: string,
+  featureType: string,
+  featureSetId: string,
+): Promise<void> {
+  const fhNr = featureSetId.replace(/^fh_/, "");
+  const sourceTable = resolveSourceTable(featureType);
+  const uuids = await tx`
+    SELECT p2d2_uuid
+    FROM ${tx(schema)}.${tx(sourceTable)}
+    WHERE fh_nr = ${fhNr}
+  `;
+  for (const row of uuids) {
+    await ensureVersion0(tx, schema, featureType, row.p2d2_uuid);
+  }
+}
+
 /**
  * Erzeugt einen neuen Session-Eintrag in wf_sessions (state = 'active').
  *
@@ -287,6 +374,7 @@ export async function insertSessionRecord(
       INSERT INTO ${tx(schema)}.${tx("wf_sessions")} (
         feature_type,
         feature_set_id,
+        feature_uuid,
         state,
         started_by,
         wpname,
@@ -297,6 +385,7 @@ export async function insertSessionRecord(
       ) VALUES (
         ${body.feature_type},
         ${body.feature_set_id},
+        ${body.feature_uuid ?? null},
         'active',
         ${userEmail},
         ${body.wpname},
@@ -354,7 +443,40 @@ export async function setFeatureStatusInProgress(
 }
 
 /**
+ * Setzt den Feature-Status auf 'in_bearbeitung' für ALLE Features eines
+ * Containers (bestimmt durch fh_nr, z. B. "33").
+ *
+ * Führt ein INSERT ... SELECT mit ON CONFLICT UPSERT aus – idempotent.
+ */
+export async function setContainerFeatureStatusInProgress(
+  tx: DbClient,
+  schema: string,
+  featureType: string,
+  fhNr: string,
+  sessionId: number,
+): Promise<void> {
+  const sourceTable = resolveSourceTable(featureType);
+  await tx`
+    INSERT INTO ${tx(schema)}.${tx("wf_feature_status")} (
+      feature_type,
+      feature_id,
+      state,
+      last_session_id
+    )
+    SELECT ${featureType}, p2d2_uuid, 'in_bearbeitung', ${sessionId}
+    FROM ${tx(schema)}.${tx(sourceTable)}
+    WHERE fh_nr = ${fhNr}
+    ON CONFLICT (feature_type, feature_id)
+    DO UPDATE SET
+      state           = 'in_bearbeitung',
+      last_session_id = ${sessionId},
+      updated_at      = now()
+  `;
+}
+
+/**
  * Erzeugt einen Snapshot-Eintrag in wf_snapshots (is_final=true, kind='manual').
+ * Speichert optional die version_nr für die Wiederherstellung (Recovery).
  *
  * @returns snapshot_id des neu angelegten Snapshots
  */
@@ -366,6 +488,7 @@ export async function insertSnapshotRecord(
   featureUuid: string,
   versionId: string,
   userEmail: string,
+  versionNr: number = 0,
 ): Promise<number> {
   // snapshot_no ermitteln
   const [maxRow] = await tx`
@@ -383,6 +506,7 @@ export async function insertSnapshotRecord(
       feature_type,
       version_table,
       version_id,
+      version_nr,
       snapshot_no,
       is_final,
       kind,
@@ -393,6 +517,7 @@ export async function insertSnapshotRecord(
       ${featureType},
       ${versionTable},
       ${versionId},
+      ${versionNr || null},
       ${snapshotNo},
       true,
       'manual',
@@ -432,4 +557,156 @@ export async function updateSessionCompleted(
     WHERE feature_type = ${featureType}
       AND feature_id   = ${featureUuid}
   `;
+}
+
+// =============================================================================
+// CONTAINER-VERSION: Commit finalisieren
+// =============================================================================
+
+/**
+ * Finalisiert eine Container-Version in einer DB-Transaktion.
+ *
+ * 1. version_nr verifizieren (SELECT MAX + 1, Warnung bei Abweichung)
+ * 2. Unmodifizierte Features des Containers kopieren (INSERT ... SELECT)
+ * 3. Snapshot + Session schliessen (wf_sessions + wf_feature_status)
+ *
+ * @returns CommitContainerResult mit session_id, version_nr, features_saved, features_copied
+ * @throws { code: 'INTERNAL_ERROR', cause }  bei DB-Fehlern
+ */
+export async function commitContainerVersion(
+  params: CommitContainerParams,
+): Promise<CommitContainerResult> {
+  const {
+    sql,
+    schema,
+    sessionId,
+    featureType,
+    featureSetId,
+    modifiedUuids,
+    insertedVersionIds,
+    userEmail,
+    editComment,
+    versionNr,
+  } = params;
+
+  const sourceTable = resolveSourceTable(featureType);
+  const versionTable = resolveVersionTable(featureType);
+  const fkCol = `${featureType}_id`;
+  const fhNr = featureSetId.replace(/^fh_/, "");
+
+  try {
+    return await sql.begin(async (tx) => {
+      // -------------------------------------------------------------------
+      // Schritt 1: version_nr verifizieren
+      // -------------------------------------------------------------------
+      console.log(
+        `[commitContainerVersion] prüfe version_nr=${versionNr} für ${insertedVersionIds.length} WFS-T-Zeile(n)`,
+      );
+      // Prüfen, ob alle WFS-T-Inserts die korrekte reservedVersionNr tragen
+      const [mismatch] = await tx`
+        SELECT COUNT(*) AS cnt
+        FROM ${tx(schema)}.${tx(versionTable)}
+        WHERE version_id = ANY(${insertedVersionIds})
+          AND version_nr <> ${versionNr}
+      `;
+      if (Number(mismatch?.cnt ?? 0) > 0) {
+        console.warn(
+          `[commitContainerVersion] ❌ ${mismatch.cnt} WFS-T-Zeile(n) haben falsche version_nr (erwartet ${versionNr})`,
+        );
+        throw new Error(
+          `WFS-T-Inserts tragen nicht durchgehend version_nr=${versionNr}`,
+        );
+      }
+      console.log(
+        `[commitContainerVersion] ✅ alle ${insertedVersionIds.length} WFS-T-Zeile(n) haben version_nr=${versionNr}`,
+      );
+
+      // -------------------------------------------------------------------
+      // Schritt 3: Vom Trigger kopierte Features zählen
+      // -------------------------------------------------------------------
+      // Der DB-Trigger fn_container_mitversionen() kopiert automatisch alle
+      // unmodifizierten Features des Containers in die Versionentabelle.
+      // Wir zählen hier, wie viele Zeilen der Trigger angelegt hat.
+      const [copyCount] = await tx`
+        SELECT COUNT(*) AS cnt
+        FROM ${tx(schema)}.${tx(versionTable)}
+        WHERE session_id = ${sessionId}
+          AND version_nr = ${versionNr}
+          AND is_session_boundary = FALSE
+      `;
+      const featuresCopied = Number(copyCount?.cnt ?? 0);
+      console.log(
+        `[commitContainerVersion] Trigger hat ${featuresCopied} unmodifizierte(s) Feature(s) kopiert`,
+      );
+
+      // -------------------------------------------------------------------
+      // Schritt 4: Snapshot + Session schliessen
+      // -------------------------------------------------------------------
+      const representativeVersionId = insertedVersionIds[0];
+      console.log(
+        `[commitContainerVersion] erzeuge Snapshot für session_id=${sessionId} mit version_nr=${versionNr}`,
+      );
+
+      // Alle Container-UUIDs für wf_feature_status
+      const allUuidsRows = await tx`
+        SELECT p2d2_uuid
+        FROM ${tx(schema)}.${tx(sourceTable)}
+        WHERE fh_nr = ${fhNr}
+      `;
+      const containerUuids = allUuidsRows.map(
+        (r: any) => r.p2d2_uuid as string,
+      );
+
+      const snapshotId: number = await insertSnapshotRecord(
+        tx,
+        schema,
+        featureType,
+        sessionId,
+        modifiedUuids[0],
+        representativeVersionId,
+        userEmail,
+        versionNr,
+      );
+      console.log(
+        `[commitContainerVersion] Snapshot erzeugt: snapshot_id=${snapshotId}`,
+      );
+
+      // wf_sessions schliessen
+      await tx`
+        UPDATE ${tx(schema)}.${tx("wf_sessions")}
+        SET state    = 'completed',
+            ended_by = ${userEmail},
+            ended_at = now()
+        WHERE id = ${sessionId}
+      `;
+      console.log(
+        `[commitContainerVersion] Session completed: session_id=${sessionId}`,
+      );
+
+      // wf_feature_status für alle Container-UUIDs auf qs1_ausstehend
+      await tx`
+        UPDATE ${tx(schema)}.${tx("wf_feature_status")}
+        SET state           = 'qs1_ausstehend',
+            last_session_id = ${sessionId},
+            updated_at      = now()
+        WHERE feature_type = ${featureType}
+          AND feature_id   = ANY(${containerUuids})
+      `;
+      console.log(
+        `[commitContainerVersion] Feature-Status aktualisiert: feature_type=${featureType}`,
+      );
+
+      return {
+        session_id: sessionId,
+        version_id: representativeVersionId,
+        snapshot_id: snapshotId,
+        workflow_status: "qs1_ausstehend" as const,
+        version_nr: versionNr,
+        features_saved: insertedVersionIds.length,
+        features_copied: Number(featuresCopied),
+      };
+    });
+  } catch (err: unknown) {
+    throw { code: "INTERNAL_ERROR" as const, cause: err };
+  }
 }

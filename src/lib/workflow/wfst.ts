@@ -120,6 +120,8 @@ function buildWfstPayload(
   editComment: string,
   featureUuid: string,
   featureData: FeatureData,
+  versionNr: number,
+  isSessionBoundary: boolean = true,
 ): string {
   const fkCol = `${featureType}_id`;
   const typeName = buildGeoServerTypeName(featureType);
@@ -131,9 +133,9 @@ function buildWfstPayload(
   // -----------------------------------------------------------------------
   const systemParts: string[] = [
     `<${geoPrefix}:${fkCol}>${xmlEscape(featureUuid)}</${geoPrefix}:${fkCol}>`,
-    `<${geoPrefix}:version_nr>1</${geoPrefix}:version_nr>`,
+    `<${geoPrefix}:version_nr>${versionNr}</${geoPrefix}:version_nr>`,
     `<${geoPrefix}:session_id>${sessionId}</${geoPrefix}:session_id>`,
-    `<${geoPrefix}:is_session_boundary>true</${geoPrefix}:is_session_boundary>`,
+    `<${geoPrefix}:is_session_boundary>${isSessionBoundary}</${geoPrefix}:is_session_boundary>`,
     `<${geoPrefix}:created_at>${createdAt}</${geoPrefix}:created_at>`,
     `<${geoPrefix}:created_by>${xmlEscape(userEmail)}</${geoPrefix}:created_by>`,
     `<${geoPrefix}:edit_comment>${xmlEscape(editComment)}</${geoPrefix}:edit_comment>`,
@@ -218,6 +220,8 @@ export async function insertVersionWfst(
   featureUuid: string,
   featureData: FeatureData,
   config: WfstConfig,
+  versionNr: number = 999999,
+  isSessionBoundary: boolean = true,
 ): Promise<string> {
   // -----------------------------------------------------------------------
   // XML-Payload bauen
@@ -230,6 +234,8 @@ export async function insertVersionWfst(
     editComment,
     featureUuid,
     featureData,
+    versionNr,
+    isSessionBoundary,
   );
 
   // -----------------------------------------------------------------------
@@ -281,5 +287,84 @@ export async function insertVersionWfst(
       parseError instanceof Error ? parseError.message : String(parseError);
     // Debug: ersten 500 Zeichen der Response anhängen
     throw new Error(`${msg}. Response-Anfang: ${responseText.slice(0, 500)}`);
+  }
+}
+
+// ===========================================================================
+// WFS-T Rollback
+// ===========================================================================
+
+/**
+ * Löscht WFS-T-Versionseinträge per WFS-T-Delete (Rollback bei Fehler).
+ *
+ * Baut ein WFS 2.0.0 Transaction/Delete-Request mit ResourceId-Filtern
+ * f�r alle �bergebenen version_ids.
+ *
+ * @param geoPrefix   GeoServer-Namespace-Prefix (z. B. "de1")
+ * @param featureType Themen-Schl�ssel (z. B. "grabflur")
+ * @param versionIds  Array von UUIDs die gel�scht werden sollen
+ * @param config      GeoServer-Endpoint + Credentials
+ */
+export async function deleteVersionsWfst(
+  geoPrefix: string,
+  featureType: string,
+  versionIds: string[],
+  config: WfstConfig,
+): Promise<void> {
+  if (versionIds.length === 0) {
+    console.log("[WFS-T Rollback] Keine versionIds zu löschen – überspringe");
+    return;
+  }
+
+  const typeName = buildGeoServerTypeName(featureType);
+  const namespace = `urn:data-dna:govdata:${geoPrefix}`;
+
+  const resourceIds = versionIds
+    .map((id) => `<fes:ResourceId rid="${typeName}.${id}"/>`)
+    .join("\n      ");
+
+  const payload = `<?xml version="1.0" encoding="UTF-8"?>
+<wfs:Transaction
+    service="WFS" version="2.0.0"
+    xmlns:wfs="http://www.opengis.net/wfs/2.0"
+    xmlns:${geoPrefix}="${namespace}"
+    xmlns:fes="http://www.opengis.net/fes/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <wfs:Delete typeName="${geoPrefix}:${typeName}">
+    <fes:Filter>
+      ${resourceIds}
+    </fes:Filter>
+  </wfs:Delete>
+</wfs:Transaction>`;
+
+  const credentials = btoa(`${config.username}:${config.password}`);
+
+  console.log(
+    `[WFS-T Rollback] Sende DELETE an ${config.endpoint} (${versionIds.length} IDs)`,
+  );
+
+  const response = await fetch(config.endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/xml",
+      Authorization: `Basic ${credentials}`,
+    },
+    body: payload,
+    signal: AbortSignal.timeout(30_000),
+  });
+
+  // Fehler beim Rollback werden geloggt, aber nicht weiter geworfen
+  // (der eigentliche Fehler aus dem Insert-Flow hat Vorrang)
+  if (!response.ok) {
+    const respBody = await response.text().catch(() => "(kein Body)");
+    console.error(
+      `[WFS-T Rollback] DELETE fehlgeschlagen: HTTP ${response.status} ${response.statusText}`,
+    );
+    console.error(
+      `[WFS-T Rollback] Response-Body (Auszug):`,
+      respBody.slice(0, 1000),
+    );
+  } else {
+    console.log("[WFS-T Rollback] DELETE erfolgreich");
   }
 }

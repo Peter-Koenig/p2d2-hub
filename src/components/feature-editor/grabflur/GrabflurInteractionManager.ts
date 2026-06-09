@@ -76,6 +76,15 @@ export default class GrabflurInteractionManager {
   // -- Konfiguration --
   private municipality: string;
 
+  // -- Modified-Tracking (Container-Versionen) --
+  private modifiedUuids: Set<string> = new Set();
+
+  // -- Pending (Popup-gesteuerter) Cemetery-Load --
+  private pendingCemeteryId: string | null = null;
+  private pendingExtent: number[] | null = null;
+  private pendingCemeteryName: string = "";
+  private pendingCemeteryFhNr: string = "";
+
   constructor(
     map: OLMap,
     layerManager: GrabflurLayerManager,
@@ -189,6 +198,7 @@ export default class GrabflurInteractionManager {
 
     const name = selected.get("name") || "Unbenannt";
     const cemeteryId = selected.getId() || name;
+    const fhNr = selected.get("fh_nr") ?? "";
     this.currentCemeteryId = cemeteryId;
 
     // Auf Friedhof zoomen
@@ -213,18 +223,74 @@ export default class GrabflurInteractionManager {
     if (this.sessionManager.isSessionActive()) return;
     this.exitEditMode();
 
-    // ── Grabflure für diesen Friedhof laden ──
+    // ── Version-Popup anzeigen (statt sofortigem Laden) ──
+    this.pendingCemeteryId = cemeteryId;
+    this.pendingExtent = extent;
+    this.pendingCemeteryName = name;
+    this.pendingCemeteryFhNr = fhNr;
+
+    // Grabflure zurücksetzen (vorherige ausblenden)
+    this.layerManager.clearGrabflure();
+    this.layerManager.setGrabflureVisible(false);
+
+    this.showVersionPopup(name);
+  }
+
+  // -----------------------------------------------------------------------
+  // Version-Popup
+  // -----------------------------------------------------------------------
+
+  /**
+   * Zeigt das Version-Auswahl-Popup für einen Friedhof.
+   * Aktuell rein visuell – die Versionen sind Platzhalter.
+   */
+  private showVersionPopup(fhName: string): void {
+    const el = document.getElementById("version-popup");
+    const subtitle = document.getElementById("version-popup-cemetery");
+    if (subtitle) subtitle.textContent = `Friedhof: ${fhName}`;
+    if (el) el.classList.remove("version-popup-hidden");
+  }
+
+  /** Versteckt das Version-Popup. */
+  hideVersionPopup(): void {
+    const el = document.getElementById("version-popup");
+    if (el) el.classList.add("version-popup-hidden");
+  }
+
+  /** Setzt die Friedhofs-Auswahl zurück (nach Popup-Abbruch). */
+  resetPendingCemeterySelection(): void {
+    this.currentCemeteryId = null;
+    this.pendingCemeteryId = null;
+    this.pendingExtent = null;
+  }
+
+  /**
+   * Wird aufgerufen, wenn der Nutzer im Version-Popup auf "Starten" klickt.
+   * Lädt die Grabflur-Features des zuvor ausgewählten Friedhofs.
+   */
+  async proceedWithCemeteryLoad(): Promise<void> {
+    this.hideVersionPopup();
+
+    const cemeteryId = this.pendingCemeteryId;
+    const extent = this.pendingExtent;
+
+    if (!cemeteryId || !extent) {
+      console.warn(
+        "[GrabflurInteractionManager] Kein ausstehender Cemetery-Load",
+      );
+      return;
+    }
+
+    // Race-Condition-Schutz
+    if (this.currentCemeteryId !== cemeteryId) return;
+
     try {
       const grabflureFeatures = await this.dataManager.loadGrabflureForFriedhof(
         extent,
         this.projection,
       );
 
-      // Race-Condition-Schutz: Nur anwenden, wenn kein anderer Cemetery
-      // zwischenzeitlich geklickt wurde
-      if (this.currentCemeteryId !== cemeteryId) {
-        return;
-      }
+      if (this.currentCemeteryId !== cemeteryId) return;
 
       this.layerManager.clearGrabflure();
       if (grabflureFeatures.length > 0) {
@@ -234,7 +300,7 @@ export default class GrabflurInteractionManager {
         this.layerManager.setGrabflureVisible(false);
       }
     } catch (err) {
-      console.error("[Grabflur-Editor] Grabflur-Fehler:", err);
+      console.error("[GrabflurInteractionManager] Grabflur-Ladefehler:", err);
       this.layerManager.setGrabflureVisible(false);
     }
   }
@@ -282,11 +348,20 @@ export default class GrabflurInteractionManager {
     if (!uuid) return; // kein UUID → kein Edit-Mode möglich
 
     if (uuid === this.lastClickedGrabflureUuid) {
-      // 2. Klick auf dieselbe Grabflur → Session öffnen, dann Edit-Mode
+      // 2. Klick auf dieselbe Grabflur → Session für Friedhof öffnen, dann Edit-Mode
       this.lastClickedGrabflureUuid = null;
       try {
-        await this.sessionManager.openSession(hitFeature, this.municipality);
-        this.enterEditMode(hitFeature);
+        const fhNr = hitFeature.get("fh_nr");
+        const fhName = hitFeature.get("fh_name");
+        const wpName = hitFeature.get("wp_name");
+        await this.sessionManager.openSession(
+          fhNr,
+          fhName,
+          wpName,
+          this.municipality,
+          uuid,
+        );
+        this.enterEditMode();
       } catch {
         // SessionConflictError / SessionOpenError behandeln bereits
         // alert() in GrabflurSessionManager – hier nichts weiter tun
@@ -316,8 +391,12 @@ export default class GrabflurInteractionManager {
   /**
    * Schaltet in den Edit-Mode: zeigt die Edit-Toolbar, aktiviert
    * das Select-Werkzeug und dispatcht ein EDITOR_MODE_CHANGE-Event.
+   *
+   * (Ruft clearModifiedTracking() auf, um das Modified-Tracking
+   * für die neue Edit-Session zurückzusetzen.)
    */
-  enterEditMode(feature: Feature<Geometry>): void {
+  enterEditMode(): void {
+    this.clearModifiedTracking();
     const container = document.getElementById("edit-tools-container");
     container?.classList.remove("edit-tools-hidden");
     container?.classList.add("edit-tools-visible");
@@ -330,9 +409,7 @@ export default class GrabflurInteractionManager {
       .querySelector('[data-tool="select"]')
       ?.classList.add("highlighted");
 
-    console.log(
-      `[Editor] 🖊️ Edit-Mode für Grabflur: ${feature.get("name") || feature.get("flur_nr") || "unbenannt"}`,
-    );
+    console.log("[Editor] 🖊️ Edit-Mode aktiviert");
 
     dispatchCrossWindowEvent(P2D2EventType.EDITOR_MODE_CHANGE, {
       mode: "edit",
@@ -364,9 +441,48 @@ export default class GrabflurInteractionManager {
       .querySelector('[data-tool="select"]')
       ?.classList.add("highlighted");
     this.lastClickedGrabflureUuid = null;
+    this.clearModifiedTracking();
 
     dispatchCrossWindowEvent(P2D2EventType.EDITOR_MODE_CHANGE, {
       mode: "navigate",
+      previousMode: "edit",
+      windowId: getWindowId(),
+      timestamp: Date.now(),
+    });
+  }
+
+  /**
+   * Beendet den Edit-Mode, aber BEHÄLT die Grabflur-Features sichtbar.
+   *
+   * Wie exitEditMode, jedoch OHNE:
+   *   - layerManager.clearGrabflure()
+   *   - layerManager.setGrabflureVisible(false)
+   *
+   * Der Nutzer sieht nach dem Speichern weiterhin die Grabflur-Features
+   * im Read-Only-Modus, bevor er zur nächsten Grabflur wechselt.
+   * Das Event wird mit mode: 'view' (statt 'navigate') dispatchet,
+   * damit die UI weiss, dass Features sichtbar bleiben sollen.
+   */
+  exitEditModeKeepFeatures(): void {
+    this.setActiveTool(null);
+    this.activeTool = null;
+    document
+      .getElementById("edit-tools-container")
+      ?.classList.remove("edit-tools-visible");
+    document
+      .getElementById("edit-tools-container")
+      ?.classList.add("edit-tools-hidden");
+    document
+      .querySelectorAll("[data-tool]")
+      .forEach((b) => b.classList.remove("highlighted"));
+    document
+      .querySelector('[data-tool="select"]')
+      ?.classList.add("highlighted");
+    this.lastClickedGrabflureUuid = null;
+    this.clearModifiedTracking();
+
+    dispatchCrossWindowEvent(P2D2EventType.EDITOR_MODE_CHANGE, {
+      mode: "view",
       previousMode: "edit",
       windowId: getWindowId(),
       timestamp: Date.now(),
@@ -383,6 +499,35 @@ export default class GrabflurInteractionManager {
    */
   getGrabflureSelect(): Select | null {
     return this.grabflureSelect;
+  }
+
+  // -----------------------------------------------------------------------
+  // Modified-Tracking (Container-Versionen)
+  // -----------------------------------------------------------------------
+
+  /**
+   * Gibt alle modifizierten Features als Array zurück (für commitAndClose).
+   *
+   * Iteriert über den grabflureSource und filtert die Features,
+   * deren p2d2_uuid in modifiedUuids enthalten ist.
+   */
+  getModifiedFeatures(): Array<{ uuid: string; geometry: any }> {
+    const result: Array<{ uuid: string; geometry: any }> = [];
+    this.layerManager
+      .getGrabflureSource()
+      .getFeatures()
+      .forEach((f: any) => {
+        const uuid = f.get("p2d2_uuid");
+        if (uuid && this.modifiedUuids.has(uuid)) {
+          result.push({ uuid, geometry: f.getGeometry() });
+        }
+      });
+    return result;
+  }
+
+  /** Setzt das Modified-Tracking zurück (nach Commit oder Abbruch). */
+  clearModifiedTracking(): void {
+    this.modifiedUuids.clear();
   }
 
   /**
@@ -432,7 +577,11 @@ export default class GrabflurInteractionManager {
           layers: [this.layerManager.getGrabflureLayer()],
           hitTolerance: 8,
         });
-        tr.on("translatestart", () => {
+        tr.on("translateend", (evt) => {
+          evt.features.forEach((f: any) => {
+            const uuid = f.get("p2d2_uuid");
+            if (uuid) this.modifiedUuids.add(uuid);
+          });
           (document.getElementById("tool-save") as HTMLButtonElement).disabled =
             false;
         });
@@ -442,13 +591,17 @@ export default class GrabflurInteractionManager {
       }
       case "modify": {
         if (!this.grabflureSelect) break;
-        this.grabflureSelect.setActive(false);
+        // grabflureSelect bleibt aktiv, damit ein Feature-Wechsel per Klick möglich ist
         const md = new Modify({
           features: this.grabflureSelect.getFeatures(),
           pixelTolerance: 6,
           insertVertexCondition: never,
         });
-        md.on("modifystart", () => {
+        md.on("modifyend", (evt) => {
+          evt.features.forEach((f: any) => {
+            const uuid = f.get("p2d2_uuid");
+            if (uuid) this.modifiedUuids.add(uuid);
+          });
           (document.getElementById("tool-save") as HTMLButtonElement).disabled =
             false;
         });
