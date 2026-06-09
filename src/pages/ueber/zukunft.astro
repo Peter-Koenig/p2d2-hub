@@ -1,0 +1,202 @@
+<!-- SPDX-FileCopyrightText: 2026-2026 Peter König <peter.koenig@data-dna.eu> -->
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+<!-- p2d2: Zukunft: Wohin sich p2d2 entwickelt -->
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Zukunft | p2d2"
+  description="Wohin sich p2d2 entwickelt: Doppelhelix-Prinzip, Civitas Core, Bürgerbeteiligung, thematische Offenheit und europäischer Weg"
+>
+  <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
+    <div
+      class="prose prose-lg max-w-none prose-headings:font-poppins prose-headings:font-bold prose-p:font-inter prose-p:text-gray-700 prose-a:text-primary-600 hover:prose-a:text-primary-500 transition-colors"
+    >
+      <h1>Wohin sich p2d2 entwickelt</h1>
+      <p>
+        p2d2 ist ein Werkzeug, das mit der Gemeinschaft wächst, die es
+        nutzt. Die technische Basis steht - der Weg von einem
+        Einzelprojekt zu einer gemeinsam getragenen Infrastruktur ist das
+        eigentliche Zukunftsziel.
+      </p>
+
+      <h2>Das Doppelhelix-Prinzip als Kern</h2>
+      <p>
+        p2d2 verbindet zwei unabh&auml;ngige Datenhaltungen: kommunale
+        Verwaltungsdaten, die aus Fachverfahren stammen und &uuml;ber
+        Open-Data- oder Geodaten-Portale bereitgestellt werden, und
+        OpenStreetMap, die von einer weltweiten Gemeinschaft gepflegt wird.
+        Diese Doppelhelix-Struktur ist kein technischer Zufall, sondern
+        bewusstes Design.
+      </p>
+      <p>
+        Indem p2d2 beide Datenstr&auml;nge gleichberechtigt nebeneinanderstellt
+        und ihren Abgleich organisiert, entsteht ein
+        <strong>Level Playing Field</strong>: Verwaltung, B&uuml;rgerinnen und
+        B&uuml;rger sowie wirtschaftliche Akteure arbeiten an denselben Daten
+        mit denselben Werkzeugen. Wirtschaftliche Akteure haben ein
+        Eigeninteresse an der Datenpflege, vergleichbar mit der Dynamik, die
+        den Linux-Kernel antreibt. Das verleiht dem System eine Eigendynamik,
+        die &uuml;ber die Projektlaufzeit hinaus wirken kann.
+      </p>
+      <p>
+        Die Analogie zur DNA tr&auml;gt allerdings weiter, als es auf den ersten
+        Blick scheint. In der Natur ist DNA nicht nur der stabilste
+        Datenspeicher, den die Evolution hervorgebracht hat - sie ist
+        auch derjenige, der Weiterentwicklung erm&ouml;glicht. Die gegenseitige
+        Kontrolle der beiden Str&auml;nge sorgt f&uuml;r Stabilit&auml;t: Ein
+        Fehler in einem Strang f&auml;llt auf, weil der andere Strang ihn nicht
+        best&auml;tigt. Gleichzeitig sind es genau die kontrollierten
+        Abweichungen zwischen den Str&auml;ngen, die biologische
+        Weiterentwicklung erst m&ouml;glich machen. Ohne diese Abweichungen
+        g&auml;be es keine Anpassung an ver&auml;nderte Umgebungen.
+      </p>
+      <p>
+        &Uuml;bertragen auf p2d2 bedeutet das: Die beiden Datenstr&auml;nge
+        (Verwaltung und OSM) korrigieren sich gegenseitig - das schafft
+        Stabilit&auml;t. Aber jeder Strang kann sich auch unabh&auml;ngig
+        weiterentwickeln. Die Verwaltung kann neue Daten aus Fachverfahren
+        einspielen, ohne auf die OSM-Community warten zu m&uuml;ssen. Die
+        OSM-Community kann aus eigener Ortskenntnis erg&auml;nzen und
+        korrigieren, ohne auf eine Genehmigung der Verwaltung angewiesen zu
+        sein. Das Ergebnis ist ein System, das stabil ist, weil es Fehler
+        erkennt, und gleichzeitig anpassungsf&auml;hig, weil beide Seiten
+        eigenst&auml;ndig handeln k&ouml;nnen. Das ist der entscheidende
+        Vorteil gegen&uuml;ber einer zentralen Datenhaltung, die entweder
+        stabil oder flexibel sein kann, aber selten beides.
+      </p>
+
+      <h2>Civitas Core als Multiplikator</h2>
+      <p>
+        Die mittelfristige Perspektive ist, p2d2 als
+        <strong>Plugin f&uuml;r Civitas Core</strong> zu integrieren.
+        Civitas Core ist eine kommunale Open-Source-Datenplattform, getragen
+        von Civitas Connect e.V. mit &uuml;ber 50 St&auml;dten, Gemeinden und
+        Stadtwerken und gef&ouml;rdert durch das ZenDiS. Die Plattform
+        verf&uuml;gt &uuml;ber vielf&auml;ltige Module f&uuml;r kommunale
+        Verwaltungsprozesse, hat aber keinen GIS-Editor, der B&uuml;rgerinnen
+        und B&uuml;rgern eine aktive Beteiligung an der Geodatenpflege
+        erm&ouml;glicht.
+      </p>
+      <p>
+        Genau diese L&uuml;cke schlie&szlig;t p2d2. Als Plugin eingebunden,
+        k&ouml;nnten kommunale Mitarbeitende und B&uuml;rgerinnen gleicherma&szlig;en
+        &uuml;ber den OSM-Kanal an der Pflege &ouml;ffentlicher Geodaten
+        mitwirken. Die derzeitige Authentifizierung (Zitadel) soll daf&uuml;r
+        auf den Keycloak-Stack von OpenDesk und Civitas Core migrierbar sein,
+        sodass p2d2 nahtlos in die vorhandene Identit&auml;tsinfrastruktur
+        eingebunden werden kann.
+      </p>
+
+      <h2>B&uuml;rgerbeteiligung als Designprinzip</h2>
+      <p>
+        Klassische Verwaltungsportale ver&ouml;ffentlichen Daten - sie laden
+        zum Betrachten ein, selten zum Mitmachen. p2d2 geht einen anderen Weg:
+        B&uuml;rgerinnen werden zu aktiven Datenproduzenten. Der
+        Qualit&auml;tsicherungsprozess ist so gestaltet, dass
+        Community-Feedback strukturell in den Datenfluss integriert ist -
+        kein Kontaktformular, sondern ein echter Review-Kanal mit Rechten und
+        Rollen.
+      </p>
+      <p>
+        Der Prozess durchl&auml;uft mehrere Stationen: von der Bearbeitung
+        &uuml;ber die interne Qualit&auml;tsspr&uuml;fung und das
+        OSM-Community-Feedback bis zur Freigabe. Die interne Pr&uuml;fung und
+        das Feedback aus der Community sind gleichberechtigte Stationen vor dem
+        Export. Das ist kein Portal, das Daten konsumiert - es ist ein
+        Werkzeug, das Daten gemeinschaftlich produziert.
+      </p>
+
+      <h2>Geografischer Scope durch OSM</h2>
+      <p>
+        Weil p2d2 auf OpenStreetMap aufbaut, ist es strukturell global
+        ausgerichtet. Es muss keine eigene Ausrollungsinfrastruktur in anderen
+        L&auml;ndern aufbauen, denn OSM und das &ouml;ffentliche Internet
+        sind die Infrastruktur. Das er&ouml;ffnet eine Perspektive, die &uuml;ber
+        den europ&auml;ischen Fokus hinausweist.
+      </p>
+      <p>
+        Insbesondere L&auml;nder des Globalen S&uuml;dens k&ouml;nnten von einem
+        <strong>Leapfrogging</strong>-Effekt profitieren: Statt propriet&auml;re
+        Lock-ins zu &uuml;bernehmen, k&ouml;nnen sie direkt auf offenen,
+        gemeinschaftlich gepflegten Standards aufbauen. Das ist eine
+        M&ouml;glichkeit, kein Versprechen - die OSM-Datendichte ist
+        regional sehr unterschiedlich, und der Ansatz funktioniert selektiv,
+        nicht universell.
+      </p>
+
+      <h2>Von Friedh&ouml;fen zu Baumscheiben</h2>
+      <p>
+        Friedh&ouml;fe sind nicht das Ziel - sie sind der Anfang. p2d2
+        wurde mit dem Gedanken gebaut, dass der Prozess auf andere kommunale
+        Objekttypen &uuml;bertragbar ist. Baumscheiben, Stra&szlig;enlaternen,
+        Spielpl&auml;tze, Denkm&auml;ler: Sie alle haben dieselben
+        Eigenschaften - r&auml;umlich verortbar, &ouml;ffentlich
+        verwaltet, f&uuml;r B&uuml;rgerinnen relevant. Die Architektur ist
+        bereits vorbereitet.
+      </p>
+      <p>
+        Was fehlt, sind Daten und die Kommunen, die bereit sind, diese Daten in
+        das System einzubringen. Das ist keine technische Frage mehr, sondern
+        eine organisatorische - und genau das ist der Punkt, an dem p2d2
+        vom Werkzeug zur Infrastruktur wird. Eine Infrastruktur entsteht nicht
+        dadurch, dass man sie baut, sondern dadurch, dass man sie nutzt. Jede
+        Kommune, die einen Datensatz einbringt, erweitert nicht nur das System,
+        sondern definiert mit, wof&uuml;r es steht.
+      </p>
+
+      <h2>Prototype Fund und europ&auml;ischer Weg</h2>
+      <p>
+        p2d2 wird durch den <strong>Prototype Fund</strong> (BMBF)
+        gef&ouml;rdert. Phase 1 (Konzept und Prototyp) l&auml;uft, Phase 2
+        (Umsetzung) ist ab Dezember 2026 beantragt. Der mittelfristige Weg
+        sieht dar&uuml;ber hinaus mehrere Schritte vor:
+      </p>
+      <ul>
+        <li>
+          <strong>Gr&uuml;ndung eines Anwendervereins</strong> -
+          europ&auml;isch ausgerichtet, offen f&uuml;r Kommunen, Institutionen
+          und Einzelpersonen, die p2d2 nutzen oder mitentwickeln wollen.
+        </li>
+        <li>
+          <strong>Gr&uuml;ndung einer europ&auml;ischen
+          Beratungsgesellschaft</strong> mit zwei Kernangeboten: Beratung beim
+          Heraussch&auml;len offener Daten aus kommunalen Fachverfahren und
+          deren Bereitstellung &uuml;ber geeignete Open-Data- und
+          Geodaten-Portale sowie Beratung bei der R&uuml;ckintegration von
+          Daten aus dem &ouml;ffentlichen Raum in Verwaltungsprozesse.
+        </li>
+        <li>
+          <strong>Eine Dachorganisation</strong> setzt die Regeln f&uuml;r die
+          Gemeinwohlorientierung und die Qualit&auml;tsbedingungen f&uuml;r
+          Beratungsleistungen - vergleichbar mit der Rolle der OSGeo
+          f&uuml;r freie Geodaten-Infrastruktur.
+        </li>
+        <li>
+          <strong>Potenzielle F&ouml;rderung</strong> &uuml;ber Horizon Europe
+          oder Digital Europe, idealerweise im Konsortium mit kommunalen
+          Pilotpartnern. Erste Gespr&auml;che laufen mit Kommunen in
+          Schleswig-Holstein und Civitas-Core-interessierten St&auml;dten.
+        </li>
+      </ul>
+
+      <h2>Ein Projekt im Wachstum</h2>
+      <p>
+        p2d2 ist ein junges Projekt mit einem Hauptentwickler. Die Entwicklung
+        wird durch den Prototype Fund erm&ouml;glicht und durch
+        KI-Unterst&uuml;tzung beschleunigt - das ist transparent
+        dokumentiert und im Quellcode nachvollziehbar.
+      </p>
+      <p>
+        Der Weg von einem Einzelprojekt zu einer gemeinschaftlich getragenen
+        Infrastruktur ist das eigentliche Zukunftsziel. Er erfordert mehr als
+        Code: Er erfordert eine Gemeinschaft, die das Werkzeug annimmt, weiter
+        entwickelt und seine Regeln mitbestimmt. Wo heute ein Prototyp steht,
+        kann morgen ein Werkzeug stehen, das von mehreren Kommunen, einer
+        wachsenden OSM-Community und &ouml;ffentlichen Institutionen gemeinsam
+        getragen wird. Das unterscheidet eine Infrastruktur von einem Tool.
+      </p>
+    </div>
+  </main>
+</BaseLayout>
