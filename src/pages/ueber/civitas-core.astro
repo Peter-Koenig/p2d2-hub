@@ -1,0 +1,147 @@
+<!-- SPDX-FileCopyrightText: 2026-2026 Peter König <peter.koenig@data-dna.eu> -->
+<!-- SPDX-License-Identifier: EUPL-1.2 -->
+<!-- p2d2: Über p2d2: p2d2 Standalone vs. p2d2 als CIVITAS/CORE-Plugin -->
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="CIVITAS/CORE | p2d2"
+  description="p2d2 im Vergleich: Standalone-Betrieb vs. Integration als CIVITAS/CORE-Plugin auf Kubernetes"
+>
+  <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
+    <div
+      class="prose prose-lg max-w-none prose-headings:font-poppins prose-headings:font-bold prose-p:font-inter prose-p:text-gray-700 prose-a:text-primary-600 hover:prose-a:text-primary-500 transition-colors"
+    >
+      <h1>p2d2 und CIVITAS/CORE</h1>
+      <p>
+        p2d2 l&auml;uft heute als <strong>Standalone-Anwendung</strong> auf
+        eigener Proxmox-Infrastruktur. Parallel dazu wird gepr&uuml;ft, wie
+        sich p2d2 als <strong>Plugin in CIVITAS/CORE</strong> integrieren
+        l&auml;sst - die gemeinsame, Kubernetes-basierte Plattform des
+        CIVITAS/CORE-Netzwerks. Die folgende Grafik stellt beide Betriebsarten
+        gegen&uuml;ber:
+      </p>
+
+      <img
+        src="/images/p2d2_Standalon_CivitasCore.svg"
+        alt="Architekturvergleich: p2d2 Standalone (Proxmox, Hetzner) versus p2d2 als CIVITAS/CORE-Plugin (Kubernetes-Cluster)"
+      />
+
+      <h2>Die Komponenten im Einzelnen</h2>
+      <p>
+        Im Standalone-Betrieb besteht p2d2 aus sechs Komponenten, die als
+        LXC-Container bzw. VMs auf dem Proxmox-Server laufen. Bei einer
+        Integration in CIVITAS/CORE unterscheiden sich diese Komponenten
+        grundlegend danach, ob sie sich unver&auml;ndert als eigener Pod im
+        Cluster abbilden lassen, oder ob sie durch bereits vorhandene
+        CORE-Kernkomponenten ersetzt werden m&uuml;ssen.
+      </p>
+
+      <h3>Neu aufzubauen: 1:1 als eigener Pod</h3>
+      <p>
+        Diese Komponenten existieren im CIVITAS/CORE-Cluster noch nicht. Sie
+        w&uuml;rden dieselbe Codebasis wie im Standalone-Betrieb behalten und
+        lediglich als Kubernetes-Deployment statt als LXC laufen:
+      </p>
+      <ul>
+        <li>
+          <strong>Frontend/Hub (AstroJS)</strong> - liefert die
+          WebGIS-Oberfl&auml;che aus und steuert die Synchronisation zwischen
+          Verwaltungsdaten und OpenStreetMap. Im Cluster: Deployment mit
+          Ingress, gleiche Codebasis wie im Standalone-Betrieb. Da es keine
+          Abh&auml;ngigkeit zu einer CORE-Kernkomponente gibt, ist dies die
+          Komponente mit dem geringsten Integrationsaufwand - im Wesentlichen
+          Containerisierung und Anpassung der Umgebungsvariablen.
+        </li>
+        <li>
+          <strong>Mapproxy</strong> - cacht Kachel- und OGC-Dienste vor den
+          eigentlichen GeoServer- und Tileserver-Backends und reduziert so
+          Last und Latenz. Im Cluster: Deployment mit persistentem Volume
+          (PVC) f&uuml;r den Tile-Cache. Ebenfalls unver&auml;ndert
+          &uuml;bertragbar, da Mapproxy keine CORE-spezifische Gegenstelle
+          hat.
+        </li>
+      </ul>
+
+      <h3>Integration in bestehende Kernkomponenten</h3>
+      <p>
+        Diese Komponenten haben in CIVITAS/CORE ein Gegenst&uuml;ck, das
+        bereits als gemeinsam genutzte Kernkomponente im Cluster l&auml;uft.
+        Statt eine eigene Instanz mitzubringen, m&uuml;sste p2d2 sich an die
+        vorhandene Komponente anbinden:
+      </p>
+      <ul>
+        <li>
+          <strong>Authentifizierung: Zitadel &rarr; Keycloak</strong> - im
+          Standalone-Betrieb meldet sich p2d2 &uuml;ber Zitadel als eigenen
+          Identity Provider an (OIDC Authorization Code Flow mit PKCE). In
+          CIVITAS/CORE &uuml;bernimmt <strong>Keycloak</strong> diese Rolle
+          als zentrale CORE-Kernkomponente f&uuml;r alle Addons. Die
+          Integration erfordert keinen neuen IAM-Betrieb, sondern eine
+          OIDC-Anbindung an Keycloak: Client-Registrierung, Anpassung des
+          Discovery-Endpunkts und &Uuml;bertragung der p2d2-Rollen
+          (editor, qs1_reviewer, qs2_reviewer, export_admin) in das
+          Keycloak-Rollenmodell.
+        </li>
+        <li>
+          <strong>GeoServer</strong> - stellt die WMS-, WFS- und
+          WFS-T-Schnittstellen bereit, &uuml;ber die die Editoren Geometrien
+          lesen und transaktional schreiben. GeoServer ist ebenfalls eine
+          CORE-Kernkomponente (Deployment mit PVC). Eine Integration
+          bedeutet, dass p2d2 nicht mit einer eigenen GeoServer-Instanz
+          arbeitet, sondern eigene Workspaces/Layer innerhalb des
+          bestehenden CORE-GeoServers erh&auml;lt - inklusive Kl&auml;rung
+          von Zugriffsrechten und Schema-Trennung gegen&uuml;ber anderen
+          Addons.
+        </li>
+        <li>
+          <strong>PostgreSQL/PostGIS</strong> - h&auml;lt Stammdaten,
+          Versionen und die Workflow-Tabellen des Session-Modells. In
+          CIVITAS/CORE l&auml;uft die Datenbank &uuml;ber einen
+          CloudNativePG-Operator als Kernkomponente. p2d2 m&uuml;sste sein
+          Schema in diese gemeinsam betriebene Instanz &uuml;berf&uuml;hren,
+          statt - wie im Standalone-Betrieb - ein eigenes LXC mit
+          PostgreSQL/PostGIS zu betreiben.
+        </li>
+      </ul>
+
+      <h3>Kein p2d2-Migrationsthema: der OSM-Tileserver</h3>
+      <p>
+        Der OSM-Tileserver, der die Kartenkacheln f&uuml;r die
+        OpenStreetMap-Basiskarte liefert, ist im Standalone-Betrieb als
+        eigene VM aufgebaut, aber noch nicht produktiv geschaltet - die
+        Aufteilung des verf&uuml;gbaren SSD-Speichers zwischen Mapproxy und
+        Tileserver ist noch nicht final entschieden. Im
+        CIVITAS/CORE-Szenario ist er als vereinsweiter, gemeinsam genutzter
+        Dienst mit eigener PostgreSQL/PostGIS-Instanz <strong>au&szlig;erhalb</strong>
+        des Kubernetes-Clusters vorgesehen. Er ist damit kein Bestandteil
+        der p2d2-Migration.
+      </p>
+
+      <h2>Offene Frage: Masterportal</h2>
+      <p>
+        CIVITAS/CORE sieht standardm&auml;&szlig;ig Masterportal als
+        Geoportal-Komponente vor. Ob p2d2 dieses Masterportal nutzen muss
+        oder mit seinem AstroJS-Frontend als eigenst&auml;ndige
+        Pr&auml;sentationsschicht betrieben werden kann, ist noch nicht
+        abschlie&szlig;end mit den CIVITAS/CORE-Verantwortlichen
+        gekl&auml;rt.
+      </p>
+
+      <h2>Weiterf&uuml;hrende Dokumentation</h2>
+      <p>
+        Eine ausf&uuml;hrlichere Beschreibung der Server-Architektur findet
+        sich im
+        <a
+          href="https://doc.data-dna.eu/de/administrationshandbuch/server-architektur/"
+          target="_blank"
+          rel="noopener"
+          >Administrationshandbuch</a
+        >. Diese Seite wird derzeit &uuml;berarbeitet, um den aktuellen
+        Stand (insbesondere Zitadel statt der dort fr&uuml;her beschriebenen
+        Ory-Komponenten) sowie die CIVITAS/CORE-Perspektive abzubilden.
+      </p>
+    </div>
+  </main>
+</BaseLayout>
