@@ -27,9 +27,9 @@
      inkscape:pagecheckerboard="1"
      inkscape:deskcolor="#d1d1d1"
      showguides="true"
-     inkscape:zoom="0.71407186"
-     inkscape:cx="698.80922"
-     inkscape:cy="672.20126"
+     inkscape:zoom="1.4281437"
+     inkscape:cx="1016.3543"
+     inkscape:cy="917.27463"
      inkscape:window-width="2325"
      inkscape:window-height="1232"
      inkscape:window-x="0"
@@ -530,25 +530,6 @@
          in2="comp1"
          id="feComposite241-0-7" />
     </filter>
-    <marker
-       style="overflow:visible"
-       id="ConcaveTriangle-1-3"
-       refX="0"
-       refY="0"
-       orient="auto-start-reverse"
-       inkscape:stockid="Concave triangle arrow"
-       markerWidth="1"
-       markerHeight="1"
-       viewBox="0 0 1 1"
-       inkscape:isstock="true"
-       inkscape:collect="always"
-       preserveAspectRatio="xMidYMid">
-      <path
-         transform="scale(0.7)"
-         d="M -2,-4 9,0 -2,4 c 2,-2.33 2,-5.66 0,-8 z"
-         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
-         id="path7-0-8" />
-    </marker>
     <filter
        style="color-interpolation-filters:sRGB"
        inkscape:label="Drop Shadow"
@@ -1990,6 +1971,22 @@
      y="1014.9726"
      id="text114"
      transform="translate(-33.174762,-118.22574)">Sachdaten</text>
+  <path
+     d="m 1030.3699,1103.6504 c 0,-5.6897 57.3952,-5.6897 57.3952,-5.6897 0,0 57.3952,0 57.3952,5.6897 v 42.2107 c 0,5.6898 -57.3952,5.6898 -57.3952,5.6898 0,0 -57.3952,0 -57.3952,-5.6898 v -42.2107"
+     fill="#438dd5"
+     style="fill:#677821;stroke:#3c7fc0;stroke-width:0.284487"
+     id="path104-7" />
+  <text
+     fill="#ffffff"
+     font-family="sans-serif"
+     font-size="16px"
+     font-weight="700"
+     lengthAdjust="spacing"
+     textLength="181.75"
+     x="875.13"
+     y="967.93842"
+     id="text105-5"
+     transform="matrix(0.56897329,0,0,0.56897329,538.13405,569.33504)">PostgreSQL/PostGIS</text>
   <rect
      fill="#438dd5"
      height="85.1875"
@@ -2697,7 +2694,7 @@
      y="310.93723"
      id="text206"><tspan
        sodipodi:role="line"
-       id="tspan206"></tspan></text>
+       id="tspan206" /></text>
   <g
      id="g241"
      transform="translate(34.310273,114.83438)">
@@ -2755,35 +2752,6 @@
          x="915.65967"
          y="361.26031"
          style="fill:#ffffff;fill-opacity:1;stroke-width:5.04756;marker-end:url(#ConcaveTriangle-1)">Neu</tspan></text>
-  </g>
-  <g
-     id="g241-3-3"
-     transform="translate(383.86746,669.3842)">
-    <path
-       style="fill:#d55043;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.8489;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ConcaveTriangle-1-3)"
-       id="path216-9-7"
-       sodipodi:type="arc"
-       sodipodi:cx="930.5462"
-       sodipodi:cy="343.10916"
-       sodipodi:rx="20.510147"
-       sodipodi:ry="20.510147"
-       sodipodi:start="4.9741884"
-       sodipodi:end="4.712389"
-       sodipodi:arc-type="arc"
-       d="m 935.85462,323.29788 a 20.510147,20.510147 0 0 1 14.80763,23.81261 20.510147,20.510147 0 0 1 -22.79316,16.33335 20.510147,20.510147 0 0 1 -17.78912,-21.67611 20.510147,20.510147 0 0 1 20.46623,-19.16872"
-       sodipodi:open="true" />
-    <text
-       xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:26.9954px;line-height:1.2;font-family:'Alegreya Sans';-inkscape-font-specification:'Alegreya Sans Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-decoration-color:#000000;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;direction:ltr;fill:#d55043;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:5.04756;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#ConcaveTriangle-1-3);filter:url(#filter241-5-2)"
-       x="915.65967"
-       y="361.26031"
-       id="text216-0-4"
-       transform="matrix(0.71421295,0,0,0.71421295,260.07652,89.914928)"><tspan
-         sodipodi:role="line"
-         id="tspan216-4-3"
-         x="915.65967"
-         y="361.26031"
-         style="fill:#ffffff;fill-opacity:1;stroke-width:5.04756;marker-end:url(#ConcaveTriangle-1-3)">Neu</tspan></text>
   </g>
   <g
      id="g241-3-0"
