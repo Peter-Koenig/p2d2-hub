@@ -1,15 +1,10 @@
-<!-- SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu> -->
-<!-- SPDX-License-Identifier: EUPL-1.2 -->
-<!-- p2d2: Hauptnavigation: Menü, Login/Logout, rollenabhängige Einträge -->
 ---
-import { getUserSession } from '../lib/auth/session';
+import { getUserSession } from "../lib/auth/session";
 const userSession = getUserSession(Astro.locals);
 const canShowVerwaltung =
-  userSession.isAuthenticated &&
-  userSession.roles.includes("verwaltung");
+    userSession.isAuthenticated && userSession.roles.includes("verwaltung");
 const canShowOsm =
-  userSession.isAuthenticated &&
-  userSession.roles.includes("osm");
+    userSession.isAuthenticated && userSession.roles.includes("osm");
 
 const nav = [
     {
@@ -19,6 +14,7 @@ const nav = [
             { name: "Hintergrund", href: "/ueber/hintergrund" },
             { name: "Ziel", href: "/ueber/ziel" },
             { name: "Umsetzung", href: "/ueber/umsetzung" },
+            { name: "CIVITAS/CORE", href: "/ueber/civitas-core" },
             { name: "Status", href: "/ueber/status" },
             { name: "Zukunft", href: "/ueber/zukunft" },
             { name: "Tests", href: "/ueber/testen" },
@@ -29,17 +25,19 @@ const nav = [
     { name: "Mitmachen", href: "/mitmachen", key: "mitmachen" },
     { name: "Kontakt", href: "/kontakt", key: "kontakt" },
     ...(canShowVerwaltung
-      ? [{ name: "Verwaltung", href: "/verwaltung", key: "verwaltung" }]
-      : []),
-    ...(canShowOsm
-      ? [{ name: "OSM", href: "/osm", key: "osm" }]
-      : []),
+        ? [{ name: "Verwaltung", href: "/verwaltung", key: "verwaltung" }]
+        : []),
+    ...(canShowOsm ? [{ name: "OSM", href: "/osm", key: "osm" }] : []),
 ];
 
 const currentPath = Astro.url.pathname;
 
 // Hilfsfunktion für aktive Links
-function isActive(item: { href?: string; name: string; children?: { name: string; href: string }[] }) {
+function isActive(item: {
+    href?: string;
+    name: string;
+    children?: { name: string; href: string }[];
+}) {
     if (!item.href) return false;
     return item.href === "/"
         ? currentPath === "/"
@@ -48,14 +46,15 @@ function isActive(item: { href?: string; name: string; children?: { name: string
 
 // userSession wurde bereits weiter oben definiert
 const initials = userSession.isAuthenticated
-  ? (userSession.displayName ?? userSession.userName ?? '?')
-      .split(' ')
-      .map((w: string) => w?.charAt(0)?.toUpperCase() ?? '')
-      .slice(0, 2)
-      .join('')
-  : '';
+    ? (userSession.displayName ?? userSession.userName ?? "?")
+          .split(" ")
+          .map((w: string) => w?.charAt(0)?.toUpperCase() ?? "")
+          .slice(0, 2)
+          .join("")
+    : "";
 ---
 
+<!-- SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu> --><!-- SPDX-License-Identifier: EUPL-1.2 --><!-- p2d2: Hauptnavigation: Menü, Login/Logout, rollenabhängige Einträge -->
 <header
     class="w-full bg-green-50/90 backdrop-blur-sm shadow-sm sticky top-0 z-50"
 >
@@ -102,10 +101,7 @@ const initials = userSession.isAuthenticated
                     if (item.children) {
                         // Dropdown-Menü für "Über …" – mit mouseenter/mouseleave für zuverlässiges Öffnen
                         return (
-                            <li
-                                class="relative"
-                                data-dropdown-wrapper="about"
-                            >
+                            <li class="relative" data-dropdown-wrapper="about">
                                 <button
                                     class="px-1 pb-1 text-gray-700 hover:text-gray-900 transition-colors duration-200"
                                     data-dropdown="true"
@@ -173,9 +169,25 @@ const initials = userSession.isAuthenticated
                             <span class="w-6 h-6 rounded-full bg-white text-green-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
                                 {initials}
                             </span>
-                            <span title={userSession.userName}>{userSession.displayName ?? userSession.userName ?? userSession.email ?? 'Benutzer'}</span>
-                            <svg class="w-4 h-4 transition-transform duration-200" id="user-dropdown-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            <span title={userSession.userName}>
+                                {userSession.displayName ??
+                                    userSession.userName ??
+                                    userSession.email ??
+                                    "Benutzer"}
+                            </span>
+                            <svg
+                                class="w-4 h-4 transition-transform duration-200"
+                                id="user-dropdown-arrow"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M19 9l-7 7-7-7"
+                                />
                             </svg>
                         </button>
                         <div
@@ -313,7 +325,10 @@ const initials = userSession.isAuthenticated
                         {
                             userSession.isAuthenticated ? (
                                 <li>
-                                    <div class="relative" id="user-dropdown-wrapper-mobile">
+                                    <div
+                                        class="relative"
+                                        id="user-dropdown-wrapper-mobile"
+                                    >
                                         <button
                                             id="user-dropdown-btn-mobile"
                                             class="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium font-poppins text-white bg-green-700 hover:bg-green-800 transition-colors duration-200 w-full"
@@ -322,9 +337,25 @@ const initials = userSession.isAuthenticated
                                             <span class="w-6 h-6 rounded-full bg-white text-green-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
                                                 {initials}
                                             </span>
-                                            <span title={userSession.userName}>{userSession.displayName ?? userSession.userName ?? userSession.email ?? 'Benutzer'}</span>
-                                            <svg class="w-4 h-4 ml-auto transition-transform duration-200" id="user-dropdown-arrow-mobile" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                            <span title={userSession.userName}>
+                                                {userSession.displayName ??
+                                                    userSession.userName ??
+                                                    userSession.email ??
+                                                    "Benutzer"}
+                                            </span>
+                                            <svg
+                                                class="w-4 h-4 ml-auto transition-transform duration-200"
+                                                id="user-dropdown-arrow-mobile"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M19 9l-7 7-7-7"
+                                                />
                                             </svg>
                                         </button>
                                         <div
@@ -503,7 +534,9 @@ const initials = userSession.isAuthenticated
         // User-Dropdown Toggle (Desktop)
         const userDropdownBtn = document.getElementById("user-dropdown-btn");
         const userDropdown = document.getElementById("user-dropdown");
-        const userDropdownArrow = document.getElementById("user-dropdown-arrow");
+        const userDropdownArrow = document.getElementById(
+            "user-dropdown-arrow",
+        );
 
         if (userDropdownBtn && userDropdown) {
             userDropdownBtn.addEventListener("click", (e) => {
@@ -529,16 +562,25 @@ const initials = userSession.isAuthenticated
         }
 
         // User-Dropdown Toggle (Mobile)
-        const userDropdownBtnMobile = document.getElementById("user-dropdown-btn-mobile");
-        const userDropdownMobile = document.getElementById("user-dropdown-mobile");
-        const userDropdownArrowMobile = document.getElementById("user-dropdown-arrow-mobile");
+        const userDropdownBtnMobile = document.getElementById(
+            "user-dropdown-btn-mobile",
+        );
+        const userDropdownMobile = document.getElementById(
+            "user-dropdown-mobile",
+        );
+        const userDropdownArrowMobile = document.getElementById(
+            "user-dropdown-arrow-mobile",
+        );
 
         if (userDropdownBtnMobile && userDropdownMobile) {
             userDropdownBtnMobile.addEventListener("click", (e) => {
                 e.stopPropagation();
                 const isOpen = !userDropdownMobile.classList.contains("hidden");
                 userDropdownMobile.classList.toggle("hidden");
-                userDropdownBtnMobile.setAttribute("aria-expanded", String(!isOpen));
+                userDropdownBtnMobile.setAttribute(
+                    "aria-expanded",
+                    String(!isOpen),
+                );
                 if (userDropdownArrowMobile) {
                     userDropdownArrowMobile.style.transform = isOpen
                         ? "rotate(0deg)"
@@ -547,20 +589,28 @@ const initials = userSession.isAuthenticated
             });
 
             // Schließen bei Klick auf "Abmelden"
-            userDropdownMobile.querySelector("a")?.addEventListener("click", () => {
-                userDropdownMobile.classList.add("hidden");
-                userDropdownBtnMobile.setAttribute("aria-expanded", "false");
-                if (userDropdownArrowMobile) {
-                    userDropdownArrowMobile.style.transform = "rotate(0deg)";
-                }
-            });
+            userDropdownMobile
+                .querySelector("a")
+                ?.addEventListener("click", () => {
+                    userDropdownMobile.classList.add("hidden");
+                    userDropdownBtnMobile.setAttribute(
+                        "aria-expanded",
+                        "false",
+                    );
+                    if (userDropdownArrowMobile) {
+                        userDropdownArrowMobile.style.transform =
+                            "rotate(0deg)";
+                    }
+                });
         }
 
         // Dropdown schließen bei Klick außerhalb
         document.addEventListener("click", (e) => {
             // Desktop
             if (userDropdown && userDropdownBtn) {
-                const wrapper = document.getElementById("user-dropdown-wrapper");
+                const wrapper = document.getElementById(
+                    "user-dropdown-wrapper",
+                );
                 if (wrapper && !wrapper.contains(e.target)) {
                     userDropdown.classList.add("hidden");
                     userDropdownBtn.setAttribute("aria-expanded", "false");
@@ -571,12 +621,18 @@ const initials = userSession.isAuthenticated
             }
             // Mobile
             if (userDropdownMobile && userDropdownBtnMobile) {
-                const wrapper = document.getElementById("user-dropdown-wrapper-mobile");
+                const wrapper = document.getElementById(
+                    "user-dropdown-wrapper-mobile",
+                );
                 if (wrapper && !wrapper.contains(e.target)) {
                     userDropdownMobile.classList.add("hidden");
-                    userDropdownBtnMobile.setAttribute("aria-expanded", "false");
+                    userDropdownBtnMobile.setAttribute(
+                        "aria-expanded",
+                        "false",
+                    );
                     if (userDropdownArrowMobile) {
-                        userDropdownArrowMobile.style.transform = "rotate(0deg)";
+                        userDropdownArrowMobile.style.transform =
+                            "rotate(0deg)";
                     }
                 }
             }
