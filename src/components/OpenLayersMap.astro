@@ -5,23 +5,33 @@
 import MapCanvas from "./MapCanvas.astro";
 ---
 
-<div class="w-full mb-section">
+<div id="entdecken" class="w-full mb-section">
     <h2
         id="kommune-kategorie-header"
         class="text-2xl md:text-3xl font-bold text-gray-900 mb-4 text-center"
     >
+        Entdecke den öffentlichen Raum
+    </h2>
+    <p class="text-lg text-gray-700 max-w-3xl mx-auto text-center leading-relaxed mb-4">
+        p2d2 verbindet Daten aus der Öffentlichen Verwaltung mit Wissen von Menschen vor Ort und OpenStreetMap. Wähle eine{" "}
         <a
             href="#kommunen-grid"
             onclick="handleKommuneClick(event)"
             class="text-orange-400 hover:text-orange-500 underline decoration-2 underline-offset-4 hover:decoration-4 transition-colors duration-200 font-bold"
             >Kommune</a
-        > / <a
+        >{" "}oder eine{" "}
+        <a
             href="#kategorien-grid"
             onclick="handleKategorieClick(event)"
             class="text-green-400 hover:text-green-500 underline decoration-2 underline-offset-4 hover:decoration-4 transition-colors duration-200 font-bold"
             >Kategorie</a
-        > auswählen und los gehts!
-    </h2>
+        >{" "}und entdecke, welche Orte bereits sichtbar sind.
+    </p>
+    <ol class="list-decimal list-inside text-gray-700 max-w-3xl mx-auto mb-4 space-y-1">
+        <li class="text-center">Kommune oder Thema auswählen</li>
+        <li class="text-center">Orte auf der Karte entdecken</li>
+        <li class="text-center">Wissen beitragen und Daten gemeinsam weiterentwickeln</li>
+    </ol>
     <div
         class="w-full h-[30rem] text-lg text-grey-900 mb-8 text-center relative"
     >

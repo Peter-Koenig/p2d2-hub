@@ -41,6 +41,47 @@ import "../styles/feature-popup.css";
                     Kategorien
                 </button>
             </div>
+
+            <!-- Onboarding-Overlay (lokale UI, blockiert OL-Canvas und CRS-Toggle) -->
+            <div
+                id="map-onboarding-overlay"
+                class="absolute inset-0 z-40 bg-black/15 flex items-center justify-center p-4"
+                style="touch-action: pan-y;"
+            >
+                <div
+                    class="bg-white/95 rounded-lg shadow-lg p-4 text-center max-w-sm"
+                >
+                    <p class="text-gray-900 font-medium mb-3">
+                        Wähle eine Kommune oder ein Thema, um die Karte zu erkunden.
+                    </p>
+                    <button
+                        id="map-onboarding-start"
+                        class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+                    >
+                        Karte erkunden
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hilfe-Button (nach Freigabe sichtbar) -->
+            <button
+                id="map-help-button"
+                class="hidden absolute bottom-4 right-4 z-40 bg-white px-3 py-1 shadow-md text-sm font-medium border border-gray-300 hover:bg-gray-50"
+                title="Karten-Einführung erneut anzeigen"
+            >
+                Hilfe
+            </button>
+        </div>
+
+        <!-- CRS-Toggle (in den .relative-Container verschoben, damit das Onboarding-Overlay ihn verdecken kann) -->
+        <div id="crs-toggle" class="px-3 py-2">
+            <button
+                id="crs-toggle-button"
+                class="bg-white px-3 py-1 shadow-md text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Koordinatensystem umschalten"
+            >
+                CRS: generisch
+            </button>
         </div>
     </div>
 
@@ -57,15 +98,6 @@ import "../styles/feature-popup.css";
             }
         }, 100);
     </script>
-    <div id="crs-toggle" class="px-3 py-2">
-        <button
-            id="crs-toggle-button"
-            class="bg-white px-3 py-1 shadow-md text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Koordinatensystem umschalten"
-        >
-            CRS: generisch
-        </button>
-    </div>
 </div>
 
 <script>
@@ -326,6 +358,34 @@ import "../styles/feature-popup.css";
             }
         });
         tabKategorienButton.dataset.listenerBound = "true";
+    }
+
+    // Karten-Onboarding (rein lokale UI-Interaktion; blockiert OL-Canvas und CRS-Toggle per Stacking)
+    // Kein Import aus events.ts / cross-window-events.ts / map-state.ts, kein localStorage.
+    const onboardingOverlay = document.getElementById("map-onboarding-overlay");
+    const onboardingStart = document.getElementById("map-onboarding-start");
+    const helpButton = document.getElementById("map-help-button");
+
+    function showOnboarding(): void {
+        if (!onboardingOverlay || !helpButton) return;
+        onboardingOverlay.style.display = "flex";
+        helpButton.classList.add("hidden");
+    }
+
+    function hideOnboarding(): void {
+        if (!onboardingOverlay || !helpButton) return;
+        onboardingOverlay.style.display = "none";
+        helpButton.classList.remove("hidden");
+    }
+
+    if (onboardingStart && !onboardingStart.dataset.listenerBound) {
+        onboardingStart.addEventListener("click", hideOnboarding);
+        onboardingStart.dataset.listenerBound = "true";
+    }
+
+    if (helpButton && !helpButton.dataset.listenerBound) {
+        helpButton.addEventListener("click", showOnboarding);
+        helpButton.dataset.listenerBound = "true";
     }
 
     // Subscribe to map state changes
