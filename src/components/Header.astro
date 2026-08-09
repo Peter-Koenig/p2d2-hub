@@ -8,22 +8,48 @@ const canShowOsm =
 
 const nav = [
     {
+        name: "Entdecken",
+        href: "/#entdecken",
+        key: "entdecken",
+        ariaLabel: "p2d2 entdecken",
+        explanation: "p2d2 entdecken",
+    },
+    {
+        name: "Mitmachen",
+        href: "/mitmachen",
+        key: "mitmachen",
+        ariaLabel: "Bei p2d2 mitmachen",
+        explanation: "Bei p2d2 mitmachen",
+    },
+    {
+        name: "Für ÖV",
+        href: "/fuer-oev",
+        key: "fuer-oev",
+        ariaLabel: "Für die Öffentliche Verwaltung",
+        explanation: "Für die Öffentliche Verwaltung",
+    },
+    {
+        name: "Für OSM",
+        href: "/fuer-osm",
+        key: "fuer-osm",
+        ariaLabel: "Für die OSM-Community",
+        explanation: "Für die OSM-Community",
+    },
+    {
         name: "Über p2d2",
         key: "about",
+        ariaLabel: "Über p2d2",
+        explanation: "Über p2d2",
         children: [
             { name: "Hintergrund", href: "/ueber/hintergrund" },
             { name: "Ziel", href: "/ueber/ziel" },
-            { name: "Umsetzung", href: "/ueber/umsetzung" },
-            { name: "CIVITAS/CORE", href: "/ueber/civitas-core" },
             { name: "Status", href: "/ueber/status" },
+            { name: "Umsetzung", href: "/ueber/umsetzung" },
             { name: "Zukunft", href: "/ueber/zukunft" },
             { name: "Tests", href: "/ueber/testen" },
         ],
     },
-    { name: "Themenbereiche", href: "/themenbereiche", key: "themen" },
-    { name: "Community", href: "/community", key: "community" },
-    { name: "Mitmachen", href: "/mitmachen", key: "mitmachen" },
-    { name: "Kontakt", href: "/kontakt", key: "kontakt" },
+    { name: "Kontakt", href: "/kontakt", key: "kontakt", ariaLabel: "Kontakt zu p2d2", explanation: "Kontakt zu p2d2" },
     ...(canShowVerwaltung
         ? [{ name: "Verwaltung", href: "/verwaltung", key: "verwaltung" }]
         : []),
@@ -101,13 +127,22 @@ const initials = userSession.isAuthenticated
                     if (item.children) {
                         // Dropdown-Menü für "Über …" – mit mouseenter/mouseleave für zuverlässiges Öffnen
                         return (
-                            <li class="relative" data-dropdown-wrapper="about">
+                            <li class="relative group" data-dropdown-wrapper="about">
                                 <button
                                     class="px-1 pb-1 text-gray-700 hover:text-gray-900 transition-colors duration-200"
                                     data-dropdown="true"
+                                    aria-label={item.ariaLabel}
                                 >
                                     {item.name}
                                 </button>
+                                {item.explanation && (
+                                    <span
+                                        role="tooltip"
+                                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 z-50"
+                                    >
+                                        {item.explanation}
+                                    </span>
+                                )}
                                 <ul
                                     id="dropdown-ueber"
                                     class="hidden absolute left-0 top-full pt-1 bg-green-50/90 backdrop-blur-md rounded-lg shadow-lg z-50 min-w-160px transition-all border border-green-200/50"
@@ -131,7 +166,7 @@ const initials = userSession.isAuthenticated
                         );
                     } else {
                         return (
-                            <li>
+                            <li class="relative group">
                                 <a
                                     href={item.href}
                                     class={`relative transition-colors duration-200
@@ -145,10 +180,19 @@ const initials = userSession.isAuthenticated
                                     aria-current={
                                         isActive(item) ? "page" : undefined
                                     }
+                                    aria-label={item.ariaLabel}
                                     style="display: inline-block; position: relative;"
                                 >
                                     {item.name}
                                 </a>
+                                {item.explanation && (
+                                    <span
+                                        role="tooltip"
+                                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100 z-50"
+                                    >
+                                        {item.explanation}
+                                    </span>
+                                )}
                             </li>
                         );
                     }
@@ -313,9 +357,15 @@ const initials = userSession.isAuthenticated
                                                         ? "page"
                                                         : undefined
                                                 }
+                                                aria-label={item.ariaLabel}
                                             >
                                                 {item.name}
                                             </a>
+                                            {item.explanation && (
+                                                <span class="block text-sm text-gray-500">
+                                                    {item.explanation}
+                                                </span>
+                                            )}
                                         </li>
                                     );
                                 }
