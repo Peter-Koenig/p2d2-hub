@@ -1,1 +1,1 @@
-# Gemeinsam den öffentlichen Raum sichtbar machen</br> <span style="color:#41C7B4;">Mit Wissen aus der Öffentlichen Verwaltung, OpenStreetMap und vor Ort.</span>
+# Erfassen wir den öffentlichen Datenraum</br><span style="color:#41C7B4;">der für uns Freiheit und Souveränität bedeutet</span>
