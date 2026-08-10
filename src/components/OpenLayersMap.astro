@@ -147,6 +147,19 @@ import MapCanvas from "./MapCanvas.astro";
             // Also expose globally for direct calls
             window.scrollToSelectionHeader = scrollToSelectionHeader;
 
+            // Korrektur beim initialen Laden mit Hash: ersetzt den nativen
+            // Browser-Anker-Sprung durch die header-bewusste Position
+            if (
+                typeof window !== "undefined" &&
+                window.location.hash === "#entdecken"
+            ) {
+                window.addEventListener("load", () => {
+                    setTimeout(() => {
+                        scrollToSelectionHeader();
+                    }, 150);
+                });
+            }
+
             console.log("[OpenLayersMap] Scroll event listeners registered");
         }
     </script>
