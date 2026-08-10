@@ -1,31 +1,78 @@
 <!-- SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu> -->
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
-<!-- p2d2: Platzhalter-Route für die OSM-Community (noch im Aufbau) -->
+<!-- p2d2: Für die OSM-Community: Nutzen von p2d2 für die OSM-Community -->
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout
-    title="Für die OSM-Community | p2d2"
-    description="Informationen für die OSM-Community – diese Seite befindet sich noch im Aufbau."
+  title="Für die OSM-Community | p2d2"
+  description="Nutzen von p2d2 für die OSM-Community – die Seite wird laufend ergänzt."
 >
-    <main class="flex flex-col items-center w-full">
-        <section class="w-full max-w-6xl mx-auto px-6 py-12 text-center">
-            <h1 class="font-poppins font-bold text-3xl md:text-4xl text-gray-900 mb-6">
-                Für die OSM-Community
-            </h1>
-            <p class="text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed mb-8">
-                Diese Seite ist noch im Aufbau.
-            </p>
-            <p class="text-gray-700">
-                Bei Rückfragen wenden Sie sich bitte an unser
-                <a
-                    href="/kontakt"
-                    class="text-primary-600 hover:text-primary-700 font-medium underline"
-                >
-                    Kontaktformular
-                </a>.
-            </p>
-        </section>
-    </main>
+  <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
+    <div
+      class="prose prose-lg max-w-none prose-headings:font-poppins prose-headings:font-bold prose-p:font-inter prose-p:text-gray-700 prose-a:text-primary-600 hover:prose-a:text-primary-500 transition-colors"
+    >
+      <h1>Für die OSM-Community</h1>
+
+      <p>
+        <em>Diese Seite ist noch im Aufbau – wir ergänzen sie laufend.</em>
+      </p>
+
+      <p>
+        p2d2 richtet sich gezielt auch an die OpenStreetMap-Community - nicht als
+        Datenempfänger, sondern als aktive Mitgestalterin.
+      </p>
+
+      <h2>Level Playing Field statt Einbahnstraße</h2>
+      <p>
+        Verwaltung und OSM-Community arbeiten an denselben Daten mit denselben
+        Werkzeugen. Das Doppelhelix-Prinzip sorgt für gegenseitige Kontrolle: Ein
+        Fehler in einem Datenstrang fällt auf, weil der andere ihn nicht bestätigt.
+        Gleichzeitig kann die OSM-Community aus eigener Ortskenntnis ergänzen und
+        korrigieren, ohne auf eine Genehmigung der Verwaltung warten zu müssen.
+      </p>
+
+      <h2>Echte Mitsprache statt Kontaktformular</h2>
+      <p>
+        Der Qualitätssicherungsprozess sieht eine eigene Rolle für
+        Community-Feedback vor, die vor der endgültigen Freigabe gleichberechtigt
+        neben der internen Prüfung steht. Rückmeldungen aus der Community sind ein
+        struktureller Teil des Datenflusses, kein nachträgliches Anhängsel.
+      </p>
+
+      <h2>Vollständigkeit als Hebel</h2>
+      <p>
+        Der Nutzen für die OSM-Community wächst deutlich, wenn eine Kommune nicht
+        nur einzelne Objekte, sondern möglichst ihren gesamten zugehörigen
+        Datenbestand einbringt: aus vielen einzelnen Fachverfahren entsteht so
+        schrittweise eine vollständigere, verlässliche Abbildung des öffentlichen
+        Raums vor Ort - der digitale Zwilling von unten. Für Mapper bedeutet das:
+        amtlich geprüfte Ausgangsdaten für ein ganzes Gebiet statt einzelner,
+        verstreuter Objekte.
+      </p>
+
+      <h2>Netzwerkeffekt: Erwartung schafft Nutzung</h2>
+      <p>
+        Viele Menschen kennen OpenStreetMap nicht als ersten Anlaufpunkt, weil sie
+        nicht erwarten, dort bestimmte Informationen zu finden. Diese Erwartung
+        entscheidet über das Suchverhalten: Wer nur mit halbwegs guter Chance
+        rechnet, sein Anliegen dort zu lösen, sucht seltener dort - und greift
+        stattdessen zu kommerziellen Kartendiensten. Je zuverlässiger und
+        vollständiger die Daten für ein Gebiet sind, insbesondere wenn eine
+        Kommune selbst als Contributor auftritt, desto eher erinnern sich Menschen
+        daran, dort nachzusehen. Amtliche Beteiligung erhöht so nicht nur die
+        Datenqualität, sondern auch die Wahrscheinlichkeit, dass OpenStreetMap
+        überhaupt die erste Anlaufstelle wird - statt Google Maps.
+      </p>
+
+      <h2>Thematische Offenheit</h2>
+      <p>
+        Der Anfang liegt bei Grabfluren, verpflichtend ist das aber nicht. Die
+        Architektur ist für weitere Objekttypen vorbereitet - Baumscheiben,
+        Straßenlaternen, Spielplätze und andere -, sobald Kommunen entsprechende
+        Daten einbringen und sich Menschen für das jeweilige Thema engagieren.
+      </p>
+    </div>
+  </main>
 </BaseLayout>
