@@ -1,3 +1,3 @@
 ---
-text: "Public-Public Data-DNA © 2025"
+text: "Public-Public Data-DNA © 2026"
 ---

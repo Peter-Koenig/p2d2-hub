@@ -5,7 +5,14 @@
 import { getCollection } from "astro:content";
 
 const socialmedia = await getCollection("socialmedia");
-const intern = await getCollection("intern");
+const ueberUns = [
+    { name: "Hintergrund", url: "/ueber/hintergrund" },
+    { name: "Ziel", url: "/ueber/ziel" },
+    { name: "Status", url: "/ueber/status" },
+    { name: "Umsetzung", url: "/ueber/umsetzung" },
+    { name: "Zukunft", url: "/ueber/zukunft" },
+    { name: "Tests", url: "/ueber/testen" },
+];
 const repositories = await getCollection("repositories");
 
 const copyrightEntry = await getCollection("copyright");
@@ -59,13 +66,13 @@ const copyright = copyrightEntry[0]?.data.text ?? "";
             <h3 class="font-poppins text-xl font-bold mb-4">Über uns</h3>
             <ul class="space-y-2">
                 {
-                    intern.map((entry) => (
+                    ueberUns.map((entry) => (
                         <li>
                             <a
-                                href={entry.data.url}
+                                href={entry.url}
                                 class="hover:text-green-400 transition"
                             >
-                                {entry.data.name}
+                                {entry.name}
                             </a>
                         </li>
                     ))
@@ -94,7 +101,7 @@ const copyright = copyrightEntry[0]?.data.text ?? "";
         <!-- Rechts: Ressourcen & Social Media -->
         <div class="mt-4 md:mt-4 flex flex-col">
             <div>
-                <h3 class="font-poppins text-xl font-bold mb-4">Ressourcen</h3>
+                <h3 class="font-poppins text-xl font-bold mb-4">Technisches & Ressourcen</h3>
                 <ul class="space-y-2 mb-4">
                     <li>
                         <span class="font-semibold">Repositories:</span>
@@ -115,6 +122,14 @@ const copyright = copyrightEntry[0]?.data.text ?? "";
                                 </span>
                             ))
                         }
+                    </li>
+                    <li>
+                        <a
+                            href="/ueber/civitas-core"
+                            class="hover:text-green-400 transition"
+                        >
+                            CIVITAS/CORE: technische Einordnung
+                        </a>
                     </li>
                 </ul>
             </div>
