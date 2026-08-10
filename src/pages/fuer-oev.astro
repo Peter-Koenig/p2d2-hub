@@ -1,31 +1,93 @@
 <!-- SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu> -->
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
-<!-- p2d2: Platzhalter-Route für die Öffentliche Verwaltung (noch im Aufbau) -->
+<!-- p2d2: Für die Öffentliche Verwaltung: Nutzen von p2d2 auf allen Verwaltungsebenen -->
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout
-    title="Für die Öffentliche Verwaltung | p2d2"
-    description="Informationen für die Öffentliche Verwaltung – diese Seite befindet sich noch im Aufbau."
+  title="Für die Öffentliche Verwaltung | p2d2"
+  description="Nutzen von p2d2 für die Öffentliche Verwaltung auf allen Ebenen – die Seite wird laufend ergänzt."
 >
-    <main class="flex flex-col items-center w-full">
-        <section class="w-full max-w-6xl mx-auto px-6 py-12 text-center">
-            <h1 class="font-poppins font-bold text-3xl md:text-4xl text-gray-900 mb-6">
-                Für die Öffentliche Verwaltung
-            </h1>
-            <p class="text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed mb-8">
-                Diese Seite ist noch im Aufbau.
-            </p>
-            <p class="text-gray-700">
-                Bei Rückfragen wenden Sie sich bitte an unser
-                <a
-                    href="/kontakt"
-                    class="text-primary-600 hover:text-primary-700 font-medium underline"
-                >
-                    Kontaktformular
-                </a>.
-            </p>
-        </section>
-    </main>
+  <main class="max-w-4xl mx-auto px-6 py-12 bg-white min-h-screen">
+    <div
+      class="prose prose-lg max-w-none prose-headings:font-poppins prose-headings:font-bold prose-p:font-inter prose-p:text-gray-700 prose-a:text-primary-600 hover:prose-a:text-primary-500 transition-colors"
+    >
+      <h1>Für die Öffentliche Verwaltung</h1>
+
+      <p>
+        <em>Diese Seite ist noch im Aufbau – wir ergänzen sie laufend.</em>
+      </p>
+
+      <p>
+        p2d2 unterstützt Öffentliche Verwaltung auf allen Ebenen dabei, Geodaten
+        schrittweise mit der Öffentlichkeit zu teilen und gemeinsam zu pflegen -
+        von der einzelnen Kommune bis zur europäischen Ebene. Was p2d2 dabei
+        konkret nützt, hängt von der Verwaltungsebene ab.
+      </p>
+
+      <h2>Kommunen</h2>
+      <p>
+        Auf kommunaler Ebene entfaltet p2d2 den unmittelbarsten Nutzen:
+      </p>
+      <ul>
+        <li>
+          <strong>Bürgerbeteiligung:</strong> Bürgerinnen und Bürger werden von
+          Datenkonsumenten zu aktiven Mitwirkenden. Die OSM-Community ergänzt
+          und prüft Daten mit eigenem Ortswissen, ohne dass die Verwaltung
+          dafür eine eigene Beteiligungsplattform betreiben muss.
+        </li>
+        <li>
+          <strong>Prozessmanagement etablieren oder überarbeiten:</strong> Die
+          Einführung von p2d2 bietet Anlass, den Weg von der Datenerfassung
+          über die interne Qualitätssicherung bis zur Freigabe erstmals klar
+          zu strukturieren oder einen bestehenden Prozess zu überarbeiten.
+        </li>
+        <li>
+          <strong>Kosteneinsparung durch Open-Data-Carve-Out:</strong> Wenn
+          Geodaten bereits öffentlich und aktuell in OpenStreetMap verfügbar
+          sind, kann beispielsweise bei Ausschreibungen auf diese Daten
+          verwiesen werden, statt für jeden Bieter einen gesonderten Zugang zu
+          internen Geodatensystemen einzurichten und zu verwalten.
+        </li>
+        <li>
+          <strong>Mehrfachnutzung über Ämter hinweg:</strong> Einmal mit
+          OpenStreetMap synchronisierte Daten (etwa zu Grünflächen oder
+          Infrastruktur) stehen automatisch auch anderen Fachverfahren zur
+          Verfügung, ohne dass jedes Amt eigene Erhebungen durchführen muss.
+        </li>
+      </ul>
+
+      <h2>Bundesländer</h2>
+      <p>
+        Bundesländer tragen die Zuständigkeit für viele überkommunale
+        Fachverfahren. Hier liegt ein besonderer Nutzen in der
+        <strong>Vergleichbarkeit von Daten an Zuständigkeitsgrenzen</strong>:
+        OGC-Dienste einzelner Behörden enden oft technisch und fachlich exakt an
+        Verwaltungsgrenzen, ohne dass Unstimmigkeiten auffallen. Werden
+        Datenbestände mehrerer Bundesländer auf einer gemeinsamen, offenen
+        Plattform wie OpenStreetMap zusammengeführt, werden solche Brüche direkt
+        nebeneinander sichtbar - ein Alleinstellungsmerkmal gegenüber
+        isolierten Länder-Portalen.
+      </p>
+
+      <h2>Nationalstaaten und europäische Ebene</h2>
+      <p>
+        Auf Ebene der Nationalstaaten gilt derselbe Mechanismus: INSPIRE hat
+        europaweit eine gemeinsame Datenverfügbarkeit geschaffen, aber noch
+        keinen gemeinsamen Ort, an dem Staaten ihre Daten nebeneinander
+        betrachten und vergleichen können. p2d2 kann über OpenStreetMap genau
+        diesen Vergleichsort - ein Level Playing Field - bereitstellen und so
+        eine europäische Perspektive für die Entwicklung gemeinsamer Best
+        Practices zur Datenvergleichbarkeit eröffnen.
+      </p>
+      <p>
+        Für die längerfristige Zusammenarbeit über Verwaltungsebenen und
+        Ländergrenzen hinweg wird geprüft, ob eine Dachorganisation oder ein
+        Anwenderverein entstehen kann, über den sich Nutzende von p2d2
+        gegenseitig unterstützen. Das ist eine Perspektive, kein beschlossenes
+        Ergebnis.
+      </p>
+    </div>
+  </main>
 </BaseLayout>
