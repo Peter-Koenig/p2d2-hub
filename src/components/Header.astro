@@ -543,6 +543,32 @@ const initials = userSession.isAuthenticated
             link.addEventListener("click", closeMobileMenu);
         });
 
+        // "Entdecken"-Klick: auf der Startseite scrollToSelectionHeader nutzen,
+        // damit die Karte header-bewusst positioniert wird (wie bei Karten-Auswahl)
+        document
+            .querySelectorAll('a[href="/#entdecken"], a[href="#entdecken"]')
+            .forEach((link) => {
+                link.addEventListener("click", (event) => {
+                    const onHomePage =
+                        window.location.pathname === "/" ||
+                        window.location.pathname === "";
+
+                    if (
+                        onHomePage &&
+                        typeof window.scrollToSelectionHeader === "function"
+                    ) {
+                        event.preventDefault();
+                        if (window.history && window.history.pushState) {
+                            window.history.pushState(null, "", "/#entdecken");
+                        }
+                        window.scrollToSelectionHeader();
+                    }
+                    // Ist man nicht auf der Startseite, lässt der Klick die normale
+                    // Navigation zu index.astro#entdecken zu; die Korrektur nach dem
+                    // Laden übernimmt Auftrag 2 in OpenLayersMap.astro.
+                });
+            });
+
         // Dropdown handling – About-Menü
         let aboutCloseTimeout = null;
         const aboutWrapper = document.querySelector(
