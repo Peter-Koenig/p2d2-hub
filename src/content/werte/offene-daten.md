@@ -1,6 +1,6 @@
 ---
-title: Offene Daten
+title: Ich kenne Orte und Geschichten
 icon: offene-daten
 order: 1
 ---
-Alle gesammelten Daten sind frei verfügbar und können von jeder Person genutzt, geteilt und verbessert werden.
+Lokales Wissen sichtbar machen
