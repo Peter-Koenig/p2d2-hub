@@ -1,0 +1,23 @@
+{
+  "name": "@p2d2/core",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Fachliche Kernlogik des p2d2-AddOns (workflow, wfst, content, preferences, qs) — geteilt zwischen Astro-Standalone und Masterportal-Addon.",
+  "license": "EUPL-1.2",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
