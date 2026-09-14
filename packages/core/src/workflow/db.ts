@@ -11,7 +11,7 @@
 //   ensureVersion0, ensureVersion0ForContainer,
 //   insertSessionRecord, setFeatureStatusInProgress,
 //   setContainerFeatureStatusInProgress,
-//   finalizeSnapshot, updateSessionCompleted, updateFeatureStatusQs1
+//   insertSnapshotRecord, updateSessionCompleted
 //
 // Alle Funktionen arbeiten themenunabhängig: Tabellen- und Spaltennamen
 // werden aus dem Parameter `featureType` abgeleitet (via utils.ts).
