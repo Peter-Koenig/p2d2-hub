@@ -135,11 +135,6 @@ export class SessionConflictError extends Error {
 
 /**
  * Struktur der Daten, die für den WFS-T-Export aus der DB gelesen werden.
- * Enthält die GML-Geometrie + alle Domain-Attribute als Key-Value-Map.
+ * Seit Turn 6 aus @p2d2/core re-exportiert.
  */
-export interface FeatureData {
-  /** GML 3.2-Geometrie (EPSG:4326) */
-  geom_gml: string;
-  /** Alle Domain-Attribute (Spaltenname → Wert) */
-  attributes: Record<string, unknown>;
-}
+export type { FeatureData } from "@p2d2/core";

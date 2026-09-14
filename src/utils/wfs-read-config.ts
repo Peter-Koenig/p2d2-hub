@@ -1,35 +1,14 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
-// p2d2: WFS-Konfiguration: Layer-Definitionen für GeoServer-Integration
-/**
- * WFS Read Configuration Helper
- *
- * Derives the stage-specific WFS read endpoint from public environment variables.
- *
- * Read access is anonymous - no credentials required.
- *
- * Endpoint derivation:
- *   PUBLIC_WFST_ENDPOINT=https://wfs.data-dna.eu/geoserver/ows
- *   PUBLIC_WFST_WORKSPACE=Verwaltungsdaten_de1
- *   => https://wfs.data-dna.eu/geoserver/Verwaltungsdaten_de1/ows
- *
- * Local dev proxy (/api/wfs-proxy) is used only for CORS bypass during development.
- * Production/Staging use direct anonymous access.
- */
+// p2d2: WFS-Konfiguration — Astro-Adapter auf @p2d2/core.
+//
+// Liest die `import.meta.env`-Variablen (Vite/Astro-Kopplung) und delegiert
+// die reine Endpoint-Ableitung an @p2d2/core.
+import { deriveWorkspaceEndpoint } from "@p2d2/core";
+import type { WFSReadConfig } from "@p2d2/core";
 
-export interface WFSReadConfig {
-  endpoint: string;
-  workspace: string;
-  namespace: string;
-}
+export type { WFSReadConfig } from "@p2d2/core";
 
-/**
- * Creates a WFS read configuration from environment variables.
- *
- * @param overrides - Optional overrides for testing or special cases
- * @returns WFSReadConfig with workspace-specific endpoint
- * @throws Error if required environment variables are missing or malformed
- */
 export function createWFSReadConfig(
   overrides: Partial<WFSReadConfig> = {},
 ): WFSReadConfig {
@@ -65,12 +44,7 @@ export function createWFSReadConfig(
     );
   }
 
-  // Derive workspace-specific endpoint:
-  // https://wfs.data-dna.eu/geoserver/ows => https://wfs.data-dna.eu/geoserver/<workspace>/ows
-  const endpoint = baseEndpoint.replace(
-    "/geoserver/ows",
-    `/geoserver/${workspace}/ows`,
-  );
+  const endpoint = deriveWorkspaceEndpoint(baseEndpoint, workspace);
 
   return {
     endpoint,
@@ -79,12 +53,6 @@ export function createWFSReadConfig(
   };
 }
 
-/**
- * Gets the workspace-specific read endpoint directly.
- * Convenience function for quick endpoint access.
- *
- * @returns The workspace-specific WFS read endpoint URL
- */
 export function getWFSReadEndpoint(): string {
   return createWFSReadConfig().endpoint;
 }

@@ -3,16 +3,21 @@
 //
 // @p2d2/core — Public API surface.
 //
-// Turn 4 (Content/Preferences) exportiert:
+// Turn 4 (Content/Preferences):
 //   - Content-Schemata (kommuneSchema, kategorieSchema)
 //   - Kommunen-/Kategorien-Domänenlogik (pure Teile)
 //   - Preference-Parsing (metadata-parser)
 //   - Karten-Grundkonfiguration (MAP_CONFIG)
 //
-// Folgeturns ergänzen WFS-T, Workflow/Session und das QS-Skelett.
+// Turn 6 (WFS-T):
+//   - Tabellen-Namens-Mapping, WFS-T-Insert/Delete (XML + HTTP)
+//   - Reine WFS-URL-/Request-Bau-Logik
 
 export * from "./content/schemas";
 export * from "./content/kommunen";
 export * from "./content/kategorien";
 export * from "./preferences/metadata-parser";
 export * from "./map/map-config";
+export * from "./wfst/table-names";
+export * from "./wfst/wfst";
+export * from "./wfst/wfs-url";
