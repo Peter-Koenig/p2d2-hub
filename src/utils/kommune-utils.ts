@@ -1,9 +1,19 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
-// p2d2: Kommune-Utilities: Daten aus Content-Collection lesen
+// p2d2: Kommune-Utilities — Astro-Adapter auf @p2d2/core.
+//
+// Die puren Domänen-Teile (Typ, Prädikate, Selektor) liegen in
+// @p2d2/core; hier bleibt die Astro-/Dateisystem-Datenbeschaffung
+// (getCollection('kommunen') bzw. FS-Fallback).
 import { readFileSync, readdirSync } from "fs";
 import { join, extname } from "path";
 import matter from "gray-matter";
+import {
+  hasValidOSMData,
+  findKommuneBySlug,
+  getKommunenReadyForSync as filterReadyForSync,
+} from "@p2d2/core";
+import type { KommuneData } from "@p2d2/core";
 
 // erkennt zur Laufzeit, ob Astro-Runtime verfügbar ist
 async function loadCollection() {
@@ -21,28 +31,6 @@ async function loadCollection() {
         return { slug: f.replace(/\.(mdx?)$/, ""), data };
       });
   }
-}
-
-// Central configuration for default kommune
-export const DEFAULT_KOMMUNE_SLUG = "koeln";
-
-// Interface for kommune data
-export interface KommuneData {
-  slug: string;
-  title: string;
-  osmAdminLevels?: number[];
-  wpName: string;
-  osm_refinement?: string;
-  colorStripe: string;
-  map: {
-    center: [number, number];
-    zoom: number;
-    projection: string;
-    extent?: [number, number, number, number];
-    extra?: Record<string, any>;
-  };
-  order?: number;
-  icon?: string;
 }
 
 export async function getAllKommunen(): Promise<KommuneData[]> {
@@ -75,21 +63,13 @@ export async function getKommuneBySlug(
   slug: string,
 ): Promise<KommuneData | null> {
   const kommunen = await getAllKommunen();
-  return kommunen.find((k) => k.slug === slug) || null;
+  return findKommuneBySlug(kommunen, slug);
 }
 
-// Utility function to check if a kommune has valid OSM data
-export function hasValidOSMData(kommune: KommuneData): boolean {
-  return (
-    !!kommune.wpName &&
-    !!kommune.osmAdminLevels &&
-    kommune.osmAdminLevels.length > 0 &&
-    !!kommune.map?.center
-  );
-}
-
-// Get kommunen that are ready for sync
 export async function getKommunenReadyForSync(): Promise<KommuneData[]> {
   const kommunen = await getAllKommunen();
-  return kommunen.filter(hasValidOSMData);
+  return filterReadyForSync(kommunen);
 }
+
+export { hasValidOSMData, DEFAULT_KOMMUNE_SLUG } from "@p2d2/core";
+export type { KommuneData } from "@p2d2/core";

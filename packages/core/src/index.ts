@@ -3,11 +3,16 @@
 //
 // @p2d2/core — Public API surface.
 //
-// Wird in den Folgeturns schrittweise gefüllt:
-//   Turn 4  – Content/Preferences
-//   Turn 5  – WFS-T
-//   Turn 6  – Workflow/Session (+ DbClient-Interface)
-//   Turn 7  – QS-Skelett (Schnittstellen-Rahmen)
+// Turn 4 (Content/Preferences) exportiert:
+//   - Content-Schemata (kommuneSchema, kategorieSchema)
+//   - Kommunen-/Kategorien-Domänenlogik (pure Teile)
+//   - Preference-Parsing (metadata-parser)
+//   - Karten-Grundkonfiguration (MAP_CONFIG)
 //
-// Bis dahin bewusst leer (Workspace-Skelett ohne Logik-Verschiebung).
-export {};
+// Folgeturns ergänzen WFS-T, Workflow/Session und das QS-Skelett.
+
+export * from "./content/schemas";
+export * from "./content/kommunen";
+export * from "./content/kategorien";
+export * from "./preferences/metadata-parser";
+export * from "./map/map-config";
