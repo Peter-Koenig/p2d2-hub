@@ -4,10 +4,9 @@
   "exclude": ["dist", "packages"],
   "compilerOptions": {
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "*": ["node_modules/*"],
       "@/*": ["./src/*"],
       "@utils/*": ["./src/utils/*"]
     },

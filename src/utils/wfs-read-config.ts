@@ -4,10 +4,10 @@
 //
 // Liest die `import.meta.env`-Variablen (Vite/Astro-Kopplung) und delegiert
 // die reine Endpoint-Ableitung an @p2d2/core.
-import { deriveWorkspaceEndpoint } from "@p2d2/core";
-import type { WFSReadConfig } from "@p2d2/core";
+import { deriveWorkspaceEndpoint } from "@p2d2/core/wfst/wfs-url";
+import type { WFSReadConfig } from "@p2d2/core/wfst/wfs-url";
 
-export type { WFSReadConfig } from "@p2d2/core";
+export type { WFSReadConfig } from "@p2d2/core/wfst/wfs-url";
 
 export function createWFSReadConfig(
   overrides: Partial<WFSReadConfig> = {},

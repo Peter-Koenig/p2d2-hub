@@ -10,10 +10,10 @@ import {
   buildWFSURL as buildWFSURLCore,
   buildBBoxWFSURL as buildBBoxWFSURLCore,
   buildBasicAuthHeader,
-} from "@p2d2/core";
-import type { WFSCredentials, WFSConfig } from "@p2d2/core";
+} from "@p2d2/core/wfst/wfs-url";
+import type { WFSCredentials, WFSConfig } from "@p2d2/core/wfst/wfs-url";
 
-export type { WFSCredentials, WFSConfig } from "@p2d2/core";
+export type { WFSCredentials, WFSConfig } from "@p2d2/core/wfst/wfs-url";
 
 interface EnvironmentInfo {
   isDev: boolean;
@@ -138,22 +138,6 @@ export class WFSAuthClient {
     const proxyUrl = `/api/wfs-proxy?url=${encodeURIComponent(url)}`;
     console.log(`[WFS] Using WFS proxy for read access`, proxyUrl);
     return proxyUrl;
-  }
-
-  private buildHeaders(existingHeaders?: HeadersInit): Headers {
-    const headers = new Headers(existingHeaders);
-
-    if (
-      this.config.credentials?.username?.trim() &&
-      this.config.credentials?.password?.trim()
-    ) {
-      headers.set(
-        "Authorization",
-        buildBasicAuthHeader(this.config.credentials),
-      );
-    }
-
-    return headers;
   }
 
   async fetchWFS(url: string, options: RequestInit = {}): Promise<Response> {

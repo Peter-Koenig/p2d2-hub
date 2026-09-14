@@ -12,6 +12,12 @@
 // Turn 6 (WFS-T):
 //   - Tabellen-Namens-Mapping, WFS-T-Insert/Delete (XML + HTTP)
 //   - Reine WFS-URL-/Request-Bau-Logik
+//
+// Turn 9 (Workflow/Session):
+//   - DbClient-Interface + Workflow-Typen/-Utils/-DB-Funktionen
+//
+// Turn 11 (QS-Skelett):
+//   - QS-2-/Snapshot-Platzhalter (nur Typen, keine Implementierung)
 
 export * from "./content/schemas";
 export * from "./content/kommunen";
