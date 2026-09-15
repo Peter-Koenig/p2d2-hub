@@ -1,0 +1,78 @@
+{
+  "name": "@p2d2/core",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Fachliche Kernlogik des p2d2-AddOns (workflow, wfst, content, preferences, qs) — geteilt zwischen Astro-Standalone und Masterportal-Addon.",
+  "license": "EUPL-1.2",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./content/schemas": {
+      "types": "./dist/content/schemas.d.ts",
+      "import": "./dist/content/schemas.js"
+    },
+    "./content/kommunen": {
+      "types": "./dist/content/kommunen.d.ts",
+      "import": "./dist/content/kommunen.js"
+    },
+    "./content/kategorien": {
+      "types": "./dist/content/kategorien.d.ts",
+      "import": "./dist/content/kategorien.js"
+    },
+    "./preferences/metadata-parser": {
+      "types": "./dist/preferences/metadata-parser.d.ts",
+      "import": "./dist/preferences/metadata-parser.js"
+    },
+    "./map/map-config": {
+      "types": "./dist/map/map-config.d.ts",
+      "import": "./dist/map/map-config.js"
+    },
+    "./wfst/table-names": {
+      "types": "./dist/wfst/table-names.d.ts",
+      "import": "./dist/wfst/table-names.js"
+    },
+    "./wfst/wfst": {
+      "types": "./dist/wfst/wfst.d.ts",
+      "import": "./dist/wfst/wfst.js"
+    },
+    "./wfst/wfs-url": {
+      "types": "./dist/wfst/wfs-url.d.ts",
+      "import": "./dist/wfst/wfs-url.js"
+    },
+    "./db/types": {
+      "types": "./dist/db/types.d.ts",
+      "import": "./dist/db/types.js"
+    },
+    "./workflow/types": {
+      "types": "./dist/workflow/types.d.ts",
+      "import": "./dist/workflow/types.js"
+    },
+    "./workflow/utils": {
+      "types": "./dist/workflow/utils.d.ts",
+      "import": "./dist/workflow/utils.js"
+    },
+    "./workflow/db": {
+      "types": "./dist/workflow/db.d.ts",
+      "import": "./dist/workflow/db.js"
+    },
+    "./qs/types": {
+      "types": "./dist/qs/types.d.ts",
+      "import": "./dist/qs/types.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

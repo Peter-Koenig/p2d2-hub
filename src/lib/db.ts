@@ -13,6 +13,7 @@ import {
   DB_USER,
   DB_PASSWORD,
 } from "astro:env/server";
+import type { DbClient } from "@p2d2/core";
 
 let sql: postgres.Sql<{}> | null = null;
 
@@ -25,7 +26,7 @@ let sql: postgres.Sql<{}> | null = null;
  *   const sql = getDb();
  *   await sql\`SELECT 1 AS ok\`;
  */
-export function getDb(): postgres.Sql<{}> {
+export function getDb(): DbClient {
   if (!sql) {
     const connectionString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
     sql = postgres(connectionString, {
@@ -39,7 +40,7 @@ export function getDb(): postgres.Sql<{}> {
       debug: APP_DEBUG,
     });
   }
-  return sql;
+  return sql as unknown as DbClient;
 }
 
 /**
