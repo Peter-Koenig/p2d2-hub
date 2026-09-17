@@ -134,6 +134,6 @@ class MapStateManager {
 // Export singleton instance
 export const mapState = new MapStateManager({
   defaultCRS: "EPSG:3857",
-  wmsUrl: "https://ows.data-dna.eu/",
+  wmsUrl: import.meta.env.PUBLIC_MAPSERVER_URL || "https://ows.data-dna.eu",
   wmsLayer: "p2d2_cemeteries_cologne",
 });
