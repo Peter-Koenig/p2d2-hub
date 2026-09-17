@@ -8,11 +8,13 @@ import vue from "@astrojs/vue";
 import { polygonSyncPlugin } from "./src/integrations/polygon-sync-plugin.mjs";
 import { fileURLToPath } from "url";
 
+const site = process.env.PUBLIC_SITE_URL || "http://localhost:4321";
+
 export default defineConfig({
   // Performance: Telemetrie deaktivieren (spart ~560ms)
   telemetry: false,
 
-  site: "https://opn.data-dna.eu",
+  site,
 
   env: {
     schema: {

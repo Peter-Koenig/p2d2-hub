@@ -4,6 +4,8 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Prose from "../../components/Prose.astro";
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || "http://localhost:4321";
 ---
 
 <BaseLayout title="Impressum | p2d2">
@@ -18,7 +20,7 @@ import Prose from "../../components/Prose.astro";
             <p>
                 <strong>Betreiber der Website:</strong><br />
                 Projekt p2d2 – Public-Public Data-DNA<br />
-                <a href="https://opn.data-dna.eu">https://opn.data-dna.eu</a>
+                <a href={siteUrl}>{siteUrl}</a>
             </p>
 
             <p>
