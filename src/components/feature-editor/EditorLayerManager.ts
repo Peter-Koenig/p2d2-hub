@@ -111,7 +111,7 @@ export class EditorLayerManager {
 
     // Friedhofsplan Layer
     const friedhofsplanSource = new ImageWMS({
-      url: "https://ows.data-dna.eu/service",
+      url: `${import.meta.env.PUBLIC_MAPSERVER_URL || "https://ows.data-dna.eu"}/service`,
       params: {
         LAYERS: "p2d2_cemeteries_details",
         FORMAT: "image/png",
