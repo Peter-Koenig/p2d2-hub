@@ -23,21 +23,16 @@ spec:
           env:
             - name: NAMESPACE
               value: cc-prd-geodata-stack
-            - name: SECRET_MAIN
+            - name: GITLAB_WEBHOOK_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: p2d2-webhook-secrets
-                  key: secret-main
-            - name: SECRET_DEVELOP
+                  key: gitlab-webhook-token
+            - name: GITHUB_HMAC_SECRET
               valueFrom:
                 secretKeyRef:
                   name: p2d2-webhook-secrets
-                  key: secret-develop
-            - name: SECRET_TEAM_HUB
-              valueFrom:
-                secretKeyRef:
-                  name: p2d2-webhook-secrets
-                  key: secret-team-hub
+                  key: github-hmac-secret
           readinessProbe:
             httpGet:
               path: /health

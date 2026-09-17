@@ -32,7 +32,7 @@ const STAGES = {
     pvc: "p2d2-main-code",
     deployment: "p2d2-main",
     provider: "gitlab",
-    secret: process.env.SECRET_MAIN,
+    secret: process.env.GITLAB_WEBHOOK_TOKEN,
   },
   develop: {
     name: "p2d2-dev",
@@ -43,7 +43,7 @@ const STAGES = {
     pvc: "p2d2-dev-code",
     deployment: "p2d2-dev",
     provider: "gitlab",
-    secret: process.env.SECRET_DEVELOP,
+    secret: process.env.GITLAB_WEBHOOK_TOKEN,
   },
   "feature/team-de1/main": {
     name: "p2d2-f-de1",
@@ -54,7 +54,7 @@ const STAGES = {
     pvc: "p2d2-f-de1-code",
     deployment: "p2d2-f-de1",
     provider: "github",
-    secret: process.env.SECRET_TEAM_HUB,
+    secret: process.env.GITHUB_HMAC_SECRET,
   },
   "feature/team-de2/main": {
     name: "p2d2-f-de2",
@@ -65,7 +65,7 @@ const STAGES = {
     pvc: "p2d2-f-de2-code",
     deployment: "p2d2-f-de2",
     provider: "github",
-    secret: process.env.SECRET_TEAM_HUB,
+    secret: process.env.GITHUB_HMAC_SECRET,
   },
   "feature/team-fv/main": {
     name: "p2d2-f-fv",
@@ -76,7 +76,7 @@ const STAGES = {
     pvc: "p2d2-f-fv-code",
     deployment: "p2d2-f-fv",
     provider: "github",
-    secret: process.env.SECRET_TEAM_HUB,
+    secret: process.env.GITHUB_HMAC_SECRET,
   },
 };
 
