@@ -4,6 +4,8 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Prose from "../../components/Prose.astro";
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || "http://localhost:4321";
 ---
 
 <BaseLayout title="Datenschutz | p2d2">
@@ -13,7 +15,7 @@ import Prose from "../../components/Prose.astro";
 
             <p>
                 Wir freuen uns über dein Interesse an p2d2
-                (<a href="https://opn.data-dna.eu">https://opn.data-dna.eu</a>).
+                (<a href={siteUrl}>{siteUrl}</a>).
                 Der Schutz deiner persönlichen Daten ist uns ein wichtiges
                 Anliegen.
             </p>

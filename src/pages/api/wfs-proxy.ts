@@ -3,6 +3,35 @@
 // p2d2: WFS-Proxy: Server-seitiger WFS-Request mit Auth-Forwarding
 import type { APIRoute } from "astro";
 
+// Erlaubte WFS-Hosts aus der Konfiguration ableiten (SSRF-Schutz).
+// Primaer: Hostname der server-seitig konfigurierten PUBLIC_WFST_ENDPOINT.
+// Optional: ein zusaetzlicher Host (PUBLIC_WFS_PROXY_EXTRA_HOST), z. B. falls
+// ein zweiter Zugang weiterhin benoetigt wird. Keine hartkodierte Legacy-Liste.
+function getAllowedWfsHosts(): string[] {
+  const hosts: string[] = [];
+
+  const baseEndpoint =
+    import.meta.env.PUBLIC_WFST_ENDPOINT || import.meta.env.PUBLICWFSTENDPOINT;
+
+  if (baseEndpoint) {
+    try {
+      hosts.push(new URL(baseEndpoint).hostname);
+    } catch {
+      console.error(
+        "[WFS-PROXY-DEBUG] Invalid PUBLIC_WFST_ENDPOINT:",
+        baseEndpoint,
+      );
+    }
+  }
+
+  const extraHost = import.meta.env.PUBLIC_WFS_PROXY_EXTRA_HOST;
+  if (extraHost) {
+    hosts.push(extraHost);
+  }
+
+  return hosts;
+}
+
 /**
  * WFS Proxy for CORS bypass
  *
@@ -28,7 +57,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Validate that URL is from trusted WFS endpoints
-    const allowedHosts = ["wfs.data-dna.eu", "ows.data-dna.eu"];
+    const allowedHosts = getAllowedWfsHosts();
     const urlHost = new URL(url).hostname;
 
     if (!allowedHosts.includes(urlHost)) {
@@ -143,7 +172,7 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   // Validate that URL is from trusted WFS endpoints
-  const allowedHosts = ["wfs.data-dna.eu", "ows.data-dna.eu"];
+  const allowedHosts = getAllowedWfsHosts();
   try {
     const urlHost = new URL(targetUrl).hostname;
     if (!allowedHosts.includes(urlHost)) {
