@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: p2d2-webhook-controller
+  namespace: cc-prd-geodata-stack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: p2d2-webhook-controller
+  template:
+    metadata:
+      labels:
+        app: p2d2-webhook-controller
+    spec:
+      serviceAccountName: p2d2-webhook-controller
+      containers:
+        - name: controller
+          image: p2d2-webhook-controller:v1s-2026-09-17
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9321
+          env:
+            - name: NAMESPACE
+              value: cc-prd-geodata-stack
+            - name: SECRET_MAIN
+              valueFrom:
+                secretKeyRef:
+                  name: p2d2-webhook-secrets
+                  key: secret-main
+            - name: SECRET_DEVELOP
+              valueFrom:
+                secretKeyRef:
+                  name: p2d2-webhook-secrets
+                  key: secret-develop
+            - name: SECRET_TEAM_HUB
+              valueFrom:
+                secretKeyRef:
+                  name: p2d2-webhook-secrets
+                  key: secret-team-hub
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9321
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: p2d2-webhook-controller
+  namespace: cc-prd-geodata-stack
+spec:
+  type: ClusterIP
+  selector:
+    app: p2d2-webhook-controller
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9321
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: p2d2-webhook-secrets
+  namespace: cc-prd-geodata-stack
+type: Opaque
+stringData:
+  secret-main: CHANGEME
+  secret-develop: CHANGEME
+  secret-team-hub: CHANGEME

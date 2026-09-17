@@ -1,0 +1,78 @@
+# Builder-Job (Referenz für eine Stage; der Webhook-Controller erzeugt pro Deploy
+# einen parametrisierten Job mit GIT_REPO/GIT_BRANCH/BUILD_COMMAND/PVC).
+#
+# Ablauf (portiert aus deploy-branch.sh, OHNE Kommunen-Symlink):
+#   git clone -> npm ci -> npx tsc --noEmit -> npm run build:<stage> -> dist/ ins PVC
+#
+# Git-Auth: Token aus Secret p2d2-builder-git-auth (Key token). Die konkrete
+# URL-Injektion (GitLab oauth2:<token> vs. GitHub x-access-token:<token>) wird im
+# Job-Script je nach GIT_HOST umgesetzt.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: p2d2-builder-main
+  namespace: cc-prd-geodata-stack
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: builder
+          image: node:20
+          imagePullPolicy: IfNotPresent
+          workingDir: /build
+          env:
+            - name: GIT_HOST
+              value: gitlab.opencode.de
+            - name: GIT_REPO_PATH
+              value: OC000028072444/p2d2.git
+            - name: GIT_BRANCH
+              value: main
+            - name: BUILD_COMMAND
+              value: "npm run build"
+            - name: GIT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: p2d2-builder-git-auth
+                  key: token
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -euo pipefail
+              # Git-Auth abhaengig vom Host: GitLab oauth2:<token>, GitHub x-access-token:<token>
+              case "$GIT_HOST" in
+                *github*) AUTH_USER="x-access-token" ;;
+                *) AUTH_USER="oauth2" ;;
+              esac
+              git clone --depth 1 --branch "$GIT_BRANCH" \
+                "https://${AUTH_USER}:${GIT_TOKEN}@${GIT_HOST}/${GIT_REPO_PATH}" /build/app
+              cd /build/app
+              # package-lock.json Pflicht (deterministisch)
+              test -f package-lock.json
+              npm ci
+              npx tsc --noEmit
+              eval "$BUILD_COMMAND"
+              test -d dist/server
+              # dist/ ins PVC (Mount /app) uebernehmen
+              rm -rf /app/dist
+              cp -a dist /app/dist
+          volumeMounts:
+            - name: code
+              mountPath: /app
+      volumes:
+        - name: code
+          persistentVolumeClaim:
+            claimName: p2d2-main-code
+---
+# Git-Credential-Secrets (Platzhalter; Peter befuellt die echten Werte).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: p2d2-builder-git-auth
+  namespace: cc-prd-geodata-stack
+type: Opaque
+stringData:
+  gitlab-token: CHANGEME
+  github-token: CHANGEME

@@ -1,0 +1,13 @@
+{
+  "name": "p2d2-webhook-controller",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@kubernetes/client-node": "^0.22.3",
+    "express": "^4.19.2"
+  }
+}

@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: p2d2-webhook-controller
+  namespace: cc-prd-geodata-stack
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: p2d2-webhook-controller-role
+  namespace: cc-prd-geodata-stack
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "create"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: p2d2-webhook-controller-binding
+  namespace: cc-prd-geodata-stack
+subjects:
+  - kind: ServiceAccount
+    name: p2d2-webhook-controller
+    namespace: cc-prd-geodata-stack
+roleRef:
+  kind: Role
+  name: p2d2-webhook-controller-role
+  apiGroup: rbac.authorization.k8s.io
