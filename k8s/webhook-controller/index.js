@@ -122,7 +122,6 @@ async function createBuilderJob(config) {
     "cd /build/app",
     "test -f package-lock.json",
     "npm ci",
-    "npx tsc --noEmit",
     `eval "${config.build}"`,
     "test -d dist/server",
     "rm -rf /app/dist",

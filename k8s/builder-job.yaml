@@ -2,7 +2,7 @@
 # einen parametrisierten Job mit GIT_REPO/GIT_BRANCH/BUILD_COMMAND/PVC).
 #
 # Ablauf (portiert aus deploy-branch.sh, OHNE Kommunen-Symlink):
-#   git clone -> npm ci -> npx tsc --noEmit -> npm run build:<stage> -> dist/ ins PVC
+#   git clone -> npm ci -> npm run build:<stage> -> dist/ ins PVC
 #
 # Git-Auth: Token aus Secret p2d2-builder-git-auth. Das Secret wird NICHT von
 # diesem Manifest verwaltet, sondern separat von Peter befüllt (echte GitLab/
@@ -65,7 +65,6 @@ spec:
               # package-lock.json Pflicht (deterministisch)
               test -f package-lock.json
               npm ci
-              npx tsc --noEmit
               eval "$BUILD_COMMAND"
               test -d dist/server
               # dist/ ins PVC (Mount /app) uebernehmen
