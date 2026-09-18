@@ -117,7 +117,7 @@ function gitAuthUser(host) {
 async function createBuilderJob(config) {
   const jobName = `${config.name}-builder-${Date.now()}`;
   const script = [
-    "set -euo pipefail",
+    "set -eu",
     `git clone --depth 1 --branch "${config.branch}" "https://${gitAuthUser(config.gitHost)}:\${GIT_TOKEN}@${config.gitHost}/${config.gitRepoPath}" /build/app`,
     "cd /build/app",
     "test -f package-lock.json",

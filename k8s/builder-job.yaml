@@ -53,7 +53,7 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-              set -euo pipefail
+              set -eu
               # Git-Auth abhaengig vom Host: GitLab oauth2:<token>, GitHub x-access-token:<token>
               case "$GIT_HOST" in
                 *github*) AUTH_USER="x-access-token" ;;

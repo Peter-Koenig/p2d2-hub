@@ -43,7 +43,7 @@ Manifeste für die fünf Frontend-Pods (Astro-SSR) im Namespace `cc-prd-geodata-
 kubectl apply -f k8s/base.yaml
 kubectl apply -f k8s/stages/
 kubectl apply -f k8s/builder-job.yaml
-kubectl apply -f k8s/webhook-controller/
+kubectl apply -f k8s/webhook-controller/deployment.yaml -f k8s/webhook-controller/rbac.yaml
 ```
 
 ## Bewusst weggelassen (gegenüber Standalone `deploy-branch.sh`)
