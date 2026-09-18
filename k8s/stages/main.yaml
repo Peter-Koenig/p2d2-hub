@@ -17,28 +17,16 @@ metadata:
   name: p2d2-main-config
   namespace: cc-prd-geodata-stack
 data:
-  APP_DEBUG: "false"
-  DEFAULT_CATEGORY_ICON: /images/icons/default-category.svg
-  DB_HOST: central-db.cc-prd-database-stack.svc.cluster.local
-  DB_PORT: "5432"
-  DB_NAME: p2d2
   DB_USER: P2D2-MAIN
-  WFST_NAMESPACE: urn:data-dna:govdata
   WFST_WORKSPACE: main
   PUBLIC_WFST_WORKSPACE: main
-  PUBLIC_WFST_ENDPOINT: https://geoportal.udp.data-dna.eu/geoserver/ows
-  WFST_ENDPOINT: https://geoportal.udp.data-dna.eu/geoserver/ows
-  WFST_ENDPOINT_MAIN: https://geoportal.udp.data-dna.eu/geoserver/ows
+  PUBLIC_SITE_URL: https://www.udp.data-dna.eu
+  # Server-seitiger WFS-T-Endpoint je Stage (mit Workspace-Pfad).
+  # Beide Schreibweisen (plain + suffigiert) werden vom Code unterstützt.
+  WFST_ENDPOINT: https://geoportal.udp.data-dna.eu/geoserver/main/ows
+  WFST_ENDPOINT_MAIN: https://geoportal.udp.data-dna.eu/geoserver/main/ows
   WFST_USERNAME: p2d2_wfst_main
   WFST_USER_MAIN: p2d2_wfst_main
-  PUBLIC_MAPSERVER_URL: https://geoportal.udp.data-dna.eu/mapserver
-  PUBLIC_SITE_URL: https://www.udp.data-dna.eu
-  SMTP_HOST: CHANGEME
-  SMTP_PORT: "587"
-  SMTP_SECURE: "false"
-  SMTP_USER: CHANGEME
-  CONTACT_EMAIL_TO: CHANGEME
-  CONTACT_EMAIL_FROM: CHANGEME
 ---
 apiVersion: v1
 kind: Secret
@@ -47,17 +35,13 @@ metadata:
   namespace: cc-prd-geodata-stack
 type: Opaque
 stringData:
+  # K3: Cluster-DB-Rolle P2D2-MAIN (Rotation durch Peter)
   DB_PASSWORD: CHANGEME
+  # K1: GeoServer-WFS-T-Secret p2d2-geoserver-wfst-main
   WFST_PASSWORD: CHANGEME
   WFST_PW_MAIN: CHANGEME
+  # K2: zufällig generiert, bleibt
   SESSION_SECRET: CHANGEME
-  ALTCHA_HMAC_KEY: CHANGEME
-  SMTP_PASS: CHANGEME
-  ZITADEL_ISSUER: CHANGEME
-  ZITADEL_CLIENT_ID: CHANGEME
-  ZITADEL_CLIENT_SECRET: CHANGEME
-  ZITADEL_PROJECT_ID: CHANGEME
-  ZITADEL_ORG_ID: CHANGEME
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -83,6 +67,10 @@ spec:
           ports:
             - containerPort: 4321
           envFrom:
+            - configMapRef:
+                name: p2d2-base-config
+            - secretRef:
+                name: p2d2-base-secret
             - configMapRef:
                 name: p2d2-main-config
             - secretRef:

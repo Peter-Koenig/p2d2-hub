@@ -4,9 +4,13 @@
 # Ablauf (portiert aus deploy-branch.sh, OHNE Kommunen-Symlink):
 #   git clone -> npm ci -> npx tsc --noEmit -> npm run build:<stage> -> dist/ ins PVC
 #
-# Git-Auth: Token aus Secret p2d2-builder-git-auth (Key token). Die konkrete
-# URL-Injektion (GitLab oauth2:<token> vs. GitHub x-access-token:<token>) wird im
-# Job-Script je nach GIT_HOST umgesetzt.
+# Git-Auth: Token aus Secret p2d2-builder-git-auth. Das Secret wird NICHT von
+# diesem Manifest verwaltet, sondern separat von Peter befüllt (echte GitLab/
+# GitHub-Tokens) — siehe k8s/VARIABLES.md. Key je Provider:
+#   GitLab: gitlab-token  |  GitHub: github-token
+#
+# Der Build benötigt dieselben Env-Variablen wie der Runtime-Pod (Astro-Env-Schema),
+# daher envFrom auf base-config/base-secret + stage-config/stage-secret.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -23,6 +27,15 @@ spec:
           image: node:20
           imagePullPolicy: IfNotPresent
           workingDir: /build
+          envFrom:
+            - configMapRef:
+                name: p2d2-base-config
+            - secretRef:
+                name: p2d2-base-secret
+            - configMapRef:
+                name: p2d2-main-config
+            - secretRef:
+                name: p2d2-main-secret
           env:
             - name: GIT_HOST
               value: gitlab.opencode.de
@@ -36,7 +49,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: p2d2-builder-git-auth
-                  key: token
+                  key: gitlab-token
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -65,14 +78,3 @@ spec:
         - name: code
           persistentVolumeClaim:
             claimName: p2d2-main-code
----
-# Git-Credential-Secrets (Platzhalter; Peter befuellt die echten Werte).
-apiVersion: v1
-kind: Secret
-metadata:
-  name: p2d2-builder-git-auth
-  namespace: cc-prd-geodata-stack
-type: Opaque
-stringData:
-  gitlab-token: CHANGEME
-  github-token: CHANGEME

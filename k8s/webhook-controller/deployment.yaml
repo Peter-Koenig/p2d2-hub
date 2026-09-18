@@ -1,3 +1,8 @@
+# Webhook-Controller (Node.js) im Namespace cc-prd-geodata-stack.
+#
+# Das Secret p2d2-webhook-secrets (github-hmac-secret, gitlab-webhook-token) wird
+# NICHT von diesem Manifest verwaltet, sondern separat von Peter befüllt (echte
+# Werte) — siehe k8s/VARIABLES.md. Dieses Manifest referenziert es nur.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -53,14 +58,3 @@ spec:
     - name: http
       port: 80
       targetPort: 9321
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: p2d2-webhook-secrets
-  namespace: cc-prd-geodata-stack
-type: Opaque
-stringData:
-  secret-main: CHANGEME
-  secret-develop: CHANGEME
-  secret-team-hub: CHANGEME

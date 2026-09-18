@@ -1,0 +1,50 @@
+# Gemeinsame Basis-Werte für alle 5 Frontend-Stages (CIVITAS/CORE, autark).
+#
+# Nicht-sensibel -> ConfigMap "p2d2-base-config"
+# Sensibel        -> Secret    "p2d2-base-secret"
+#
+# Stage-spezifische Werte liegen in stages/<stage>.yaml. Das vollständige
+# Variablen-Ledger (Kategorie/Quelle/Status) ist k8s/VARIABLES.md.
+#
+# Klarstellung 1 (Autarkie): alle Standalone-internen Adressen sind auf die
+# Cluster-internen Instanzen umgestellt (central-db / geoportal.udp.data-dna.eu).
+# Klarstellung 2 (ein IAM): OIDC_ISSUER/CLIENT_ID/CLIENT_SECRET liegen als EINE
+# Zeile im Basis-Secret (ein Keycloak-Realm + ein OIDC-Client für alle Stages).
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: p2d2-base-config
+  namespace: cc-prd-geodata-stack
+data:
+  APP_DEBUG: "false"
+  # K1 aus .env.base; im aktuellen Code deklariert, aber nicht konsumiert.
+  # Datei Fahnenmasten.svg im public/-Baum prüfen (aktuell nicht vorhanden).
+  DEFAULT_CATEGORY_ICON: Fahnenmasten.svg
+  DB_HOST: central-db.cc-prd-database-stack.svc.cluster.local
+  DB_PORT: "5432"
+  DB_NAME: p2d2
+  WFST_NAMESPACE: urn:data-dna:govdata
+  PUBLIC_WFST_ENDPOINT: https://geoportal.udp.data-dna.eu/geoserver/ows
+  PUBLIC_MAPSERVER_URL: https://geoportal.udp.data-dna.eu/mapserver
+  SMTP_HOST: mxe860.netcup.net
+  SMTP_PORT: "587"
+  SMTP_SECURE: "false"
+  SMTP_USER: p2d2-prod@scanea.de
+  CONTACT_EMAIL_TO: peter.koenig@scanea.de
+  CONTACT_EMAIL_FROM: p2d2-prod@scanea.de
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: p2d2-base-secret
+  namespace: cc-prd-geodata-stack
+type: Opaque
+stringData:
+  # K1: echte Werte aus Standalone-.env.base (Peter trägt sie nach)
+  ALTCHA_HMAC_KEY: CHANGEME
+  SMTP_PASS: CHANGEME
+  # K3/K4: ein gemeinsamer Keycloak-OIDC-Client für alle 5 Stages (Peter/Keycloak)
+  OIDC_ISSUER: CHANGEME
+  OIDC_CLIENT_ID: CHANGEME
+  OIDC_CLIENT_SECRET: CHANGEME
