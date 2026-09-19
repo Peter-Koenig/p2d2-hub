@@ -38,7 +38,7 @@ maintenance:
   contacts:
     - name: Peter König
 legal:
-  license: AGPL-3.0-or-later
+  license: EUPL-1.2
   mainCopyrightOwner: Peter König
   repoOwner: Peter König
 localisation:
