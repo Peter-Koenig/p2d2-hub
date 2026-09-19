@@ -5,15 +5,21 @@ import type { APIRoute } from "astro";
 import { getOrigin } from "../../../lib/auth/origin-helper";
 import { getOidcConfig } from "../../../lib/auth/oidc-client";
 import { getSession, clearSession } from "../../../lib/auth/session";
-import { OIDC_CLIENT_ID } from "astro:env/server";
+import { OIDC_ISSUER, OIDC_CLIENT_ID, OIDC_ZITADEL_PROJECT_ID } from "astro:env/server";
 
 export const GET: APIRoute = async ({ request, redirect }) => {
   const session = await getSession(request);
 
-  // End-Session-Endpunkt aus der OIDC-Discovery (Keycloak) beziehen. Zitadel nutzte
-  // hartkodiert /oidc/v1/end_session; Keycloak liefert den Endpunkt per Discovery.
+  // End-Session-Endpunkt aus der OIDC-Discovery beziehen. Keycloak UND Zitadel liefern
+  // ihn per Discovery (Zitadel verifiziert: end_session_endpoint vorhanden). Der
+  // Fallback unten ist rein defensiv fuer den Fall, dass eine Discovery ihn nicht liefert.
   const config = await getOidcConfig();
-  const endSessionEndpoint = config.serverMetadata().end_session_endpoint;
+  let endSessionEndpoint = config.serverMetadata().end_session_endpoint;
+
+  if (!endSessionEndpoint && OIDC_ZITADEL_PROJECT_ID) {
+    // Zitadel-Zweig: hartkodierter End-Session-Pfad (wie vor dem Refactor).
+    endSessionEndpoint = new URL("/oidc/v1/end_session", OIDC_ISSUER).toString();
+  }
 
   // Explizite externe Origin aus PUBLIC_SITE_URL, nicht aus request.url
   // (hinter Reverse-Proxy ist request.url = https://localhost/ – falsch)

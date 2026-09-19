@@ -73,6 +73,13 @@ export default defineConfig({
         context: "server",
         access: "secret",
       }),
+      // Optional: Zitadel-Projekt-ID (nur p2d2-Standalone). Wenn gesetzt, wird der
+      // Zitadel-Zweig aktiviert (Zitadel-Scopes + Rollen-/Metadaten-Claims als Fallback).
+      OIDC_ZITADEL_PROJECT_ID: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
 
       // Session-Verschlüsselung
       SESSION_SECRET: envField.string({ context: "server", access: "secret" }),

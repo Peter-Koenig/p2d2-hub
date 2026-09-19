@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
 // p2d2: Session-Verschlüsselung, Cookie-Handling und UserSession-Factory
-import { SESSION_SECRET, OIDC_CLIENT_ID } from "astro:env/server";
+import { SESSION_SECRET, OIDC_CLIENT_ID, OIDC_ZITADEL_PROJECT_ID } from "astro:env/server";
 import type { Membership, UserPreferences } from "./metadata-parser";
 
 // Types
@@ -253,13 +253,30 @@ export function deleteCookie(response: Response, name: string): Response {
 // (siehe addon_25_iam.sh, Rollen-Token-Mapper).
 export function extractRoles(claims: Record<string, unknown>): string[] {
   if (!claims || typeof claims !== "object") return [];
+
+  // 1) Keycloak: resource_access.<client_id>.roles (String-Array)
   const resourceAccess = claims["resource_access"];
-  if (!resourceAccess || typeof resourceAccess !== "object") return [];
-  const clientRoles = (resourceAccess as Record<string, unknown>)[OIDC_CLIENT_ID];
-  if (!clientRoles || typeof clientRoles !== "object") return [];
-  const roles = (clientRoles as Record<string, unknown>)["roles"];
-  if (!Array.isArray(roles)) return [];
-  return roles.filter((r): r is string => typeof r === "string");
+  if (resourceAccess && typeof resourceAccess === "object") {
+    const clientRoles = (resourceAccess as Record<string, unknown>)[OIDC_CLIENT_ID];
+    if (clientRoles && typeof clientRoles === "object") {
+      const roles = (clientRoles as Record<string, unknown>)["roles"];
+      if (Array.isArray(roles)) {
+        const filtered = roles.filter((r): r is string => typeof r === "string");
+        if (filtered.length > 0) return filtered;
+      }
+    }
+  }
+
+  // 2) Dual-Provider-Fallback: Zitadel-Rollen-Claim (Objekt-Keys) lesen.
+  if (OIDC_ZITADEL_PROJECT_ID) {
+    const raw =
+      claims[`urn:zitadel:iam:org:project:${OIDC_ZITADEL_PROJECT_ID}:roles`];
+    if (raw && typeof raw === "object") {
+      return Object.keys(raw as Record<string, unknown>);
+    }
+  }
+
+  return [];
 }
 
 export function getUserSession(locals: App.Locals): UserSession {
