@@ -7,7 +7,7 @@ import { getOrigin } from "../../../lib/auth/origin-helper";
 import { getOidcConfig } from "../../../lib/auth/oidc-client";
 import { applySessionCookie, deleteCookie } from "../../../lib/auth/session";
 import { parseMetadata } from "../../../lib/auth/metadata-parser";
-import { ZITADEL_PROJECT_ID } from "astro:env/server";
+import { OIDC_CLIENT_ID, OIDC_ZITADEL_PROJECT_ID } from "astro:env/server";
 
 export const GET: APIRoute = async ({ request, redirect }) => {
   const url = new URL(request.url);
@@ -85,20 +85,36 @@ export const GET: APIRoute = async ({ request, redirect }) => {
       throw new Error("ID-Token-Claims fehlen nach Validierung");
     }
 
-    // Extract roles from Zitadel claim: urn:zitadel:iam:org:project:roles
-    const rolesClaim = idTokenClaims[
-      `urn:zitadel:iam:org:project:${ZITADEL_PROJECT_ID}:roles`
-    ] as Record<string, Record<string, string>> | undefined;
+    // Rollen: zuerst Keycloak (resource_access.<client_id>.roles, String-Array),
+    // dann Dual-Provider-Fallback auf Zitadel (urn:zitadel:iam:org:project:<id>:roles).
+    const resourceAccess = idTokenClaims["resource_access"] as
+      | Record<string, { roles?: string[] }>
+      | undefined;
+    const clientRoles = resourceAccess?.[OIDC_CLIENT_ID]?.roles;
 
     let roles: string[] = ["editor"]; // fallback
-    if (rolesClaim && typeof rolesClaim === "object") {
-      roles = Object.keys(rolesClaim);
+    if (Array.isArray(clientRoles) && clientRoles.length > 0) {
+      roles = clientRoles.filter((r): r is string => typeof r === "string");
+    } else if (OIDC_ZITADEL_PROJECT_ID) {
+      const zitadelRoles = idTokenClaims[
+        `urn:zitadel:iam:org:project:${OIDC_ZITADEL_PROJECT_ID}:roles`
+      ] as Record<string, unknown> | undefined;
+      if (zitadelRoles && typeof zitadelRoles === "object") {
+        const keys = Object.keys(zitadelRoles);
+        if (keys.length > 0) roles = keys;
+      }
     }
 
-    // Metadata aus ID-Token-Claims parsen (defensiv, Fehler unterbrechen Login nicht)
-    const metadataRaw = idTokenClaims["urn:zitadel:iam:user:metadata"] as
+    // Metadaten: zuerst Keycloak ("user_metadata"), dann Zitadel-Fallback
+    // ("urn:zitadel:iam:user:metadata"). Defensiv parsen (Fehler unterbrechen Login nicht).
+    let metadataRaw = idTokenClaims["user_metadata"] as
       | Record<string, unknown>
       | undefined;
+    if ((!metadataRaw || typeof metadataRaw !== "object") && OIDC_ZITADEL_PROJECT_ID) {
+      metadataRaw = idTokenClaims["urn:zitadel:iam:user:metadata"] as
+        | Record<string, unknown>
+        | undefined;
+    }
     const parsedMetadata = parseMetadata(metadataRaw);
 
     // Build session data (ohne Tokens – Cookie-Größen-Limit)

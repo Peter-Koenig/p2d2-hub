@@ -9,7 +9,7 @@
 // PATCH /api/workflow/session/:id.
 //
 // Themenunabhaengig: feature_type kommt aus dem Request-Body.
-// Auth ueber locals.user (Zitadel-Session-Cookie, kein x-user-email-Header mehr).
+// Auth ueber locals.user (OIDC-Session-Cookie, kein x-user-email-Header mehr).
 
 import type { APIRoute } from "astro";
 
