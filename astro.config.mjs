@@ -63,21 +63,16 @@ export default defineConfig({
         default: false,
       }),
 
-      // Zitadel OIDC
-      ZITADEL_ISSUER: envField.string({ context: "server", access: "secret" }),
-      ZITADEL_CLIENT_ID: envField.string({
+      // OIDC (Keycloak)
+      OIDC_ISSUER: envField.string({ context: "server", access: "secret" }),
+      OIDC_CLIENT_ID: envField.string({
         context: "server",
         access: "secret",
       }),
-      ZITADEL_CLIENT_SECRET: envField.string({
+      OIDC_CLIENT_SECRET: envField.string({
         context: "server",
         access: "secret",
       }),
-      ZITADEL_PROJECT_ID: envField.string({
-        context: "server",
-        access: "secret",
-      }),
-      ZITADEL_ORG_ID: envField.string({ context: "server", access: "secret" }),
 
       // Session-Verschlüsselung
       SESSION_SECRET: envField.string({ context: "server", access: "secret" }),

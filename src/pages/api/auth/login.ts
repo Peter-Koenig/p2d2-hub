@@ -6,7 +6,6 @@ import { getOidcConfig } from "../../../lib/auth/oidc-client";
 import { getOrigin } from "../../../lib/auth/origin-helper";
 import { setCookie } from "../../../lib/auth/session";
 import { buildAuthorizationUrl } from "openid-client";
-import { ZITADEL_PROJECT_ID } from "astro:env/server";
 
 export const GET: APIRoute = async ({ request, redirect }) => {
   const config = await getOidcConfig();
@@ -33,15 +32,9 @@ export const GET: APIRoute = async ({ request, redirect }) => {
   const origin = getOrigin();
   const redirectUri = `${origin}/api/auth/callback`;
 
-  const scope = [
-    "openid",
-    "profile",
-    "email",
-    "offline_access",
-    "urn:zitadel:iam:user:metadata",
-    `urn:zitadel:iam:org:project:id:${ZITADEL_PROJECT_ID}:aud`,
-    "urn:zitadel:iam:org:project:roles",
-  ].join(" ");
+  // Rollen und Metadaten kommen in Keycloak ueber Token-/User-Attribute-Mapper
+  // (nicht ueber zusaetzliche Scopes); siehe addon_25_iam.sh.
+  const scope = ["openid", "profile", "email", "offline_access"].join(" ");
 
   const authorizationUrl = buildAuthorizationUrl(config, {
     redirect_uri: redirectUri,
