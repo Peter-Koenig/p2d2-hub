@@ -1,11 +1,11 @@
 // SPDX-FileCopyrightText: 2026-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
-// p2d2: Defensiver Parser für Zitadel-User-Metadaten (Memberships, Preferences)
+// p2d2: Defensiver Parser für OIDC-User-Metadaten (Memberships, Preferences)
 
 /**
- * Defensiver Parser für Zitadel-User-Metadaten.
+ * Defensiver Parser für OIDC-User-Metadaten (Keycloak).
  *
- * Bekannte Keys (nur "p2d2."-Namespace des Zitadel-Metadaten-Claims):
+ * Bekannte Keys (nur "p2d2."-Namespace des Metadaten-Claims):
  *   - p2d2.memberships
  *   - p2d2.preferences.default_topic_key
  *   - p2d2.preferences.home_kommune_slug
@@ -228,7 +228,7 @@ function parsePreferences(raw: unknown): UserPreferences {
 // ---------------------------------------------------------------------------
 
 /**
- * Nimmt den "urn:zitadel:iam:user:metadata"-Claim aus dem ID-Token
+ * Nimmt den User-Metadaten-Claim (Keycloak: "user_metadata") aus dem ID-Token
  * entgegen und liefert ein validiertes, abgesichertes ParsedMetadata-Objekt.
  *
  * @param claimsMetadata – Der Roh-Claim (kann undefined, null oder Objekt sein)

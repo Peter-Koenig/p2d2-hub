@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
-// p2d2: Re-Export des Zitadel-Metadata-Parsers aus @p2d2/core.
+// p2d2: Re-Export des OIDC-Metadata-Parsers aus @p2d2/core.
 export {
   parseMetadata,
   validateTopicKey,

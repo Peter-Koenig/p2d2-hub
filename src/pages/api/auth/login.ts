@@ -6,7 +6,7 @@ import { getOidcConfig } from "../../../lib/auth/oidc-client";
 import { getOrigin } from "../../../lib/auth/origin-helper";
 import { setCookie } from "../../../lib/auth/session";
 import { buildAuthorizationUrl } from "openid-client";
-import { ZITADEL_PROJECT_ID } from "astro:env/server";
+import { OIDC_ZITADEL_PROJECT_ID } from "astro:env/server";
 
 export const GET: APIRoute = async ({ request, redirect }) => {
   const config = await getOidcConfig();
@@ -33,15 +33,18 @@ export const GET: APIRoute = async ({ request, redirect }) => {
   const origin = getOrigin();
   const redirectUri = `${origin}/api/auth/callback`;
 
-  const scope = [
-    "openid",
-    "profile",
-    "email",
-    "offline_access",
-    "urn:zitadel:iam:user:metadata",
-    `urn:zitadel:iam:org:project:id:${ZITADEL_PROJECT_ID}:aud`,
-    "urn:zitadel:iam:org:project:roles",
-  ].join(" ");
+  // Basis-Scopes immer. Rollen/Metadaten kommen in Keycloak ueber Token-/User-
+  // Attribute-Mapper (addon_25_iam.sh), NICHT ueber zusaetzliche Scopes.
+  const scopes = ["openid", "profile", "email", "offline_access"];
+  // Dual-Provider-Fallback: im Zitadel-Zweig (p2d2-Standalone) die Zitadel-Scopes anhaengen.
+  if (OIDC_ZITADEL_PROJECT_ID) {
+    scopes.push(
+      "urn:zitadel:iam:user:metadata",
+      `urn:zitadel:iam:org:project:id:${OIDC_ZITADEL_PROJECT_ID}:aud`,
+      "urn:zitadel:iam:org:project:roles",
+    );
+  }
+  const scope = scopes.join(" ");
 
   const authorizationUrl = buildAuthorizationUrl(config, {
     redirect_uri: redirectUri,
