@@ -1,6 +1,6 @@
 ---
-title: Gemeinschaft
+title: Ich arbeite mit öffentlichen Daten
 icon: gemeinschaft
 order: 2
 ---
-Gemeinsam schaffen wir mehr: Unsere Plattform lebt vom Engagement und Wissen vieler verschiedener Menschen.
+Ein Fachverfahren als gemeinsames Thema öffnen

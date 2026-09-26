@@ -5,11 +5,14 @@
 import TransparenzIcon from "./icons/TransparenzIcon.astro";
 import GemeinschaftIcon from "./icons/GemeinschaftIcon.astro";
 import OffeneDatenIcon from "./icons/OffeneDatenIcon.astro";
-const { title, icon, description } = Astro.props;
+const { title, icon, description, href } = Astro.props;
+const CardTag = href ? "a" : "div";
+const cardAttrs = href ? { href } : {};
 ---
 
-<div
-    class="relative bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group"
+<CardTag
+    {...cardAttrs}
+    class="relative bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl group block"
     style="max-width: 100%;"
 >
     <!-- Permanent Glow-Overlay -->
@@ -41,4 +44,4 @@ const { title, icon, description } = Astro.props;
         class="absolute inset-0 pointer-events-none rounded-xl transition-all duration-300 group-hover:shadow-[0_0_32px_4px_#D6FFEA] z-10"
     >
     </div>
-</div>
+</CardTag>
