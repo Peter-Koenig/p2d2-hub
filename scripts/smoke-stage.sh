@@ -5,12 +5,13 @@
 # p2d2: Smoke-Test für eine laufende Stage. Read-only (nur GET), keine Secrets
 # oder Tokens in der Ausgabe.
 #
-# Aufruf: scripts/smoke-stage.sh <BASE_URL> [--expect-node <major>]
+# Aufruf: scripts/smoke-stage.sh <BASE_URL> [--expect-node <major>] [--wfs-url <URL>]
 #
 # Prüfungen:
 #   1. GET /api/health       -> 200 + JSON-Feld "status":"ok"
 #   2. GET /api/auth/login   -> 302/303 mit Location (nur Host wird ausgegeben)
 #   3. GET /api/wfs-proxy    -> Endpunkt erreichbar (400 ohne url erwartet)
+#      --wfs-url <URL>       -> GET ?url=<URL> -> 200 + Capabilities-Dokument
 #   4. --expect-node <major> -> Major von "node" aus /api/health vergleichen
 #                               (nur bei HEALTH_VERBOSE=true; sonst nicht pruefbar,
 #                               kein FAIL)
@@ -21,10 +22,11 @@ set -euo pipefail
 
 BASE_URL=""
 EXPECT_NODE=""
+WFS_URL=""
 FAILS=0
 
 usage() {
-  printf 'Usage: %s <BASE_URL> [--expect-node <major>]\n' "$0" >&2
+  printf 'Usage: %s <BASE_URL> [--expect-node <major>] [--wfs-url <URL>]\n' "$0" >&2
   exit 2
 }
 
@@ -41,6 +43,13 @@ while [[ $# -gt 0 ]]; do
         usage
       fi
       EXPECT_NODE="$2"
+      shift 2
+      ;;
+    --wfs-url)
+      if [[ $# -lt 2 ]]; then
+        usage
+      fi
+      WFS_URL="$2"
       shift 2
       ;;
     *)
@@ -95,12 +104,29 @@ else
   fail "auth/login      HTTP ${login_status:-000} (erwartet 302/303 + Location)"
 fi
 
-# --- 3) wfs-proxy (read-only; 400 ohne url erwartet) ---
-http_get "${BASE_URL}/api/wfs-proxy"
-if [[ "$HTTP_STATUS" == "400" ]]; then
-  pass "wfs-proxy       HTTP 400 (Endpunkt erreichbar)"
+# --- 3) wfs-proxy ---
+if [[ -n "$WFS_URL" ]]; then
+  # Upstream-Check: GetCapabilities über den Proxy (read-only). Nur Status und
+  # Content-Type ausgeben, keine Body-Teile.
+  wfs_out="$(curl -sS --max-time 30 -G --data-urlencode "url=${WFS_URL}" \
+    -w $'\n%{http_code} %{content_type}' \
+    "${BASE_URL}/api/wfs-proxy" 2>/dev/null)" || wfs_out=""
+  wfs_status_ct="${wfs_out##*$'\n'}"
+  wfs_body="${wfs_out%$'\n'*}"
+  wfs_status="${wfs_status_ct%% *}"
+  wfs_ct="${wfs_status_ct#* }"
+  if [[ "$wfs_status" == "200" ]] && grep -q 'Capabilities' <<< "$wfs_body"; then
+    pass "wfs-proxy       HTTP 200, content-type=${wfs_ct:-<unbekannt>}, Capabilities gefunden"
+  else
+    fail "wfs-proxy       HTTP ${wfs_status:-000}, content-type=${wfs_ct:-<unbekannt>} (erwartet 200 + Capabilities)"
+  fi
 else
-  fail "wfs-proxy       HTTP ${HTTP_STATUS} (erwartet 400)"
+  http_get "${BASE_URL}/api/wfs-proxy"
+  if [[ "$HTTP_STATUS" == "400" ]]; then
+    pass "wfs-proxy       HTTP 400 (Endpunkt erreichbar)"
+  else
+    fail "wfs-proxy       HTTP ${HTTP_STATUS} (erwartet 400)"
+  fi
 fi
 
 # --- Ergebnis ---
