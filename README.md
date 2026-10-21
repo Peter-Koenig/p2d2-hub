@@ -283,5 +283,3 @@ This project is licensed under the **European Union Public Licence v1.2 (EUPL-1.
 - More channels see footer on the website
 
 ```
-
-..
