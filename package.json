@@ -3,6 +3,9 @@
   "private": true,
   "type": "module",
   "version": "0.0.1",
+  "engines": {
+    "node": ">=24.22.1 <25"
+  },
   "workspaces": ["packages/core"],
   "scripts": {
     "dev": "astro dev",
