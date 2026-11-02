@@ -37,10 +37,11 @@ export async function getOidcConfig(): Promise<Configuration> {
 
   if (!discoveryPromise) {
     discoveryPromise = (async () => {
-      const issuerUrl = new URL(
-        "/.well-known/openid-configuration",
-        OIDC_ISSUER,
-      );
+      // Issuer unveraendert uebergeben: openid-client bildet die Well-Known-URL
+      // selbst (/.well-known/openid-configuration wird korrekt an den Realm-Pfad
+      // angehaengt). Ein manuelles new URL("/...", OIDC_ISSUER) wuerde den
+      // Realm-Pfad verlieren (fuehrender Slash ersetzt den Pfad).
+      const issuerUrl = new URL(OIDC_ISSUER);
 
       const config = await discovery(
         issuerUrl,
