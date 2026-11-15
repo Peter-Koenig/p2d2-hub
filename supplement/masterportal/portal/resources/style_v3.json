@@ -1,0 +1,24 @@
+[
+  {
+    "styleId": "unterkuenfte",
+    "rules": [
+      {
+        "style": {
+          "type": "icon",
+          "clusterType": "icon",
+          "imageName": "93.png",
+          "imageScale": 0.9,
+          "clusterImageName": "93_cluster.png",
+          "clusterTextOffsetX": 0,
+          "clusterTextOffsetY": 2,
+          "clusterTextFillColor": [
+            255,
+            255,
+            255,
+            1
+          ]
+        }
+      }
+    ]
+  }
+]
