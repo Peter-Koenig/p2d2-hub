@@ -1,0 +1,107 @@
+const Config = {
+    ignoredKeys: ["BOUNDEDBY", "SHAPE", "SHAPE_LENGTH", "SHAPE_AREA", "OBJECTID", "OBJECTID_1", "GLOBALID", "GEOMETRY", "SHP", "SHP_AREA", "SHP_LENGTH", "GEOM", "O_CODE", "O_KAT", "O_FKT"],
+	//gfiWindow: "detached",
+    addons: [],
+    login: {
+        oidcAuthorizationEndpoint: "https://${IDM_HOST}/realms/${IAM_REALM}/protocol/openid-connect/auth",
+        oidcTokenEndpoint: "https://${IDM_HOST}/realms/${IAM_REALM}/protocol/openid-connect/token",
+        oidcClientId: "${OIDC_CLIENT_ID}",
+        oidcRedirectUri: "${OIDC_REDIRECT_URI}",
+        oidcScope: "profile email openid",
+        interceptorUrlRegex: "${INTERCEPTOR_URL_REGEX}"
+    },  
+	// mapMarker: {
+	// 	pointStyleId: "customMapMarker",
+	// 	//polygonStyleId: "solar"
+	// },
+    /*simpleMap: true,
+    tree: {
+        orderBy: "opendata",
+        saveSelection: true,
+		isFolderSelectable: false,
+    },*/
+    scaleLine: true,
+    wfsImgPath: "./resources/img/",
+    allowParametricURL: true,
+    view: {
+        center: [ 406590, 5756625 ]
+    },
+    wfsImgPath: "./resources/img/",
+    cswId: "004",
+    namedProjections: [
+        // ETRS89 UTM
+        ["EPSG:25832", "+title=ETRS89/UTM 32N +proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"],
+
+        // WGS84
+        ["EPSG:4326", "+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"]
+    ],
+	footer: {
+	   showVersion: true,
+	   urls: [{
+		"bezeichnung": "",
+		"url": "https://www.civitasconnect.digital/impressum/",
+		"alias": "Impressum",
+		"alias_mobil": "Impressum |"
+	   }]
+	},
+    quickHelp: {
+        imgPath: "./resources/img/"
+    },
+    layerConf: "./resources/services-internet.json",
+    restConf: "./resources/rest-services-internet.json",
+	styleConf: "./resources/style_v3.json",
+    proxyURL: "/cgi-bin/proxy.cgi",
+
+    attributions: true,
+    scaleLine: true,
+    mouseHover:
+        {
+            numFeaturesToShow: 2,
+            infoText: "(weitere Objekte. Bitte zoomen.)"
+        },
+    //isMenubarVisible: true,
+    print: {
+        printID: "99999",
+        title: "Geo-Online",
+        gfi: false
+    },
+    zoomTo: [
+        {
+            id: "zoomToFeatureId",
+            layerId: "unterkuenfte_wfs",
+            property: "ds_open_data:hotelname",
+            styleId: "unterkuenfte"
+        }
+    ],    
+	obliqueMap: true,
+    cesiumParameter: {
+        tileCacheSize: 20,
+        enableLighting: false,
+        fog: {
+            enabled: true,
+            density: 0.0002,
+            screenSpaceErrorFactor: 2.0
+        },
+        maximumScreenSpaceError: 2,
+        fxaa: false
+    },
+    //startingMap3D: false,
+    geoAPI: false,
+    //clickCounter: {},
+    portalLanguage: {
+        enabled: false,
+        debug: false,
+        languages: {
+            de: "Deutsch",
+            en: "English",
+        },
+        fallbackLanguage: "de",
+        changeLanguageOnStartWhen: ["querystring", "localStorage", "htmlTag"],
+        loadPath: "../mastercode/3_27_1/locales/{{lng}}/{{ns}}.json"
+    }
+};
+
+// conditional export to make config readable by e2e tests
+if (typeof module !== "undefined") {
+    module.exports = Config;
+};
