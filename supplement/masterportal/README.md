@@ -37,8 +37,10 @@ supplement/masterportal/
    (`git rev-parse HEAD:supplement/masterportal`) gebildet.
 3. Beim Containerstart wird `portal/config.js.template` per `envsubst` nach
    `/var/run/masterportal/config.js` gerendert (emptyDir) und von nginx unter
-   `/masterportal/<stage>/config.js` ausgeliefert. Stage- und domainabhängige
-   Werte kommen aus der ConfigMap `masterportal-<stage>-config`.
+   `/masterportal/config.js` ausgeliefert. Das Portal einer Stage liegt unter
+   `https://<frontend-host>/masterportal/` (ohne Stage-Segment; der Host
+   bestimmt die Stage). Stage- und domainabhängige Werte kommen aus der
+   ConfigMap `masterportal-<stage>-config`.
 
 ## Laufzeit-Variablen (config.js)
 
@@ -47,6 +49,6 @@ supplement/masterportal/
 | `IDM_HOST` | `idm.${ADDON_DOMAIN}` |
 | `IAM_REALM` | `ADDON_IAM_REALM` (Standard `cc-prd`) |
 | `OIDC_CLIENT_ID` | `geostack_public` (CIVITAS/CORE-Public-Client) |
-| `OIDC_REDIRECT_URI` | `https://<frontend-host>/masterportal/<stage>/` |
+| `OIDC_REDIRECT_URI` | `https://<frontend-host>/masterportal/` |
 | `INTERCEPTOR_URL_REGEX` | `https://(geoportal|<host-prefix>)[.]<domain-mit-[.]>/` |
 | `PORTAL_BACKEND_ORIGIN` | `https://geoportal.${ADDON_DOMAIN}` |
