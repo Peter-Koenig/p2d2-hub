@@ -13,6 +13,7 @@ import { join, resolve } from "node:path";
 
 const PORTAL = resolve(__dirname, "../../supplement/masterportal/portal");
 const RES = join(PORTAL, "resources");
+const ADDONS = resolve(__dirname, "../../supplement/masterportal/addons");
 const read = (p: string): string => readFileSync(p, "utf8");
 const readJson = (p: string): any => JSON.parse(read(p));
 
@@ -62,6 +63,12 @@ describe("config.js.template", () => {
       "OIDC_REDIRECT_URI",
     ]);
     expect(template).not.toMatch(/\$\{(?![A-Z_]+\})/);
+  });
+
+  it("addons registriert genau p2d2FeatureEditor", () => {
+    const m = template.match(/^\s*addons:\s*\[([^\]]*)\]/m);
+    expect(m, "addons-Zeile").not.toBeNull();
+    expect(JSON.parse(`[${m![1]}]`)).toEqual(["p2d2FeatureEditor"]);
   });
 
   it("enthält kein zoomTo (wird in 3.27.1 nur aus portalConfig gelesen)", () => {
@@ -152,5 +159,87 @@ describe("Portal-Konfiguration und Layer", () => {
     expect(decodeURIComponent(fh.url.slice(prefix.length))).toBe(INNER_WFS);
     expect(styles.some((s) => s.styleId === fh.styleId)).toBe(true);
     expect(styles.some((s) => s.styleId === "unterkuenfte")).toBe(true);
+  });
+});
+
+// Liest alle .js-Dateien unter <dir> rekursiv.
+const jsFiles = (dir: string): string[] =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory()
+      ? jsFiles(join(dir, e.name))
+      : e.name.endsWith(".js")
+        ? [join(dir, e.name)]
+        : [],
+  );
+// Entfernt Block- und Zeilenkommentare (ohne Rücksicht auf Strings; in den
+// Add-on-Dateien kommt "//" nur in Kommentaren vor).
+const stripComments = (code: string): string =>
+  code.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+
+describe("addons/", () => {
+  const conf = readJson(join(ADDONS, "addonsConf.json"));
+
+  it("jeder Schlüssel in addonsConf.json hat addons/<Pfad>/index.js", () => {
+    expect(Object.keys(conf).length).toBeGreaterThan(0);
+    for (const [key, value] of Object.entries<any>(conf)) {
+      const dir = typeof value === "object" && value.path ? value.path : key;
+      expect(existsSync(join(ADDONS, dir, "index.js")), key).toBe(true);
+    }
+  });
+
+  it("p2d2FeatureEditor ist vom Typ javascript", () => {
+    expect(conf.p2d2FeatureEditor).toEqual({ type: "javascript" });
+  });
+
+  describe("p2d2FeatureEditor ohne Friedhofskonstanten", () => {
+    const files = jsFiles(join(ADDONS, "p2d2FeatureEditor"));
+
+    it("enthält Einstieg und reine Module", () => {
+      const names = files.map((f) => f.slice(ADDONS.length + 1)).sort();
+      expect(names).toEqual([
+        "p2d2FeatureEditor/index.js",
+        "p2d2FeatureEditor/js/clickFlow.js",
+        "p2d2FeatureEditor/js/editorConfig.js",
+        "p2d2FeatureEditor/js/editorDialog.js",
+        "p2d2FeatureEditor/js/editorUrl.js",
+      ]);
+    });
+
+    for (const word of ["cemetery", "geo-containers", "wfs-proxy", "osm_admin_level=10"]) {
+      it(`kein "${word}" im Code`, () => {
+        for (const f of files) {
+          expect(stripComments(read(f)), f).not.toContain(word);
+        }
+      });
+    }
+
+    it("kein innerHTML", () => {
+      for (const f of files) expect(stripComments(read(f)), f).not.toMatch(/innerHTML|insertAdjacentHTML|outerHTML/);
+    });
+  });
+});
+
+describe("p2d2-editor-config.json ↔ services-p2d2.json", () => {
+  const editorCfg = readJson(join(RES, "p2d2-editor-config.json"));
+  const layers = Object.entries<any>(editorCfg.layers);
+
+  it("jede konfigurierte Layer-ID existiert, GFI ist abgeschaltet", () => {
+    expect(layers.map(([id]) => id)).toEqual(["p2d2-geo-containers-koeln"]);
+    for (const [id] of layers) {
+      const layer = svc.find((l) => l.id === id);
+      expect(layer, id).toBeDefined();
+      expect(layer.gfiAttributes, id).toBe("ignore");
+    }
+  });
+
+  it("wfsBase, typeName und proxyPath passen zur Layer-URL", () => {
+    for (const [id, c] of layers) {
+      const layer = svc.find((l) => l.id === id);
+      const prefix = `${c.proxyPath}?url=`;
+      expect(layer.url.startsWith(prefix), id).toBe(true);
+      const inner = new URL(decodeURIComponent(layer.url.slice(prefix.length)));
+      expect(inner.origin + inner.pathname).toBe(c.wfsBase);
+      expect(inner.searchParams.get("typeName")).toBe(c.typeName);
+    }
   });
 });

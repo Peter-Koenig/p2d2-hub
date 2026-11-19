@@ -1,0 +1,41 @@
+{
+  "_comment": "Konfiguration des Add-ons p2d2FeatureEditor je Layer-ID aus services-p2d2.json (stage-spezifisch). Kind-Regel und Fenster wie im Standalone (src/utils/feature-popup-handler.ts: loadGrabflurData, openFeatureEditor). Zoomstufen sind Portal-Stufen aus portal-config-p2d2.json (0 bis 9), nicht die Web-Mercator-Stufen des Standalone.",
+  "layers": {
+    "p2d2-geo-containers-koeln": {
+      "wfsBase": "https://geoportal.udp.data-dna.eu/geoserver/de1/ows",
+      "typeName": "geo-containers",
+      "proxyPath": "/api/wfs-proxy",
+      "checkTimeoutMs": 3000,
+      "children": {
+        "level": 10,
+        "separator": "-",
+        "prefixFields": ["admin_name", "name"]
+      },
+      "editor": {
+        "windowNamePrefix": "feature-editor-",
+        "windowFeatures": "width=1200,height=800,resizable=yes,scrollbars=yes,location=yes"
+      },
+      "zoom": {
+        "padding": 30,
+        "durationMs": 300,
+        "minZoom": 0,
+        "maxZoom": 8
+      },
+      "info": {
+        "fields": [
+          { "key": "container_type", "label": "Typ" },
+          { "key": "wp_name", "label": "wp_name" },
+          { "key": "osm_admin_level", "label": "Admin Level" }
+        ],
+        "texts": {
+          "noChildren": "Keine Details verfügbar.",
+          "popupBlocked": "Der Browser hat das Editor-Fenster blockiert. Bitte über den Button öffnen oder Popups für diese Seite erlauben.",
+          "checkTimeout": "Die Prüfung auf Detaildaten dauert zu lange. Der Editor kann über den Button geöffnet werden.",
+          "checkFailed": "Die Prüfung auf Detaildaten ist fehlgeschlagen.",
+          "openEditor": "Editor öffnen",
+          "close": "Schließen"
+        }
+      }
+    }
+  }
+}

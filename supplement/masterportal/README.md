@@ -22,13 +22,15 @@ supplement/masterportal/
 │   ├── resources/
 │   │   ├── portal-config-p2d2.json  # Portal-Konfiguration (portalConf), stage-spezifisch
 │   │   ├── services-p2d2.json       # Layer-Definitionen (layerConf), stage-spezifisch
+│   │   ├── p2d2-editor-config.json  # Add-on p2d2FeatureEditor je Layer-ID, stage-spezifisch
 │   │   ├── style_v3.json            # Styles (styleConf)
 │   │   └── img/                     # Bilder, u. a. p2d2-logo.svg
 │   └── localdata/          # Demodaten
 ├── addons/
-│   ├── addonsConf.json     # leeres Objekt (Customizing folgt separat)
-│   └── p2d2FeatureEditor/
-│       └── js/editorUrl.js # URL-Bau für den Astro-Feature-Editor (noch ohne Wirkung)
+│   ├── addonsConf.json     # registriert p2d2FeatureEditor (Typ javascript)
+│   └── p2d2FeatureEditor/  # Klick auf Feature öffnet den Astro-Feature-Editor
+│       ├── index.js
+│       └── js/             # clickFlow, editorUrl, editorConfig, editorDialog
 └── README.md
 ```
 
@@ -89,19 +91,94 @@ ausgeliefert.
 
 ## Add-ons (`addons/`)
 
-`addons/p2d2FeatureEditor/js/editorUrl.js` ist ein reines ES-Modul ohne
-Imports, DOM, Vue oder OpenLayers. Es baut die Editor-URL
-`/feature-editor/<name>?wp_name=…&container_type=…&name=…&extent=…&projection=…`
-sowie CQL und Proxy-URL der Kinderprüfung (Grabflure). Das Fenster mit dem
-Astro-Feature-Editor öffnet später ein GFI-Theme, das dieses Modul nutzt.
+### p2d2FeatureEditor (Typ `javascript`)
 
-- Ohne Eintrag in `addonsConf.json` wird das Modul nicht gebündelt; das Portal
-  verhält sich unverändert. Der Build bricht dadurch nicht ab.
-- Der Ordner `p2d2FeatureEditor/` gilt für den Image-Build trotzdem als
-  „wirksames“ Add-on: `ADDONS_SHA` ist gesetzt und geht in den Image-Tag ein,
-  und die Dateien werden nach `/src/addons/` kopiert.
-- Vertragstest gegen die Zielseite, `EditorState.ts`, `crs.ts` und
-  `services-p2d2.json`: `src/tests/masterportal-editor-contract.test.ts`.
+Ein Klick auf ein Feature eines konfigurierten Layers verhält sich wie in der
+Standalone-Karte (`src/utils/feature-popup-handler.ts`):
+
+1. Prüfung per WFS (über den Stage-Proxy, `count=1`), ob Kind-Features
+   existieren (z. B. Grabflure eines Friedhofs).
+2. Mit Treffern öffnet sich der Astro-Feature-Editor in einem eigenen Fenster
+   (`/feature-editor/<name>?wp_name=…&container_type=…&name=…&extent=…&projection=…&osm_admin_level=…`).
+3. Ohne Treffer, bei Fehler, bei Zeitüberschreitung oder blockiertem Fenster
+   erscheint ein modaler Info-Dialog. Bei Zeitüberschreitung und blockiertem
+   Fenster enthält er den Button „Editor öffnen“ (neue Nutzergeste).
+   Ein Klick daneben oder Escape schließt ihn.
+4. Die Karte zoomt in jedem Fall auf das Feature.
+
+Für die konfigurierten Layer ist das GFI abgeschaltet (`gfiAttributes: "ignore"`
+in `services-p2d2.json`), damit kein zweites Fenster erscheint.
+
+| Datei | Inhalt |
+|---|---|
+| `addonsConf.json` | Eintrag `{"p2d2FeatureEditor": {"type": "javascript"}}` |
+| `p2d2FeatureEditor/index.js` | Einstieg: wartet auf die 2D-Karte, Klick-Listener, Zoom |
+| `p2d2FeatureEditor/js/clickFlow.js` | reiner Ablauf (Kinderprüfung, Fenster, Zeitlimit) |
+| `p2d2FeatureEditor/js/editorUrl.js` | Editor-URL, CQL, Proxy-URL |
+| `p2d2FeatureEditor/js/editorConfig.js` | `validateConfig` |
+| `p2d2FeatureEditor/js/editorDialog.js` | Info-Dialog (`<dialog>`, nur `textContent`) |
+
+Das Add-on wird nur aktiv, wenn es zusätzlich in `config.js.template` unter
+`addons` steht.
+
+### Konfiguration `portal/resources/p2d2-editor-config.json`
+
+Das JavaScript enthält keine Fachwerte (Typen, Layer-Namen, Level,
+Proxy-Pfad, Fenstermaße). Sie stehen je Layer-ID aus `services-p2d2.json` in
+`p2d2-editor-config.json`. Die Datei wird zur Laufzeit relativ zur Portal-Seite
+geladen und passt nicht auf die Proxy-Regel des nginx. `validateConfig` wirft
+bei fehlenden oder falsch typisierten Pflichtschlüsseln, es gibt keine stillen
+Standardwerte.
+
+| Schlüssel | Bedeutung |
+|---|---|
+| `wfsBase`, `typeName`, `proxyPath` | WFS ohne Query, Feature-Typ, Stage-Proxy |
+| `checkTimeoutMs` | Zeitlimit der Kinderprüfung; danach wird abgebrochen (Popup-Frist der Browser beachten) |
+| `children.level`, `children.separator`, `children.prefixFields` | Kind-Level, Trenner, Präfixfelder in Reihenfolge |
+| `editor.windowNamePrefix`, `editor.windowFeatures` | Fenstername (`<Präfix><name>`) und `window.open`-Merkmale |
+| `zoom.padding`, `zoom.durationMs`, `zoom.minZoom`, `zoom.maxZoom` | Rand in Pixeln, Animationsdauer, Grenzen in **Portal-Stufen** (`portal-config-p2d2.json`) |
+| `info.fields`, `info.texts` | Anzeigefelder (Schlüssel, Beschriftung) und Texte des Dialogs |
+
+### Weiteren Layer aufnehmen
+
+1. Layer in `services-p2d2.json` anlegen, `gfiAttributes` auf `"ignore"`.
+2. Eintrag mit derselben Layer-ID unter `layers` in `p2d2-editor-config.json`.
+3. Passt die Kind-Regel (`osm_admin_level=<level> AND wp_name AND
+   container_type AND name LIKE '<Präfix><Trenner>%'`) nicht, wird sie in
+   `editorUrl.js`/`clickFlow.js` als zusätzliche, konfigurierbare Regel ergänzt.
+   Der Astro-Editor muss die Kategorie ebenfalls kennen.
+4. Tests: `src/tests/masterportal-supplement.test.ts` prüft Layer-ID,
+   `gfiAttributes` und `wfsBase`/`typeName` gegen die Layer-URL.
+
+### Herkunft der Regeln
+
+Admin-Level der Hauptkarte (`getOsmAdminLevel` in `src/utils/wfs-layer-manager.ts`)
+und Kind-Regel (`loadGrabflurData` in `src/utils/feature-popup-handler.ts`)
+liegen im Standalone-Code. Die Konfiguration bildet sie für die Stage nach;
+ändert sich eine Regel dort, muss die Konfiguration nachgezogen werden.
+
+### Bekannte Einschränkungen
+
+- Nur 2D-Karte. Ist ein Werkzeug mit eigenen Karteninteraktionen aktiv
+  (Messen, Zeichnen, Auswahl …), reagiert das Add-on nicht – dieselbe Bedingung
+  wie beim GFI (`Menu/currentMouseMapInteractionsComponent`).
+- Das Editor-Fenster wird nicht für Cross-Window-Events registriert
+  (`registerEditorWindow` im Standalone); Änderungen im Editor aktualisieren
+  die Masterportal-Karte nicht.
+- Öffnet `window.open` erst nach der Kinderprüfung. Dauert sie länger als die
+  Popup-Frist des Browsers, blockiert er das Fenster; dafür gibt es den Button.
+- `%` und `_` im Präfix wirken als LIKE-Platzhalter (wie im Standalone).
+- `ol/proj.js` ist nur transitiv über den Masterportal-Upstream verfügbar.
+- Die Zielseite liest `osm_admin_level` noch nicht; der Parameter wird für
+  spätere Kategorien schon übergeben.
+
+### Tests
+
+- `src/tests/masterportal-editor-contract.test.ts`: Vertrag mit Zielseite,
+  `EditorState.ts`, `crs.ts`, `services-p2d2.json` und dem CQL des Standalone.
+- `src/tests/masterportal-editor-flow.test.ts`: Ablauf, `validateConfig`, Zoom.
+- `src/tests/masterportal-supplement.test.ts`: Registrierung, keine
+  Friedhofskonstanten im Add-on-Code, kein `innerHTML`, Konsistenz der Konfiguration.
 
 ## Stage de1: Inhalte
 

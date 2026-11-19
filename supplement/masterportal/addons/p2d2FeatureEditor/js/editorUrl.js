@@ -9,8 +9,9 @@
 // (extent.split(",").map(Number), Reihenfolge Lon/Lat in WGS84) ab.
 // Präfixregel und CQL der Kinderprüfung entsprechen loadGrabflurData in
 // src/utils/feature-popup-handler.ts, ergänzt um die Maskierung von Hochkommata.
+// Kind-Level, Trenner, Präfixfelder und Proxy-Pfad sind Parameter; die Werte
+// stehen in der Layer-Konfiguration (portal/resources/p2d2-editor-config.json).
 //
-// Ohne Eintrag in addons/addonsConf.json wird dieses Modul nicht gebündelt.
 // Vertragstest: src/tests/masterportal-editor-contract.test.ts
 
 const EXTENT_DECIMALS = 7;
@@ -39,41 +40,53 @@ export function quoteCql (value) {
 }
 
 /**
- * Präfix der Kind-Features (Grabflure) eines Elternteils: admin_name
- * (getrimmt), falls nicht leer, sonst name.
- * @param {{name: string, admin_name?: (string|null)}} props Properties des Elternteils.
- * @returns {string} Präfix für das Muster "<Präfix>-%".
+ * Präfix der Kind-Features eines Elternteils: der erste nichtleere Wert der
+ * Präfixfelder in der angegebenen Reihenfolge, getrimmt.
+ * @param {Object} props Properties des Elternteils.
+ * @param {string[]} prefixFields Feldnamen in Reihenfolge, z. B. ["admin_name", "name"].
+ * @returns {string} Präfix für das Muster "<Präfix><Trenner>%".
+ * @throws {TypeError} Ohne Präfixfelder oder wenn keines einen Wert hat.
  */
-export function childPrefix (props) {
-    const admin = props?.admin_name;
-
-    if (typeof admin === "string" && admin.trim() !== "") {
-        return admin.trim();
+export function childPrefix (props, prefixFields) {
+    if (!Array.isArray(prefixFields) || prefixFields.length === 0) {
+        throw new TypeError("editorUrl: prefixFields fehlt oder ist leer");
     }
-    return requireText("name", props?.name);
+    for (const field of prefixFields) {
+        const value = props?.[field];
+
+        if (typeof value === "string" && value.trim() !== "") {
+            return value.trim();
+        }
+    }
+    throw new TypeError(`editorUrl: kein Präfix in den Feldern ${prefixFields.join(", ")}`);
 }
 
 /**
- * CQL-Filter der Kinderprüfung. Alle drei Werte werden mit quoteCql maskiert.
- * Die LIKE-Platzhalter % und _ im Präfix bleiben wie im Standalone unmaskiert.
- * @param {{wpName: string, containerType: string, prefix: string}} args Eingaben.
- * @returns {string} CQL-Filter.
+ * CQL-Filter der Kinderprüfung. wpName, containerType und prefix werden mit
+ * quoteCql maskiert. Die LIKE-Platzhalter % und _ im Präfix bleiben wie im
+ * Standalone unmaskiert.
+ * @param {{wpName: string, containerType: string, childLevel: number, prefix: string, separator: string}} args Eingaben.
+ * @returns {string} "osm_admin_level=<childLevel> AND wp_name='…' AND container_type='…' AND (name LIKE '<prefix><separator>%')"
  */
-export function buildChildCql ({wpName, containerType, prefix}) {
+export function buildChildCql ({wpName, containerType, childLevel, prefix, separator}) {
+    if (!Number.isInteger(childLevel)) {
+        throw new TypeError("editorUrl: childLevel muss eine ganze Zahl sein");
+    }
     const wp = quoteCql(requireText("wpName", wpName)),
         type = quoteCql(requireText("containerType", containerType)),
-        pre = quoteCql(requireText("prefix", prefix));
+        pre = quoteCql(requireText("prefix", prefix)),
+        sep = quoteCql(requireText("separator", separator));
 
-    return `osm_admin_level=10 AND wp_name='${wp}' AND container_type='${type}' AND (name LIKE '${pre}-%')`;
+    return `osm_admin_level=${childLevel} AND wp_name='${wp}' AND container_type='${type}' AND (name LIKE '${pre}${sep}%')`;
 }
 
 /**
  * URL für die Kinderprüfung über den Stage-Proxy. Die innere WFS-URL folgt dem
  * Aufbau des Friedhofs-Layers in services-p2d2.json, ergänzt um count=1.
- * @param {{wfsBase: string, typeName: string, cql: string, proxyPath?: string}} args Eingaben.
+ * @param {{wfsBase: string, typeName: string, cql: string, proxyPath: string}} args Eingaben (alle Pflicht).
  * @returns {string} Relativer Proxy-Pfad mit url-Parameter.
  */
-export function buildChildCheckUrl ({wfsBase, typeName, cql, proxyPath = "/api/wfs-proxy"}) {
+export function buildChildCheckUrl ({wfsBase, typeName, cql, proxyPath}) {
     requireText("wfsBase", wfsBase);
     if (wfsBase.includes("?")) {
         throw new TypeError("editorUrl: wfsBase darf keine Query enthalten");
