@@ -63,6 +63,11 @@ describe("config.js.template", () => {
     ]);
     expect(template).not.toMatch(/\$\{(?![A-Z_]+\})/);
   });
+
+  it("enthält kein zoomTo (wird in 3.27.1 nur aus portalConfig gelesen)", () => {
+    expect(template).not.toMatch(/\bzoomTo\b/);
+    expect(template).not.toContain("unterkuenfte_wfs");
+  });
 });
 
 describe("resources/", () => {

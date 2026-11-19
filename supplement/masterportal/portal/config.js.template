@@ -66,14 +66,6 @@ const Config = {
         title: "Geo-Online",
         gfi: false
     },
-    zoomTo: [
-        {
-            id: "zoomToFeatureId",
-            layerId: "unterkuenfte_wfs",
-            property: "ds_open_data:hotelname",
-            styleId: "unterkuenfte"
-        }
-    ],    
 	obliqueMap: true,
     cesiumParameter: {
         tileCacheSize: 20,

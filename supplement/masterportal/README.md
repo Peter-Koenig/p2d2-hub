@@ -26,7 +26,9 @@ supplement/masterportal/
 │   │   └── img/                     # Bilder, u. a. p2d2-logo.svg
 │   └── localdata/          # Demodaten
 ├── addons/
-│   └── addonsConf.json     # leeres Objekt (Customizing folgt separat)
+│   ├── addonsConf.json     # leeres Objekt (Customizing folgt separat)
+│   └── p2d2FeatureEditor/
+│       └── js/editorUrl.js # URL-Bau für den Astro-Feature-Editor (noch ohne Wirkung)
 └── README.md
 ```
 
@@ -84,6 +86,22 @@ passen; `config.js.template` verweist darauf:
 Pfade werden relativ zur Portal-URL aufgelöst (`/masterportal/`). Nur
 `config.js` wird zur Laufzeit gerendert; JSON-Dateien werden unverändert
 ausgeliefert.
+
+## Add-ons (`addons/`)
+
+`addons/p2d2FeatureEditor/js/editorUrl.js` ist ein reines ES-Modul ohne
+Imports, DOM, Vue oder OpenLayers. Es baut die Editor-URL
+`/feature-editor/<name>?wp_name=…&container_type=…&name=…&extent=…&projection=…`
+sowie CQL und Proxy-URL der Kinderprüfung (Grabflure). Das Fenster mit dem
+Astro-Feature-Editor öffnet später ein GFI-Theme, das dieses Modul nutzt.
+
+- Ohne Eintrag in `addonsConf.json` wird das Modul nicht gebündelt; das Portal
+  verhält sich unverändert. Der Build bricht dadurch nicht ab.
+- Der Ordner `p2d2FeatureEditor/` gilt für den Image-Build trotzdem als
+  „wirksames“ Add-on: `ADDONS_SHA` ist gesetzt und geht in den Image-Tag ein,
+  und die Dateien werden nach `/src/addons/` kopiert.
+- Vertragstest gegen die Zielseite, `EditorState.ts`, `crs.ts` und
+  `services-p2d2.json`: `src/tests/masterportal-editor-contract.test.ts`.
 
 ## Stage de1: Inhalte
 
