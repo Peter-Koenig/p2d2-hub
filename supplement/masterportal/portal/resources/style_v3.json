@@ -20,5 +20,27 @@
         }
       }
     ]
+  },
+  {
+    "styleId": "p2d2_friedhof",
+    "rules": [
+      {
+        "style": {
+          "polygonStrokeColor": [
+            255,
+            105,
+            0,
+            1
+          ],
+          "polygonStrokeWidth": 2,
+          "polygonFillColor": [
+            255,
+            105,
+            0,
+            0.1
+          ]
+        }
+      }
+    ]
   }
 ]

@@ -17,10 +17,14 @@ Astro-Builds: die Standalone-Anwendung ignoriert ihn vollständig.
 ```text
 supplement/masterportal/
 ├── portal/
-│   ├── index.html          # Einstiegspunkt (byte-identisch über alle Stages)
+│   ├── index.html          # Einstiegspunkt (Seitentitel stage-spezifisch)
 │   ├── config.js.template  # Laufzeit-Konfiguration (envsubst-Platzhalter)
-│   ├── resources/          # style_v3.json + img/ (byte-identisch über alle Stages)
-│   └── localdata/          # Demodaten (byte-identisch über alle Stages)
+│   ├── resources/
+│   │   ├── portal-config-p2d2.json  # Portal-Konfiguration (portalConf), stage-spezifisch
+│   │   ├── services-p2d2.json       # Layer-Definitionen (layerConf), stage-spezifisch
+│   │   ├── style_v3.json            # Styles (styleConf)
+│   │   └── img/                     # Bilder, u. a. p2d2-logo.svg
+│   └── localdata/          # Demodaten
 ├── addons/
 │   └── addonsConf.json     # leeres Objekt (Customizing folgt separat)
 └── README.md
@@ -28,9 +32,12 @@ supplement/masterportal/
 
 ## Ablauf
 
-1. Der Ordner liegt im **Stage-Branch** des p2d2-Repos. Da alle Stages denselben
-   Inhalt haben, tragen Merges zwischen Stage-Branches keine Hosts/Konfigurationen
-   mit.
+1. Der Ordner liegt im **Stage-Branch** des p2d2-Repos. Die Inhalte sind
+   **stage-spezifisch**: Stage de1 weicht mit eigener Portal-Konfiguration,
+   eigenen Layern, Titel und Logo von den übrigen Stages ab. Bei Merges zwischen
+   Stage-Branches ist `supplement/masterportal/` daher gezielt zu prüfen bzw.
+   auszunehmen, damit keine Layer, Hosts oder Kartenausschnitte einer anderen
+   Stage übernommen werden.
 2. Beim Masterportal-Build wird der Stage-Branch genau einmal flach geklont
    (`addon_stage_checkout`, `modules_addon_V1s/addon_30_frontend.sh`). Der
    Image-Tag wird über die Tree-Hash dieses Ordners
@@ -52,3 +59,45 @@ supplement/masterportal/
 | `OIDC_REDIRECT_URI` | `https://<frontend-host>/masterportal/` |
 | `INTERCEPTOR_URL_REGEX` | `https://(geoportal|<host-prefix>)[.]<domain-mit-[.]>/` |
 | `PORTAL_BACKEND_ORIGIN` | `https://geoportal.${ADDON_DOMAIN}` |
+
+## Eigene Konfigurationsdateien und Proxy-Regel
+
+Das nginx im Masterportal-Pod leitet genau diese Pfade an das CIVITAS-Portal-
+Backend weiter (nginx-Vorlage `overlay_addon_V1s/k8s/masterportal/nginx/templates/default.conf.template`
+im Repository `civitas_einrichtung`):
+
+- `/masterportal/config.json`
+- `/masterportal/resources/services-internet.json`
+- `/masterportal/resources/rest-services-internet.json`
+
+Alle anderen Pfade unter `/masterportal/` werden statisch aus dem Stage-Ordner
+ausgeliefert. Eigene Dateien tragen deshalb Namen, die **nicht** auf diese Regel
+passen; `config.js.template` verweist darauf:
+
+| Schlüssel (config.js) | Datei | Herkunft |
+|---|---|---|
+| `portalConf` | `./resources/portal-config-p2d2.json` | statisch, dieser Ordner |
+| `layerConf` | `./resources/services-p2d2.json` | statisch, dieser Ordner |
+| `styleConf` | `./resources/style_v3.json` | statisch, dieser Ordner |
+| `restConf` | `./resources/rest-services-internet.json` | Portal-Backend (Proxy) |
+
+Pfade werden relativ zur Portal-URL aufgelöst (`/masterportal/`). Nur
+`config.js` wird zur Laufzeit gerendert; JSON-Dateien werden unverändert
+ausgeliefert.
+
+## Stage de1: Inhalte
+
+- Hintergrundkarte: MapProxy-Layer `p2d2_osm` (WMS
+  `https://geoportal.udp.data-dna.eu/mapserver/service`), Karte in EPSG:25832.
+- Fachlayer: Friedhöfe Köln als GeoJSON über den Stage-Proxy
+  `/api/wfs-proxy?url=<kodierte WFS-URL>` (GeoServer-Workspace `de1`,
+  `typeName=geo-containers`, CQL-Filter auf Köln/`cemetery`/`osm_admin_level=8`,
+  Daten in EPSG:4326, Umprojektion im Client). Style `p2d2_friedhof` in
+  `style_v3.json`.
+- Kartenausschnitt: Zentrum Kölner Dom, `extent` = Stadtgebiet Köln
+  (`[minX, minY, maxX, maxY]`, EPSG:25832). Der `extent` begrenzt nur den
+  Kartenmittelpunkt.
+
+**Feste Hostnamen:** `geoportal.udp.data-dna.eu` steht fest in
+`services-p2d2.json` (MapProxy-URL und innere WFS-URL); es gibt kein Templating
+für JSON-Dateien. Bei einer anderen Domain sind diese Einträge anzupassen.

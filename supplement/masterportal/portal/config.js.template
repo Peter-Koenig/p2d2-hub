@@ -47,7 +47,8 @@ const Config = {
     quickHelp: {
         imgPath: "./resources/img/"
     },
-    layerConf: "./resources/services-internet.json",
+    portalConf: "./resources/portal-config-p2d2.json",
+    layerConf: "./resources/services-p2d2.json",
     restConf: "./resources/rest-services-internet.json",
 	styleConf: "./resources/style_v3.json",
     proxyURL: "/cgi-bin/proxy.cgi",
