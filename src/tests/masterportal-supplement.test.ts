@@ -216,6 +216,49 @@ describe("addons/", () => {
     it("kein innerHTML", () => {
       for (const f of files) expect(stripComments(read(f)), f).not.toMatch(/innerHTML|insertAdjacentHTML|outerHTML/);
     });
+
+    // Isolation vom Cross-Window-Eventmanagement des Standalone: keine Importe
+    // aus dem Astro-Code oder @p2d2/core, kein Halbempfänger. Wird eine
+    // Empfangs-Bridge gebaut, passt ein eigener Auftrag diesen Test an.
+    it("keine Importe aus src/, @/, @p2d2/core oder dem Eventmanagement", () => {
+      for (const f of files) {
+        const code = stripComments(read(f));
+        const imports = [
+          ...code.matchAll(/^\s*import\s[\s\S]*?from\s*["']([^"']+)["']/gm),
+          ...code.matchAll(/^\s*import\s*["']([^"']+)["']/gm),
+          ...code.matchAll(/\bimport\(\s*["']([^"']+)["']\s*\)/g),
+        ];
+        for (const m of imports) {
+          const statement = m[0];
+          const spec = m[1];
+          expect(spec, `${f}: ${spec}`).not.toMatch(
+            /(^|\/)src\/|^\.\.\/\.\.\/src|^@\/|^@p2d2\/core/,
+          );
+          expect(statement, `${f}: ${spec}`).not.toMatch(
+            /events|cross-window-events|initializeCrossWindowBridge/,
+          );
+        }
+      }
+    });
+
+    it("kein postMessage und kein Listener auf message", () => {
+      for (const f of files) {
+        const code = stripComments(read(f));
+        expect(code, f).not.toContain("postMessage");
+        expect(code, f).not.toMatch(/addEventListener\(\s*["']message["']|\bonmessage\b/);
+      }
+    });
+
+    it("window.open genau einmal, mit drei Argumenten (window.opener bleibt erhalten)", () => {
+      const calls = files.flatMap((f) =>
+        [...stripComments(read(f)).matchAll(/window\.open\(([^)]*)\)/g)].map((m) => m[1]),
+      );
+      expect(calls).toEqual(["url, name, features"]);
+      // Keine rel-Attribute (noopener/noreferrer); die Merkmale prüft validateConfig.
+      for (const f of files) {
+        expect(stripComments(read(f)), f).not.toMatch(/\brel\s*=|\.rel\b|relList/);
+      }
+    });
   });
 });
 

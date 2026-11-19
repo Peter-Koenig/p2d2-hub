@@ -100,6 +100,19 @@ describe("validateConfig", () => {
     expect(LC.zoom.durationMs).toBe(300);
   });
 
+  it("windowFeatures mit noopener oder noreferrer wird abgelehnt (Editor braucht window.opener)", () => {
+    for (const bad of [
+      "width=1200,height=800,noopener",
+      "noreferrer,width=1200",
+      "width=1200, NoOpener",
+      "width=1200,NOREFERRER=yes",
+    ]) {
+      const c = JSON.parse(JSON.stringify(CFG_FILE));
+      c.layers[LAYER_ID].editor.windowFeatures = bad;
+      expect(() => validateConfig(c), bad).toThrow(/noopener|noreferrer/);
+    }
+  });
+
   it("fehlende oder falsch typisierte Pflichtschlüssel werfen", () => {
     const clone = () => JSON.parse(JSON.stringify(CFG_FILE));
     const mutations: ((c: any) => void)[] = [

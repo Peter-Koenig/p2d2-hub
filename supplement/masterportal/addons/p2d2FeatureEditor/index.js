@@ -76,10 +76,14 @@ function clicksAllowed () {
 }
 
 /**
- * Öffnet ein Fenster.
+ * Öffnet ein Fenster. Genau drei Argumente, keine weiteren Merkmale, kein
+ * noopener/noreferrer: Der Editor braucht window.opener, um seine
+ * Cross-Window-Events an das öffnende Fenster zu senden
+ * (src/utils/cross-window-events.ts, isMainWindow ist !window.opener).
+ * Auch der Button „Editor öffnen“ im Dialog nutzt diese Funktion.
  * @param {string} url URL.
  * @param {string} name Fenstername.
- * @param {string} features Fenstermerkmale.
+ * @param {string} features Fenstermerkmale (validateConfig lehnt noopener/noreferrer ab).
  * @returns {Window|null} Fenster oder null, wenn blockiert.
  */
 function openWindow (url, name, features) {

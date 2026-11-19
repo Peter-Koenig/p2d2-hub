@@ -107,7 +107,12 @@ function validateLayer (c, path) {
     const editor = requireObject(c, "editor", path);
 
     requireString(editor, "windowNamePrefix", `${path}.editor`);
-    requireString(editor, "windowFeatures", `${path}.editor`);
+    // Der Editor braucht window.opener für seine Cross-Window-Events
+    // (src/utils/cross-window-events.ts: isMainWindow ist !window.opener).
+    // noopener/noreferrer würden den opener kappen.
+    if (/noopener|noreferrer/i.test(requireString(editor, "windowFeatures", `${path}.editor`))) {
+        fail(`${path}.editor.windowFeatures`, "ohne noopener und noreferrer");
+    }
 
     const zoom = requireObject(c, "zoom", path),
         zPath = `${path}.zoom`;

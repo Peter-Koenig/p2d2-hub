@@ -164,13 +164,31 @@ liegen im Standalone-Code. Die Konfiguration bildet sie für die Stage nach;
   wie beim GFI (`Menu/currentMouseMapInteractionsComponent`).
 - Das Editor-Fenster wird nicht für Cross-Window-Events registriert
   (`registerEditorWindow` im Standalone); Änderungen im Editor aktualisieren
-  die Masterportal-Karte nicht.
+  die Masterportal-Karte nicht (siehe „Cross-Window-Events“).
 - Öffnet `window.open` erst nach der Kinderprüfung. Dauert sie länger als die
   Popup-Frist des Browsers, blockiert er das Fenster; dafür gibt es den Button.
 - `%` und `_` im Präfix wirken als LIKE-Platzhalter (wie im Standalone).
 - `ol/proj.js` ist nur transitiv über den Masterportal-Upstream verfügbar.
 - Die Zielseite liest `osm_admin_level` noch nicht; der Parameter wird für
   spätere Kategorien schon übergeben.
+
+### Cross-Window-Events
+
+- **Heute:** Der Editor sendet seine Ereignisse (`p2d2:editor:*`) per
+  `window.opener.postMessage` mit `type: "p2d2:cross-window-event"` an das
+  öffnende Fenster, hier das Masterportal (`src/utils/cross-window-events.ts`).
+  Das Masterportal hat keinen Empfänger; die Nachrichten werden ignoriert.
+  Das Add-on enthält bewusst weder `postMessage` noch einen `message`-Listener.
+- **Voraussetzungen:** `window.opener` bleibt erhalten – kein `noopener`, kein
+  `noreferrer` (`validateConfig` lehnt beides in `editor.windowFeatures` ab) und
+  kein `Cross-Origin-Opener-Policy`-Header an Masterportal oder Editor.
+  Masterportal und Editor laufen unter derselben Origin (Ziel der Nachricht ist
+  `window.location.origin`).
+- **Ausblick:** Eine Empfangs-Bridge, die `p2d2:cross-window-event` im
+  Masterportal als Ereignis weiterreicht (z. B. Neuladen des Layers nach
+  `p2d2:editor:save:complete`), ist ein eigener Auftrag.
+- Test: `src/tests/masterportal-crosswindow-contract.test.ts` prüft das
+  Protokoll; `masterportal-supplement.test.ts` prüft die Isolation des Add-ons.
 
 ### Tests
 
