@@ -65,10 +65,10 @@ describe("config.js.template", () => {
     expect(template).not.toMatch(/\$\{(?![A-Z_]+\})/);
   });
 
-  it("addons registriert genau p2d2FeatureEditor", () => {
+  it("addons registriert genau p2d2FeatureEditor und p2d2Crs", () => {
     const m = template.match(/^\s*addons:\s*\[([^\]]*)\]/m);
     expect(m, "addons-Zeile").not.toBeNull();
-    expect(JSON.parse(`[${m![1]}]`)).toEqual(["p2d2FeatureEditor"]);
+    expect(JSON.parse(`[${m![1]}]`)).toEqual(["p2d2FeatureEditor", "p2d2Crs"]);
   });
 
   it("enthält kein zoomTo (wird in 3.27.1 nur aus portalConfig gelesen)", () => {
@@ -201,6 +201,7 @@ describe("addons/", () => {
         "p2d2FeatureEditor/js/clickFlow.js",
         "p2d2FeatureEditor/js/editorConfig.js",
         "p2d2FeatureEditor/js/editorDialog.js",
+        "p2d2FeatureEditor/js/editorProjection.js",
         "p2d2FeatureEditor/js/editorUrl.js",
       ]);
     });
@@ -284,5 +285,128 @@ describe("p2d2-editor-config.json ↔ services-p2d2.json", () => {
       expect(inner.origin + inner.pathname).toBe(c.wfsBase);
       expect(inner.searchParams.get("typeName")).toBe(c.typeName);
     }
+  });
+});
+
+// Dateien eines Add-ons mit Endung .js oder .vue, rekursiv.
+const sourceFiles = (dir: string): string[] =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory()
+      ? sourceFiles(join(dir, e.name))
+      : /\.(js|vue)$/.test(e.name)
+        ? [join(dir, e.name)]
+        : [],
+  );
+const stripAll = (code: string): string =>
+  stripComments(code.replace(/<!--[\s\S]*?-->/g, ""));
+
+describe("addons/p2d2Crs (Projektions-Switch)", () => {
+  const CRS = join(ADDONS, "p2d2Crs");
+  const conf = readJson(join(ADDONS, "addonsConf.json"));
+  const files = existsSync(CRS) ? sourceFiles(CRS) : [];
+  const rel = (f: string) => f.slice(CRS.length + 1);
+  const stateFile = join(CRS, "store/stateP2d2Crs.js");
+
+  it("ist vom Typ tool", () => {
+    expect(conf.p2d2Crs).toEqual({ type: "tool" });
+  });
+
+  it("enthält Einstieg, Komponente, Store, reine Module", () => {
+    expect(files.map(rel).sort()).toEqual([
+      "components/P2d2Crs.vue",
+      "index.js",
+      "js/runtime.js",
+      "js/utm.js",
+      "js/viewSwap.js",
+      "store/actionsP2d2Crs.js",
+      "store/gettersP2d2Crs.js",
+      "store/indexP2d2Crs.js",
+      "store/mutationsP2d2Crs.js",
+      "store/stateP2d2Crs.js",
+    ]);
+  });
+
+  it("Locales de und en sind gültig und haben dieselben Schlüssel", () => {
+    const keys = (o: any, p = ""): string[] =>
+      Object.entries(o).flatMap(([k, v]) =>
+        v && typeof v === "object" ? keys(v, `${p}${k}.`) : [`${p}${k}`],
+      );
+    const de = readJson(join(CRS, "locales/de/additional.json"));
+    const en = readJson(join(CRS, "locales/en/additional.json"));
+    expect(keys(de).sort()).toEqual(keys(en).sort());
+    expect(de.modules.p2d2Crs.name).toBe("Koordinatensystem");
+  });
+
+  it("Komponentenname passt zum Menü-type (moduleCollection, addons.js)", () => {
+    const vue = read(join(CRS, "components/P2d2Crs.vue"));
+    expect(vue).toMatch(/name:\s*"P2d2Crs"/);
+    expect(stripAll(read(stateFile))).toMatch(/type:\s*"p2d2Crs"/);
+  });
+
+  it("State: Defaults und kein hasMouseMapInteractions", () => {
+    const state = stripAll(read(stateFile));
+    expect(state).toMatch(/localCrs:\s*"EPSG:25832"/);
+    expect(state).toMatch(/genericCrs:\s*"EPSG:3857"/);
+    expect(state).toMatch(/activeCrs:\s*"EPSG:25832"/);
+    for (const f of files) {
+      expect(stripAll(read(f)), rel(f)).not.toContain("hasMouseMapInteractions");
+    }
+  });
+
+  it("keine festen Kommunenwerte außer dem Default im State", () => {
+    for (const f of files) {
+      const code = stripAll(read(f));
+      expect(code, rel(f)).not.toMatch(/K(ö|oe)ln|de-K|wp_name|356560|5645282/i);
+      if (f !== stateFile) expect(code, rel(f)).not.toContain("EPSG:25832");
+    }
+  });
+
+  it("keine Importe aus src/, @/, @p2d2/core oder dem Eventmanagement, kein postMessage", () => {
+    for (const f of files) {
+      const code = stripAll(read(f));
+      const imports = [
+        ...code.matchAll(/^\s*import\s[\s\S]*?from\s*["']([^"']+)["']/gm),
+        ...code.matchAll(/^\s*import\s*["']([^"']+)["']/gm),
+        ...code.matchAll(/\bimport\(\s*["']([^"']+)["']\s*\)/g),
+      ];
+      for (const m of imports) {
+        // Paketpfade wie @masterportal/masterportalapi/src/… sind erlaubt
+        // (nur js/runtime.js, siehe unten); verboten ist der Astro-Code.
+        const spec = m[1].startsWith("@masterportal/") ? "" : m[1];
+        expect(spec, `${rel(f)}: ${m[1]}`).not.toMatch(
+          /(^|\/)src\/|^\.\.\/\.\.\/src|^@\/|^@p2d2\/core|p2d2FeatureEditor/,
+        );
+        expect(m[0], `${rel(f)}: ${m[1]}`).not.toMatch(
+          /events|cross-window-events|initializeCrossWindowBridge/,
+        );
+      }
+      expect(code, rel(f)).not.toContain("postMessage");
+      expect(code, rel(f)).not.toMatch(/innerHTML|insertAdjacentHTML|outerHTML/);
+    }
+  });
+
+  it("Masterportal-Importe nur in js/runtime.js (Testbarkeit der reinen Module)", () => {
+    for (const f of files.filter((x) => x.endsWith(".js"))) {
+      const code = stripAll(read(f));
+      if (rel(f) === "js/runtime.js") {
+        expect(code).toMatch(/@masterportal\/masterportalapi\/src\/crs\.js/);
+      }
+      else {
+        expect(code, rel(f)).not.toMatch(/@masterportal|@appstore|@shared|window\.mapCollection/);
+      }
+    }
+  });
+
+  it("Menü: Eintrag an Index 0 von secondaryMenu.sections[0], vor print", () => {
+    const section = cfg.portalConfig.secondaryMenu.sections[0];
+    expect(section[0]).toEqual({ type: "p2d2Crs", name: "Koordinatensystem", icon: "bi-globe2" });
+    expect(section[1].type).toBe("print");
+  });
+
+  it("namedProjections unverändert (EPSG:3857 kommt aus ol und proj4)", () => {
+    expect([...template.matchAll(/\["(EPSG:\d+)",/g)].map((m) => m[1])).toEqual([
+      "EPSG:25832",
+      "EPSG:4326",
+    ]);
   });
 });

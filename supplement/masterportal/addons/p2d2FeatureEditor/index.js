@@ -16,6 +16,7 @@ import store from "@appstore/index.js";
 import {createClickFlow, zoomTarget} from "./js/clickFlow.js";
 import {validateConfig} from "./js/editorConfig.js";
 import {showInfoDialog} from "./js/editorDialog.js";
+import {editorProjection} from "./js/editorProjection.js";
 
 const LOG = "[p2d2FeatureEditor]",
     // Relativ zur Portal-Seite, wie portalConf und layerConf in config.js.
@@ -155,13 +156,18 @@ function register (map, layers) {
         }
         try {
             const props = hit.feature.getProperties(),
-                projection = map.getView().getProjection().getCode(),
+                viewProjection = map.getView().getProjection().getCode(),
                 extent = geometry.getExtent(),
                 result = await flow.handle({
                     props,
                     layerConfig: hit.layerConfig,
-                    extentWGS84: transformExtent(extent, projection, EDITOR_EXTENT_CRS),
-                    projection
+                    // Extent in der aktuellen View-Projektion, URL mit lokalem CRS
+                    // (Add-on p2d2Crs; ohne das Add-on die View-Projektion).
+                    extentWGS84: transformExtent(extent, viewProjection, EDITOR_EXTENT_CRS),
+                    projection: editorProjection({
+                        localCrs: store.getters["Modules/P2d2Crs/localCrs"],
+                        viewProjection
+                    })
                 });
 
             if (result.action === "stale") {

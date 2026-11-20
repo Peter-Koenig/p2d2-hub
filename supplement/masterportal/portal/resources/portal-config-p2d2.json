@@ -234,6 +234,11 @@
       "sections": [
         [
           {
+            "type": "p2d2Crs",
+            "name": "Koordinatensystem",
+            "icon": "bi-globe2"
+          },
+          {
             "name": "Karte drucken",
             "printAppId": "default",
             "filename": "Ausdruck",

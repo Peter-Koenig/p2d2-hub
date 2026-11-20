@@ -342,3 +342,33 @@ describe("synthetische Köln-Fixture", () => {
     }
   });
 });
+
+// Projektions-Switch (Add-on p2d2Crs): Die Editor-URL bekommt immer das lokale
+// CRS, auch wenn die Karte gerade in EPSG:3857 steht (wie der Standalone,
+// src/utils/feature-popup-handler.ts, projection: localCRS).
+describe("editorProjection ↔ Projektions-Switch", () => {
+  const load = () =>
+    import("../../supplement/masterportal/addons/p2d2FeatureEditor/js/editorProjection.js");
+
+  it("bei aktivem 3857 bleibt projection in der Editor-URL UTM", async () => {
+    const { editorProjection } = await load();
+    const projection = editorProjection({ localCrs: "EPSG:25832", viewProjection: "EPSG:3857" });
+    const url = parse(buildEditorUrl({ ...GOLDEN_INPUT, projection }));
+    expect(url.searchParams.get("projection")).toBe("EPSG:25832");
+    expect(isUtm(url.searchParams.get("projection")!)).toBe(true);
+  });
+
+  it("ohne Add-on p2d2Crs gilt die Projektion der View", async () => {
+    const { editorProjection } = await load();
+    for (const localCrs of [undefined, null, ""]) {
+      expect(editorProjection({ localCrs, viewProjection: "EPSG:25832" })).toBe("EPSG:25832");
+    }
+  });
+
+  it("index.js: URL mit lokalem CRS, Extent mit View-Projektion", () => {
+    const index = read("supplement/masterportal/addons/p2d2FeatureEditor/index.js");
+    expect(index).toContain('store.getters["Modules/P2d2Crs/localCrs"]');
+    expect(index).toMatch(/transformExtent\(extent,\s*viewProjection,\s*EDITOR_EXTENT_CRS\)/);
+    expect(index).toMatch(/projection:\s*editorProjection\(/);
+  });
+});

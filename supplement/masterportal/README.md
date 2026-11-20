@@ -27,10 +27,13 @@ supplement/masterportal/
 │   │   └── img/                     # Bilder, u. a. p2d2-logo.svg
 │   └── localdata/          # Demodaten
 ├── addons/
-│   ├── addonsConf.json     # registriert p2d2FeatureEditor (Typ javascript)
-│   └── p2d2FeatureEditor/  # Klick auf Feature öffnet den Astro-Feature-Editor
-│       ├── index.js
-│       └── js/             # clickFlow, editorUrl, editorConfig, editorDialog
+│   ├── addonsConf.json     # registriert p2d2FeatureEditor (javascript), p2d2Crs (tool)
+│   ├── p2d2FeatureEditor/  # Klick auf Feature öffnet den Astro-Feature-Editor
+│   │   ├── index.js
+│   │   └── js/             # clickFlow, editorUrl, editorConfig, editorDialog, editorProjection
+│   └── p2d2Crs/            # Projektions-Switch (Werkzeug-Menü)
+│       ├── index.js, components/, store/, locales/
+│       └── js/             # utm, viewSwap, runtime
 └── README.md
 ```
 
@@ -117,6 +120,7 @@ in `services-p2d2.json`), damit kein zweites Fenster erscheint.
 | `p2d2FeatureEditor/js/editorUrl.js` | Editor-URL, CQL, Proxy-URL |
 | `p2d2FeatureEditor/js/editorConfig.js` | `validateConfig` |
 | `p2d2FeatureEditor/js/editorDialog.js` | Info-Dialog (`<dialog>`, nur `textContent`) |
+| `p2d2FeatureEditor/js/editorProjection.js` | Projektion der Editor-URL: lokales CRS aus `Modules/P2d2Crs/localCrs`, sonst View-Projektion |
 
 Das Add-on wird nur aktiv, wenn es zusätzlich in `config.js.template` unter
 `addons` steht.
@@ -197,6 +201,110 @@ liegen im Standalone-Code. Die Konfiguration bildet sie für die Stage nach;
 - `src/tests/masterportal-editor-flow.test.ts`: Ablauf, `validateConfig`, Zoom.
 - `src/tests/masterportal-supplement.test.ts`: Registrierung, keine
   Friedhofskonstanten im Add-on-Code, kein `innerHTML`, Konsistenz der Konfiguration.
+
+### p2d2Crs (Typ `tool`): Projektions-Switch
+
+Werkzeug im `secondaryMenu` (erster Eintrag, vor „Karte drucken“). Es schaltet
+die 2D-Karte zwischen dem lokalen UTM-CRS (`localCrs`, Default `EPSG:25832`)
+und `EPSG:3857` (`genericCrs`) um, wie der Umschalter der Standalone-Karte
+(`src/components/MapCanvas.astro`, `toggleCRS`). Die Wahl wird nicht
+gespeichert; nach dem Neuladen startet das Portal in der Projektion aus
+`portal-config-p2d2.json`.
+
+| Datei | Inhalt |
+|---|---|
+| `p2d2Crs/index.js` | Einstieg `{component, store, locales}` (Pflicht für Typ `tool`) |
+| `p2d2Crs/components/P2d2Crs.vue` | Anzeige und Umschalter, gesperrt außerhalb von 2D |
+| `p2d2Crs/store/*` | Modul `Modules/P2d2Crs`: `localCrs`, `genericCrs`, `activeCrs`; Aktionen `toggle`, `setLocalCrs` |
+| `p2d2Crs/js/utm.js` | `isUtm`, `utmDefinition` (326xx, 327xx mit `+south`, 258xx mit GRS80; Zone 1–60), `crsLabel`, `createEnsureProjection` |
+| `p2d2Crs/js/viewSwap.js` | `targetCrs`, `targetResolution`, `snapResolution`, `buildViewOptions`, `reprojectLayers`, `swapView` |
+| `p2d2Crs/js/runtime.js` | einzige Datei mit Masterportal-Importen (masterportalapi `crs`, `ol/View`, `window.mapCollection`) |
+
+Der State setzt kein `hasMouseMapInteractions`. Sonst übernähme das Werkzeug
+beim Öffnen die Mausinteraktion, und der `p2d2FeatureEditor` würde keine
+Klicks mehr auswerten (`Menu/currentMouseMapInteractionsComponent`).
+
+`setLocalCrs(code)` registriert eine UTM-Zone bei Bedarf und setzt `localCrs`;
+die Aktion ist für die Kommunenwahl vorgesehen und wird noch nicht aufgerufen.
+
+#### Ablauf `swapView`
+
+Das Masterportal 3.27.1 kann die Projektion zur Laufzeit nicht wechseln
+(`openConfig`/`watchPortalConfig` setzen nur Werte auf die bestehende View).
+`swapView` ersetzt deshalb die View und verbindet danach neu:
+
+0. Nur bei `Maps/mode === "2D"` und wenn das Ziel nicht schon aktiv ist.
+1. Projektion sicherstellen: UTM-Zonen ohne proj4-Definition über
+   masterportalapi `crs.registerProjections` (proj4, OL, GeoServer-Alias,
+   Kennung für das Koordinatenwerkzeug). `EPSG:3857` ist in ol und proj4
+   eingebaut und steht nicht in `namedProjections`; fehlt es zur Laufzeit,
+   bricht der Wechsel ohne Änderung ab.
+2. Bodenauflösung am Zentrum erhalten (`getPointResolution`) und auf die
+   nächste Stufe der Portal-Tabelle einrasten (`snapResolution`, gleiche Regel
+   wie OL `constrainResolution`). In Köln ist 1 m/px in UTM etwa 1,59 m/px in 3857.
+3. Neue View wie masterportalapi `createMapView`: dieselbe Tabelle `options`
+   (wird View-Property) und `resolutions`, `constrainResolution`,
+   `constrainOnlyCenter`, `backgroundImage`, Extent der Portal-Konfiguration
+   in die Zielprojektion transformiert, Zentrum transformiert, Rotation erhalten.
+4. `map.setView`; übernimmt die Karte die View nicht oder wirft der Aufbau,
+   wird die alte View zurückgesetzt.
+5. Store und Listener neu verbinden (siehe Liste).
+6. Vektorquellen: mit URL oder Loader `refresh()` (der Loader bekommt die neue
+   View-Projektion), ohne (Zeichnen, Messen, Inline-Features) Geometrien
+   transformieren; Overlays verschieben.
+7. Koordinaten der alten Projektion verwerfen: Marker, Highlights, BackForward.
+
+#### Neuverbindungsliste (Masterportal 3.27.1, masterportalapi 2.64.0)
+
+| Teil | Fundstelle | Maßnahme |
+|---|---|---|
+| Store `Maps/projection`, `resolutions`, `scales`, `initialCenter`, `initialZoom` | `src/core/maps/store/actionsMapsAttributesMapper.js` `setInitialAttributes` (nur beim Start) | `Maps/setProjection`, `setResolutions`, `setScales`, `setInitialCenter` (transformiert), `setInitialZoom` |
+| `change:resolution`-Listener (Maßstab, Zoom im Store, Maßstabsleiste) | ebd. `registerMapViewListener` | `Maps/registerMapViewListener`, dann `updateAttributesByChangeResolution`, `updateAttributesByMoveend` |
+| Maßstab im Store, Scale-Switcher | ebd. `updateAttributesByChangeResolution`, `src/modules/scaleSwitcher/components/ScaleSwitcher.vue` (`view.get("options")`) | neue View trägt `options` |
+| totalView | `src/core/maps/store/actionsMapsInteractions.js` `resetView` | `initialCenter` transformiert |
+| GeoJSON-, WFS-, OAF-Layer | masterportalapi `src/layer/vector.js`, `src/layer/wfs.js` (Loader mit View-Projektion) | `refresh()` |
+| Zeichnen, Messen, Inline-Features, Overlays | Vektorquellen ohne URL/Loader | Geometrien und Positionen transformieren |
+| Marker, Highlights | `src/core/maps/store/actionsMapsMarker.js`, `src/core/maps/js/removeHighlighting.js` | `Maps/removePointMarker`, `removePolygonMarker`, `removeHighlightFeature` |
+| BackForward | `src/modules/controls/backForward/store/mutationsBackForward.js` | `Controls/BackForward/setMemory([])`, `setPosition(null)` |
+| WMS-Kacheln | `src/core/layers/js/layer2dRasterWms.js` (TileGrid aus den View-Auflösungen) | keine; bleibt gültig, weil die Tabelle gleich bleibt |
+| Rotation-Reset-Icon | `src/modules/controls/rotation/components/RotationItem.vue` (`change:rotation` der alten View) | keine; mit `showResetRotationAlways: true` ohne Wirkung |
+
+Andere Teile lesen die View bei jedem Zugriff über `mapCollection.getMapView("2D")`.
+
+#### Grenzen und Risiken
+
+- **R1 Interna:** `swapView` hängt an der View-Property `options`, an den
+  Store-Feldern oben und am internen Feld `loader_` von `ol/source/Vector`
+  (`isRemoteSource`). Ein Masterportal- oder ol-Update kann das ändern; die
+  Tests decken nur das ol des p2d2-Repositorys ab, nicht das des Masterportals.
+- **R2 Unbekannte Konsumenten:** Module, die die Projektion zwischenspeichern
+  und nicht in der Liste stehen, bleiben auf der alten Projektion.
+- **R3 Skizzen:** Zeichnungen und Messungen werden transformiert; Werkzeuge mit
+  eigenem Zustand in Kartenkoordinaten können Reste behalten.
+- **R4 3D:** Der Umschalter ist außerhalb von 2D gesperrt. Ob der 3D-Modus nach
+  einem Wechsel auf 3857 richtig startet, ist ungeprüft (offene Grenze).
+- **R5 `openConfig`/`setPortalConfig`:** setzt die Startwerte der
+  Portal-Konfiguration (EPSG:25832) auf die aktuelle View. In p2d2 nicht
+  konfiguriert.
+- **R6 Upstream-Updates:** Die Fundstellen oben gelten für Masterportal 3.27.1
+  und masterportalapi 2.64.0 und sind bei einem Update zu prüfen.
+- **Druck:** nicht Ziel; das Verhalten des Druckdienstes in EPSG:3857 ist ungeprüft.
+- **Maßstab in 3857:** Die Portal-Tabelle gilt nominell; in Köln ist der
+  Bodenmaßstab etwa 0,63-mal so groß wie angezeigt.
+- **Basiskarte:** Der WMS `p2d2_osm` liefert EPSG:25832, 3857 und 4326; andere
+  UTM-Zonen brauchen andere Basiskarten.
+- **Editor-URL:** Der `p2d2FeatureEditor` übergibt immer `localCrs`, auch wenn
+  die Karte in 3857 steht (`js/editorProjection.js`).
+
+#### Tests
+
+- `src/tests/masterportal-crs-utm.test.ts`: UTM-Codes, Definitionen, Registrierung.
+- `src/tests/masterportal-crs-viewswap.test.ts`: Ziel, Bodenauflösung,
+  Einrasten (abgeglichen mit dem OL-Konstruktor), View-Optionen, `swapView`
+  mit Fakes (Reihenfolge, Rollback, 3D, refresh/transform), Store-Aktionen.
+- `src/tests/masterportal-supplement.test.ts`: Registrierung, Menüposition,
+  Isolation, kein `hasMouseMapInteractions`.
+- `src/tests/masterportal-editor-contract.test.ts`: Editor-URL bleibt bei 3857 UTM.
 
 ## Stage de1: Inhalte
 

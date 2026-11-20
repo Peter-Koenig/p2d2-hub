@@ -1,0 +1,12 @@
+{
+    "modules": {
+        "p2d2Crs": {
+            "name": "Koordinatensystem",
+            "active": "Aktives Koordinatensystem",
+            "switchTo": "Wechseln zu {{label}}",
+            "only2d": "Nur in der 2D-Ansicht verfügbar.",
+            "noLocal": "Kein lokales Koordinatensystem bekannt.",
+            "failed": "Umschalten nicht möglich ({{reason}})."
+        }
+    }
+}
