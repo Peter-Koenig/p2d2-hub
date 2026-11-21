@@ -72,6 +72,8 @@ describe("addons/p2d2Selector: Isolation", () => {
     expect(files.map(rel).sort()).toEqual([
       "components/P2d2Selector.vue",
       "index.js",
+      "js/debug.js",
+      "js/layerControl.js",
       "js/runtime.js",
       "js/selection.js",
       "js/wfsRequest.js",
@@ -88,20 +90,54 @@ describe("addons/p2d2Selector: Isolation", () => {
     for (const f of files) expect(stripAll(read(f)), rel(f)).not.toContain("hasMouseMapInteractions");
   });
 
-  it("keine Importe aus src/, @/, @p2d2/core, @masterportal, ol, anderen Add-ons", () => {
+  const importsOf = (code: string) => [
+    ...code.matchAll(/^\s*import\s[\s\S]*?from\s*["']([^"']+)["']/gm),
+    ...code.matchAll(/^\s*import\s*["']([^"']+)["']/gm),
+    ...code.matchAll(/\bimport\(\s*["']([^"']+)["']\s*\)/g),
+  ].map((m) => m[1]);
+
+  it("keine Importe aus src/, @/, @p2d2/core, @masterportal oder anderen Add-ons; ol nur in js/runtime.js", () => {
     for (const f of files) {
       const code = stripAll(read(f));
-      const imports = [
-        ...code.matchAll(/^\s*import\s[\s\S]*?from\s*["']([^"']+)["']/gm),
-        ...code.matchAll(/^\s*import\s*["']([^"']+)["']/gm),
-        ...code.matchAll(/\bimport\(\s*["']([^"']+)["']\s*\)/g),
-      ];
-      for (const m of imports) {
-        expect(m[1], `${rel(f)}: ${m[1]}`).toMatch(/^(vuex|\.\/|\.\.\/(js|store|components|locales)\/)/);
-        expect(m[1], `${rel(f)}: ${m[1]}`).not.toMatch(/src\/|^@|p2d2Crs|p2d2FeatureEditor/);
+      for (const spec of importsOf(code)) {
+        if (rel(f) === "js/runtime.js" && /^ol\//.test(spec)) continue;
+        expect(spec, `${rel(f)}: ${spec}`).toMatch(/^(vuex|\.\/|\.\.\/(js|store|components|locales)\/)/);
+        expect(spec, `${rel(f)}: ${spec}`).not.toMatch(/src\/|^@|p2d2Crs|p2d2FeatureEditor/);
       }
       expect(code, rel(f)).not.toMatch(/innerHTML|insertAdjacentHTML|outerHTML|postMessage/);
     }
+  });
+
+  it("js/runtime.js importiert nur ol/format/GeoJSON, ol/proj und ./debug.js", () => {
+    expect(importsOf(stripAll(read(join(DIR, "js/runtime.js")))).sort()).toEqual([
+      "./debug.js",
+      "ol/format/GeoJSON.js",
+      "ol/proj.js",
+    ]);
+  });
+
+  it("window, mapCollection und console.debug nur in js/runtime.js", () => {
+    for (const f of files.filter((x) => rel(x) !== "js/runtime.js")) {
+      expect(stripAll(read(f)), rel(f)).not.toMatch(/\bwindow\b|mapCollection|console\.debug/);
+    }
+  });
+
+  it("Stage-Werte und Layer-ID: runtime.js nennt Datei und ID, keine Hostnamen im Code", () => {
+    const runtime = stripAll(read(join(DIR, "js/runtime.js")));
+    expect(runtime).toContain('"./resources/p2d2-editor-config.json"');
+    expect(runtime).toContain('layerId: "p2d2-geo-containers"');
+    for (const f of files) {
+      const code = stripAll(read(f));
+      expect(code, rel(f)).not.toMatch(/geoportal|data-dna\.eu|wfs-proxy|cemetery/);
+      if (rel(f) !== "js/runtime.js") expect(code, rel(f)).not.toContain("p2d2-geo-containers");
+    }
+  });
+
+  it("p2d2-geo-containers existiert in services-p2d2.json und p2d2-editor-config.json", () => {
+    const svc = readJson(join(MP, "portal/resources/services-p2d2.json"));
+    const editor = readJson(join(MP, "portal/resources/p2d2-editor-config.json"));
+    expect(svc.some((l: any) => l.id === "p2d2-geo-containers")).toBe(true);
+    expect(Object.keys(editor.layers)).toContain("p2d2-geo-containers");
   });
 
   it("reine Module (js/ außer runtime.js) ohne Masterportal, Karte, OpenLayers oder DOM", () => {

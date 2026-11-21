@@ -15,5 +15,21 @@ export default {
     setSelected (state, {kommuneSlug, kategorieSlug}) {
         state.kommuneSlug = kommuneSlug;
         state.kategorieSlug = kategorieSlug;
+    },
+    setStage (state, {stage, status, error}) {
+        state.stage = stage;
+        state.stageStatus = status;
+        state.stageError = error;
+    },
+    setAppliedSignature (state, signature) {
+        state.appliedSignature = signature;
+    },
+    setFocusedSlug (state, slug) {
+        state.focusedSlug = slug;
+    },
+    setLayerStatus (state, {status, count = 0, error = null}) {
+        state.layerStatus = status;
+        state.featureCount = count;
+        state.layerError = error;
     }
 };

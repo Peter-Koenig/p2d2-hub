@@ -162,7 +162,7 @@ export function toggleSelection (state, click, selection) {
 }
 
 /**
- * Kennung einer Auswahl für Vergleich und Hook.
+ * Kennung einer Auswahl (Vergleich in applySelection, Debug-Ausgabe).
  * @param {{kommuneSlug: (string|null), kategorieSlug: (string|null)}} state Auswahl.
  * @returns {string} "<kommune>|<kategorie>", leer wenn beide fehlen.
  */

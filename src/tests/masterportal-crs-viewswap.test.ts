@@ -457,4 +457,70 @@ describe("Store-Aktionen (createActions mit Fakes)", () => {
     expect(actions.setLocalCrs(ctx as any, "EPSG:32737")).toBe(false);
     expect(ctx.state.localCrs).toBe("EPSG:25832");
   });
+
+  it("activateLocal, andere Projektion: Austausch auf localCrs, activeCrs lokal", async () => {
+    const { createActions } = await load();
+    const swap = vi.fn(() => ({ ok: true, from: "EPSG:3857", to: "EPSG:25833" }));
+    const actions = createActions({ swapView: swap, getMap: () => ({}), View, ensureProjection: () => true, baseExtent: () => undefined });
+    const ctx = context({ activeCrs: "EPSG:3857", localCrs: "EPSG:25833", genericCrs: "EPSG:3857", lastError: "x" });
+    expect(actions.activateLocal(ctx as any)).toEqual({ ok: true, from: "EPSG:3857", to: "EPSG:25833" });
+    expect(swap).toHaveBeenCalledWith(expect.objectContaining({ target: "EPSG:25833", baseExtent: undefined }));
+    expect(ctx.state.activeCrs).toBe("EPSG:25833");
+    expect(ctx.commit).toHaveBeenCalledWith("setLastError", null);
+  });
+
+  it("activateLocal, gleiche Projektion: echter swapView ohne Austausch, activeCrs bleibt lokal", async () => {
+    const { createActions } = await load();
+    const { deps, map, log } = setup({ target: "EPSG:25832" });
+    const actions = createActions({ swapView, getMap: () => map, View, ensureProjection: () => true, baseExtent: () => undefined });
+    const ctx = context({ activeCrs: "EPSG:25832", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" });
+    ctx.rootGetters = { ...deps.getters } as any;
+    expect(actions.activateLocal(ctx as any)).toEqual({ ok: true, unchanged: true, from: "EPSG:25832", to: "EPSG:25832" });
+    expect(map.setView).not.toHaveBeenCalled();
+    expect(log).toEqual([]);
+    expect(ctx.state.activeCrs).toBe("EPSG:25832");
+  });
+
+  it("activateLocal, echter swapView auf eine andere Zone: View in localCrs", async () => {
+    const { createActions } = await load();
+    const { deps, map } = setup();
+    const actions = createActions({ swapView, getMap: () => map, View, ensureProjection: () => true, baseExtent: () => undefined });
+    const ctx = context({ activeCrs: "EPSG:25832", localCrs: "EPSG:32737", genericCrs: "EPSG:3857" });
+    ctx.rootGetters = { ...deps.getters } as any;
+    expect(actions.activateLocal(ctx as any)).toMatchObject({ ok: true, from: "EPSG:25832", to: "EPSG:32737" });
+    expect(map.getView().getProjection().getCode()).toBe("EPSG:32737");
+    // ohne Portal-Extent (E11b) ist das Zentrum frei
+    map.getView().setCenter([500000, 9000000]);
+    expect(map.getView().getCenter()).toEqual([500000, 9000000]);
+    expect(ctx.state.activeCrs).toBe("EPSG:32737");
+  });
+
+  it("activateLocal in 3D oder ohne localCrs: kein Austausch, lastError", async () => {
+    const { createActions } = await load();
+    const swap = vi.fn(() => ({ ok: true }));
+    const actions = createActions({ swapView: swap, getMap: () => ({}), View, ensureProjection: () => true, baseExtent: () => undefined });
+    const ctx3d = context({ activeCrs: "EPSG:25832", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" }, "3D");
+    expect(actions.activateLocal(ctx3d as any)).toEqual({ ok: false, reason: "mode" });
+    const none = context({ activeCrs: "EPSG:25832", localCrs: undefined, genericCrs: "EPSG:3857" });
+    expect(actions.activateLocal(none as any)).toEqual({ ok: false, reason: "local" });
+    expect(swap).not.toHaveBeenCalled();
+    expect(ctx3d.commit).toHaveBeenCalledWith("setLastError", "mode");
+  });
+
+  it("activateLocal bei Fehlschlag: activeCrs unverändert, lastError gesetzt", async () => {
+    const { createActions } = await load();
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    const actions = createActions({
+      swapView: () => ({ ok: false, reason: "projection" }),
+      getMap: () => ({}),
+      View,
+      ensureProjection: () => true,
+      baseExtent: () => undefined,
+    });
+    const ctx = context({ activeCrs: "EPSG:3857", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" });
+    expect(actions.activateLocal(ctx as any)).toEqual({ ok: false, reason: "projection" });
+    expect(ctx.state.activeCrs).toBe("EPSG:3857");
+    expect(ctx.commit).toHaveBeenCalledWith("setLastError", "projection");
+    err.mockRestore();
+  });
 });

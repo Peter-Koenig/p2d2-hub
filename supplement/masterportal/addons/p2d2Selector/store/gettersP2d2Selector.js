@@ -15,5 +15,10 @@ export default {
     kategorieSlug: state => state.kategorieSlug,
     signature: state => selectionSignature(state),
     selectedKommune: state => findKommune(state.selection, state.kommuneSlug),
-    selectedKategorie: state => findKategorie(state.selection, state.kategorieSlug)
+    selectedKategorie: state => findKategorie(state.selection, state.kategorieSlug),
+    stageStatus: state => state.stageStatus,
+    stageError: state => state.stageError,
+    layerStatus: state => state.layerStatus,
+    featureCount: state => state.featureCount,
+    layerError: state => state.layerError
 };

@@ -16,45 +16,56 @@ import {targetCrs} from "../js/viewSwap.js";
  * @param {Function} runtime.View View-Klasse.
  * @param {function(string): boolean} runtime.ensureProjection Projektion sicherstellen.
  * @param {function(Object): ({extent: number[], epsg: string}|undefined)} runtime.baseExtent Extent der Portal-Konfiguration aus den Root-Gettern.
- * @returns {{toggle: function(Object): void, setLocalCrs: function(Object, string): boolean}} Aktionen.
+ * @returns {{toggle: function(Object): void, setLocalCrs: function(Object, string): boolean, activateLocal: function(Object): Object}} Aktionen.
  */
 export function createActions ({swapView, getMap, View, ensureProjection, baseExtent}) {
+    /**
+     * Tauscht die View auf target und hält activeCrs/lastError nach.
+     * @param {Object} context Store-Kontext.
+     * @param {string} target Zielprojektion.
+     * @returns {{ok: boolean, reason?: string, unchanged?: boolean}} Ergebnis von swapView.
+     */
+    function switchTo ({commit, dispatch, rootGetters}, target) {
+        const result = swapView({
+            target,
+            map: getMap(),
+            View,
+            ensureProjection,
+            getters: rootGetters,
+            commit: (type, payload) => commit(type, payload, {root: true}),
+            dispatch: (type, payload) => dispatch(type, payload, {root: true}),
+            baseExtent: baseExtent(rootGetters)
+        });
+
+        if (result.ok) {
+            commit("setActiveCrs", target);
+            commit("setLastError", null);
+        }
+        else {
+            commit("setLastError", result.reason);
+            console.error("[p2d2Crs] Umschalten nicht möglich:", result.reason, result.error ?? "");
+        }
+        return result;
+    }
+
     return {
         /**
          * Schaltet zwischen lokalem und generischem CRS um.
          * @param {Object} context Store-Kontext.
          * @returns {void}
          */
-        toggle ({state, commit, dispatch, rootGetters}) {
-            const target = targetCrs(state);
+        toggle (context) {
+            const target = targetCrs(context.state);
 
-            if (!target || rootGetters["Maps/mode"] !== "2D") {
+            if (!target || context.rootGetters["Maps/mode"] !== "2D") {
                 return;
             }
-            const result = swapView({
-                target,
-                map: getMap(),
-                View,
-                ensureProjection,
-                getters: rootGetters,
-                commit: (type, payload) => commit(type, payload, {root: true}),
-                dispatch: (type, payload) => dispatch(type, payload, {root: true}),
-                baseExtent: baseExtent(rootGetters)
-            });
-
-            if (result.ok) {
-                commit("setActiveCrs", target);
-                commit("setLastError", null);
-            }
-            else {
-                commit("setLastError", result.reason);
-                console.error("[p2d2Crs] Umschalten nicht möglich:", result.reason, result.error ?? "");
-            }
+            switchTo(context, target);
         },
 
         /**
-         * Setzt das lokale CRS (für die Kommunenwahl in Phase 4). Registriert
-         * die UTM-Zone bei Bedarf; die aktive View bleibt unverändert.
+         * Setzt das lokale CRS (Kommunenwahl). Registriert die UTM-Zone bei
+         * Bedarf; die aktive View bleibt unverändert.
          * @param {Object} context Store-Kontext.
          * @param {string} code EPSG-Code einer UTM-Zone.
          * @returns {boolean} true, wenn gesetzt.
@@ -65,6 +76,28 @@ export function createActions ({swapView, getMap, View, ensureProjection, baseEx
             }
             commit("setLocalCrs", code);
             return true;
+        },
+
+        /**
+         * Schaltet die View auf das lokale CRS, auch wenn das generische aktiv
+         * ist (Kommunenwahl wie im Standalone). Bei gleicher Projektion tauscht
+         * swapView nichts aus. Läuft synchron; der Rückgabewert kommt über
+         * Vuex-dispatch als Promise an, die Wirkung steht sofort im Store.
+         * @param {Object} context Store-Kontext.
+         * @returns {{ok: boolean, reason?: string, unchanged?: boolean}} Ergebnis.
+         */
+        activateLocal (context) {
+            const {state, commit, rootGetters} = context;
+
+            if (typeof state.localCrs !== "string" || state.localCrs === "") {
+                commit("setLastError", "local");
+                return {ok: false, reason: "local"};
+            }
+            if (rootGetters["Maps/mode"] !== "2D") {
+                commit("setLastError", "mode");
+                return {ok: false, reason: "mode"};
+            }
+            return switchTo(context, state.localCrs);
         }
     };
 }

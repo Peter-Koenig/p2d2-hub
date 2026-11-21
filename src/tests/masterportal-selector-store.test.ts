@@ -99,56 +99,57 @@ describe("loadSelection", () => {
 });
 
 describe("select", () => {
-  const loaded = async (applySelection?: any) => {
-    const ctx = makeContext();
-    const actions = createActions({ url: URL_, fetch: async () => ok(real()), ...(applySelection ? { applySelection } : {}) });
+  // select löst die Aktion applySelection aus (Karte, Layer, Zoom; siehe
+  // masterportal-selector-actions.test.ts); hier nur der Aufruf.
+  const loaded = async () => {
+    const ctx: any = makeContext();
+    const actions = createActions({ url: URL_, fetch: async () => ok(real()) });
     await actions.loadSelection(ctx);
+    ctx.dispatch = vi.fn(() => Promise.resolve());
     return { ctx, actions };
   };
 
-  it("ruft den Hook mit der Signatur und den Einträgen", async () => {
-    const hook = vi.fn();
-    const { ctx, actions } = await loaded(hook);
+  it("löst applySelection mit Slugs und Einträgen aus", async () => {
+    const { ctx, actions } = await loaded();
     const k = ctx.state.selection.kommunen[0];
     const c = ctx.state.selection.kategorien[0];
     actions.select(ctx, { kommuneSlug: k.slug });
     actions.select(ctx, { kategorieSlug: c.slug });
-    expect(hook).toHaveBeenCalledTimes(2);
-    expect(hook.mock.calls[0][0]).toBe(`${k.slug}|`);
-    expect(hook.mock.calls[1][0]).toBe(`${k.slug}|${c.slug}`);
-    expect(hook.mock.calls[1][1]).toMatchObject({ kommuneSlug: k.slug, kategorieSlug: c.slug, kommune: k, kategorie: c });
+    expect(ctx.dispatch).toHaveBeenCalledTimes(2);
+    expect(ctx.dispatch.mock.calls[0]).toEqual([
+      "applySelection",
+      { kommuneSlug: k.slug, kategorieSlug: null, kommune: k, kategorie: null },
+    ]);
+    expect(ctx.dispatch.mock.calls[1][1]).toMatchObject({ kommuneSlug: k.slug, kategorieSlug: c.slug, kommune: k, kategorie: c });
     expect((getters as any).signature(ctx.state)).toBe(`${k.slug}|${c.slug}`);
   });
 
-  it("zweiter Klick hebt auf, Hook bekommt die leere Signatur", async () => {
-    const hook = vi.fn();
-    const { ctx, actions } = await loaded(hook);
+  it("zweiter Klick hebt auf, applySelection bekommt die leere Auswahl", async () => {
+    const { ctx, actions } = await loaded();
     const slug = ctx.state.selection.kommunen[0].slug;
     actions.select(ctx, { kommuneSlug: slug });
     actions.select(ctx, { kommuneSlug: slug });
     expect(ctx.state.kommuneSlug).toBeNull();
-    expect(hook.mock.calls[1][0]).toBe("");
+    expect(ctx.dispatch.mock.calls[1][1]).toEqual({ kommuneSlug: null, kategorieSlug: null, kommune: null, kategorie: null });
   });
 
-  it("unbekannter Slug: kein Hook-Aufruf, State unverändert", async () => {
-    const hook = vi.fn();
-    const { ctx, actions } = await loaded(hook);
+  it("unbekannter Slug: kein applySelection, State unverändert", async () => {
+    const { ctx, actions } = await loaded();
     actions.select(ctx, { kommuneSlug: "gibt-es-nicht" });
-    expect(hook).not.toHaveBeenCalled();
+    expect(ctx.dispatch).not.toHaveBeenCalled();
     expect(ctx.state.kommuneSlug).toBeNull();
   });
 
   it("ohne geladene Auswahl passiert nichts", () => {
-    const hook = vi.fn();
-    const ctx = makeContext();
-    createActions({ url: URL_, fetch: vi.fn(), applySelection: hook }).select(ctx, { kommuneSlug: "x" });
-    expect(hook).not.toHaveBeenCalled();
+    const ctx: any = { ...makeContext(), dispatch: vi.fn() };
+    createActions({ url: URL_, fetch: vi.fn() }).select(ctx, { kommuneSlug: "x" });
+    expect(ctx.dispatch).not.toHaveBeenCalled();
   });
 
-  it("ohne Hook kein Fehler", async () => {
+  it("Getter der gewählten Einträge", async () => {
     const { ctx, actions } = await loaded();
     const slug = ctx.state.selection.kommunen[0].slug;
-    expect(() => actions.select(ctx, { kommuneSlug: slug })).not.toThrow();
+    actions.select(ctx, { kommuneSlug: slug });
     expect(ctx.state.kommuneSlug).toBe(slug);
     expect((getters as any).selectedKommune(ctx.state).slug).toBe(slug);
   });

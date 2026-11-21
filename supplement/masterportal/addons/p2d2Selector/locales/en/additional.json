@@ -8,7 +8,16 @@
             "none": "No selection",
             "loading": "Loading selection …",
             "failed": "Selection could not be loaded ({{reason}}).",
-            "retry": "Reload"
+            "retry": "Reload",
+            "layer": {
+                "idle": "No layer loaded.",
+                "loading": "Loading objects …",
+                "ready": "{{count}} objects loaded.",
+                "empty": "No objects for this selection.",
+                "error": "Loading failed: {{reason}}"
+            },
+            "alertTitle": "Selection layer",
+            "stageFailed": "Layer configuration missing ({{reason}})."
         }
     }
 }

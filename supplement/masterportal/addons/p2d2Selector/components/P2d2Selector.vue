@@ -1,8 +1,9 @@
 <!--
 SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 SPDX-License-Identifier: EUPL-1.2
-p2d2: Werkzeugseite der Auswahl (Kommune, Kategorie) als Kachelmatrizen.
-Nur Anzeige und Klicks; Logik in js/selection.js und store/actionsP2d2Selector.js.
+p2d2: Werkzeugseite der Auswahl (Kommune, Kategorie) als Kachelmatrizen mit
+Statuszeile des Auswahl-Layers. Nur Anzeige und Klicks; Logik in js/ und
+store/actionsP2d2Selector.js.
 Kacheln sind Textkacheln mit Farbstreifen (Kategorie-Bilder liegen nicht im Supplement).
 -->
 <script>
@@ -12,7 +13,8 @@ export default {
     name: "P2d2Selector",
     computed: {
         ...mapGetters("Modules/P2d2Selector", [
-            "selection", "loadStatus", "lastError", "kommuneSlug", "kategorieSlug", "selectedKommune", "selectedKategorie"
+            "selection", "loadStatus", "lastError", "kommuneSlug", "kategorieSlug", "selectedKommune", "selectedKategorie",
+            "stageStatus", "stageError", "layerStatus", "featureCount", "layerError"
         ]),
 
         /**
@@ -21,15 +23,29 @@ export default {
          */
         summary () {
             return [this.selectedKommune?.title, this.selectedKategorie?.title].filter(Boolean).join(" · ");
+        },
+
+        /**
+         * Text der Statuszeile des Auswahl-Layers (idle, loading, ready, empty, error).
+         * @returns {string} Übersetzter Text.
+         */
+        layerText () {
+            return this.$t(`additional:modules.p2d2Selector.layer.${this.layerStatus}`, {
+                count: this.featureCount,
+                reason: this.layerError
+            });
         }
     },
     created () {
         if (this.loadStatus === "idle") {
             this.loadSelection();
         }
+        if (this.stageStatus === "idle") {
+            this.loadStage();
+        }
     },
     methods: {
-        ...mapActions("Modules/P2d2Selector", ["loadSelection", "select"])
+        ...mapActions("Modules/P2d2Selector", ["loadSelection", "loadStage", "select"])
     }
 };
 </script>
@@ -49,7 +65,21 @@ export default {
             <div class="fw-bold">
                 {{ summary || $t("additional:modules.p2d2Selector.none") }}
             </div>
+            <div
+                class="small p2d2-layer-status"
+                :class="{'text-danger': layerStatus === 'error'}"
+            >
+                {{ layerText }}
+            </div>
         </div>
+
+        <p
+            v-if="stageStatus === 'error'"
+            class="small text-danger mb-0"
+            role="alert"
+        >
+            {{ $t("additional:modules.p2d2Selector.stageFailed", {reason: stageError}) }}
+        </p>
 
         <p
             v-if="loadStatus === 'loading' || loadStatus === 'idle'"

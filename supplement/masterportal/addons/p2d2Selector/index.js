@@ -3,8 +3,8 @@
 // p2d2: Masterportal-Add-on p2d2Selector (Typ "tool"): Auswahl von Kommune und Kategorie
 //
 // Werkzeug im mainMenu mit zwei Kachelmatrizen wie auf der Standalone-Startseite.
-// Die Auswahl liegt im Store; Karte, Layer und Zoom folgen in späteren Stufen
-// über den Hook runtime.applySelection.
+// Eine Auswahl zoomt auf die Kommune (lokales CRS) und lädt die Container der
+// Kombination in den Layer p2d2-geo-containers (README, Abschnitt „p2d2Selector“).
 
 import P2d2Selector from "./components/P2d2Selector.vue";
 import store from "./store/indexP2d2Selector.js";

@@ -4,6 +4,7 @@
 //
 // Kein hasMouseMapInteractions: Das Werkzeug übernimmt keine Mausinteraktion,
 // sonst sperrt die Klickprüfung des p2d2FeatureEditor die Editor-Klicks.
+// layerStatus: idle | loading | ready | empty | error (Auswahl-Layer).
 
 const state = {
     type: "p2d2Selector",
@@ -13,7 +14,15 @@ const state = {
     loadStatus: "idle",
     lastError: null,
     kommuneSlug: null,
-    kategorieSlug: null
+    kategorieSlug: null,
+    stage: null,
+    stageStatus: "idle",
+    stageError: null,
+    appliedSignature: null,
+    focusedSlug: null,
+    layerStatus: "idle",
+    featureCount: 0,
+    layerError: null
 };
 
 export default state;

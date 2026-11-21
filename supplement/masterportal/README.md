@@ -23,17 +23,21 @@ supplement/masterportal/
 │   │   ├── portal-config-p2d2.json  # Portal-Konfiguration (portalConf), stage-spezifisch
 │   │   ├── services-p2d2.json       # Layer-Definitionen (layerConf), stage-spezifisch
 │   │   ├── p2d2-editor-config.json  # Add-on p2d2FeatureEditor je Layer-ID, stage-spezifisch
+│   │   ├── p2d2-selection.json      # Kommunen und Kategorien (generiert aus src/content)
 │   │   ├── style_v3.json            # Styles (styleConf)
 │   │   └── img/                     # Bilder, u. a. p2d2-logo.svg
 │   └── localdata/          # Demodaten
 ├── addons/
-│   ├── addonsConf.json     # registriert p2d2FeatureEditor (javascript), p2d2Crs (tool)
+│   ├── addonsConf.json     # registriert p2d2FeatureEditor (javascript), p2d2Crs und p2d2Selector (tool)
 │   ├── p2d2FeatureEditor/  # Klick auf Feature öffnet den Astro-Feature-Editor
 │   │   ├── index.js
 │   │   └── js/             # clickFlow, editorUrl, editorConfig, editorDialog, editorProjection
-│   └── p2d2Crs/            # Projektions-Switch (Werkzeug-Menü)
+│   ├── p2d2Crs/            # Projektions-Switch (Werkzeug-Menü)
+│   │   ├── index.js, components/, store/, locales/
+│   │   └── js/             # utm, viewSwap, runtime
+│   └── p2d2Selector/       # Auswahl Kommune/Kategorie, dynamischer Layer, Zoom (Hauptmenü)
 │       ├── index.js, components/, store/, locales/
-│       └── js/             # utm, viewSwap, runtime
+│       └── js/             # selection, wfsRequest, zoom, layerControl, debug, runtime
 └── README.md
 ```
 
@@ -215,7 +219,7 @@ gespeichert; nach dem Neuladen startet das Portal in der Projektion aus
 |---|---|
 | `p2d2Crs/index.js` | Einstieg `{component, store, locales}` (Pflicht für Typ `tool`) |
 | `p2d2Crs/components/P2d2Crs.vue` | Anzeige und Umschalter, gesperrt außerhalb von 2D |
-| `p2d2Crs/store/*` | Modul `Modules/P2d2Crs`: `localCrs`, `genericCrs`, `activeCrs`; Aktionen `toggle`, `setLocalCrs` |
+| `p2d2Crs/store/*` | Modul `Modules/P2d2Crs`: `localCrs`, `genericCrs`, `activeCrs`; Aktionen `toggle`, `setLocalCrs`, `activateLocal` |
 | `p2d2Crs/js/utm.js` | `isUtm`, `utmDefinition` (326xx, 327xx mit `+south`, 258xx mit GRS80; Zone 1–60), `crsLabel`, `createEnsureProjection` |
 | `p2d2Crs/js/viewSwap.js` | `targetCrs`, `targetResolution`, `snapResolution`, `buildViewOptions`, `reprojectLayers`, `swapView` |
 | `p2d2Crs/js/runtime.js` | einzige Datei mit Masterportal-Importen (masterportalapi `crs`, `ol/View`, `window.mapCollection`) |
@@ -224,8 +228,10 @@ Der State setzt kein `hasMouseMapInteractions`. Sonst übernähme das Werkzeug
 beim Öffnen die Mausinteraktion, und der `p2d2FeatureEditor` würde keine
 Klicks mehr auswerten (`Menu/currentMouseMapInteractionsComponent`).
 
-`setLocalCrs(code)` registriert eine UTM-Zone bei Bedarf und setzt `localCrs`;
-die Aktion ist für die Kommunenwahl vorgesehen und wird noch nicht aufgerufen.
+`setLocalCrs(code)` registriert eine UTM-Zone bei Bedarf und setzt `localCrs`,
+ohne die View zu ändern. `activateLocal` schaltet die View auf `localCrs`
+(`swapView`, bei gleicher Projektion ohne Austausch) und setzt `activeCrs`.
+Beide ruft der `p2d2Selector` bei der Kommunenwahl auf.
 
 #### Ablauf `swapView`
 
@@ -305,6 +311,129 @@ Andere Teile lesen die View bei jedem Zugriff über `mapCollection.getMapView("2
 - `src/tests/masterportal-supplement.test.ts`: Registrierung, Menüposition,
   Isolation, kein `hasMouseMapInteractions`.
 - `src/tests/masterportal-editor-contract.test.ts`: Editor-URL bleibt bei 3857 UTM.
+
+### p2d2Selector (Typ `tool`): Auswahl, dynamischer Layer, Zoom
+
+Werkzeug im `mainMenu` (eigene Sektion an Index 1) mit zwei Kachelmatrizen
+(Kommunen, Kategorien) aus `portal/resources/p2d2-selection.json`. Ein Klick
+wählt, ein zweiter Klick auf dieselbe Kachel hebt die Auswahl auf. Vuex-Modul
+`Modules/P2d2Selector`, kein `hasMouseMapInteractions` (sonst sperrt die
+Klickprüfung des `p2d2FeatureEditor`).
+
+#### Ablauf `applySelection`
+
+Die Aktion `select` wendet den Kachelklick an und löst `applySelection` aus.
+Alle Schritte laufen synchron, ohne `await` dazwischen. OpenLayers lädt erst
+beim nächsten Rendern; deshalb entsteht genau **ein** Request mit dem neuen
+Loader in der neuen Projektion, auch wenn `swapView` die Quelle vorher schon
+neu angestoßen hat.
+
+1. Signatur `<kommune>|<kategorie>` (leer ohne Auswahl). Gleiche Signatur wie
+   die zuletzt angewendete: nichts tun.
+2. Neue Kommune (Slug ≠ zuletzt fokussierte), `focusKommune`:
+   1. `Modules/P2d2Crs/setLocalCrs(map.projection)` registriert die UTM-Zone.
+   2. `Modules/P2d2Crs/activateLocal` tauscht die View auf das lokale CRS
+      (`swapView`), auch wenn vorher EPSG:3857 aktiv war (wie im Standalone).
+   3. Zielstufe aus `map.zoom` (siehe Zoom-Regel), `view.animate` mit Zentrum
+      und Auflösung (300 ms wie im Standalone).
+   4. `Maps/setInitialCenter` und `Maps/setInitialZoom`: „Startansicht“
+      (totalView) führt zur gewählten Kommune.
+
+   Ob Schritt 1 und 2 gewirkt haben, prüft der Selektor am Store
+   (`localCrs`) und an der View-Projektion; der Rückgabewert von `dispatch`
+   ist in Vuex immer ein Promise.
+3. Kommune und Kategorie gewählt: Loader mit der URL der Auswahl setzen und
+   `source.refresh()`. Sonst: leerer Loader, `source.clear()`.
+
+Nach Abwahl der Kommune bleiben `localCrs` und View wie sie sind (wie im
+Standalone); eine erneute Wahl derselben Kommune zoomt wieder auf sie.
+
+#### Dynamischer Layer (`js/layerControl.js`)
+
+Der Layer `p2d2-geo-containers` steht ohne `url` in `services-p2d2.json`. Der
+Selektor sucht ihn über `mapCollection.getMap("2D")` per `layer.get("id")` und
+setzt einen eigenen Loader (`source.setLoader`):
+
+- **Token und Abbruch:** Jeder Loader-Aufruf bricht den vorherigen per
+  `AbortController` ab und erhält ein neues Token. Eine Antwort mit veraltetem
+  Token wird verworfen (`success([])`, nichts eingefügt). Das gilt auch für
+  Aufrufe nach dem CRS-Umschalter (`swapView` → `refresh`).
+- **Fehler:** HTTP-Status ≠ 2xx oder kein `type: "FeatureCollection"` →
+  `failure()`, Status `error`, Meldung im Panel und über
+  `Alerting/addSingleAlert` (Kategorie `error`). 0 Features → Status `empty`,
+  nur im Panel.
+- **Lesen:** `GeoJSON.readFeatures` mit `dataProjection: EPSG:4326` und der
+  View-Projektion, die OpenLayers dem Loader übergibt.
+- **Loader-Vertrag:** Der Loader gibt nichts zurück und ruft `success` bzw.
+  `failure` genau einmal. Ab OpenLayers 10.10 (Masterportal 3.27.1) fügt
+  `VectorSource` die Features selbst ein, wenn ein Loader ein Promise
+  zurückgibt; zusammen mit dem eigenen `addFeatures` wäre das doppelt.
+
+Die Stage-Werte `wfsBase`, `typeName` und `proxyPath` liest der Selektor aus
+`layers["p2d2-geo-containers"]` in `p2d2-editor-config.json` (dieselbe Datei
+wie der `p2d2FeatureEditor`). Fehlt einer, ist der Status `error` mit Text; es
+gibt keinen Standardwert.
+
+#### Request
+
+- CQL: `wp_name='<wpName>' AND container_type='<containerType>' AND
+  osm_admin_level=<n>`; Hochkommata werden verdoppelt, das Level kommt je
+  `containerType` aus `p2d2-selection.json` und muss eine ganze Zahl sein.
+- Innere URL wie `buildWFSURL` aus `@p2d2/core` (`version=2.0.0`,
+  `outputFormat=application/json`, `srsName=EPSG:4326`, ohne `count`), außen
+  `<proxyPath>?url=<encodeURIComponent(…)>` wie im Standalone.
+
+#### Zoom-Regel
+
+Auflösung = `2π·6370997/256/2^zoom` (OpenLayers-View des Standalone ohne
+Tabelle; für alle UTM-Zonen gleich), dann linear auf die nächste Stufe der
+Portal-Tabelle eingerastet (wie `snapResolution`). Köln (Zoom 11) → Stufe 1
+(1:200 000, 52,92 m/px), Bonn (12) → Stufe 2, Berlin (10) → Stufe 0,
+Kronshagen (14) → Stufe 4.
+
+#### Debug-Ausgabe
+
+Mit `?p2d2debug=1` in der Portal-URL schreibt der Selektor per
+`console.debug` mit dem Präfix `[p2d2Selector]`: Signatur, Request-URL,
+HTTP-Status, Zahl der Features, View-Projektion, Auflösung und Zentrum nach
+der Animation. Ohne den Parameter gibt es keine Ausgabe.
+
+| Ereignis | Inhalt |
+|---|---|
+| `selection` | `signature` |
+| `focus` | `slug`, `projection`, `zoom`, `zoomResolution` (vor dem Einrasten, Köln 76,35), `stage`, `resolution` (Stufe, Köln 52,92), `center` |
+| `view` | nach der Animation: `projection`, `resolution`, `center` der View |
+| `load` | `signature`, `url`, `cql` |
+| `request` / `response` / `features` | URL und Projektion des Loader-Aufrufs, HTTP-Status, Zahl der Features |
+
+#### Grenzen
+
+- **Unsichtbarer Layer:** Ein ausgeblendeter Layer lädt nicht; der Status
+  bleibt `loading`, bis er wieder sichtbar ist.
+- **Fehler-Request des Masterportals:** Auf `featuresloaderror` fragt
+  `Layer2d.addErrorListener` `<url>&service=…&request=describeFeatureType` ab.
+  Ohne `url` geht diese Anfrage an `undefined&service=GeoJSON…` relativ zum
+  Portal (Antwort 404, keine Anzeige).
+- **3D:** Im 3D-Modus lädt das Masterportal leere GeoJSON-Layer per
+  `loadFeaturesManually` über `url` nach; ohne `url` ist das ein Request auf
+  `undefined`. Die Kommunenwahl ist nur in 2D möglich (`swapView`).
+- **Feature-IDs:** `afterLoading` des Masterportals vergibt IDs nur beim
+  ersten Laden; GeoServer liefert eigene IDs (im Browser zu prüfen).
+- **Basiskarte:** in EPSG:25833, 32610 und 3265x leer (WMS nur 25832/3857/4326).
+
+#### Tests
+
+- `src/tests/masterportal-selector-request.test.ts`: CQL, URL gegen
+  `buildWFSURL` und die frühere statische Layer-URL, Stage-Werte.
+- `src/tests/masterportal-selector-zoom.test.ts`: Prüfwert, Vertrag mit der
+  OpenLayers-View, Tabelle D, `snapResolution`.
+- `src/tests/masterportal-selector-layer.test.ts`: Loader mit echter
+  `VectorSource`, Wettlauf mit zurückgehaltenen Antworten, Abwahl, Fehler.
+- `src/tests/masterportal-selector-actions.test.ts`: Reihenfolge der Commits
+  und Dispatches in `applySelection`/`focusKommune`, Status, Alerting, Debug.
+- `src/tests/masterportal-selector-selection.test.ts`,
+  `masterportal-selector-store.test.ts`, `masterportal-selector-supplement.test.ts`:
+  Auswahl-Datei, Kacheln, Store, Registrierung und Isolation.
 
 ## Stage de1: Inhalte
 
