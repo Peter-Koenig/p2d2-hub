@@ -3,8 +3,8 @@
 // p2d2: Offline-Prüfung des Add-ons p2d2Selector (Registrierung, Menü, Isolation)
 //
 // Liest nur Dateien aus dem Repository. Die Isolationsregeln entsprechen denen
-// des Add-ons p2d2Crs; zusätzlich darf der Quelltext keine Karte, Layer, WFS
-// oder CRS-Funktionen ansprechen (das Datenfeld map.projection wird nur geprüft) (kommt in späteren Stufen über den Hook applySelection).
+// des Add-ons p2d2Crs: keine Importe aus src/, @p2d2/core oder anderen
+// Add-ons; Zugriffe auf Masterportal, Karte und OpenLayers nur in js/runtime.js.
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -74,6 +74,8 @@ describe("addons/p2d2Selector: Isolation", () => {
       "index.js",
       "js/runtime.js",
       "js/selection.js",
+      "js/wfsRequest.js",
+      "js/zoom.js",
       "store/actionsP2d2Selector.js",
       "store/gettersP2d2Selector.js",
       "store/indexP2d2Selector.js",
@@ -102,10 +104,10 @@ describe("addons/p2d2Selector: Isolation", () => {
     }
   });
 
-  it("keine Referenz auf Karte, Layer, WFS oder CRS im Quelltext", () => {
-    for (const f of files) {
+  it("reine Module (js/ außer runtime.js) ohne Masterportal, Karte, OpenLayers oder DOM", () => {
+    for (const f of files.filter((x) => /\/js\/(?!runtime\.js)[^/]+\.js$/.test(x))) {
       expect(stripAll(read(f)), rel(f)).not.toMatch(
-        /mapCollection|@appstore|@shared|Maps\/|\bol\/|\bWFS\b|getFeature|addLayer|layerConfig|\bLayer\b|setCenter|setZoom|\bcrs\b|viewSwap|ensureProjection|registerProjections/i,
+        /mapCollection|@appstore|@shared|@masterportal|\bol\/|\bwindow\b|\bdocument\b|viewSwap|registerProjections/,
       );
     }
   });
