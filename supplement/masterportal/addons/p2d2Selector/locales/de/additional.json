@@ -1,0 +1,14 @@
+{
+    "modules": {
+        "p2d2Selector": {
+            "name": "Auswahl",
+            "kommunen": "Kommune",
+            "kategorien": "Kategorie",
+            "current": "Aktuelle Auswahl",
+            "none": "Keine Auswahl",
+            "loading": "Auswahl wird geladen …",
+            "failed": "Auswahl nicht ladbar ({{reason}}).",
+            "retry": "Erneut laden"
+        }
+    }
+}

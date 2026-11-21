@@ -65,10 +65,10 @@ describe("config.js.template", () => {
     expect(template).not.toMatch(/\$\{(?![A-Z_]+\})/);
   });
 
-  it("addons registriert genau p2d2FeatureEditor und p2d2Crs", () => {
+  it("addons registriert genau p2d2FeatureEditor, p2d2Crs und p2d2Selector", () => {
     const m = template.match(/^\s*addons:\s*\[([^\]]*)\]/m);
     expect(m, "addons-Zeile").not.toBeNull();
-    expect(JSON.parse(`[${m![1]}]`)).toEqual(["p2d2FeatureEditor", "p2d2Crs"]);
+    expect(JSON.parse(`[${m![1]}]`)).toEqual(["p2d2FeatureEditor", "p2d2Crs", "p2d2Selector"]);
   });
 
   it("enthält kein zoomTo (wird in 3.27.1 nur aus portalConfig gelesen)", () => {

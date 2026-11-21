@@ -1,7 +1,7 @@
 const Config = {
     ignoredKeys: ["BOUNDEDBY", "SHAPE", "SHAPE_LENGTH", "SHAPE_AREA", "OBJECTID", "OBJECTID_1", "GLOBALID", "GEOMETRY", "SHP", "SHP_AREA", "SHP_LENGTH", "GEOM", "O_CODE", "O_KAT", "O_FKT"],
 	//gfiWindow: "detached",
-    addons: ["p2d2FeatureEditor", "p2d2Crs"],
+    addons: ["p2d2FeatureEditor", "p2d2Crs", "p2d2Selector"],
     login: {
         oidcAuthorizationEndpoint: "https://${IDM_HOST}/realms/${IAM_REALM}/protocol/openid-connect/auth",
         oidcTokenEndpoint: "https://${IDM_HOST}/realms/${IAM_REALM}/protocol/openid-connect/token",

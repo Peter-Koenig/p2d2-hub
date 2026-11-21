@@ -4,5 +4,8 @@
   },
   "p2d2Crs": {
     "type": "tool"
+  },
+  "p2d2Selector": {
+    "type": "tool"
   }
 }

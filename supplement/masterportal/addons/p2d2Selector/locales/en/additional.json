@@ -1,0 +1,14 @@
+{
+    "modules": {
+        "p2d2Selector": {
+            "name": "Selection",
+            "kommunen": "Municipality",
+            "kategorien": "Category",
+            "current": "Current selection",
+            "none": "No selection",
+            "loading": "Loading selection …",
+            "failed": "Selection could not be loaded ({{reason}}).",
+            "retry": "Reload"
+        }
+    }
+}
