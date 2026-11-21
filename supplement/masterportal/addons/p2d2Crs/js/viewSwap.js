@@ -149,9 +149,19 @@ export function reprojectLayers (layers, from, to) {
 }
 
 /**
+ * Prüft über die View-Property extent (ol/View übernimmt Konstruktor-Optionen
+ * als Properties), ob die View einen Extent hat.
+ * @param {Object} view OL-View.
+ * @returns {boolean} true, wenn ein Extent gesetzt ist.
+ */
+export function hasExtent (view) {
+    return Array.isArray(view?.get?.("extent"));
+}
+
+/**
  * Tauscht die View der 2D-Karte gegen eine View in der Zielprojektion.
  * Schritte (README „Projektions-Switch“):
- *  0 nur 2D, nicht bei gleicher Projektion
+ *  0 nur 2D, nicht bei gleicher Projektion (Ausnahme dropExtent)
  *  1 Projektion sicherstellen
  *  2–5 neue View mit Portal-Tabelle, Austausch, Prüfung, sonst Rollback
  *  6 Store Maps und View-Listener neu verbinden
@@ -166,16 +176,20 @@ export function reprojectLayers (layers, from, to) {
  * @param {function(string, *): void} deps.commit Root-Commit.
  * @param {function(string, *=): void} deps.dispatch Root-Dispatch.
  * @param {{extent: number[], epsg: string}} [deps.baseExtent] Extent der Portal-Konfiguration.
- * @returns {{ok: boolean, reason?: string, unchanged?: boolean, from?: string, to?: string, error?: Error}} Ergebnis.
+ * @param {boolean} [deps.dropExtent=false] Neue View ohne Extent. Bei gleicher
+ *   Projektion wird die View nur ersetzt, wenn sie einen Extent hat; die
+ *   Koordinaten bleiben gültig, Schritte 7 und 8 entfallen.
+ * @returns {{ok: boolean, reason?: string, unchanged?: boolean, rebuilt?: boolean, from?: string, to?: string, error?: Error}} Ergebnis.
  */
-export function swapView ({target, map, View, ensureProjection, getters, commit, dispatch, baseExtent}) {
+export function swapView ({target, map, View, ensureProjection, getters, commit, dispatch, baseExtent, dropExtent = false}) {
     if (getters["Maps/mode"] !== "2D") {
         return {ok: false, reason: "mode"};
     }
     const oldView = map.getView(),
-        from = oldView.getProjection().getCode();
+        from = oldView.getProjection().getCode(),
+        rebuilt = from === target;
 
-    if (from === target) {
+    if (rebuilt && !(dropExtent && hasExtent(oldView))) {
         return {ok: true, unchanged: true, from, to: target};
     }
     if (!ensureProjection(target)) {
@@ -188,7 +202,7 @@ export function swapView ({target, map, View, ensureProjection, getters, commit,
         const center = oldView.getCenter(),
             resolutions = oldView.getResolutions(),
             resolution = snapResolution(
-                targetResolution({resolution: oldView.getResolution(), center, from, to: target}),
+                rebuilt ? oldView.getResolution() : targetResolution({resolution: oldView.getResolution(), center, from, to: target}),
                 resolutions
             );
 
@@ -200,7 +214,7 @@ export function swapView ({target, map, View, ensureProjection, getters, commit,
             options: oldView.get("options"),
             resolutions,
             backgroundImage: oldView.get("backgroundImage"),
-            baseExtent
+            baseExtent: dropExtent ? undefined : baseExtent
         }));
         map.setView(newView);
     }
@@ -229,6 +243,10 @@ export function swapView ({target, map, View, ensureProjection, getters, commit,
     dispatch("Maps/registerMapViewListener");
     dispatch("Maps/updateAttributesByChangeResolution");
     dispatch("Maps/updateAttributesByMoveend");
+
+    if (rebuilt) {
+        return {ok: true, rebuilt: true, from, to: target};
+    }
 
     // 7 Vektorquellen und Overlays (z. B. Mess-Tooltips).
     reprojectLayers(map.getAllLayers(), from, target);

@@ -119,7 +119,13 @@ export function createActions ({url, stageUrl, layerId, fetch, getMap = () => nu
         });
 
         view.animate({center: target.center, resolution: target.resolution, duration: focusDurationMs}, () => {
-            debug("view", {projection: view.getProjection().getCode(), resolution: view.getResolution(), center: view.getCenter()});
+            debug("view", {
+                projection: view.getProjection().getCode(),
+                resolution: view.getResolution(),
+                center: view.getCenter(),
+                // View-Property extent (öffentliche API ol/Object#get); ohne Extent null.
+                extent: view.get?.("extent") ?? null
+            });
         });
         // Startansicht (totalView) führt zur Kommune; gerundet wie der Vergleich in TotalView.vue.
         commit("Maps/setInitialCenter", target.center.map(Math.round), {root: true});

@@ -230,8 +230,27 @@ Klicks mehr auswerten (`Menu/currentMouseMapInteractionsComponent`).
 
 `setLocalCrs(code)` registriert eine UTM-Zone bei Bedarf und setzt `localCrs`,
 ohne die View zu ändern. `activateLocal` schaltet die View auf `localCrs`
-(`swapView`, bei gleicher Projektion ohne Austausch) und setzt `activeCrs`.
-Beide ruft der `p2d2Selector` bei der Kommunenwahl auf.
+(`swapView` mit `dropExtent`) und setzt `activeCrs`. Beide ruft der
+`p2d2Selector` bei der Kommunenwahl auf.
+
+**Regel: Nach der Kommunenwahl hat die View keinen Extent.** Ohne `extent` in
+`mapView` legt die masterportalapi die Start-View mit ihrem Standard-Extent
+`[510000, 5850000, 625000.4, 6000000]` (EPSG:25832, Raum Hamburg) an
+(`src/defaults.js:11`, `src/maps/mapView.js:38-55`, `Object.assign` über die
+Standardwerte). `constrainOnlyCenter` klemmt das Zentrum in dieses Rechteck;
+schon das Startzentrum Köln landet an dessen Ecke bei 9,15° E / 52,80° N.
+`activateLocal` übergibt deshalb `dropExtent: true`:
+
+- andere Projektion: neue View ohne Extent (auch wenn die Portal-Konfiguration
+  einen hat);
+- gleiche Projektion und die View hat einen Extent (View-Property `extent`,
+  `ol/View` übernimmt Konstruktor-Optionen als Properties): die View wird in
+  derselben Projektion neu gebaut, Schritte 0–6, ohne 7 und 8 (Koordinaten
+  bleiben gültig), Ergebnis `rebuilt: true`;
+- gleiche Projektion ohne Extent: nichts passiert.
+
+`toggle` übergibt `dropExtent` nicht; dort gilt weiter der Extent der
+Portal-Konfiguration (Schritt 3).
 
 #### Ablauf `swapView`
 
@@ -240,6 +259,7 @@ Das Masterportal 3.27.1 kann die Projektion zur Laufzeit nicht wechseln
 `swapView` ersetzt deshalb die View und verbindet danach neu:
 
 0. Nur bei `Maps/mode === "2D"` und wenn das Ziel nicht schon aktiv ist.
+   Ausnahme `dropExtent` bei einer View mit Extent (siehe Regel oben).
 1. Projektion sicherstellen: UTM-Zonen ohne proj4-Definition über
    masterportalapi `crs.registerProjections` (proj4, OL, GeoServer-Alias,
    Kennung für das Koordinatenwerkzeug). `EPSG:3857` ist in ol und proj4
@@ -251,7 +271,8 @@ Das Masterportal 3.27.1 kann die Projektion zur Laufzeit nicht wechseln
 3. Neue View wie masterportalapi `createMapView`: dieselbe Tabelle `options`
    (wird View-Property) und `resolutions`, `constrainResolution`,
    `constrainOnlyCenter`, `backgroundImage`, Extent der Portal-Konfiguration
-   in die Zielprojektion transformiert, Zentrum transformiert, Rotation erhalten.
+   in die Zielprojektion transformiert (mit `dropExtent` keiner), Zentrum
+   transformiert, Rotation erhalten.
 4. `map.setView`; übernimmt die Karte die View nicht oder wirft der Aufbau,
    wird die alte View zurückgesetzt.
 5. Store und Listener neu verbinden (siehe Liste).
@@ -307,7 +328,11 @@ Andere Teile lesen die View bei jedem Zugriff über `mapCollection.getMapView("2
 - `src/tests/masterportal-crs-utm.test.ts`: UTM-Codes, Definitionen, Registrierung.
 - `src/tests/masterportal-crs-viewswap.test.ts`: Ziel, Bodenauflösung,
   Einrasten (abgeglichen mit dem OL-Konstruktor), View-Optionen, `swapView`
-  mit Fakes (Reihenfolge, Rollback, 3D, refresh/transform), Store-Aktionen.
+  mit Fakes (Reihenfolge, Rollback, 3D, refresh/transform, `dropExtent`),
+  Store-Aktionen.
+- `src/tests/masterportal-focus-extent.test.ts`: Start-View wie masterportalapi
+  `createMapView` (Standard-Extent), Kommunenwahl mit echter View, echtem
+  `swapView` und beiden Add-ons in fünf UTM-Zonen, Reihenfolgen.
 - `src/tests/masterportal-supplement.test.ts`: Registrierung, Menüposition,
   Isolation, kein `hasMouseMapInteractions`.
 - `src/tests/masterportal-editor-contract.test.ts`: Editor-URL bleibt bei 3857 UTM.
@@ -334,6 +359,7 @@ neu angestoßen hat.
    1. `Modules/P2d2Crs/setLocalCrs(map.projection)` registriert die UTM-Zone.
    2. `Modules/P2d2Crs/activateLocal` tauscht die View auf das lokale CRS
       (`swapView`), auch wenn vorher EPSG:3857 aktiv war (wie im Standalone).
+      Die View hat danach keinen Extent (Regel unter „p2d2Crs“).
    3. Zielstufe aus `map.zoom` (siehe Zoom-Regel), `view.animate` mit Zentrum
       und Auflösung (300 ms wie im Standalone).
    4. `Maps/setInitialCenter` und `Maps/setInitialZoom`: „Startansicht“
@@ -402,7 +428,7 @@ der Animation. Ohne den Parameter gibt es keine Ausgabe.
 |---|---|
 | `selection` | `signature` |
 | `focus` | `slug`, `projection`, `zoom`, `zoomResolution` (vor dem Einrasten, Köln 76,35), `stage`, `resolution` (Stufe, Köln 52,92), `center` |
-| `view` | nach der Animation: `projection`, `resolution`, `center` der View |
+| `view` | nach der Animation: `projection`, `resolution`, `center`, `extent` der View (View-Property, ohne Extent `null`) |
 | `load` | `signature`, `url`, `cql` |
 | `request` / `response` / `features` | URL und Projektion des Loader-Aufrufs, HTTP-Status, Zahl der Features |
 
@@ -448,10 +474,14 @@ der Animation. Ohne den Parameter gibt es keine Ausgabe.
   Style `p2d2_friedhof` in `style_v3.json`, GFI aus (Klicks behandelt der
   `p2d2FeatureEditor`). In `layerConfig` ist der Layer sichtbar, sonst entsteht
   kein OL-Layer.
-- Kartenausschnitt: Start im Zentrum Kölner Dom auf Stufe 3, **ohne `extent`**.
+- Kartenausschnitt: `startCenter` Kölner Dom auf Stufe 3, **ohne `extent`**.
   Ein Extent begrenzt in OpenLayers das Kartenzentrum; mit dem früheren
   Köln-Extent landeten alle anderen Kommunen an dessen Rand (Report 017 E).
-  Die View lässt sich wie im Standalone frei verschieben.
+  Ohne `extent` setzt die masterportalapi aber ihren Standard-Extent (Raum
+  Hamburg) für die Start-View; bis zur ersten Kommunenwahl steht die Karte
+  deshalb an dessen Ecke (9,15° E / 52,80° N), nicht in Köln. Nach der
+  Kommunenwahl hat die View keinen Extent und lässt sich wie im Standalone
+  frei verschieben (Regel unter „p2d2Crs“).
 
 **Feste Hostnamen:** `geoportal.udp.data-dna.eu` steht fest in
 `services-p2d2.json` (MapProxy-URL) und in `p2d2-editor-config.json`

@@ -23,9 +23,10 @@ export function createActions ({swapView, getMap, View, ensureProjection, baseEx
      * Tauscht die View auf target und hält activeCrs/lastError nach.
      * @param {Object} context Store-Kontext.
      * @param {string} target Zielprojektion.
-     * @returns {{ok: boolean, reason?: string, unchanged?: boolean}} Ergebnis von swapView.
+     * @param {{dropExtent?: boolean}} [options] Weiter an swapView.
+     * @returns {{ok: boolean, reason?: string, unchanged?: boolean, rebuilt?: boolean}} Ergebnis von swapView.
      */
-    function switchTo ({commit, dispatch, rootGetters}, target) {
+    function switchTo ({commit, dispatch, rootGetters}, target, {dropExtent = false} = {}) {
         const result = swapView({
             target,
             map: getMap(),
@@ -34,7 +35,8 @@ export function createActions ({swapView, getMap, View, ensureProjection, baseEx
             getters: rootGetters,
             commit: (type, payload) => commit(type, payload, {root: true}),
             dispatch: (type, payload) => dispatch(type, payload, {root: true}),
-            baseExtent: baseExtent(rootGetters)
+            baseExtent: baseExtent(rootGetters),
+            dropExtent
         });
 
         if (result.ok) {
@@ -80,11 +82,14 @@ export function createActions ({swapView, getMap, View, ensureProjection, baseEx
 
         /**
          * Schaltet die View auf das lokale CRS, auch wenn das generische aktiv
-         * ist (Kommunenwahl wie im Standalone). Bei gleicher Projektion tauscht
-         * swapView nichts aus. Läuft synchron; der Rückgabewert kommt über
-         * Vuex-dispatch als Promise an, die Wirkung steht sofort im Store.
+         * ist (Kommunenwahl wie im Standalone). Die View danach hat keinen
+         * Extent (dropExtent): Ohne konfigurierten extent setzt die
+         * masterportalapi für die Start-View ihren Standard-Extent, der das
+         * Zentrum klemmen würde. Bei gleicher Projektion und View ohne Extent
+         * tauscht swapView nichts aus. Läuft synchron; der Rückgabewert kommt
+         * über Vuex-dispatch als Promise an, die Wirkung steht sofort im Store.
          * @param {Object} context Store-Kontext.
-         * @returns {{ok: boolean, reason?: string, unchanged?: boolean}} Ergebnis.
+         * @returns {{ok: boolean, reason?: string, unchanged?: boolean, rebuilt?: boolean}} Ergebnis.
          */
         activateLocal (context) {
             const {state, commit, rootGetters} = context;
@@ -97,7 +102,7 @@ export function createActions ({swapView, getMap, View, ensureProjection, baseEx
                 commit("setLastError", "mode");
                 return {ok: false, reason: "mode"};
             }
-            return switchTo(context, state.localCrs);
+            return switchTo(context, state.localCrs, {dropExtent: true});
         }
     };
 }

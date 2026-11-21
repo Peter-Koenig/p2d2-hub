@@ -464,6 +464,7 @@ describe("Debug-Ausgabe", () => {
       projection: "EPSG:25832",
       resolution: RESOLUTIONS[1],
       center: transform(kommune("koeln").map.center, "EPSG:4326", "EPSG:25832"),
+      extent: null,
     });
     expect(w.debug.mock.calls.find((c: any[]) => c[0] === "focus")[1]).toMatchObject({
       slug: "koeln",
