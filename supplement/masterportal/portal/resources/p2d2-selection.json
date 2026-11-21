@@ -1,0 +1,311 @@
+{
+  "version": 1,
+  "kommunen": [
+    {
+      "slug": "koeln",
+      "title": "Köln",
+      "wpName": "de-Köln",
+      "order": 10,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          6.9603,
+          50.9375
+        ],
+        "zoom": 11,
+        "projection": "EPSG:25832"
+      },
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 9
+      }
+    },
+    {
+      "slug": "bonn",
+      "title": "Bonn",
+      "wpName": "de-Bonn",
+      "order": 20,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          7.0998,
+          50.7374
+        ],
+        "zoom": 12,
+        "projection": "EPSG:25832"
+      },
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 9
+      }
+    },
+    {
+      "slug": "flensburg",
+      "title": "Flensburg",
+      "wpName": "de-Flensburg",
+      "order": 20,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          9.4333,
+          54.7833
+        ],
+        "zoom": 11,
+        "projection": "EPSG:25832"
+      },
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 9
+      }
+    },
+    {
+      "slug": "dortmund",
+      "title": "Dortmund",
+      "wpName": "de-Dortmund",
+      "order": 25,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          7.466,
+          51.5149
+        ],
+        "zoom": 11,
+        "projection": "EPSG:25832"
+      },
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 9
+      }
+    },
+    {
+      "slug": "berlin",
+      "title": "Berlin",
+      "wpName": "de-Berlin",
+      "order": 30,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          13.404954,
+          52.520008
+        ],
+        "zoom": 10,
+        "projection": "EPSG:25833"
+      },
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 9
+      }
+    },
+    {
+      "slug": "hamburg",
+      "title": "Hamburg",
+      "wpName": "de-Hamburg",
+      "order": 32,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          9.9937,
+          53.5511
+        ],
+        "zoom": 11,
+        "projection": "EPSG:25832"
+      },
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 9
+      }
+    },
+    {
+      "slug": "hangzhou",
+      "title": "Hangzhou",
+      "wpName": "de-Hangzhou",
+      "order": 40,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          120.1551,
+          30.2741
+        ],
+        "zoom": 11,
+        "projection": "EPSG:32650"
+      },
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 5
+      }
+    },
+    {
+      "slug": "kiel",
+      "title": "Kiel",
+      "wpName": "de-Kiel",
+      "order": 50,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          10.1228,
+          54.3233
+        ],
+        "zoom": 11,
+        "projection": "EPSG:25832"
+      },
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 10
+      }
+    },
+    {
+      "slug": "san-francisco",
+      "title": "San Francisco",
+      "wpName": "de-San Francisco",
+      "order": 50,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          -122.4194,
+          37.7749
+        ],
+        "zoom": 12,
+        "projection": "EPSG:32610"
+      },
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 6
+      }
+    },
+    {
+      "slug": "bornheim",
+      "title": "Bornheim",
+      "wpName": "de-Bornheim",
+      "order": 60,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          7.0022,
+          50.7639
+        ],
+        "zoom": 13,
+        "projection": "EPSG:25832"
+      },
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 8
+      }
+    },
+    {
+      "slug": "kronshagen",
+      "title": "Kronshagen",
+      "wpName": "de-Kronshagen",
+      "order": 95,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          10.08454,
+          54.33607
+        ],
+        "zoom": 14,
+        "projection": "EPSG:25832"
+      },
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 8
+      }
+    }
+  ],
+  "kategorien": [
+    {
+      "slug": "friedhoefe",
+      "title": "Friedhöfe",
+      "icon": "friedhof",
+      "order": 1,
+      "containerType": "cemetery"
+    },
+    {
+      "slug": "oeffentlicherraum",
+      "title": "Öffentlicher Raum",
+      "icon": "public-space",
+      "order": 2,
+      "containerType": "administrative"
+    },
+    {
+      "slug": "blumenbeete",
+      "title": "Blumenbeete",
+      "icon": "blumenbeete",
+      "order": 3,
+      "containerType": "administrative"
+    },
+    {
+      "slug": "baume",
+      "title": "Bäume",
+      "icon": "baume",
+      "order": 4,
+      "containerType": "administrative"
+    },
+    {
+      "slug": "fahrradstaender",
+      "title": "Fahrradständer",
+      "icon": "fahrradstaender",
+      "order": 5,
+      "containerType": "administrative"
+    },
+    {
+      "slug": "pflanzenbehaelter",
+      "title": "Pflanzenbehälter",
+      "icon": "pflanzenbehaelter",
+      "order": 6,
+      "containerType": "administrative"
+    },
+    {
+      "slug": "spielsandkisten",
+      "title": "Spielsandkisten",
+      "icon": "spielsandkisten",
+      "order": 7,
+      "containerType": "administrative"
+    },
+    {
+      "slug": "abfallbehaelter",
+      "title": "Abfallbehälter",
+      "icon": "abfallbehaelter",
+      "order": 8,
+      "containerType": "administrative"
+    },
+    {
+      "slug": "fahnenmaste",
+      "title": "Fahnenmasten",
+      "icon": "fahnenmast",
+      "order": 9,
+      "containerType": "administrative"
+    },
+    {
+      "slug": "sportrasen",
+      "title": "Sportrasen",
+      "icon": "sportrasen",
+      "order": 16,
+      "containerType": "administrative"
+    },
+    {
+      "slug": "tribuenen",
+      "title": "Tribünen",
+      "icon": "tribuenen",
+      "order": 17,
+      "containerType": "administrative"
+    },
+    {
+      "slug": "strassenlaternen",
+      "title": "Straßenlaternen",
+      "icon": "strassenlaternen",
+      "order": 18,
+      "containerType": "administrative"
+    }
+  ]
+}
