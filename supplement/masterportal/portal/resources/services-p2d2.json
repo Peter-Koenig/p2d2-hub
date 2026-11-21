@@ -23,10 +23,9 @@
     "datasets": []
   },
   {
-    "id": "p2d2-geo-containers-koeln",
-    "name": "Friedhöfe Köln (de1)",
+    "id": "p2d2-geo-containers",
+    "name": "Auswahl",
     "typ": "GeoJSON",
-    "url": "/api/wfs-proxy?url=https%3A%2F%2Fgeoportal.udp.data-dna.eu%2Fgeoserver%2Fde1%2Fows%3Fservice%3DWFS%26version%3D2.0.0%26request%3DGetFeature%26typeName%3Dgeo-containers%26outputFormat%3Dapplication%252Fjson%26srsName%3DEPSG%253A4326%26CQL_FILTER%3Dwp_name%253D'de-K%25C3%25B6ln'%2520AND%2520container_type%253D'cemetery'%2520AND%2520osm_admin_level%253D8",
     "styleId": "p2d2_friedhof",
     "gfiAttributes": "ignore",
     "gfiTheme": "default",

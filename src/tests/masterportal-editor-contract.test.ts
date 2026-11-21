@@ -33,7 +33,7 @@ const fixture = JSON.parse(
 const EDITOR_CFG = JSON.parse(
   read("supplement/masterportal/portal/resources/p2d2-editor-config.json"),
 );
-const FH = EDITOR_CFG.layers["p2d2-geo-containers-koeln"];
+const FH = EDITOR_CFG.layers["p2d2-geo-containers"];
 const KIDS = { childLevel: FH.children.level, separator: FH.children.separator };
 const PREFIX_FIELDS: string[] = FH.children.prefixFields;
 const PROXY: string = FH.proxyPath;
@@ -252,13 +252,18 @@ describe("buildChildCheckUrl", () => {
     expect(innerUrl.searchParams.get("CQL_FILTER")).toBe(cql);
   });
 
-  it("gleicher Aufbau wie die WFS-URL des Friedhofs-Layers in services-p2d2.json", () => {
-    const svc = JSON.parse(
-      read("supplement/masterportal/portal/resources/services-p2d2.json"),
-    );
-    const layer = svc.find((l: any) => l.id === "p2d2-geo-containers-koeln");
+  // Frühere statische URL des Friedhofs-Layers in services-p2d2.json (bis der
+  // Layer dynamisch wurde, im Browser auf de1 geprüft). Dieselbe Zeichenkette
+  // prüft masterportal-selector-request.test.ts für buildLayerUrl.
+  const FORMER_LAYER_URL =
+    "/api/wfs-proxy?url=https%3A%2F%2Fgeoportal.udp.data-dna.eu%2Fgeoserver%2Fde1%2Fows%3Fservice%3DWFS" +
+    "%26version%3D2.0.0%26request%3DGetFeature%26typeName%3Dgeo-containers%26outputFormat%3Dapplication%252Fjson" +
+    "%26srsName%3DEPSG%253A4326%26CQL_FILTER%3Dwp_name%253D'de-K%25C3%25B6ln'%2520AND%2520container_type%253D'cemetery'" +
+    "%2520AND%2520osm_admin_level%253D8";
+
+  it("gleicher Aufbau wie die frühere WFS-URL des Friedhofs-Layers", () => {
     const prefix = "/api/wfs-proxy?url=";
-    const layerInner = decodeURIComponent(layer.url.slice(prefix.length));
+    const layerInner = decodeURIComponent(FORMER_LAYER_URL.slice(prefix.length));
     const layerCql = new URL(layerInner).searchParams.get("CQL_FILTER")!;
     const out = buildChildCheckUrl({
       wfsBase: FH.wfsBase,

@@ -152,7 +152,7 @@ Standardwerte.
    `editorUrl.js`/`clickFlow.js` als zusätzliche, konfigurierbare Regel ergänzt.
    Der Astro-Editor muss die Kategorie ebenfalls kennen.
 4. Tests: `src/tests/masterportal-supplement.test.ts` prüft Layer-ID,
-   `gfiAttributes` und `wfsBase`/`typeName` gegen die Layer-URL.
+   `gfiAttributes` und die Stage-Werte `wfsBase`/`typeName`/`proxyPath`.
 
 ### Herkunft der Regeln
 
@@ -310,15 +310,21 @@ Andere Teile lesen die View bei jedem Zugriff über `mapCollection.getMapView("2
 
 - Hintergrundkarte: MapProxy-Layer `p2d2_osm` (WMS
   `https://geoportal.udp.data-dna.eu/mapserver/service`), Karte in EPSG:25832.
-- Fachlayer: Friedhöfe Köln als GeoJSON über den Stage-Proxy
+- Fachlayer: ein GeoJSON-Layer `p2d2-geo-containers` („Auswahl“) **ohne
+  `url`**. Die masterportalapi legt dafür eine leere Quelle an
+  (`layer/vector.js` `createVectorSource`); den Inhalt lädt das Add-on
+  `p2d2Selector` je Auswahl von Kommune und Kategorie über den Stage-Proxy
   `/api/wfs-proxy?url=<kodierte WFS-URL>` (GeoServer-Workspace `de1`,
-  `typeName=geo-containers`, CQL-Filter auf Köln/`cemetery`/`osm_admin_level=8`,
-  Daten in EPSG:4326, Umprojektion im Client). Style `p2d2_friedhof` in
-  `style_v3.json`.
-- Kartenausschnitt: Zentrum Kölner Dom, `extent` = Stadtgebiet Köln
-  (`[minX, minY, maxX, maxY]`, EPSG:25832). Der `extent` begrenzt nur den
-  Kartenmittelpunkt.
+  `typeName=geo-containers`, Daten in EPSG:4326, Umprojektion im Client).
+  Style `p2d2_friedhof` in `style_v3.json`, GFI aus (Klicks behandelt der
+  `p2d2FeatureEditor`). In `layerConfig` ist der Layer sichtbar, sonst entsteht
+  kein OL-Layer.
+- Kartenausschnitt: Start im Zentrum Kölner Dom auf Stufe 3, **ohne `extent`**.
+  Ein Extent begrenzt in OpenLayers das Kartenzentrum; mit dem früheren
+  Köln-Extent landeten alle anderen Kommunen an dessen Rand (Report 017 E).
+  Die View lässt sich wie im Standalone frei verschieben.
 
 **Feste Hostnamen:** `geoportal.udp.data-dna.eu` steht fest in
-`services-p2d2.json` (MapProxy-URL und innere WFS-URL); es gibt kein Templating
-für JSON-Dateien. Bei einer anderen Domain sind diese Einträge anzupassen.
+`services-p2d2.json` (MapProxy-URL) und in `p2d2-editor-config.json`
+(`wfsBase`); es gibt kein Templating für JSON-Dateien. Bei einer anderen Domain
+sind diese Einträge anzupassen.

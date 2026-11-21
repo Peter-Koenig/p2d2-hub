@@ -1,7 +1,7 @@
 {
   "_comment": "Konfiguration des Add-ons p2d2FeatureEditor je Layer-ID aus services-p2d2.json (stage-spezifisch). Kind-Regel und Fenster wie im Standalone (src/utils/feature-popup-handler.ts: loadGrabflurData, openFeatureEditor). Zoomstufen sind Portal-Stufen aus portal-config-p2d2.json (0 bis 9), nicht die Web-Mercator-Stufen des Standalone.",
   "layers": {
-    "p2d2-geo-containers-koeln": {
+    "p2d2-geo-containers": {
       "wfsBase": "https://geoportal.udp.data-dna.eu/geoserver/de1/ows",
       "typeName": "geo-containers",
       "proxyPath": "/api/wfs-proxy",

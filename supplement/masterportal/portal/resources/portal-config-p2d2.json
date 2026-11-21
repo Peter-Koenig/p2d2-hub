@@ -91,7 +91,6 @@
             "zoomLevel": 12
           }
         ],
-        "extent": [343135, 5633285, 371269, 5660884],
         "startZoomLevel": 3,
         "epsg": "EPSG:25832"
       },
@@ -296,8 +295,8 @@
     "subjectlayer": {
       "elements": [
         {
-          "id": "p2d2-geo-containers-koeln",
-          "name": "Friedhöfe Köln (de1)",
+          "id": "p2d2-geo-containers",
+          "name": "Auswahl",
           "visibility": true
         }
       ]

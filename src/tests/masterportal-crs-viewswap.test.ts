@@ -39,7 +39,10 @@ const CFG = JSON.parse(
 const MAP_VIEW = CFG.portalConfig.map.mapView;
 const OPTIONS: { resolution: number; scale: number; zoomLevel: number }[] = MAP_VIEW.options;
 const RESOLUTIONS = OPTIONS.map((o) => o.resolution);
-const BASE_EXTENT = { extent: MAP_VIEW.extent, epsg: MAP_VIEW.epsg };
+// Die Portal-Konfiguration hat keinen extent mehr (E11b); buildViewOptions und
+// swapView unterstützen ihn weiter. Testwert: früherer Extent Stadtgebiet Köln.
+const TEST_EXTENT = [343135, 5633285, 371269, 5660884];
+const BASE_EXTENT = { extent: TEST_EXTENT, epsg: MAP_VIEW.epsg };
 const KOELN = MAP_VIEW.startCenter as number[];
 
 beforeAll(() => {
@@ -151,8 +154,8 @@ describe("buildViewOptions", () => {
 
   it("Extent wird aus der Portal-Projektion transformiert", () => {
     const o = buildViewOptions(args);
-    expect(o.extent).toEqual(transformExtent(MAP_VIEW.extent, "EPSG:25832", "EPSG:3857"));
-    expect(buildViewOptions({ ...args, projection: "EPSG:25832" }).extent).toEqual(MAP_VIEW.extent);
+    expect(o.extent).toEqual(transformExtent(TEST_EXTENT, "EPSG:25832", "EPSG:3857"));
+    expect(buildViewOptions({ ...args, projection: "EPSG:25832" }).extent).toEqual(TEST_EXTENT);
   });
 
   it("ohne Basis-Extent kein Extent", () => {
@@ -184,7 +187,7 @@ const makeView = (projection = "EPSG:25832") =>
     rotation: 0.25,
     constrainResolution: true,
     constrainOnlyCenter: true,
-    extent: MAP_VIEW.extent,
+    extent: TEST_EXTENT,
     options: OPTIONS,
     backgroundImage: "bg.jpeg",
   } as any);

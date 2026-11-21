@@ -29,11 +29,8 @@ const svc: any[] = readJson(join(PORTAL, layerConfPath ?? "missing"));
 const styles: any[] = readJson(join(PORTAL, styleConfPath ?? "missing"));
 const svcIds = new Set(svc.map((l) => l.id));
 
-// Erwartete innere WFS-URL (Workspace de1, Friedhöfe Köln).
-const INNER_WFS =
-  "https://geoportal.udp.data-dna.eu/geoserver/de1/ows?service=WFS&version=2.0.0&request=GetFeature" +
-  "&typeName=geo-containers&outputFormat=application%2Fjson&srsName=EPSG%3A4326" +
-  "&CQL_FILTER=wp_name%3D'de-K%C3%B6ln'%20AND%20container_type%3D'cemetery'%20AND%20osm_admin_level%3D8";
+// Layer-ID des dynamischen Fachlayers (Auswahl aus dem Add-on p2d2Selector).
+const SELECTION_LAYER = "p2d2-geo-containers";
 
 describe("config.js.template", () => {
   it("portalConf und layerConf zeigen auf vorhandene eigene Dateien", () => {
@@ -102,7 +99,7 @@ describe("Portal-Konfiguration und Layer", () => {
       ...cfg.layerConfig.subjectlayer.elements.map((e: any) => e.id),
       cfg.portalConfig.map.controls.overviewMap.layerId,
     ];
-    expect(refs).toEqual(["p2d2-osm", "p2d2-geo-containers-koeln", "p2d2-osm"]);
+    expect(refs).toEqual(["p2d2-osm", SELECTION_LAYER, "p2d2-osm"]);
     for (const id of refs) expect(svcIds.has(id), id).toBe(true);
   });
 
@@ -112,18 +109,15 @@ describe("Portal-Konfiguration und Layer", () => {
     expect(cfg.portalConfig.map.zoomTo).toBeUndefined();
   });
 
-  it("extent [minX,minY,maxX,maxY] ist geordnet und enthält startCenter", () => {
-    const [minX, minY, maxX, maxY] = mapView.extent;
-    const [cx, cy] = mapView.startCenter;
-    expect(minX).toBeLessThan(maxX);
-    expect(minY).toBeLessThan(maxY);
-    expect(cx).toBeGreaterThan(minX);
-    expect(cx).toBeLessThan(maxX);
-    expect(cy).toBeGreaterThan(minY);
-    expect(cy).toBeLessThan(maxY);
+  // Kein extent: Er würde das Zentrum jeder anderen Kommune an den Rand des
+  // Start-Ausschnitts zwingen (README „Fachlayer und Kartenausschnitt“).
+  it("kein mapView.extent; startCenter, startZoomLevel und epsg bleiben", () => {
+    expect(mapView).not.toHaveProperty("extent");
+    expect(mapView.startCenter).toEqual([356560, 5645282]);
     expect(mapView.epsg).toBe("EPSG:25832");
     const levels = mapView.options.map((o: any) => o.zoomLevel);
     expect(levels).toContain(mapView.startZoomLevel);
+    expect(mapView.startZoomLevel).toBe(3);
   });
 
   it("Titel und Logo verweisen auf vorhandene Dateien", () => {
@@ -151,14 +145,29 @@ describe("Portal-Konfiguration und Layer", () => {
     });
   });
 
-  it("Friedhofs-Layer: GeoJSON über den Stage-Proxy, Style vorhanden", () => {
-    const fh = svc.find((l) => l.id === "p2d2-geo-containers-koeln");
-    expect(fh.typ).toBe("GeoJSON");
-    const prefix = "/api/wfs-proxy?url=";
-    expect(fh.url.startsWith(prefix)).toBe(true);
-    expect(decodeURIComponent(fh.url.slice(prefix.length))).toBe(INNER_WFS);
-    expect(styles.some((s) => s.styleId === fh.styleId)).toBe(true);
+  // Ohne url erzeugt die masterportalapi eine leere VectorSource ohne Loader
+  // (layer/vector.js createVectorSource); den Loader setzt p2d2Selector.
+  it("Auswahl-Layer: GeoJSON ohne url und ohne geojson, neutraler Name, GFI aus, Style vorhanden", () => {
+    const layer = svc.find((l) => l.id === SELECTION_LAYER);
+    expect(layer.typ).toBe("GeoJSON");
+    expect(layer).not.toHaveProperty("url");
+    expect(layer).not.toHaveProperty("geojson");
+    expect(layer.name).toBe("Auswahl");
+    expect(layer.gfiAttributes).toBe("ignore");
+    expect(styles.some((s) => s.styleId === layer.styleId)).toBe(true);
+    expect(layer.styleId).toBe("p2d2_friedhof");
     expect(styles.some((s) => s.styleId === "unterkuenfte")).toBe(true);
+  });
+
+  it("layerConfig: Auswahl-Layer sichtbar (nur sichtbare Einträge werden zum Layer)", () => {
+    const entry = cfg.layerConfig.subjectlayer.elements.find((e: any) => e.id === SELECTION_LAYER);
+    expect(entry).toEqual({ id: SELECTION_LAYER, name: "Auswahl", visibility: true });
+  });
+
+  it("der Demo-Layer Friedhöfe Köln ist entfernt", () => {
+    expect(svcIds.has("p2d2-geo-containers-koeln")).toBe(false);
+    expect(JSON.stringify(cfg)).not.toContain("p2d2-geo-containers-koeln");
+    expect(svc.some((l) => typeof l.url === "string" && l.url.includes("wfs-proxy"))).toBe(false);
   });
 });
 
@@ -268,7 +277,7 @@ describe("p2d2-editor-config.json ↔ services-p2d2.json", () => {
   const layers = Object.entries<any>(editorCfg.layers);
 
   it("jede konfigurierte Layer-ID existiert, GFI ist abgeschaltet", () => {
-    expect(layers.map(([id]) => id)).toEqual(["p2d2-geo-containers-koeln"]);
+    expect(layers.map(([id]) => id)).toEqual([SELECTION_LAYER]);
     for (const [id] of layers) {
       const layer = svc.find((l) => l.id === id);
       expect(layer, id).toBeDefined();
@@ -276,14 +285,13 @@ describe("p2d2-editor-config.json ↔ services-p2d2.json", () => {
     }
   });
 
-  it("wfsBase, typeName und proxyPath passen zur Layer-URL", () => {
+  // Die URL baut p2d2Selector aus diesen Werten (Vertrag in
+  // masterportal-selector-request.test.ts gegen die frühere statische URL).
+  it("wfsBase, typeName und proxyPath der Stage de1", () => {
     for (const [id, c] of layers) {
-      const layer = svc.find((l) => l.id === id);
-      const prefix = `${c.proxyPath}?url=`;
-      expect(layer.url.startsWith(prefix), id).toBe(true);
-      const inner = new URL(decodeURIComponent(layer.url.slice(prefix.length)));
-      expect(inner.origin + inner.pathname).toBe(c.wfsBase);
-      expect(inner.searchParams.get("typeName")).toBe(c.typeName);
+      expect(c.wfsBase, id).toBe("https://geoportal.udp.data-dna.eu/geoserver/de1/ows");
+      expect(c.typeName, id).toBe("geo-containers");
+      expect(c.proxyPath, id).toBe("/api/wfs-proxy");
     }
   });
 });

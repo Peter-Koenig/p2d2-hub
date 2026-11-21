@@ -18,7 +18,7 @@ const read = (p: string): string => readFileSync(join(ROOT, p), "utf8");
 const CFG_FILE = JSON.parse(
   read("supplement/masterportal/portal/resources/p2d2-editor-config.json"),
 );
-const LAYER_ID = "p2d2-geo-containers-koeln";
+const LAYER_ID = "p2d2-geo-containers";
 const LAYERS: Record<string, any> = validateConfig(CFG_FILE);
 const LC = LAYERS[LAYER_ID];
 
