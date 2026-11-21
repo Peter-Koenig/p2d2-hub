@@ -6,6 +6,7 @@
 // Turn 4 (Content/Preferences):
 //   - Content-Schemata (kommuneSchema, kategorieSchema)
 //   - Kommunen-/Kategorien-Domänenlogik (pure Teile)
+//   - OSM-Admin-Level-Regel der Geo-Container (getOsmAdminLevel)
 //   - Preference-Parsing (metadata-parser)
 //   - Karten-Grundkonfiguration (MAP_CONFIG)
 //
@@ -22,6 +23,7 @@
 export * from "./content/schemas";
 export * from "./content/kommunen";
 export * from "./content/kategorien";
+export * from "./content/osm-admin-level";
 export * from "./preferences/metadata-parser";
 export * from "./map/map-config";
 export * from "./wfst/table-names";
