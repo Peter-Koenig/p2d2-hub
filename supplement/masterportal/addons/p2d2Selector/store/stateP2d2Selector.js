@@ -8,7 +8,12 @@
 const state = {
     type: "p2d2Selector",
     name: "additional:modules.p2d2Selector.name",
-    icon: "bi-grid-3x3-gap"
+    icon: "bi-grid-3x3-gap",
+    selection: null,
+    loadStatus: "idle",
+    lastError: null,
+    kommuneSlug: null,
+    kategorieSlug: null
 };
 
 export default state;

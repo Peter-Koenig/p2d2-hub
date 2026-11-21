@@ -60,4 +60,53 @@ describe("addons/p2d2Selector: Registrierung und Menü", () => {
     expect(de.modules.p2d2Selector.name).toBe("Auswahl");
     expect(en.modules.p2d2Selector.name).toBe("Selection");
   });
+
+  it("p2d2-selection.json liegt unter resources/ und wird relativ geladen", () => {
+    expect(existsSync(join(MP, "portal/resources/p2d2-selection.json"))).toBe(true);
+    expect(stripAll(read(join(DIR, "js/runtime.js")))).toContain('"./resources/p2d2-selection.json"');
+  });
+});
+
+describe("addons/p2d2Selector: Isolation", () => {
+  it("enthält Einstieg, Komponente, Store, reine Module", () => {
+    expect(files.map(rel).sort()).toEqual([
+      "components/P2d2Selector.vue",
+      "index.js",
+      "js/runtime.js",
+      "js/selection.js",
+      "store/actionsP2d2Selector.js",
+      "store/gettersP2d2Selector.js",
+      "store/indexP2d2Selector.js",
+      "store/mutationsP2d2Selector.js",
+      "store/stateP2d2Selector.js",
+    ]);
+  });
+
+  it("kein hasMouseMapInteractions", () => {
+    for (const f of files) expect(stripAll(read(f)), rel(f)).not.toContain("hasMouseMapInteractions");
+  });
+
+  it("keine Importe aus src/, @/, @p2d2/core, @masterportal, ol, anderen Add-ons", () => {
+    for (const f of files) {
+      const code = stripAll(read(f));
+      const imports = [
+        ...code.matchAll(/^\s*import\s[\s\S]*?from\s*["']([^"']+)["']/gm),
+        ...code.matchAll(/^\s*import\s*["']([^"']+)["']/gm),
+        ...code.matchAll(/\bimport\(\s*["']([^"']+)["']\s*\)/g),
+      ];
+      for (const m of imports) {
+        expect(m[1], `${rel(f)}: ${m[1]}`).toMatch(/^(vuex|\.\/|\.\.\/(js|store|components|locales)\/)/);
+        expect(m[1], `${rel(f)}: ${m[1]}`).not.toMatch(/src\/|^@|p2d2Crs|p2d2FeatureEditor/);
+      }
+      expect(code, rel(f)).not.toMatch(/innerHTML|insertAdjacentHTML|outerHTML|postMessage/);
+    }
+  });
+
+  it("keine Referenz auf Karte, Layer, WFS oder CRS im Quelltext", () => {
+    for (const f of files) {
+      expect(stripAll(read(f)), rel(f)).not.toMatch(
+        /mapCollection|@appstore|@shared|Maps\/|\bol\/|\bWFS\b|getFeature|addLayer|layerConfig|\bLayer\b|setCenter|setZoom|\bcrs\b|viewSwap|ensureProjection|registerProjections/i,
+      );
+    }
+  });
 });

@@ -4,9 +4,14 @@
 
 import state from "./stateP2d2Selector.js";
 import getters from "./gettersP2d2Selector.js";
+import mutations from "./mutationsP2d2Selector.js";
+import {createActions} from "./actionsP2d2Selector.js";
+import runtime from "../js/runtime.js";
 
 export default {
     namespaced: true,
     state: {...state},
-    getters
+    getters,
+    mutations,
+    actions: createActions(runtime)
 };
