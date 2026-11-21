@@ -1,13 +1,15 @@
 // SPDX-FileCopyrightText: 2024-2026 Peter König <peter.koenig@data-dna.eu>
 // SPDX-License-Identifier: EUPL-1.2
-// p2d2: Extent der Portal-View bei der Kommunenwahl (p2d2Crs und p2d2Selector)
+// p2d2: Extent der Portal-View beim Start und bei der Kommunenwahl
+// (p2d2Crs und p2d2Selector)
 //
-// Die Portal-View wird wie in masterportalapi 2.64.0 createMapView gebaut
+// Die Start-View wird wie in masterportalapi 2.64.0 createMapView gebaut
 // (src/maps/mapView.js:38-55): Konfiguration über die Standardwerte gelegt
-// (src/defaults.js:11). Ohne konfigurierten extent gilt daher der
-// Standard-Extent; constrainOnlyCenter klemmt nur das Zentrum.
-//   S0: frisch geladenes Portal (View aus der Portal-Konfiguration)
-//   S1: nach einem View-Austausch durch swapView
+// (src/defaults.js:11). portal-config-p2d2.json setzt einen Deutschland-
+// Extent; ohne ihn gälte der Standard-Extent (Raum Hamburg).
+// constrainOnlyCenter klemmt nur das Zentrum.
+//   Start-View: frisch geladenes Portal, View mit Deutschland-Extent
+//   nach swapView: View ohne Extent (Kommunenwahl und toggle)
 // Echte ol/View, echter swapView, echte Aktionen beider Add-ons. Karte und
 // Store sind Fakes, fetch antwortet nicht (hier zählt nur die View).
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
@@ -54,7 +56,29 @@ const KOMMUNEN = [...SELECTION.kommunen, ZONE51];
 const kommune = (slug: string) => KOMMUNEN.find((k: any) => k.slug === slug);
 const ZONES = ["EPSG:25832", "EPSG:25833", "EPSG:32610", "EPSG:32650", "EPSG:32651"];
 
-/** Portal-View wie masterportalapi createMapView. */
+// Deutschland, Extrempunkte WGS84 (Isenbruch, Deschka, Haldenwanger Eck, List/Sylt)
+const GERMANY_WGS84 = [5.8663, 47.2701, 15.0419, 55.0581];
+const GERMAN_ZONES = ["EPSG:25832", "EPSG:25833"];
+
+/** Rand eines WGS84-Rechtecks, n Punkte je Seite. */
+const ring = ([w, s, e, n]: number[], steps = 50) => {
+  const pts: number[][] = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    pts.push([w + t * (e - w), s], [w + t * (e - w), n], [w, s + t * (n - s)], [e, s + t * (n - s)]);
+  }
+  return pts;
+};
+const inside = ([x, y]: number[], [minX, minY, maxX, maxY]: number[]) => x >= minX && x <= maxX && y >= minY && y <= maxY;
+
+/** mapView ohne den Schlüssel extent (wie die Konfiguration vor diesem Stand). */
+const withoutExtentKey = ({ extent: _omit, ...rest }: Record<string, any>) => rest;
+
+/**
+ * Portal-View wie masterportalapi createMapView. Ein fehlender Schlüssel
+ * extent ergibt den Standard-Extent; extent: undefined überschreibt ihn
+ * (Object.assign) und ergibt eine View ohne Extent wie nach swapView.
+ */
 const portalView = (mapView: Record<string, any>) => {
   const merged = Object.assign({}, { extent: MASTERPORTALAPI_DEFAULT_EXTENT }, mapView);
   return new View({
@@ -139,11 +163,6 @@ const makeWorld = (mapView: Record<string, any> = MAP_VIEW) => {
     getMap: () => map,
     View,
     ensureProjection: (code: string) => Boolean(getProjection(code)),
-    // wie p2d2Crs/js/runtime.js baseExtent
-    baseExtent: (g: any) => {
-      const { extent, epsg } = g.mapViewSettings ?? {};
-      return Array.isArray(extent) && epsg ? { extent, epsg } : undefined;
-    },
   });
   const crsContext = {
     state: crsState,
@@ -186,44 +205,62 @@ const makeWorld = (mapView: Record<string, any> = MAP_VIEW) => {
     },
   };
   const focus = (slug: string) => actions.select(context, { kommuneSlug: slug });
-  return { map, view: () => map.getView(), focus, state, crsState, root, debug };
+  const toggle = () => crsActions.toggle(crsContext);
+  return { map, view: () => map.getView(), focus, toggle, state, crsState, root, debug };
 };
 
-describe("Portal-View ohne konfigurierten Extent (Nachbildung masterportalapi)", () => {
-  it("Portal-Konfiguration hat keinen extent", () => {
-    expect(MAP_VIEW.extent).toBeUndefined();
+describe("Start-View (createMapView mit portal-config-p2d2.json)", () => {
+  it("mapView.extent in EPSG:25832 umfasst Deutschland, das Startzentrum und alle deutschen Kommunen", () => {
+    expect(MAP_VIEW.epsg).toBe("EPSG:25832");
+    expect(MAP_VIEW.extent).toHaveLength(4);
+    for (const p of ring(GERMANY_WGS84)) {
+      expect(inside(transform(p, "EPSG:4326", "EPSG:25832"), MAP_VIEW.extent), String(p)).toBe(true);
+    }
+    expect(inside(MAP_VIEW.startCenter, MAP_VIEW.extent)).toBe(true);
+    const german = SELECTION.kommunen.filter((k: any) => GERMAN_ZONES.includes(k.map.projection));
+    expect(german.length).toBeGreaterThanOrEqual(9);
+    for (const k of german) {
+      expect(inside(transform(k.map.center, "EPSG:4326", "EPSG:25832"), MAP_VIEW.extent), k.slug).toBe(true);
+    }
   });
 
-  it("S0: Standard-Extent, das Startzentrum Köln wird an die Ecke geklemmt", () => {
+  it("Start-View: Deutschland-Extent, Zentrum ist startCenter (Köln), kein Klemmen", () => {
     const view = portalView(MAP_VIEW);
+    expect(view.get("extent")).toEqual(MAP_VIEW.extent);
+    expect(view.getCenter()).toEqual(MAP_VIEW.startCenter);
+    const [lon, lat] = transform(view.getCenter()!, "EPSG:25832", "EPSG:4326");
+    expect(lon).toBeCloseTo(6.958, 2);
+    expect(lat).toBeCloseTo(50.94, 2);
+  });
+
+  it.each(["koeln", "bonn", "dortmund", "kiel", "hamburg", "flensburg"])(
+    "Start-View: animate auf %s erreicht das Zentrum",
+    (slug) => {
+      const view = portalView(MAP_VIEW);
+      const target = expected(slug, view.getResolutions()!);
+      view.animate({ center: target.center, resolution: target.resolution, duration: 0 });
+      expectCenter(view.getCenter(), target.center, slug);
+      expect(view.getResolution(), slug).toBe(target.resolution);
+    },
+  );
+
+  it("Gegenprobe ohne mapView.extent: Standard-Extent klemmt das Startzentrum an die Ecke", () => {
+    const view = portalView(withoutExtentKey(MAP_VIEW));
     expect(view.get("extent")).toEqual(MASTERPORTALAPI_DEFAULT_EXTENT);
     expect(view.getCenter()).toEqual([510000, 5850000]);
     // Ecke etwa 9,15° E / 52,80° N (zwischen Nienburg und Bremen)
     const [lon, lat] = transform([510000, 5850000], "EPSG:25832", "EPSG:4326");
     expect(lon).toBeCloseTo(9.148, 2);
     expect(lat).toBeCloseTo(52.8, 2);
-  });
-
-  it("S0: view.animate auf Köln bleibt am Extent hängen (Ursache)", () => {
-    const view = portalView(MAP_VIEW);
     const target = expected("koeln", view.getResolutions()!);
     view.animate({ center: target.center, resolution: target.resolution, duration: 0 });
     const [x, y] = view.getCenter()!;
-    expect(Math.hypot(x - 510000, y - 5850000)).toBeLessThan(15000);
     expect(Math.hypot(x - target.center[0], y - target.center[1])).toBeGreaterThan(200000);
-  });
-
-  it("S1: View ohne Extent, animate erreicht Köln", () => {
-    const view = portalView({ ...MAP_VIEW, extent: undefined });
-    expect(view.get("extent")).toBeUndefined();
-    const target = expected("koeln", view.getResolutions()!);
-    view.animate({ center: target.center, resolution: target.resolution, duration: 0 });
-    expectCenter(view.getCenter(), target.center);
   });
 });
 
-describe("focusKommune: kein Extent klemmt das Zentrum", () => {
-  it("S0, Köln zuerst: Zentrum Köln, View ohne Extent", () => {
+describe("Kommunenwahl ab der Start-View: danach View ohne Extent", () => {
+  it("Köln zuerst: Zentrum Köln, View ohne Extent", () => {
     const w = makeWorld();
     w.focus("koeln");
     const target = expected("koeln", w.view().getResolutions()!);
@@ -240,7 +277,7 @@ describe("focusKommune: kein Extent klemmt das Zentrum", () => {
     ["san-francisco", "EPSG:32610"],
     ["hangzhou", "EPSG:32650"],
     ["zone-51", "EPSG:32651"],
-  ])("S0, %s zuerst (%s): Zentrum der Kommune", (slug, code) => {
+  ])("%s zuerst (%s): Zentrum der Kommune, View ohne Extent", (slug, code) => {
     const w = makeWorld();
     w.focus(slug);
     expect(w.view().getProjection().getCode()).toBe(code);
@@ -255,6 +292,7 @@ describe("focusKommune: kein Extent klemmt das Zentrum", () => {
       expect(w.state.focusedSlug, slug).toBe(slug);
       expect(w.view().getProjection().getCode(), slug).toBe(kommune(slug).map.projection);
       expectCenter(w.view().getCenter(), expected(slug, w.view().getResolutions()!).center, slug);
+      expect(w.view().get("extent"), slug).toBeUndefined();
     }
   });
 
@@ -266,15 +304,17 @@ describe("focusKommune: kein Extent klemmt das Zentrum", () => {
     }
   });
 
-  it("nach der Wahl von Köln lässt sich die Karte bis München verschieben", () => {
+  it("nach der Wahl von Köln lässt sich die Karte frei verschieben (München, außerhalb Deutschlands)", () => {
     const w = makeWorld();
     w.focus("koeln");
-    const muenchen = transform([11.575, 48.137], "EPSG:4326", "EPSG:25832");
-    w.view().setCenter(muenchen);
-    expectCenter(w.view().getCenter(), muenchen);
+    for (const lonLat of [[11.575, 48.137], [2.35, 48.86], [20.0, 60.0]]) {
+      const p = transform(lonLat, "EPSG:4326", "EPSG:25832");
+      w.view().setCenter(p);
+      expectCenter(w.view().getCenter(), p, String(lonLat));
+    }
   });
 
-  it("S0: genau ein View-Austausch in gleicher Projektion, danach keiner mehr", () => {
+  it("genau ein View-Austausch in gleicher Projektion, danach keiner mehr", () => {
     const w = makeWorld();
     w.focus("koeln");
     w.focus("bonn");
@@ -283,8 +323,9 @@ describe("focusKommune: kein Extent klemmt das Zentrum", () => {
     expect(w.crsState.activeCrs).toBe("EPSG:25832");
   });
 
-  it("S1 (View schon ohne Extent): Köln ohne View-Austausch", () => {
+  it("View schon ohne Extent: Köln ohne View-Austausch", () => {
     const w = makeWorld({ ...MAP_VIEW, extent: undefined });
+    expect(w.view().get("extent")).toBeUndefined();
     w.focus("koeln");
     expect(w.map.setView).not.toHaveBeenCalled();
     expectCenter(w.view().getCenter(), expected("koeln", w.view().getResolutions()!).center);
@@ -302,4 +343,37 @@ describe("focusKommune: kein Extent klemmt das Zentrum", () => {
     await flush();
     expect(w.debug).toHaveBeenCalledWith("view", expect.objectContaining({ projection: "EPSG:25832", extent: null }));
   });
+});
+
+describe("toggle (p2d2Crs): neue View ohne Extent", () => {
+  it("ab der Start-View: 3857 ohne Extent, zurück nach 25832 ohne Extent, Zentrum bleibt", () => {
+    const w = makeWorld();
+    expect(w.view().get("extent")).toEqual(MAP_VIEW.extent);
+    w.toggle();
+    expect(w.view().getProjection().getCode()).toBe("EPSG:3857");
+    expect(w.view().get("extent")).toBeUndefined();
+    w.toggle();
+    expect(w.view().getProjection().getCode()).toBe("EPSG:25832");
+    expect(w.view().get("extent")).toBeUndefined();
+    expect(w.view().getCenter()![0]).toBeCloseTo(MAP_VIEW.startCenter[0], 3);
+    expect(w.view().getCenter()![1]).toBeCloseTo(MAP_VIEW.startCenter[1], 3);
+  });
+
+  it.each(["koeln", "berlin", "san-francisco", "hangzhou", "zone-51"])(
+    "nach der Wahl von %s: toggle nach 3857 und zurück, jeweils ohne Extent und frei verschiebbar",
+    (slug) => {
+      const w = makeWorld();
+      w.focus(slug);
+      const code = kommune(slug).map.projection;
+      w.toggle();
+      expect(w.view().getProjection().getCode(), slug).toBe("EPSG:3857");
+      expect(w.view().get("extent"), slug).toBeUndefined();
+      const far = transform([-70, -40], "EPSG:4326", "EPSG:3857");
+      w.view().setCenter(far);
+      expectCenter(w.view().getCenter(), far, slug);
+      w.toggle();
+      expect(w.view().getProjection().getCode(), slug).toBe(code);
+      expect(w.view().get("extent"), slug).toBeUndefined();
+    },
+  );
 });

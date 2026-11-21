@@ -91,6 +91,7 @@
             "zoomLevel": 12
           }
         ],
+        "extent": [222000, 5179000, 1000000, 6177000],
         "startZoomLevel": 3,
         "epsg": "EPSG:25832"
       },

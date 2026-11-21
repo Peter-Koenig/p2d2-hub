@@ -15,18 +15,16 @@ import {targetCrs} from "../js/viewSwap.js";
  * @param {function(): Object} runtime.getMap Liefert die 2D-Karte.
  * @param {Function} runtime.View View-Klasse.
  * @param {function(string): boolean} runtime.ensureProjection Projektion sicherstellen.
- * @param {function(Object): ({extent: number[], epsg: string}|undefined)} runtime.baseExtent Extent der Portal-Konfiguration aus den Root-Gettern.
  * @returns {{toggle: function(Object): void, setLocalCrs: function(Object, string): boolean, activateLocal: function(Object): Object}} Aktionen.
  */
-export function createActions ({swapView, getMap, View, ensureProjection, baseExtent}) {
+export function createActions ({swapView, getMap, View, ensureProjection}) {
     /**
      * Tauscht die View auf target und hält activeCrs/lastError nach.
      * @param {Object} context Store-Kontext.
      * @param {string} target Zielprojektion.
-     * @param {{dropExtent?: boolean}} [options] Weiter an swapView.
      * @returns {{ok: boolean, reason?: string, unchanged?: boolean, rebuilt?: boolean}} Ergebnis von swapView.
      */
-    function switchTo ({commit, dispatch, rootGetters}, target, {dropExtent = false} = {}) {
+    function switchTo ({commit, dispatch, rootGetters}, target) {
         const result = swapView({
             target,
             map: getMap(),
@@ -34,9 +32,7 @@ export function createActions ({swapView, getMap, View, ensureProjection, baseEx
             ensureProjection,
             getters: rootGetters,
             commit: (type, payload) => commit(type, payload, {root: true}),
-            dispatch: (type, payload) => dispatch(type, payload, {root: true}),
-            baseExtent: baseExtent(rootGetters),
-            dropExtent
+            dispatch: (type, payload) => dispatch(type, payload, {root: true})
         });
 
         if (result.ok) {
@@ -83,11 +79,10 @@ export function createActions ({swapView, getMap, View, ensureProjection, baseEx
         /**
          * Schaltet die View auf das lokale CRS, auch wenn das generische aktiv
          * ist (Kommunenwahl wie im Standalone). Die View danach hat keinen
-         * Extent (dropExtent): Ohne konfigurierten extent setzt die
-         * masterportalapi für die Start-View ihren Standard-Extent, der das
-         * Zentrum klemmen würde. Bei gleicher Projektion und View ohne Extent
-         * tauscht swapView nichts aus. Läuft synchron; der Rückgabewert kommt
-         * über Vuex-dispatch als Promise an, die Wirkung steht sofort im Store.
+         * Extent: Bei gleicher Projektion ersetzt swapView die Start-View
+         * (Deutschland-Extent) einmal, danach tauscht es nichts mehr aus.
+         * Läuft synchron; der Rückgabewert kommt über Vuex-dispatch als
+         * Promise an, die Wirkung steht sofort im Store.
          * @param {Object} context Store-Kontext.
          * @returns {{ok: boolean, reason?: string, unchanged?: boolean, rebuilt?: boolean}} Ergebnis.
          */
@@ -102,7 +97,7 @@ export function createActions ({swapView, getMap, View, ensureProjection, baseEx
                 commit("setLastError", "mode");
                 return {ok: false, reason: "mode"};
             }
-            return switchTo(context, state.localCrs, {dropExtent: true});
+            return switchTo(context, state.localCrs);
         }
     };
 }

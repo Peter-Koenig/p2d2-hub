@@ -109,10 +109,11 @@ describe("Portal-Konfiguration und Layer", () => {
     expect(cfg.portalConfig.map.zoomTo).toBeUndefined();
   });
 
-  // Kein extent: Er würde das Zentrum jeder anderen Kommune an den Rand des
-  // Start-Ausschnitts zwingen (README „Fachlayer und Kartenausschnitt“).
-  it("kein mapView.extent; startCenter, startZoomLevel und epsg bleiben", () => {
-    expect(mapView).not.toHaveProperty("extent");
+  // extent Deutschland mit Rand: Er gilt nur für die Start-View; ohne ihn
+  // setzt die masterportalapi ihren Standard-Extent (Raum Hamburg). Herleitung
+  // und Prüfung: masterportal-focus-extent.test.ts, README „Stage de1“.
+  it("mapView.extent Deutschland; startCenter, startZoomLevel und epsg bleiben", () => {
+    expect(mapView.extent).toEqual([222000, 5179000, 1000000, 6177000]);
     expect(mapView.startCenter).toEqual([356560, 5645282]);
     expect(mapView.epsg).toBe("EPSG:25832");
     const levels = mapView.options.map((o: any) => o.zoomLevel);

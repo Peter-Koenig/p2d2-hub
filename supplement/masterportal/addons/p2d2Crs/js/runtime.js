@@ -22,10 +22,5 @@ export default {
     swapView,
     View,
     ensureProjection,
-    getMap: () => window.mapCollection.getMap("2D"),
-    baseExtent: rootGetters => {
-        const {extent, epsg} = rootGetters.mapViewSettings ?? {};
-
-        return Array.isArray(extent) && epsg ? {extent, epsg} : undefined;
-    }
+    getMap: () => window.mapCollection.getMap("2D")
 };

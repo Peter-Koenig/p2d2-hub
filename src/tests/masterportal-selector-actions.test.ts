@@ -118,7 +118,7 @@ const makeWorld = (opts: Options = {}) => {
     world.view = makeView(target, log);
     return { ok: true, from, to: target };
   });
-  const crsActions: any = createCrsActions({ swapView, getMap: () => map, View: class {}, ensureProjection: () => true, baseExtent: () => undefined });
+  const crsActions: any = createCrsActions({ swapView, getMap: () => map, View: class {}, ensureProjection: () => true });
   const state: any = { ...baseState, selection: SELECTION, loadStatus: "ready", stage: STAGE, stageStatus: "ready" };
   const root: Record<string, any> = { "Maps/initialCenter": null, "Maps/initialZoom": 3 };
   const rootGetters: any = {

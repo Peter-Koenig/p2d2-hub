@@ -11,7 +11,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import proj4 from "proj4";
 import { register } from "ol/proj/proj4.js";
-import { transform, transformExtent } from "ol/proj.js";
+import { transform } from "ol/proj.js";
 import View from "ol/View.js";
 import Feature from "ol/Feature.js";
 import Point from "ol/geom/Point.js";
@@ -42,12 +42,12 @@ const OPTIONS: { resolution: number; scale: number; zoomLevel: number }[] = MAP_
 const RESOLUTIONS = OPTIONS.map((o) => o.resolution);
 // Die Portal-Konfiguration hat keinen extent mehr (E11b); buildViewOptions und
 // swapView unterstützen ihn weiter. Testwert: früherer Extent Stadtgebiet Köln.
+// Extent der Start-View im Test (Kölner Raum); swapView übernimmt ihn nie.
 const TEST_EXTENT = [343135, 5633285, 371269, 5660884];
-const BASE_EXTENT = { extent: TEST_EXTENT, epsg: MAP_VIEW.epsg };
 const KOELN = MAP_VIEW.startCenter as number[];
 
 beforeAll(() => {
-  for (const code of ["EPSG:25832", "EPSG:32737"]) proj4.defs(code, utmDefinition(code)!);
+  for (const code of ["EPSG:25832", "EPSG:25833", "EPSG:32737"]) proj4.defs(code, utmDefinition(code)!);
   register(proj4);
 });
 
@@ -135,7 +135,6 @@ describe("buildViewOptions", () => {
     options: OPTIONS,
     resolutions: RESOLUTIONS,
     backgroundImage: "resources/img/backgroundCanvas.jpeg",
-    baseExtent: BASE_EXTENT,
   };
 
   it("übernimmt Portal-Tabelle und Einrast-Verhalten der masterportalapi", () => {
@@ -153,14 +152,11 @@ describe("buildViewOptions", () => {
     expect(o.options).toEqual(OPTIONS);
   });
 
-  it("Extent wird aus der Portal-Projektion transformiert", () => {
-    const o = buildViewOptions(args);
-    expect(o.extent).toEqual(transformExtent(TEST_EXTENT, "EPSG:25832", "EPSG:3857"));
-    expect(buildViewOptions({ ...args, projection: "EPSG:25832" }).extent).toEqual(TEST_EXTENT);
-  });
-
-  it("ohne Basis-Extent kein Extent", () => {
-    expect(buildViewOptions({ ...args, baseExtent: undefined }).extent).toBeUndefined();
+  it("nie ein Extent, auch nicht mit einem zusätzlich übergebenen", () => {
+    expect(buildViewOptions(args)).not.toHaveProperty("extent");
+    const extra = { ...args, extent: TEST_EXTENT, baseExtent: { extent: TEST_EXTENT, epsg: "EPSG:25832" } };
+    expect(buildViewOptions(extra as any)).not.toHaveProperty("extent");
+    expect(new View(buildViewOptions(args)).get("extent")).toBeUndefined();
   });
 
   it("options wird zur View-Property (Maßstab, Scale-Switcher)", () => {
@@ -235,7 +231,6 @@ const setup = (overrides: Record<string, any> = {}) => {
     getters,
     commit: vi.fn((type: string) => log.push(`commit:${type}`)),
     dispatch: vi.fn((type: string) => log.push(`dispatch:${type}`)),
-    baseExtent: BASE_EXTENT,
     ...overrides,
   };
   return { deps, log, map, refresh, clusterRefresh, point, getOverlayPos: () => overlayPos, getters };
@@ -318,8 +313,10 @@ describe("swapView", () => {
     expect(log).toEqual([]);
   });
 
-  it("Ziel gleich aktueller Projektion: nichts passiert", () => {
-    const { deps, log } = setup({ target: "EPSG:25832" });
+  it("Ziel gleich aktueller Projektion, View ohne Extent: nichts passiert", () => {
+    const { deps, log, map } = setup({ target: "EPSG:25832" });
+    map.setView(makeView("EPSG:25832", { extent: undefined }));
+    log.length = 0;
     expect(swapView(deps as any)).toEqual({ ok: true, unchanged: true, from: "EPSG:25832", to: "EPSG:25832" });
     expect(log).toEqual([]);
   });
@@ -367,7 +364,7 @@ describe("swapView", () => {
   });
 });
 
-describe("swapView mit dropExtent (Kommunenwahl)", () => {
+describe("swapView: neue View ohne Extent", () => {
   it("hasExtent liest die View-Property extent", () => {
     expect(hasExtent(makeView())).toBe(true);
     expect(hasExtent(makeView("EPSG:25832", { extent: undefined }))).toBe(false);
@@ -375,7 +372,7 @@ describe("swapView mit dropExtent (Kommunenwahl)", () => {
   });
 
   it("gleiche Projektion mit Extent: neue View ohne Extent, Store neu verbunden, Layer und Marker unverändert", () => {
-    const { deps, log, map, refresh, point } = setup({ target: "EPSG:25832", dropExtent: true });
+    const { deps, log, map, refresh, point } = setup({ target: "EPSG:25832" });
     const old = map.getView();
     expect(swapView(deps as any)).toEqual({ ok: true, rebuilt: true, from: "EPSG:25832", to: "EPSG:25832" });
     const view = map.getView();
@@ -404,26 +401,17 @@ describe("swapView mit dropExtent (Kommunenwahl)", () => {
     expect(view.getCenter()).toEqual([700000, 5300000]);
   });
 
-  it("gleiche Projektion ohne Extent: nichts passiert", () => {
-    const { deps, log, map } = setup({ target: "EPSG:25832", dropExtent: true });
-    map.setView(makeView("EPSG:25832", { extent: undefined }));
-    log.length = 0;
-    expect(swapView(deps as any)).toEqual({ ok: true, unchanged: true, from: "EPSG:25832", to: "EPSG:25832" });
-    expect(log).toEqual([]);
-  });
-
-  it("andere Projektion: Extent der Portal-Konfiguration wird nicht übernommen", () => {
-    const { deps, map } = setup({ target: "EPSG:32737", dropExtent: true });
-    expect(swapView(deps as any)).toMatchObject({ ok: true, from: "EPSG:25832", to: "EPSG:32737" });
+  it.each(["EPSG:3857", "EPSG:25833", "EPSG:32737"])("andere Projektion (%s): Extent der alten View wird nicht übernommen", (target) => {
+    const { deps, map } = setup({ target });
+    expect(hasExtent(map.getView())).toBe(true);
+    expect(swapView(deps as any)).toMatchObject({ ok: true, from: "EPSG:25832", to: target });
     expect(map.getView().get("extent")).toBeUndefined();
   });
 
-  it("ohne dropExtent (toggle): Extent der Portal-Konfiguration bleibt, gleiche Projektion unverändert", () => {
-    const { deps, map } = setup();
+  it("Parameter baseExtent und dropExtent gibt es nicht mehr (werden ignoriert)", () => {
+    const { deps, map } = setup({ baseExtent: { extent: TEST_EXTENT, epsg: "EPSG:25832" }, dropExtent: false });
     swapView(deps as any);
-    expect(map.getView().get("extent")).toEqual(transformExtent(TEST_EXTENT, "EPSG:25832", "EPSG:3857"));
-    const { deps: same } = setup({ target: "EPSG:25832" });
-    expect(swapView(same as any)).toMatchObject({ unchanged: true });
+    expect(map.getView().get("extent")).toBeUndefined();
   });
 });
 
@@ -458,7 +446,7 @@ describe("Store-Aktionen (createActions mit Fakes)", () => {
   it("toggle schaltet um und setzt activeCrs nur bei Erfolg", async () => {
     const { createActions } = await load();
     const swap = vi.fn(() => ({ ok: true }));
-    const actions = createActions({ swapView: swap, getMap: () => ({}), View, ensureProjection: () => true, baseExtent: () => BASE_EXTENT });
+    const actions = createActions({ swapView: swap, getMap: () => ({}), View, ensureProjection: () => true });
     const ctx = context({ activeCrs: "EPSG:25832", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" });
     actions.toggle(ctx as any);
     expect(swap).toHaveBeenCalledWith(expect.objectContaining({ target: "EPSG:3857" }));
@@ -482,20 +470,20 @@ describe("Store-Aktionen (createActions mit Fakes)", () => {
       getMap: () => ({}),
       View,
       ensureProjection: () => true,
-      baseExtent: () => BASE_EXTENT,
     });
     const ctx = context({ activeCrs: "EPSG:25832", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" });
     actions.toggle(ctx as any);
     expect(ctx.commit).toHaveBeenCalledWith("Maps/setProjection", 1, { root: true });
     expect(ctx.dispatch).toHaveBeenCalledWith("Maps/removePointMarker", undefined, { root: true });
     expect(seen.getters).toBe(ctx.rootGetters);
-    expect(seen.baseExtent).toEqual(BASE_EXTENT);
+    expect(seen).not.toHaveProperty("baseExtent");
+    expect(seen).not.toHaveProperty("dropExtent");
   });
 
   it("toggle ohne lokales CRS oder in 3D tut nichts", async () => {
     const { createActions } = await load();
     const swap = vi.fn(() => ({ ok: true }));
-    const actions = createActions({ swapView: swap, getMap: () => ({}), View, ensureProjection: () => true, baseExtent: () => BASE_EXTENT });
+    const actions = createActions({ swapView: swap, getMap: () => ({}), View, ensureProjection: () => true });
     actions.toggle(context({ activeCrs: "EPSG:3857", localCrs: undefined, genericCrs: "EPSG:3857" }) as any);
     actions.toggle(context({ activeCrs: "EPSG:25832", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" }, "3D") as any);
     expect(swap).not.toHaveBeenCalled();
@@ -504,7 +492,7 @@ describe("Store-Aktionen (createActions mit Fakes)", () => {
   it("setLocalCrs registriert die Zone und setzt localCrs", async () => {
     const { createActions } = await load();
     const ensure = vi.fn(() => true);
-    const actions = createActions({ swapView: vi.fn(), getMap: () => ({}), View, ensureProjection: ensure, baseExtent: () => BASE_EXTENT });
+    const actions = createActions({ swapView: vi.fn(), getMap: () => ({}), View, ensureProjection: ensure });
     const ctx = context({ activeCrs: "EPSG:25832", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" });
     expect(actions.setLocalCrs(ctx as any, "EPSG:32737")).toBe(true);
     expect(ensure).toHaveBeenCalledWith("EPSG:32737");
@@ -513,7 +501,7 @@ describe("Store-Aktionen (createActions mit Fakes)", () => {
 
   it("setLocalCrs lehnt Nicht-UTM und fehlgeschlagene Registrierung ab", async () => {
     const { createActions } = await load();
-    const actions = createActions({ swapView: vi.fn(), getMap: () => ({}), View, ensureProjection: () => false, baseExtent: () => BASE_EXTENT });
+    const actions = createActions({ swapView: vi.fn(), getMap: () => ({}), View, ensureProjection: () => false });
     const ctx = context({ activeCrs: "EPSG:25832", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" });
     expect(actions.setLocalCrs(ctx as any, "EPSG:3857")).toBe(false);
     expect(actions.setLocalCrs(ctx as any, "EPSG:32737")).toBe(false);
@@ -523,10 +511,10 @@ describe("Store-Aktionen (createActions mit Fakes)", () => {
   it("activateLocal, andere Projektion: Austausch auf localCrs, activeCrs lokal", async () => {
     const { createActions } = await load();
     const swap = vi.fn(() => ({ ok: true, from: "EPSG:3857", to: "EPSG:25833" }));
-    const actions = createActions({ swapView: swap, getMap: () => ({}), View, ensureProjection: () => true, baseExtent: () => undefined });
+    const actions = createActions({ swapView: swap, getMap: () => ({}), View, ensureProjection: () => true });
     const ctx = context({ activeCrs: "EPSG:3857", localCrs: "EPSG:25833", genericCrs: "EPSG:3857", lastError: "x" });
     expect(actions.activateLocal(ctx as any)).toEqual({ ok: true, from: "EPSG:3857", to: "EPSG:25833" });
-    expect(swap).toHaveBeenCalledWith(expect.objectContaining({ target: "EPSG:25833", baseExtent: undefined }));
+    expect(swap).toHaveBeenCalledWith(expect.objectContaining({ target: "EPSG:25833" }));
     expect(ctx.state.activeCrs).toBe("EPSG:25833");
     expect(ctx.commit).toHaveBeenCalledWith("setLastError", null);
   });
@@ -537,7 +525,7 @@ describe("Store-Aktionen (createActions mit Fakes)", () => {
     map.setView(makeView("EPSG:25832", { extent: undefined }));
     map.setView.mockClear();
     log.length = 0;
-    const actions = createActions({ swapView, getMap: () => map, View, ensureProjection: () => true, baseExtent: () => undefined });
+    const actions = createActions({ swapView, getMap: () => map, View, ensureProjection: () => true });
     const ctx = context({ activeCrs: "EPSG:25832", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" });
     ctx.rootGetters = { ...deps.getters } as any;
     expect(actions.activateLocal(ctx as any)).toEqual({ ok: true, unchanged: true, from: "EPSG:25832", to: "EPSG:25832" });
@@ -550,7 +538,7 @@ describe("Store-Aktionen (createActions mit Fakes)", () => {
     const { createActions } = await load();
     const { deps, map } = setup({ target: "EPSG:25832" });
     const old = map.getView();
-    const actions = createActions({ swapView, getMap: () => map, View, ensureProjection: () => true, baseExtent: () => BASE_EXTENT });
+    const actions = createActions({ swapView, getMap: () => map, View, ensureProjection: () => true });
     const ctx = context({ activeCrs: "EPSG:25832", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" });
     ctx.rootGetters = { ...deps.getters } as any;
     expect(actions.activateLocal(ctx as any)).toEqual({ ok: true, rebuilt: true, from: "EPSG:25832", to: "EPSG:25832" });
@@ -560,21 +548,40 @@ describe("Store-Aktionen (createActions mit Fakes)", () => {
     expect(map.getView().getCenter()).toEqual([700000, 5300000]);
   });
 
-  it("activateLocal übergibt dropExtent, toggle nicht", async () => {
+  it("activateLocal und toggle rufen swapView mit denselben Angaben (ohne Extent-Optionen)", async () => {
     const { createActions } = await load();
     const swap = vi.fn(() => ({ ok: true }));
-    const actions = createActions({ swapView: swap, getMap: () => ({}), View, ensureProjection: () => true, baseExtent: () => BASE_EXTENT });
+    const actions = createActions({ swapView: swap, getMap: () => ({}), View, ensureProjection: () => true });
     actions.activateLocal(context({ activeCrs: "EPSG:3857", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" }) as any);
     actions.toggle(context({ activeCrs: "EPSG:25832", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" }) as any);
     const calls = swap.mock.calls as unknown as Record<string, unknown>[][];
-    expect(calls[0][0]).toMatchObject({ target: "EPSG:25832", dropExtent: true });
-    expect(calls[1][0]).toMatchObject({ target: "EPSG:3857", dropExtent: false, baseExtent: BASE_EXTENT });
+    expect(calls[0][0]).toMatchObject({ target: "EPSG:25832" });
+    expect(calls[1][0]).toMatchObject({ target: "EPSG:3857" });
+    expect(Object.keys(calls[0][0]).sort()).toEqual(Object.keys(calls[1][0]).sort());
+    for (const c of calls) {
+      expect(c[0]).not.toHaveProperty("baseExtent");
+      expect(c[0]).not.toHaveProperty("dropExtent");
+    }
+  });
+
+  it("toggle, echter swapView ab einer View mit Extent: neue View ohne Extent", async () => {
+    const { createActions } = await load();
+    const { deps, map } = setup();
+    const actions = createActions({ swapView, getMap: () => map, View, ensureProjection: () => true });
+    const ctx = context({ activeCrs: "EPSG:25832", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" });
+    ctx.rootGetters = { ...deps.getters } as any;
+    actions.toggle(ctx as any);
+    expect(map.getView().getProjection().getCode()).toBe("EPSG:3857");
+    expect(map.getView().get("extent")).toBeUndefined();
+    actions.toggle(ctx as any);
+    expect(map.getView().getProjection().getCode()).toBe("EPSG:25832");
+    expect(map.getView().get("extent")).toBeUndefined();
   });
 
   it("activateLocal, echter swapView auf eine andere Zone: View in localCrs", async () => {
     const { createActions } = await load();
     const { deps, map } = setup();
-    const actions = createActions({ swapView, getMap: () => map, View, ensureProjection: () => true, baseExtent: () => undefined });
+    const actions = createActions({ swapView, getMap: () => map, View, ensureProjection: () => true });
     const ctx = context({ activeCrs: "EPSG:25832", localCrs: "EPSG:32737", genericCrs: "EPSG:3857" });
     ctx.rootGetters = { ...deps.getters } as any;
     expect(actions.activateLocal(ctx as any)).toMatchObject({ ok: true, from: "EPSG:25832", to: "EPSG:32737" });
@@ -588,7 +595,7 @@ describe("Store-Aktionen (createActions mit Fakes)", () => {
   it("activateLocal in 3D oder ohne localCrs: kein Austausch, lastError", async () => {
     const { createActions } = await load();
     const swap = vi.fn(() => ({ ok: true }));
-    const actions = createActions({ swapView: swap, getMap: () => ({}), View, ensureProjection: () => true, baseExtent: () => undefined });
+    const actions = createActions({ swapView: swap, getMap: () => ({}), View, ensureProjection: () => true });
     const ctx3d = context({ activeCrs: "EPSG:25832", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" }, "3D");
     expect(actions.activateLocal(ctx3d as any)).toEqual({ ok: false, reason: "mode" });
     const none = context({ activeCrs: "EPSG:25832", localCrs: undefined, genericCrs: "EPSG:3857" });
@@ -605,7 +612,6 @@ describe("Store-Aktionen (createActions mit Fakes)", () => {
       getMap: () => ({}),
       View,
       ensureProjection: () => true,
-      baseExtent: () => undefined,
     });
     const ctx = context({ activeCrs: "EPSG:3857", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" });
     expect(actions.activateLocal(ctx as any)).toEqual({ ok: false, reason: "projection" });

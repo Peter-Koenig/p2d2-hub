@@ -9,7 +9,7 @@
 // Karte, View-Klasse, Store und Registrierung werden injiziert; ol/proj und
 // ol/functions sind die einzigen festen Importe.
 
-import {getPointResolution, transform, transformExtent} from "ol/proj.js";
+import {getPointResolution, transform} from "ol/proj.js";
 import {VOID} from "ol/functions.js";
 
 /**
@@ -69,7 +69,8 @@ export function snapResolution (resolution, resolutions) {
 /**
  * View-Optionen wie masterportalapi createMapView (src/maps/mapView.js):
  * options wird zur View-Property (Maßstab im Store, Scale-Switcher),
- * Einrasten auf die Tabelle, Extent begrenzt nur das Zentrum.
+ * Einrasten auf die Tabelle. Ohne Extent: Der Extent der Portal-Konfiguration
+ * gilt nur für die Start-View (README „p2d2Crs“, Extent-Regel).
  * @param {Object} args Eingaben.
  * @param {string} args.projection Zielprojektion.
  * @param {number[]} args.center Zentrum in der Zielprojektion.
@@ -78,20 +79,14 @@ export function snapResolution (resolution, resolutions) {
  * @param {Object[]} args.options Portal-Tabelle (resolution, scale, zoomLevel).
  * @param {number[]} args.resolutions Auflösungen der Tabelle.
  * @param {string} [args.backgroundImage] Hintergrundbild der View.
- * @param {{extent: number[], epsg: string}} [args.baseExtent] Extent der Portal-Konfiguration.
  * @returns {Record<string, any>} Optionen für new View().
  */
-export function buildViewOptions ({projection, center, resolution, rotation, options, resolutions, backgroundImage, baseExtent}) {
-    const extent = Array.isArray(baseExtent?.extent) && baseExtent.epsg
-        ? transformExtent(baseExtent.extent, baseExtent.epsg, projection)
-        : undefined;
-
+export function buildViewOptions ({projection, center, resolution, rotation, options, resolutions, backgroundImage}) {
     return {
         projection,
         center,
         resolution,
         rotation,
-        extent,
         options,
         resolutions,
         constrainResolution: true,
@@ -160,8 +155,11 @@ export function hasExtent (view) {
 
 /**
  * Tauscht die View der 2D-Karte gegen eine View in der Zielprojektion.
+ * Die neue View hat nie einen Extent. Bei gleicher Projektion wird die View
+ * nur ersetzt, wenn sie einen Extent hat (Start-View); die Koordinaten
+ * bleiben gültig, Schritte 7 und 8 entfallen.
  * Schritte (README „Projektions-Switch“):
- *  0 nur 2D, nicht bei gleicher Projektion (Ausnahme dropExtent)
+ *  0 nur 2D; gleiche Projektion nur bei View mit Extent
  *  1 Projektion sicherstellen
  *  2–5 neue View mit Portal-Tabelle, Austausch, Prüfung, sonst Rollback
  *  6 Store Maps und View-Listener neu verbinden
@@ -175,13 +173,9 @@ export function hasExtent (view) {
  * @param {Object} deps.getters Root-Getter des Masterportal-Stores.
  * @param {function(string, *): void} deps.commit Root-Commit.
  * @param {function(string, *=): void} deps.dispatch Root-Dispatch.
- * @param {{extent: number[], epsg: string}} [deps.baseExtent] Extent der Portal-Konfiguration.
- * @param {boolean} [deps.dropExtent=false] Neue View ohne Extent. Bei gleicher
- *   Projektion wird die View nur ersetzt, wenn sie einen Extent hat; die
- *   Koordinaten bleiben gültig, Schritte 7 und 8 entfallen.
  * @returns {{ok: boolean, reason?: string, unchanged?: boolean, rebuilt?: boolean, from?: string, to?: string, error?: Error}} Ergebnis.
  */
-export function swapView ({target, map, View, ensureProjection, getters, commit, dispatch, baseExtent, dropExtent = false}) {
+export function swapView ({target, map, View, ensureProjection, getters, commit, dispatch}) {
     if (getters["Maps/mode"] !== "2D") {
         return {ok: false, reason: "mode"};
     }
@@ -189,7 +183,7 @@ export function swapView ({target, map, View, ensureProjection, getters, commit,
         from = oldView.getProjection().getCode(),
         rebuilt = from === target;
 
-    if (rebuilt && !(dropExtent && hasExtent(oldView))) {
+    if (rebuilt && !hasExtent(oldView)) {
         return {ok: true, unchanged: true, from, to: target};
     }
     if (!ensureProjection(target)) {
@@ -213,8 +207,7 @@ export function swapView ({target, map, View, ensureProjection, getters, commit,
             rotation: oldView.getRotation(),
             options: oldView.get("options"),
             resolutions,
-            backgroundImage: oldView.get("backgroundImage"),
-            baseExtent: dropExtent ? undefined : baseExtent
+            backgroundImage: oldView.get("backgroundImage")
         }));
         map.setView(newView);
     }

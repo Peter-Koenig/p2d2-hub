@@ -230,27 +230,28 @@ Klicks mehr auswerten (`Menu/currentMouseMapInteractionsComponent`).
 
 `setLocalCrs(code)` registriert eine UTM-Zone bei Bedarf und setzt `localCrs`,
 ohne die View zu ändern. `activateLocal` schaltet die View auf `localCrs`
-(`swapView` mit `dropExtent`) und setzt `activeCrs`. Beide ruft der
-`p2d2Selector` bei der Kommunenwahl auf.
+(`swapView`) und setzt `activeCrs`. Beide ruft der `p2d2Selector` bei der
+Kommunenwahl auf.
 
-**Regel: Nach der Kommunenwahl hat die View keinen Extent.** Ohne `extent` in
-`mapView` legt die masterportalapi die Start-View mit ihrem Standard-Extent
-`[510000, 5850000, 625000.4, 6000000]` (EPSG:25832, Raum Hamburg) an
-(`src/defaults.js:11`, `src/maps/mapView.js:38-55`, `Object.assign` über die
-Standardwerte). `constrainOnlyCenter` klemmt das Zentrum in dieses Rechteck;
-schon das Startzentrum Köln landet an dessen Ecke bei 9,15° E / 52,80° N.
-`activateLocal` übergibt deshalb `dropExtent: true`:
+**Extent-Regel: Nur die Start-View hat einen Extent.**
 
-- andere Projektion: neue View ohne Extent (auch wenn die Portal-Konfiguration
-  einen hat);
-- gleiche Projektion und die View hat einen Extent (View-Property `extent`,
-  `ol/View` übernimmt Konstruktor-Optionen als Properties): die View wird in
-  derselben Projektion neu gebaut, Schritte 0–6, ohne 7 und 8 (Koordinaten
-  bleiben gültig), Ergebnis `rebuilt: true`;
-- gleiche Projektion ohne Extent: nichts passiert.
-
-`toggle` übergibt `dropExtent` nicht; dort gilt weiter der Extent der
-Portal-Konfiguration (Schritt 3).
+- **Start-View:** `mapView.extent` ist Deutschland mit Rand in EPSG:25832
+  (Herleitung unter „Stage de1“). Die masterportalapi baut die Start-View mit
+  `Object.assign` über ihre Standardwerte (`src/defaults.js:11`,
+  `src/maps/mapView.js:38-55`). Fehlt `extent`, gilt ihr Standard-Extent
+  `[510000, 5850000, 625000.4, 6000000]` (Raum Hamburg); `constrainOnlyCenter`
+  klemmt dann schon das Startzentrum Köln an dessen Ecke (9,15° E / 52,80° N).
+- **Jede View aus `swapView` hat keinen Extent**, bei der Kommunenwahl wie beim
+  Umschalter (`toggle`). Ein Extent der Portal-Konfiguration wird nicht in
+  andere Zonen transformiert: in 32610, 32650 und 32651 läge er weit außerhalb
+  der Zone, und nach 3857 würde er auf Europa klemmen.
+- **Kommunenwahl in derselben Projektion wie die Start-View:** `swapView`
+  baut die View einmal neu, wenn sie einen Extent hat (View-Property `extent`,
+  `ol/View` übernimmt Konstruktor-Optionen als Properties). Schritte 0–6
+  laufen, 7 und 8 entfallen (Koordinaten bleiben gültig), Ergebnis
+  `rebuilt: true`. Ohne Extent passiert nichts. So hat die View nach jeder
+  Kommunenwahl keinen Extent, unabhängig von Zone und Reihenfolge, und lässt
+  sich wie im Standalone frei verschieben.
 
 #### Ablauf `swapView`
 
@@ -259,7 +260,7 @@ Das Masterportal 3.27.1 kann die Projektion zur Laufzeit nicht wechseln
 `swapView` ersetzt deshalb die View und verbindet danach neu:
 
 0. Nur bei `Maps/mode === "2D"` und wenn das Ziel nicht schon aktiv ist.
-   Ausnahme `dropExtent` bei einer View mit Extent (siehe Regel oben).
+   Ausnahme: gleiche Projektion bei einer View mit Extent (Extent-Regel oben).
 1. Projektion sicherstellen: UTM-Zonen ohne proj4-Definition über
    masterportalapi `crs.registerProjections` (proj4, OL, GeoServer-Alias,
    Kennung für das Koordinatenwerkzeug). `EPSG:3857` ist in ol und proj4
@@ -270,8 +271,7 @@ Das Masterportal 3.27.1 kann die Projektion zur Laufzeit nicht wechseln
    wie OL `constrainResolution`). In Köln ist 1 m/px in UTM etwa 1,59 m/px in 3857.
 3. Neue View wie masterportalapi `createMapView`: dieselbe Tabelle `options`
    (wird View-Property) und `resolutions`, `constrainResolution`,
-   `constrainOnlyCenter`, `backgroundImage`, Extent der Portal-Konfiguration
-   in die Zielprojektion transformiert (mit `dropExtent` keiner), Zentrum
+   `constrainOnlyCenter`, `backgroundImage`, kein Extent, Zentrum
    transformiert, Rotation erhalten.
 4. `map.setView`; übernimmt die Karte die View nicht oder wirft der Aufbau,
    wird die alte View zurückgesetzt.
@@ -328,11 +328,13 @@ Andere Teile lesen die View bei jedem Zugriff über `mapCollection.getMapView("2
 - `src/tests/masterportal-crs-utm.test.ts`: UTM-Codes, Definitionen, Registrierung.
 - `src/tests/masterportal-crs-viewswap.test.ts`: Ziel, Bodenauflösung,
   Einrasten (abgeglichen mit dem OL-Konstruktor), View-Optionen, `swapView`
-  mit Fakes (Reihenfolge, Rollback, 3D, refresh/transform, `dropExtent`),
-  Store-Aktionen.
+  mit Fakes (Reihenfolge, Rollback, 3D, refresh/transform, Neubau bei
+  gleicher Projektion, kein Extent in neuen Views), Store-Aktionen.
 - `src/tests/masterportal-focus-extent.test.ts`: Start-View wie masterportalapi
-  `createMapView` (Standard-Extent), Kommunenwahl mit echter View, echtem
-  `swapView` und beiden Add-ons in fünf UTM-Zonen, Reihenfolgen.
+  `createMapView` mit dem Deutschland-Extent (Abdeckung, kein Klemmen bei
+  `animate`, Gegenprobe mit Standard-Extent), Kommunenwahl mit echter View,
+  echtem `swapView` und beiden Add-ons in fünf UTM-Zonen, Reihenfolgen,
+  `toggle` ab Start-View und nach der Wahl.
 - `src/tests/masterportal-supplement.test.ts`: Registrierung, Menüposition,
   Isolation, kein `hasMouseMapInteractions`.
 - `src/tests/masterportal-editor-contract.test.ts`: Editor-URL bleibt bei 3857 UTM.
@@ -422,13 +424,16 @@ Kronshagen (14) → Stufe 4.
 Mit `?p2d2debug=1` in der Portal-URL schreibt der Selektor per
 `console.debug` mit dem Präfix `[p2d2Selector]`: Signatur, Request-URL,
 HTTP-Status, Zahl der Features, View-Projektion, Auflösung und Zentrum nach
-der Animation. Ohne den Parameter gibt es keine Ausgabe.
+der Animation. Ohne den Parameter gibt es keine Ausgabe. Die Start-View
+(vor der ersten Wahl) erzeugt kein Ereignis; ihr Extent steht in der Konsole
+unter `mapCollection.getMap("2D").getView().get("extent")` (erwartet: der
+Deutschland-Extent aus `mapView.extent`).
 
 | Ereignis | Inhalt |
 |---|---|
 | `selection` | `signature` |
 | `focus` | `slug`, `projection`, `zoom`, `zoomResolution` (vor dem Einrasten, Köln 76,35), `stage`, `resolution` (Stufe, Köln 52,92), `center` |
-| `view` | nach der Animation: `projection`, `resolution`, `center`, `extent` der View (View-Property, ohne Extent `null`) |
+| `view` | nach der Animation: `projection`, `resolution`, `center`, `extent` der View (View-Property, ohne Extent `null`; nach jeder Kommunenwahl `null`, ein Wert verletzt die Extent-Regel) |
 | `load` | `signature`, `url`, `cql` |
 | `request` / `response` / `features` | URL und Projektion des Loader-Aufrufs, HTTP-Status, Zahl der Features |
 
@@ -474,14 +479,22 @@ der Animation. Ohne den Parameter gibt es keine Ausgabe.
   Style `p2d2_friedhof` in `style_v3.json`, GFI aus (Klicks behandelt der
   `p2d2FeatureEditor`). In `layerConfig` ist der Layer sichtbar, sonst entsteht
   kein OL-Layer.
-- Kartenausschnitt: `startCenter` Kölner Dom auf Stufe 3, **ohne `extent`**.
-  Ein Extent begrenzt in OpenLayers das Kartenzentrum; mit dem früheren
-  Köln-Extent landeten alle anderen Kommunen an dessen Rand (Report 017 E).
-  Ohne `extent` setzt die masterportalapi aber ihren Standard-Extent (Raum
-  Hamburg) für die Start-View; bis zur ersten Kommunenwahl steht die Karte
-  deshalb an dessen Ecke (9,15° E / 52,80° N), nicht in Köln. Nach der
-  Kommunenwahl hat die View keinen Extent und lässt sich wie im Standalone
-  frei verschieben (Regel unter „p2d2Crs“).
+- Kartenausschnitt: `startCenter` Kölner Dom auf Stufe 3, `extent`
+  `[222000, 5179000, 1000000, 6177000]` (EPSG:25832, Deutschland mit Rand).
+  - Herleitung: Rechteck der Extrempunkte Deutschlands in WGS84
+    (5,8663–15,0419° E, 47,2701–55,0581° N) mit 0,5° Rand, der Rand mit je
+    200 Punkten nach EPSG:25832 transformiert, Umgebungsrechteck auf volle
+    Kilometer nach außen gerundet.
+  - Der Extent gilt nur für die Start-View: Er hält das Zentrum über
+    Deutschland und ersetzt den Standard-Extent der masterportalapi (Raum
+    Hamburg). Ein Extent begrenzt in OpenLayers das Kartenzentrum; mit dem
+    früheren Köln-Extent landeten alle anderen Kommunen an dessen Rand
+    (Report 017 E).
+  - Nach der Kommunenwahl und nach `toggle` hat die View keinen Extent und
+    lässt sich wie im Standalone frei verschieben (Extent-Regel unter
+    „p2d2Crs“).
+  - Auch `addWMS` liest `mapViewSettings.extent`: Es prüft, ob ein externer
+    WMS den Ausschnitt abdeckt (`AddWMS.vue:138`).
 
 **Feste Hostnamen:** `geoportal.udp.data-dna.eu` steht fest in
 `services-p2d2.json` (MapProxy-URL) und in `p2d2-editor-config.json`
