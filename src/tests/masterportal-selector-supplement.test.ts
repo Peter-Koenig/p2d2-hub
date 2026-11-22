@@ -192,9 +192,11 @@ describe("addons/p2d2Selector: Kacheln", () => {
     expect(template).not.toMatch(/p2d2-summary|\.current|\.none|featureCount|summary/);
   });
 
-  it("A5: Raster mit auto-fill und Mindestbreite 10rem", () => {
-    expect(style).toMatch(/grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(var\(--p2d2-tile-min-width\),\s*1fr\)\)/);
-    expect(style).toMatch(/--p2d2-tile-min-width:\s*10rem/);
+  it("A5: Rückfall ohne Container Queries: auto-fill mit Mindestbreite 13rem", () => {
+    expect(style).toMatch(
+      /\.p2d2-grid\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(var\(--p2d2-tile-fallback-min-width\),\s*1fr\)\)/,
+    );
+    expect(style).toMatch(/--p2d2-tile-fallback-min-width:\s*13rem/);
   });
 
   it("A6: Streifen der Kategorien in der Farbe des Standalone (Kategorien.astro)", () => {
@@ -224,6 +226,80 @@ describe("addons/p2d2Selector: Kacheln", () => {
     expect(template.match(/@error="imageFailed/g)).toHaveLength(2);
     expect(style).toMatch(/object-fit:\s*cover/);
     expect(style).toContain("--p2d2-tile-fallback: #2a2a2a");
-    expect(style).toMatch(/--p2d2-tile-height:\s*(7|7\.5|8|8\.5|9)rem/);
+  });
+});
+
+// Teil A (Turn 032): Spalten nach Breite des Selektors (Container Queries),
+// höchstens drei; Kachelhöhe wächst mit der Breite; Abstand der Überschriften.
+describe("addons/p2d2Selector: Spalten und Überschriften", () => {
+  const vue = read(join(DIR, "components/P2d2Selector.vue"));
+  const template = vue.slice(vue.indexOf("<template>"), vue.lastIndexOf("</template>"));
+  const style = stripAll(vue.slice(vue.indexOf("<style scoped>")));
+  const REM = 16; // Masterportal: Basisgröße 16 px (variables.scss)
+  const MENU_SHARE = 0.25; // mainMenu, Startbreite 25 % (MenuContainer.vue)
+  const MENU_PADDING = 2 * 1.5 * REM; // MenuContainerBody.vue, $padding links und rechts
+
+  // @container p2d2-selector (min-width: Xrem) { .p2d2-grid { grid-template-columns: ... } }
+  const rules = [...style.matchAll(
+    /@container\s+p2d2-selector\s+\(min-width:\s*([\d.]+)(rem)?\)\s*\{\s*\.p2d2-grid\s*\{\s*grid-template-columns:\s*([^;]+);\s*\}\s*\}/g,
+  )].map((m) => {
+    const value = m[3].trim(),
+      n = value === "minmax(0, 1fr)" ? 1 : Number(value.match(/^repeat\((\d+),\s*minmax\(0,\s*1fr\)\)$/)?.[1]);
+    return { minPx: Number(m[1]) * (m[2] ? REM : 1), columns: n };
+  });
+  const columnsAt = (contentPx: number): number =>
+    rules.filter((r) => contentPx >= r.minPx).reduce((acc, r) => (r.minPx >= acc.minPx ? r : acc), { minPx: -1, columns: NaN }).columns;
+  const contentWidth = (windowPx: number) => windowPx * MENU_SHARE - MENU_PADDING;
+
+  it("A1: #p2d2-selector ist Container (inline-size, Name p2d2-selector)", () => {
+    expect(style).toMatch(/#p2d2-selector\s*\{[^}]*container-type:\s*inline-size;/);
+    expect(style).toMatch(/#p2d2-selector\s*\{[^}]*container-name:\s*p2d2-selector;/);
+  });
+
+  it("A1: drei Container-Regeln für eine, zwei und drei Spalten, jede Spaltenzahl einmal", () => {
+    expect(rules.map((r) => r.columns).sort()).toEqual([1, 2, 3]);
+    expect(rules.find((r) => r.columns === 1)?.minPx).toBe(0);
+  });
+
+  it.each([
+    [1366, 1],
+    [1920, 2],
+    [2560, 3],
+    [3440, 3],
+    [7680, 3],
+  ])("A1: Fenster %i px bei Menübreite 25 Prozent: %i Spalte(n)", (windowPx, expected) => {
+    expect(columnsAt(contentWidth(windowPx))).toBe(expected);
+  });
+
+  it("A1: Kacheln mindestens 10rem breit, sobald zwei oder drei Spalten gelten", () => {
+    for (const r of rules.filter((x) => x.columns > 1)) {
+      const tile = (r.minPx - (r.columns - 1) * 0.5 * REM) / r.columns;
+      expect(tile, `${r.columns} Spalten ab ${r.minPx}px`).toBeGreaterThanOrEqual(10 * REM);
+    }
+  });
+
+  it("A1: Höhe aus Seitenverhältnis 4/3 der Bilder, zwischen 8rem und 12rem, keine feste Höhe", () => {
+    const tile = style.match(/\.p2d2-tile\s*\{([^}]*)\}/)?.[1] ?? "";
+    expect(tile).toMatch(/aspect-ratio:\s*4\s*\/\s*3;/);
+    expect(tile).toMatch(/min-height:\s*var\(--p2d2-tile-min-height\);/);
+    expect(tile).toMatch(/max-height:\s*var\(--p2d2-tile-max-height\);/);
+    expect(tile).not.toMatch(/(^|[^-])height:\s*var\(--p2d2-tile-height\)/);
+    expect(style).toMatch(/--p2d2-tile-min-height:\s*8rem/);
+    expect(style).toMatch(/--p2d2-tile-max-height:\s*12rem/);
+  });
+
+  it("A1: Titel weiterhin auf zwei Zeilen begrenzt", () => {
+    expect(style).toMatch(/\.p2d2-tile-title\s*\{[^}]*-webkit-line-clamp:\s*2;/);
+  });
+
+  it("A2: beide Überschriften mit p2d2-heading und Abstand 1rem zu den Kacheln", () => {
+    expect(template.match(/<h2 class="h6 p2d2-heading">/g)).toHaveLength(2);
+    expect(style).toMatch(/\.p2d2-heading\s*\{[^}]*margin-bottom:\s*var\(--p2d2-heading-gap\);/);
+    expect(style).toMatch(/--p2d2-heading-gap:\s*1rem/);
+  });
+
+  it("A2: Abstand zwischen den Abschnitten unverändert (gap-3 am Selektor)", () => {
+    expect(template).toMatch(/id="p2d2-selector"\s+class="d-flex flex-column gap-3"/);
+    expect(style).not.toMatch(/section\s*\{|margin-top/);
   });
 });

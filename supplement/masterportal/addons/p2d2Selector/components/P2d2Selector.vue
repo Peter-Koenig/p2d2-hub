@@ -114,7 +114,7 @@ export default {
 
         <template v-else-if="selection">
             <section>
-                <h2 class="h6">
+                <h2 class="h6 p2d2-heading">
                     {{ $t("additional:modules.p2d2Selector.kommunen") }}
                 </h2>
                 <div class="p2d2-grid">
@@ -141,7 +141,7 @@ export default {
                 </div>
             </section>
             <section>
-                <h2 class="h6">
+                <h2 class="h6 p2d2-heading">
                     {{ $t("additional:modules.p2d2Selector.kategorien") }}
                 </h2>
                 <div class="p2d2-grid">
@@ -176,11 +176,18 @@ export default {
  * Kategorien.astro): Kommunen Streifen colorStripe (Standard #FF6900), Verlauf
  * color-mix(colorStripe 35 %, schwarz), Schein rgba(255, 105, 0, 0.3);
  * Kategorien Streifen #0FF078, Verlauf #074220f5, Schein #0a6630.
- * Spalten: Mindestbreite 10rem (README, Abschnitt „p2d2Selector“).
+ * Spalten nach der Breite des Selektors, nicht des Fensters (Container
+ * Queries): eine, zwei ab 20.5rem, drei ab 31rem (je mindestens 10rem breit),
+ * nie mehr als drei. Rechnung je Fensterbreite: README, Abschnitt „p2d2Selector“.
  */
 #p2d2-selector {
-    --p2d2-tile-min-width: 10rem;
-    --p2d2-tile-height: 8rem;
+    container-type: inline-size;
+    container-name: p2d2-selector;
+    --p2d2-tile-fallback-min-width: 13rem;
+    --p2d2-tile-gap: 0.5rem;
+    --p2d2-tile-min-height: 8rem;
+    --p2d2-tile-max-height: 12rem;
+    --p2d2-heading-gap: 1rem;
     --p2d2-tile-radius: 0.5rem;
     --p2d2-tile-fallback: #2a2a2a;
     --p2d2-stripe-height: 0.375rem;
@@ -192,17 +199,48 @@ export default {
     --p2d2-focus: #0d6efd;
 }
 
-.p2d2-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(var(--p2d2-tile-min-width), 1fr));
-    gap: 0.5rem;
+/* Abstand Überschrift → Kacheln; der Abstand zwischen den Abschnitten bleibt gap-3. */
+.p2d2-heading {
+    margin-bottom: var(--p2d2-heading-gap);
 }
 
+/*
+ * Rückfall für Browser ohne Container Queries: so viele Spalten, wie 13rem breit
+ * passen (bei 25 % Menübreite drei Spalten erst ab 2752 px Fensterbreite).
+ */
+.p2d2-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--p2d2-tile-fallback-min-width), 1fr));
+    gap: var(--p2d2-tile-gap);
+}
+
+/* min-width: 0 trifft immer zu, sobald Container Queries unterstützt werden. */
+@container p2d2-selector (min-width: 0) {
+    .p2d2-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@container p2d2-selector (min-width: 20.5rem) {
+    .p2d2-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@container p2d2-selector (min-width: 31rem) {
+    .p2d2-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* Höhe wächst mit der Spaltenbreite (Bilder 4:3), begrenzt auf 8rem bis 12rem. */
 .p2d2-tile {
     position: relative;
     display: flex;
     align-items: flex-end;
-    height: var(--p2d2-tile-height);
+    aspect-ratio: 4 / 3;
+    min-height: var(--p2d2-tile-min-height);
+    max-height: var(--p2d2-tile-max-height);
     padding: 0;
     overflow: hidden;
     border: 0;

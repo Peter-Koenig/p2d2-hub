@@ -383,7 +383,9 @@ Tailwind: scoped CSS in `components/P2d2Selector.vue`, Farben und Maße als
 CSS-Variablen an `#p2d2-selector`.
 
 - **Kachel:** Bild (`object-fit: cover`, `loading="lazy"`), Verlauf nach unten,
-  Farbstreifen oben, Titel unten, Höhe 8rem. Fehlt das Bild oder lädt es
+  Farbstreifen oben, Titel unten (höchstens zwei Zeilen). Höhe aus dem
+  Seitenverhältnis 4:3 der Bilder (800 × 600), begrenzt auf 8rem bis 12rem.
+  Fehlt das Bild oder lädt es
   nicht, bleibt der dunkle Hintergrund `#2a2a2a` (wie `onerror` im Standalone).
 - **Farben aus dem Standalone:** Kommunen Streifen `colorStripe` (Standard
   `#FF6900`), Schein `rgba(255, 105, 0, 0.3)`; Kategorien Streifen `#0FF078`,
@@ -391,11 +393,33 @@ CSS-Variablen an `#p2d2-selector`.
 - **Aktiv** (`aria-pressed="true"`): Schlagschatten in der Streifenfarbe (3px)
   plus Schein. Der Fokus-Ring (`:focus-visible`, 2px, Abstand 5px) liegt
   außerhalb davon.
-- **Spalten:** `repeat(auto-fill, minmax(10rem, 1fr))`, Abstand 0,5rem. Der
-  Inhalt des Menüs ist um 2 × 1,5rem Innenabstand schmaler als das Menü
-  (`MenuContainerBody.vue`, `$padding`). Bei 25 % Menübreite: 2560 px → 592 px
-  Inhalt → 3 Spalten (4 bräuchten 664 px); 1920 px → 432 px → 2 Spalten;
-  1366 px → 294 px → 1 Spalte (2 bräuchten 328 px).
+- **Spalten:** Die Spaltenzahl hängt an der Breite des Selektors, nicht am
+  Fenster (Container Queries, `#p2d2-selector` mit
+  `container-type: inline-size`): eine Spalte, zwei ab 20,5rem (328 px), drei
+  ab 31rem (496 px), nie mehr als drei. Jede Kachel ist damit mindestens 10rem
+  breit; Abstand 0,5rem. Der Inhalt des Menüs ist um 2 × 1,5rem Innenabstand
+  schmaler als das Menü (`MenuContainerBody.vue`, `$padding`); eine
+  Bildlaufleiste im Menü kostet zusätzlich ihre Breite.
+
+  | Fenster | Menü (25 %) | Inhalt | Spalten | Kachelbreite | Kachelhöhe |
+  |---|---|---|---|---|---|
+  | 1366 px | 341,5 px | 293,5 px | 1 | 293,5 px | 192 px (Obergrenze) |
+  | 1920 px | 480 px | 432 px | 2 | 212 px | 159 px |
+  | 2560 px | 640 px | 592 px | 3 | 192 px | 144 px |
+  | 3440 px | 860 px | 812 px | 3 | 265 px | 192 px (Obergrenze) |
+
+  Das Menü lässt sich mit dem Griff am Rand breiter ziehen; Browser-Zoom
+  verkleinert die Pixel und verbreitert damit das Menü in CSS-Pixeln (z. B.
+  1920 px bei 67 % → etwa 2865 CSS-Pixel). Vorher (`auto-fill`, 10rem) ergab
+  das vier Spalten und mehr; jetzt bleibt es bei drei.
+
+  **Rückfall** für Browser ohne Container Queries (vor Firefox 110, Chrome 105,
+  Safari 16): `repeat(auto-fill, minmax(13rem, 1fr))`. Drei Spalten erst ab
+  640 px Inhalt (2752 px Fenster), vier ab 856 px; eine feste Obergrenze gibt
+  es dort nicht.
+- **Überschriften** „Kommunen“ und „Kategorien“: Abstand 1rem zu den Kacheln
+  (`.p2d2-heading`, statt 0,5rem des Bootstrap-`h6`); der Abstand zwischen den
+  Abschnitten bleibt `gap-3` (1rem).
 - **Hinweise** (`layerNoticeKey`): Laden der Auswahl-Datei, Laden der Objekte,
   „keine Objekte“ und Fehler. Ohne Auswahl und nach erfolgreichem Laden steht
   nichts über den Kacheln.
