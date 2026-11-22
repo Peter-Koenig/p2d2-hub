@@ -61,6 +61,13 @@ describe("addons/p2d2Selector: Registrierung und Menü", () => {
     expect(en.modules.p2d2Selector.name).toBe("Public-Public Data-DNA");
   });
 
+  // Titel der Fehlermeldung zum Layer; gleicher Name wie der Layer in der
+  // Portal-Konfiguration (Turn 034, vorher "Auswahl-Layer").
+  it("Locales: alertTitle nennt den Layer p2d2-Objekte", () => {
+    expect(readJson(join(DIR, "locales/de/additional.json")).modules.p2d2Selector.alertTitle).toBe("p2d2-Objekte");
+    expect(readJson(join(DIR, "locales/en/additional.json")).modules.p2d2Selector.alertTitle).toBe("p2d2 objects");
+  });
+
   it("Menütitel oben im Portal bleibt unverändert", () => {
     const cfg = readJson(join(MP, "portal/resources/portal-config-p2d2.json"));
     expect(cfg.portalConfig.mainMenu.title.text).toBe("p2d2 – Public-Public Data-DNA");

@@ -612,8 +612,8 @@ Deutschland-Extent aus `mapView.extent`).
   Masterportal eine Hintergrundkarte über die oberste sichtbare
   Hintergrundkarte, aber immer unter alle Fachlayer
   (`layerSelection/store/actionsLayerSelection.js`, `changeVisibility`). Die
-  Schummerung liegt damit über OSM und unter dem Auswahl-Layer. Als
-  `subjectlayer` käme sie beim Einschalten über die Auswahl
+  Schummerung liegt damit über OSM und unter dem Layer „p2d2-Objekte“. Als
+  `subjectlayer` käme sie beim Einschalten über diesen Layer
   (`determineZIndex`) und als Pille in die Pillenleiste (`LayerPills.vue`
   zeigt nur Fachlayer). `singleBaselayer` bleibt aus, sonst ließe sich die
   Schummerung nicht mit OSM kombinieren. Reihenfolge = Reihenfolge des
@@ -709,7 +709,7 @@ Deutschland-Extent aus `mapView.extent`).
   `MAPSERVER-URL/service`, Abschnitt „Hostnamen“), Karte in EPSG:25832.
   Zusätzlich, ausgeschaltet: basemap.de Web Raster und Schummerung (Abschnitt
   „Hintergrundkarten“).
-- Fachlayer: ein GeoJSON-Layer `p2d2-geo-containers` („Auswahl“) **ohne
+- Fachlayer: ein GeoJSON-Layer `p2d2-geo-containers` („p2d2-Objekte“) **ohne
   `url`**. Die masterportalapi legt dafür eine leere Quelle an
   (`layer/vector.js` `createVectorSource`); den Inhalt lädt das Add-on
   `p2d2Selector` je Auswahl von Kommune und Kategorie über den Stage-Proxy
@@ -717,9 +717,32 @@ Deutschland-Extent aus `mapView.extent`).
   `typeName=geo-containers`, Daten in EPSG:4326, Umprojektion im Client).
   Style `p2d2_friedhof` in `style_v3.json`, GFI aus (Klicks behandelt der
   `p2d2FeatureEditor`). In `layerConfig` ist der Layer sichtbar, sonst entsteht
-  kein OL-Layer; `isNeverVisibleInTree: true` blendet ihn im Themenbaum und in
-  der Pillenleiste aus (`LayerComponent.vue`, `LayerPills.vue`). Legende und
-  Suche (`visibleVector`) werten das Feld nicht aus.
+  kein OL-Layer. Anzeigename „p2d2-Objekte“ (bis Turn 034 „Auswahl“) in
+  `layerConfig` und `services-p2d2.json`; der Name aus `layerConfig` gilt
+  (`app-store/js/getAndMergeRawLayer.js`, `mergeRawLayer`). Das Add-on setzt
+  keinen Layernamen; nur der Titel seiner Fehlermeldung (`alertTitle`) heißt
+  ebenso.
+  - `isNeverVisibleInTree: true` blendet den Layer im Themenbaum
+    (`layerTree/components/LayerComponent.vue:48`, `LayerTreeNode.vue:72`),
+    in der Layerauswahl unter „Thema hinzufügen“ (`LayerComponent.vue:50`,
+    Zweig für `LayerSelectionTreeNode`) und in der Pillenleiste
+    (`LayerPills.vue:131`) aus.
+  - Nicht ausgeblendet ist er in der **Themensuche**: `topicTree` (Suchfeld
+    oben und Suchfeld der Layerauswahl) durchsucht alle Layer ohne Blick auf
+    das Flag (`searchBar/searchInterfaces/searchInterfaceTopicTree.js`,
+    `searchInLayers`, Zeilen 76–103) und bietet Treffer mit Kontrollkästchen
+    an (`SearchBarResultListTopicTreeItem.vue`). Ein Klick schaltet die
+    Sichtbarkeit um; ausgeschaltet lässt sich der Layer nur über die Suche
+    wieder einschalten, weil Themenbaum und Pillenleiste ihn nicht zeigen
+    (Verhalten des Add-ons dabei im Browser nicht geprüft). Abhilfe ginge
+    nur im Masterportal-Quelltext (Flag in `searchInLayers` prüfen) oder durch
+    Entfernen von `topicTree` aus `searchBar.searchInterfaces` (dann findet
+    die Suche keine Themen mehr); beides ist nicht umgesetzt.
+  - Legende und Objektsuche (`visibleVector`) werten das Flag nicht aus; die
+    Legende zeigt den Layer als „p2d2-Objekte“.
+  - Das Add-on legt den Layer nicht selbst an; es sucht den OL-Layer über die
+    ID (`p2d2Selector/js/runtime.js`, `layerId`, und
+    `store/actionsP2d2Selector.js`, `getAllLayers`).
 - Kartenausschnitt: `startCenter` Kölner Dom auf Stufe 3, `extent`
   `[222000, 5179000, 1000000, 6177000]` (EPSG:25832, Deutschland mit Rand).
   - Herleitung: Rechteck der Extrempunkte Deutschlands in WGS84

@@ -12,7 +12,7 @@
                 "empty": "Keine Objekte für diese Auswahl.",
                 "error": "Laden fehlgeschlagen: {{reason}}"
             },
-            "alertTitle": "Auswahl-Layer",
+            "alertTitle": "p2d2-Objekte",
             "stageFailed": "Layer-Konfiguration fehlt ({{reason}})."
         }
     }

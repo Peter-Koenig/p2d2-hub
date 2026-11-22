@@ -294,7 +294,7 @@
   },
   {
     "id": "p2d2-geo-containers",
-    "name": "Auswahl",
+    "name": "p2d2-Objekte",
     "typ": "GeoJSON",
     "styleId": "p2d2_friedhof",
     "gfiAttributes": "ignore",

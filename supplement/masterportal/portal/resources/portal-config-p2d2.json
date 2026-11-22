@@ -310,7 +310,7 @@
       "elements": [
         {
           "id": "p2d2-geo-containers",
-          "name": "Auswahl",
+          "name": "p2d2-Objekte",
           "visibility": true,
           "isNeverVisibleInTree": true
         }

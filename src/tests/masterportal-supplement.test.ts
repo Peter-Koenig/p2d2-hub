@@ -31,6 +31,8 @@ const svcIds = new Set(svc.map((l) => l.id));
 
 // Layer-ID des dynamischen Fachlayers (Auswahl aus dem Add-on p2d2Selector).
 const SELECTION_LAYER = "p2d2-geo-containers";
+// Anzeigename dieses Layers (Themenbaum, Legende, Themensuche); bis Turn 034 "Auswahl".
+const SELECTION_LAYER_NAME = "p2d2-Objekte";
 // Zusätzliche Hintergrundkarten (basemap.de, BKG), Reihenfolge wie in layerConfig.
 const BASEMAP_IDS = ["p2d2-basemapde-raster", "p2d2-basemapde-schummerung"];
 const MP = resolve(PORTAL, "..");
@@ -158,7 +160,7 @@ describe("Portal-Konfiguration und Layer", () => {
     expect(layer.typ).toBe("GeoJSON");
     expect(layer).not.toHaveProperty("url");
     expect(layer).not.toHaveProperty("geojson");
-    expect(layer.name).toBe("Auswahl");
+    expect(layer.name).toBe(SELECTION_LAYER_NAME);
     expect(layer.gfiAttributes).toBe("ignore");
     expect(styles.some((s) => s.styleId === layer.styleId)).toBe(true);
     expect(layer.styleId).toBe("p2d2_friedhof");
@@ -170,7 +172,31 @@ describe("Portal-Konfiguration und Layer", () => {
   // aus; Legende und Suche (visibleVector) werten das Feld nicht aus.
   it("layerConfig: Auswahl-Layer sichtbar, aber nicht im Themenbaum und nicht als Pille", () => {
     const entry = cfg.layerConfig.subjectlayer.elements.find((e: any) => e.id === SELECTION_LAYER);
-    expect(entry).toEqual({ id: SELECTION_LAYER, name: "Auswahl", visibility: true, isNeverVisibleInTree: true });
+    expect(entry).toEqual({ id: SELECTION_LAYER, name: SELECTION_LAYER_NAME, visibility: true, isNeverVisibleInTree: true });
+  });
+
+  // Der Name aus layerConfig überschreibt den aus services (getAndMergeRawLayer.js,
+  // mergeRawLayer: {...rawLayer, ...layerConf}); beide gleich halten.
+  it("kein Layer heißt mehr \"Auswahl\"", () => {
+    const names = [
+      ...svc.map((l) => l.name),
+      ...cfg.layerConfig.baselayer.elements.map((e: any) => e.name),
+      ...cfg.layerConfig.subjectlayer.elements.map((e: any) => e.name),
+    ];
+    expect(names).not.toContain("Auswahl");
+  });
+
+  // Die Themensuche (searchInterfaceTopicTree.js, searchInLayers) durchsucht alle
+  // Layer ohne Rücksicht auf isNeverVisibleInTree; die README erklärt das.
+  it("README Stage de1: neuer Name und Erklärung zur Themensuche", () => {
+    const readme = read(join(MP, "README.md"));
+    const start = readme.indexOf("\n## Stage de1: Inhalte\n");
+    expect(start, "Abschnitt fehlt").toBeGreaterThan(0);
+    const section = readme.slice(start, readme.indexOf("\n## ", start + 1));
+    for (const s of [`„${SELECTION_LAYER_NAME}“`, "searchInterfaceTopicTree.js", "LayerComponent.vue:50"]) {
+      expect(section, s).toContain(s);
+    }
+    expect(section).not.toContain("(„Auswahl“)");
   });
 
   it("layerPills bleiben aktiv (wirken für andere Fachlayer, z. B. aus addWMS)", () => {

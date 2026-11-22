@@ -12,7 +12,7 @@
                 "empty": "No objects for this selection.",
                 "error": "Loading failed: {{reason}}"
             },
-            "alertTitle": "Selection layer",
+            "alertTitle": "p2d2 objects",
             "stageFailed": "Layer configuration missing ({{reason}})."
         }
     }
