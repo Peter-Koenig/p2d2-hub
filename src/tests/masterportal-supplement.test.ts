@@ -31,6 +31,9 @@ const svcIds = new Set(svc.map((l) => l.id));
 
 // Layer-ID des dynamischen Fachlayers (Auswahl aus dem Add-on p2d2Selector).
 const SELECTION_LAYER = "p2d2-geo-containers";
+// Zusätzliche Hintergrundkarten (basemap.de, BKG), Reihenfolge wie in layerConfig.
+const BASEMAP_IDS = ["p2d2-basemapde-raster", "p2d2-basemapde-schummerung"];
+const MP = resolve(PORTAL, "..");
 
 describe("config.js.template", () => {
   it("portalConf und layerConf zeigen auf vorhandene eigene Dateien", () => {
@@ -99,7 +102,7 @@ describe("Portal-Konfiguration und Layer", () => {
       ...cfg.layerConfig.subjectlayer.elements.map((e: any) => e.id),
       cfg.portalConfig.map.controls.overviewMap.layerId,
     ];
-    expect(refs).toEqual(["p2d2-osm", SELECTION_LAYER, "p2d2-osm"]);
+    expect(refs).toEqual(["p2d2-osm", ...BASEMAP_IDS, SELECTION_LAYER, "p2d2-osm"]);
     for (const id of refs) expect(svcIds.has(id), id).toBe(true);
   });
 
@@ -172,6 +175,76 @@ describe("Portal-Konfiguration und Layer", () => {
 
   it("layerPills bleiben aktiv (wirken für andere Fachlayer, z. B. aus addWMS)", () => {
     expect(cfg.portalConfig.map.layerPills).toEqual({ active: true });
+  });
+
+  // Turn 032: basemap.de als zusätzliche Hintergrundkarten, beide aus.
+  describe("basemap.de Web Raster und Schummerung (BKG, WMTS)", () => {
+    const BKG = "https://sgx.geodatenzentrum.de";
+    const layer = (id: string) => svc.find((l) => l.id === id);
+    const entry = (id: string) => cfg.layerConfig.baselayer.elements.find((e: any) => e.id === id);
+    // GLOBAL_WEBMERCATOR aus den Capabilities beider Dienste (gelesen am 2026-11-22):
+    // 20 Ebenen 00..19, 256 px, Ursprung oben links, ScaleDenominator je Ebene.
+    const SCALE0 = 559082264.0287176;
+
+    it("OSM bleibt erste Hintergrundkarte und als einzige sichtbar", () => {
+      const els = cfg.layerConfig.baselayer.elements;
+      expect(els[0]).toMatchObject({ id: "p2d2-osm", visibility: true });
+      expect(els.filter((e: any) => e.visibility).map((e: any) => e.id)).toEqual(["p2d2-osm"]);
+    });
+
+    it.each([
+      ["p2d2-basemapde-raster", "basemap.de Web Raster", "wmts_basemapde", "de_basemapde_web_raster_farbe"],
+      ["p2d2-basemapde-schummerung", "basemap.de Schummerung", "wmts_basemapde_schummerung", "de_basemapde_web_raster_combshade"],
+    ])("%s: WMTS %s ohne Capabilities-Abruf", (id, name, service, layerName) => {
+      const l = layer(id);
+      expect(l, id).toBeDefined();
+      expect(l).toMatchObject({
+        name,
+        typ: "WMTS",
+        layers: layerName,
+        urls: [`${BKG}/${service}/tile/1.0.0/${layerName}/{Style}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png`],
+        requestEncoding: "REST",
+        tileMatrixSet: "GLOBAL_WEBMERCATOR",
+        coordinateSystem: "EPSG:3857",
+        origin: [-20037508.342789244, 20037508.342789244],
+        tileSize: "256",
+        resLength: "20",
+        format: "image/png",
+        style: "default",
+        version: "1.0.0",
+        transparent: false,
+        legendURL: "ignore",
+        gfiAttributes: "ignore",
+        minScale: "0",
+        maxScale: "2500000",
+      });
+      expect(l).not.toHaveProperty("optionsFromCapabilities");
+      expect(l).not.toHaveProperty("capabilitiesUrl");
+      expect(l.matrixSizes).toEqual(Array.from({ length: 20 }, (_, i) => [2 ** i, 2 ** i]));
+      expect(l.scales).toHaveLength(20);
+      l.scales.forEach((s: number, i: number) => expect(s, `Ebene ${i}`).toBeCloseTo(SCALE0 / 2 ** i, 3));
+      expect(entry(id)).toEqual({ id, name, visibility: false, isNeverVisibleInTree: false, ...(id.endsWith("schummerung") ? { transparency: 60 } : {}) });
+    });
+
+    it.each(BASEMAP_IDS)("%s: Quellenvermerk GeoBasis-DE / BKG mit Links auf bkg.bund.de und CC BY 4.0", (id) => {
+      const a: string = layer(id).layerAttribution;
+      expect(a).toMatch(/^© GeoBasis-DE \/ <a href="https:\/\/www\.bkg\.bund\.de" target="_blank">BKG<\/a> \(\d{4}\) <a href="https:\/\/creativecommons\.org\/licenses\/by\/4\.0\/" target="_blank">CC BY 4\.0<\/a>$/);
+    });
+
+    it("isNeverVisibleInTree nur am Auswahl-Layer", () => {
+      const all = [...cfg.layerConfig.baselayer.elements, ...cfg.layerConfig.subjectlayer.elements];
+      expect(all.filter((e: any) => e.isNeverVisibleInTree).map((e: any) => e.id)).toEqual([SELECTION_LAYER]);
+    });
+
+    it("README nennt Dienste, Lizenz, Quellenvermerk und Grenzen", () => {
+      const readme = read(join(MP, "README.md"));
+      const start = readme.indexOf("\n## Hintergrundkarten\n");
+      expect(start, "Abschnitt fehlt").toBeGreaterThan(0);
+      const section = readme.slice(start, readme.indexOf("\n## ", start + 1));
+      for (const s of ["GLOBAL_WEBMERCATOR", "CC BY 4.0", "GeoBasis-DE / BKG", "combshade", "32610", "IP-Adresse"]) {
+        expect(section, s).toContain(s);
+      }
+    });
   });
 
   it("der Demo-Layer Friedhöfe Köln ist entfernt", () => {

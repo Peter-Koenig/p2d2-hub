@@ -600,10 +600,83 @@ Deutschland-Extent aus `mapView.extent`).
   `masterportal-selector-store.test.ts`, `masterportal-selector-supplement.test.ts`:
   Auswahl-Datei, Kacheln, Store, Registrierung und Isolation.
 
+## Hintergrundkarten
+
+| ID | Name | Dienst / Layer | sichtbar | `transparency` |
+|---|---|---|---|---|
+| `p2d2-osm` | OpenStreetMap | MapProxy-WMS `p2d2_osm` (`MAPSERVER-URL/service`) | ja | 0 |
+| `p2d2-basemapde-raster` | basemap.de Web Raster | BKG-WMTS `wmts_basemapde`, `de_basemapde_web_raster_farbe` | nein | 0 |
+| `p2d2-basemapde-schummerung` | basemap.de Schummerung | BKG-WMTS `wmts_basemapde_schummerung`, `de_basemapde_web_raster_combshade` | nein | 60 |
+
+- **Alle drei unter `layerConfig.baselayer`.** Beim Einschalten legt
+  Masterportal eine Hintergrundkarte über die oberste sichtbare
+  Hintergrundkarte, aber immer unter alle Fachlayer
+  (`layerSelection/store/actionsLayerSelection.js`, `changeVisibility`). Die
+  Schummerung liegt damit über OSM und unter dem Auswahl-Layer. Als
+  `subjectlayer` käme sie beim Einschalten über die Auswahl
+  (`determineZIndex`) und als Pille in die Pillenleiste (`LayerPills.vue`
+  zeigt nur Fachlayer). `singleBaselayer` bleibt aus, sonst ließe sich die
+  Schummerung nicht mit OSM kombinieren. Reihenfolge = Reihenfolge des
+  Einschaltens: Wird Web Raster nach der Schummerung eingeschaltet, deckt es
+  sie zu; dann die Schummerung aus- und wieder einschalten.
+- **Kachelmatrixsatz `GLOBAL_WEBMERCATOR`, ohne Capabilities-Abruf.** Ohne
+  `optionsFromCapabilities` erzeugt die masterportalapi 2.64.0 das Kachelgitter
+  aus der Breite des Projektions-Extents (`layer/wmts.js`,
+  `createLayerSourceByDefinitions`); das geht nur für EPSG:3857 und EPSG:4326.
+  `GLOBAL_WEBMERCATOR` passt genau: 20 Ebenen `00`–`19`, 1 × 1 Kachel auf
+  Ebene 0, 256 px, Ursprung `-20037508.342789244, 20037508.342789244`.
+  `DE_EPSG_3857_ADV` beginnt mit 32 × 32 Kacheln (Ebene 5 des Rasters) und
+  passt nicht; `DE_EPSG_25832_ADV`/`_25833_ADV` bräuchten den Abruf der
+  Capabilities zur Laufzeit. `scales` und `matrixSizes` stammen aus den
+  Capabilities (für den Druck). Der Dienst nimmt Ebenen ohne führende Null an
+  (`10` wie `010`, gemessen).
+- **Projektions-Switch:** OpenLayers projiziert die Kacheln aus EPSG:3857 in
+  die View-Projektion um (Raster-Reprojektion). `reprojectLayers` in
+  `p2d2Crs/js/viewSwap.js` behandelt nur Vektorquellen; für die WMTS-Layer ist
+  nach `swapView` nichts zu tun. Berlin (EPSG:25833) funktioniert wie Köln.
+  Gebiet der Dienste: Deutschland (WGS84 0,106–20,449° E, 45,238–56,848° N).
+  **32610** (San Francisco) und **32650** (Hangzhou) liegen außerhalb: Der
+  Dienst liefert dort transparente Kacheln, die Karte bleibt leer (OSM
+  einschalten).
+- **Auflösungen:** Ebene 19 hat 0,2986 m/px in EPSG:3857, auf 51° N etwa
+  0,19 m Bodenauflösung. Die Portalstufen 1:500, 1:250 und 1:100 (0,13 bis
+  0,026 m/px) vergrößert OpenLayers aus Ebene 19 (unscharf); Ebene 20 liefert
+  HTTP 400. `minScale` 0 und `maxScale` 2 500 000 decken alle Portalstufen ab
+  (1:400 000 bis 1:100).
+- **Schummerung `combshade` statt `hillshade`:** Beide Dienste liefern in
+  Deutschland deckende Graustufen-PNGs (Alpha 255, gemessen auf Ebene 10 bei
+  Köln). `combshade` ist in der Ebene fast weiß (Mittelwert 248 von 255) und
+  zeigt nur Hänge dunkel; `hillshade` ist in der Ebene mittelgrau (Mittelwert
+  194) und dunkelt die ganze OSM-Karte ab. Mit `transparency: 60` (Deckkraft
+  0,4) bleiben die OSM-Farben und Beschriftungen lesbar; der Wert lässt sich im
+  Themenbaum ändern.
+- **Lizenz und Quellenvermerk:** CC BY 4.0. Vermerk laut Capabilities
+  (`ows:Fees`): „© GeoBasis-DE / BKG (Jahr des letzten Datenbezugs) CC BY 4.0“,
+  als `layerAttribution` beider Layer mit Links auf `https://www.bkg.bund.de`
+  und `https://creativecommons.org/licenses/by/4.0/`. Eingetragen ist **2026**;
+  das Jahr ist vor der Veröffentlichung zu bestätigen. Masterportal 3.27.1
+  zeigt `layerAttribution` beim Einschalten einmal je Sitzung als Hinweis
+  (`app-store/actionsLayerConfig.js`, `showLayerAttributions`), nicht dauerhaft
+  auf der Karte.
+- **Direktzugriff und Datenschutz:** Der Browser lädt die Kacheln direkt von
+  `sgx.geodatenzentrum.de`; das BKG erhält dabei die IP-Adresse der
+  Besuchenden. Alternative ohne Direktzugriff: die Dienste als WMTS-Quelle im
+  MapProxy (Cache, kein Fremdzugriff aus dem Browser, kein CORS), nicht
+  umgesetzt.
+- **CORS:** Der Dienst antwortet mit `Access-Control-Allow-Origin` gleich dem
+  anfragenden Origin (gemessen mit einem neutralen Origin).
+- **Hochauflösende Bildschirme:** Die masterportalapi setzt
+  `tilePixelRatio` auf das Pixelverhältnis des Geräts; die 256-px-Kacheln
+  werden dort nicht schärfer.
+- Test: `masterportal-supplement.test.ts`, Abschnitt „basemap.de Web Raster und
+  Schummerung“.
+
 ## Stage de1: Inhalte
 
 - Hintergrundkarte: MapProxy-Layer `p2d2_osm` (WMS
   `MAPSERVER-URL/service`, Abschnitt „Hostnamen“), Karte in EPSG:25832.
+  Zusätzlich, ausgeschaltet: basemap.de Web Raster und Schummerung (Abschnitt
+  „Hintergrundkarten“).
 - Fachlayer: ein GeoJSON-Layer `p2d2-geo-containers` („Auswahl“) **ohne
   `url`**. Die masterportalapi legt dafür eine leere Quelle an
   (`layer/vector.js` `createVectorSource`); den Inhalt lädt das Add-on

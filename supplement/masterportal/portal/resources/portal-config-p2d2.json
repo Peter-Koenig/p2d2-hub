@@ -290,6 +290,19 @@
           "name": "OpenStreetMap",
           "visibility": true,
           "isNeverVisibleInTree": false
+        },
+        {
+          "id": "p2d2-basemapde-raster",
+          "name": "basemap.de Web Raster",
+          "visibility": false,
+          "isNeverVisibleInTree": false
+        },
+        {
+          "id": "p2d2-basemapde-schummerung",
+          "name": "basemap.de Schummerung",
+          "visibility": false,
+          "isNeverVisibleInTree": false,
+          "transparency": 60
         }
       ]
     },
