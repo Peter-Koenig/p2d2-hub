@@ -55,7 +55,43 @@ describe("validateSelection", () => {
     ],
     ["osmAdminLevel kein Integer", (s) => (s.kommunen[0].osmAdminLevel.administrative = 9.5), /osmAdminLevel\.administrative/],
     ["containerType fehlt", (s) => delete s.kategorien[0].containerType, /containerType/],
+    // map.extent (optional, [minLon, minLat, maxLon, maxLat] in EPSG:4326)
+    ["extent Länge", (s) => (s.kommunen[0].map.extent = [6, 50, 7]), /kommunen\[0\]\.map\.extent.*vier Zahlen/],
+    ["extent keine Zahlen", (s) => (s.kommunen[0].map.extent = [6, 50, "7", 51]), /map\.extent.*vier Zahlen/],
+    ["extent minLon ≥ maxLon", (s) => (s.kommunen[0].map.extent = [7.2, 50.8, 6.7, 51.1]), /map\.extent.*minLon/],
+    ["extent minLat ≥ maxLat", (s) => (s.kommunen[0].map.extent = [6.7, 51.1, 7.2, 51.1]), /map\.extent.*minLat/],
+    ["extent Länge außerhalb", (s) => (s.kommunen[0].map.extent = [-181, 50, 7, 51]), /map\.extent.*Wertebereich/],
+    ["extent Breite außerhalb", (s) => (s.kommunen[0].map.extent = [6, 50, 7, 91]), /map\.extent.*Wertebereich/],
+    ["center außerhalb extent", (s) => (s.kommunen[0].map.extent = [7.5, 50, 8, 51]), /map\.center.*außerhalb.*map\.extent/],
+    // image (optional, null oder relativer Pfad unter resources/img/)
+    ["image absolut", (s) => (s.kommunen[0].image = "/images/kommunen/koeln_001.jpg"), /kommunen\[0\]\.image/],
+    ["image mit Host", (s) => (s.kategorien[0].image = "https://example.org/a.jpg"), /kategorien\[0\]\.image/],
+    ["image mit ..", (s) => (s.kategorien[0].image = "resources/img/../x.jpg"), /kategorien\[0\]\.image/],
+    ["image keine Zeichenkette", (s) => (s.kommunen[0].image = 5), /kommunen\[0\]\.image/],
   ];
+
+  it("map.extent ist optional; gültiger Extent mit center innen ist ok", () => {
+    const s = real();
+    for (const k of s.kommunen) delete k.map.extent;
+    expect(validateSelection(s).ok).toBe(true);
+    const [lon, lat] = s.kommunen[0].map.center;
+    s.kommunen[0].map.extent = [lon - 0.1, lat - 0.1, lon + 0.1, lat + 0.1];
+    expect(validateSelection(s)).toEqual({ ok: true, errors: [] });
+  });
+
+  it("center auf dem Rand des Extents ist ok", () => {
+    const s = real();
+    const [lon, lat] = s.kommunen[0].map.center;
+    s.kommunen[0].map.extent = [lon, lat, lon + 0.1, lat + 0.1];
+    expect(validateSelection(s).ok).toBe(true);
+  });
+
+  it("image null oder fehlend ist ok", () => {
+    const s = real();
+    s.kommunen[0].image = null;
+    delete s.kategorien[0].image;
+    expect(validateSelection(s).ok).toBe(true);
+  });
 
   for (const [name, mutate, expected] of cases) {
     it(`Fehlerfall: ${name}`, () => {

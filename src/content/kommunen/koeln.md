@@ -6,6 +6,7 @@ osmAdminLevels: [6,9,10]
 wp_name: "de-Köln"
 map:
   center: [6.9603, 50.9375]
+  extent: [6.772, 50.83, 7.163, 51.085]
   zoom: 11
   projection: "EPSG:25832" # center/extent in EPSG:4326 (lon,lat)
 order: 10

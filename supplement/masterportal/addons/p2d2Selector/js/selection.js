@@ -12,7 +12,58 @@ export const SELECTION_VERSION = 1;
 const isObject = v => typeof v === "object" && v !== null && !Array.isArray(v),
     isString = v => typeof v === "string",
     isNumber = v => typeof v === "number" && Number.isFinite(v),
-    PROJECTION = /^EPSG:\d+$/;
+    PROJECTION = /^EPSG:\d+$/,
+    // Relativ zur Portal-Seite, nur unter resources/img/, kein "..", Bildendung.
+    IMAGE_PATH = /^resources\/img\/(?:[A-Za-z0-9_-][A-Za-z0-9_.-]*\/)*[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(?:jpg|jpeg|png|webp)$/;
+
+/**
+ * Prüft map.extent einer Kommune ([minLon, minLat, maxLon, maxLat], EPSG:4326).
+ * Gleiche Regeln im Generator (scripts/generate-masterportal-selection.mjs).
+ * @param {unknown} extent Extent.
+ * @param {unknown} center map.center ([lon, lat]); nur geprüft, wenn es zwei Zahlen sind.
+ * @returns {string[]} Meldungen ohne Pfad; leer, wenn gültig.
+ */
+export function extentErrors (extent, center) {
+    if (!Array.isArray(extent) || extent.length !== 4 || !extent.every(isNumber)) {
+        return ["muss vier Zahlen [minLon, minLat, maxLon, maxLat] enthalten"];
+    }
+    const [minLon, minLat, maxLon, maxLat] = extent,
+        errors = [];
+
+    if (!(minLon < maxLon)) {
+        errors.push("minLon muss kleiner als maxLon sein");
+    }
+    if (!(minLat < maxLat)) {
+        errors.push("minLat muss kleiner als maxLat sein");
+    }
+    if ([minLon, maxLon].some(v => Math.abs(v) > 180) || [minLat, maxLat].some(v => Math.abs(v) > 90)) {
+        errors.push("liegt außerhalb des Wertebereichs (Länge ±180, Breite ±90)");
+    }
+    if (errors.length === 0 && Array.isArray(center) && center.length === 2 && center.every(isNumber)) {
+        const [lon, lat] = center;
+
+        if (lon < minLon || lon > maxLon || lat < minLat || lat > maxLat) {
+            errors.push("center liegt außerhalb von map.extent");
+        }
+    }
+    return errors;
+}
+
+/**
+ * Prüft das Feld image eines Eintrags (fehlt, null oder Pfad unter resources/img/).
+ * @param {Object} entry Eintrag.
+ * @param {string} where Pfad für Meldungen.
+ * @param {string[]} errors Fehlerliste (wird ergänzt).
+ * @returns {void}
+ */
+function checkImage (entry, where, errors) {
+    if (entry.image === undefined || entry.image === null) {
+        return;
+    }
+    if (!isString(entry.image) || !IMAGE_PATH.test(entry.image) || entry.image.split("/").includes("..")) {
+        errors.push(`${where}.image muss null oder ein relativer Bildpfad unter resources/img/ sein`);
+    }
+}
 
 /**
  * Prüft die Einträge einer Liste: Array, nichtleer, Slug und Titel Strings, Slug eindeutig.
@@ -76,7 +127,13 @@ function checkKommune (k, where, types, errors) {
         if (!isString(map.projection) || !PROJECTION.test(map.projection)) {
             errors.push(`${where}.map.projection muss "EPSG:<Ziffern>" sein`);
         }
+        if (map.extent !== undefined) {
+            for (const message of extentErrors(map.extent, map.center)) {
+                errors.push(message.startsWith("center ") ? `${where}.map.${message}` : `${where}.map.extent ${message}`);
+            }
+        }
     }
+    checkImage(k, where, errors);
     if (!isObject(k.osmAdminLevel)) {
         errors.push(`${where}.osmAdminLevel muss ein Objekt sein`);
         return;
@@ -110,6 +167,7 @@ export function validateSelection (json) {
         if (!isString(k.containerType) || k.containerType === "") {
             errors.push(`kategorien[${i}].containerType muss ein nichtleerer String sein`);
         }
+        checkImage(k, `kategorien[${i}]`, errors);
     });
     kommunen.forEach((k, i) => checkKommune(k, `kommunen[${i}]`, types.filter(isString), errors));
     return {ok: errors.length === 0, errors};
