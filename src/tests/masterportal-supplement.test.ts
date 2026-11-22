@@ -324,6 +324,66 @@ describe("Portal-Konfiguration und Layer", () => {
       });
     });
 
+    // Turn 034: layerAttribution erscheint nur einmal je Sitzung beim Einschalten;
+    // die Nutzungsbedingungen verlangen einen deutlich sichtbaren Vermerk. Die
+    // Fußzeile (modules/portalFooter/components/PortalFooter.vue) zeigt je
+    // Eintrag "bezeichnung" als Text und einen Link (alias, mobil alias_mobile;
+    // ohne alias_mobile ist der Eintrag mobil ausgeblendet).
+    describe("dauerhafter Quellenvermerk in der Fußzeile", () => {
+      const urls: any[] = cfg.portalConfig.portalFooter.urls;
+      const year = (layer(BASEMAP_IDS[0]).layerAttribution as string).match(/\((\d{4})\)/)?.[1];
+
+      it("Jahr in beiden layerAttribution gleich", () => {
+        expect(year).toMatch(/^\d{4}$/);
+        for (const id of BASEMAP_IDS) expect(layer(id).layerAttribution, id).toContain(`(${year})`);
+      });
+
+      it("Impressum bleibt erster Eintrag, danach BKG und CC BY 4.0", () => {
+        expect(urls.map((u) => u.url)).toEqual([
+          "https://www.civitasconnect.digital/impressum/",
+          "https://www.bkg.bund.de",
+          "https://creativecommons.org/licenses/by/4.0/",
+        ]);
+      });
+
+      it("BKG-Eintrag: Hintergrundkarte basemap.de, © GeoBasis-DE / BKG (Jahr)", () => {
+        expect(urls[1]).toEqual({
+          bezeichnung: "Hintergrundkarte basemap.de:",
+          url: "https://www.bkg.bund.de",
+          alias: `© GeoBasis-DE / BKG (${year})`,
+          alias_mobile: `© GeoBasis-DE / BKG (${year})`,
+        });
+      });
+
+      it("Lizenz-Eintrag: CC BY 4.0", () => {
+        expect(urls[2]).toEqual({
+          bezeichnung: "",
+          url: "https://creativecommons.org/licenses/by/4.0/",
+          alias: "CC BY 4.0",
+          alias_mobile: "CC BY 4.0",
+        });
+      });
+
+      // PortalFooter.vue liest alias_mobile; alias_mobil blendete das Impressum
+      // mobil aus. Der Trenner kommt aus "seperator", nicht aus dem Text.
+      it("alle Einträge mobil sichtbar (alias_mobile), kein alias_mobil", () => {
+        for (const u of urls) {
+          expect(u, u.url).not.toHaveProperty("alias_mobil");
+          expect(typeof u.alias_mobile === "string" && u.alias_mobile.length > 0, u.url).toBe(true);
+          expect(u.alias_mobile, u.url).not.toMatch(/\|/);
+        }
+      });
+
+      it("README nennt Fußzeile, Fundstelle und offene Frage", () => {
+        const readme = read(join(MP, "README.md"));
+        const start = readme.indexOf("\n## Hintergrundkarten\n");
+        const section = readme.slice(start, readme.indexOf("\n## ", start + 1));
+        for (const s of ["portalFooter", "PortalFooter.vue", "Veränderungshinweis", "nutzungsbedingungen_basemapde.pdf", "unabhängig davon"]) {
+          expect(section, s).toContain(s);
+        }
+      });
+    });
+
     it("isNeverVisibleInTree nur am Auswahl-Layer", () => {
       const all = [...cfg.layerConfig.baselayer.elements, ...cfg.layerConfig.subjectlayer.elements];
       expect(all.filter((e: any) => e.isNeverVisibleInTree).map((e: any) => e.id)).toEqual([SELECTION_LAYER]);

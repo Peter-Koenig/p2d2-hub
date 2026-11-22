@@ -145,7 +145,19 @@
           "bezeichnung": "",
           "url": "https://www.civitasconnect.digital/impressum/",
           "alias": "Impressum",
-          "alias_mobil": "Impressum |"
+          "alias_mobile": "Impressum"
+        },
+        {
+          "bezeichnung": "Hintergrundkarte basemap.de:",
+          "url": "https://www.bkg.bund.de",
+          "alias": "© GeoBasis-DE / BKG (2026)",
+          "alias_mobile": "© GeoBasis-DE / BKG (2026)"
+        },
+        {
+          "bezeichnung": "",
+          "url": "https://creativecommons.org/licenses/by/4.0/",
+          "alias": "CC BY 4.0",
+          "alias_mobile": "CC BY 4.0"
         }
       ],
       "scaleLine": true

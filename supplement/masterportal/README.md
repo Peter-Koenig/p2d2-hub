@@ -633,7 +633,7 @@ Deutschland-Extent aus `mapView.extent`).
 
   | Layer | Datei | Quelle |
   |---|---|---|
-  | Web Raster | `resources/img/basemap/basemapde-web-raster.jpg` | `de_basemapde_web_raster_farbe`, `GLOBAL_WEBMERCATOR` Kachel `10/343/531` (Köln, Bonn) |
+  | Web Raster | `resources/img/basemap/basemapde-web-raster.jpg` | `de_basemapde_web_raster_farbe`, `GLOBAL_WEBMERCATOR` Kachel `10/343/531` (Köln, Rhein-Erft-Kreis) |
   | Schummerung | `resources/img/basemap/basemapde-schummerung.png` | `de_basemapde_web_raster_combshade`, Kachel `10/343/532` (Siebengebirge, Bergisches Land) |
 
   Die Schummerung stammt aus der östlichen Nachbarkachel, weil `combshade` um
@@ -690,6 +690,37 @@ Deutschland-Extent aus `mapView.extent`).
   zeigt `layerAttribution` beim Einschalten einmal je Sitzung als Hinweis
   (`app-store/actionsLayerConfig.js`, `showLayerAttributions`), nicht dauerhaft
   auf der Karte.
+- **Dauerhafter Vermerk in der Fußzeile (`portalConfig.portalFooter.urls`).**
+  Die Nutzungsbedingungen (`https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/deu/nutzungsbedingungen_basemapde.pdf`,
+  Abschnitt 3 „Quellenvermerk“) verlangen bei jeder öffentlichen Wiedergabe
+  einen deutlich sichtbaren Vermerk; auf Webseiten sind „BKG“ mit
+  `https://www.bkg.bund.de` und „CC BY 4.0“ mit
+  `https://creativecommons.org/licenses/by/4.0/` zu verlinken. Die Fußzeile
+  (`modules/portalFooter/components/PortalFooter.vue`) zeigt je Eintrag
+  `bezeichnung` als Text und genau einen Link (`url`, Text `alias`, mobil
+  `alias_mobile`; ohne `alias_mobile` ist der Eintrag mobil ausgeblendet).
+  HTML ist in den Feldern nicht möglich (Textinterpolation). Daher zwei
+  Einträge nach dem Impressum:
+
+  `Impressum | Hintergrundkarte basemap.de: © GeoBasis-DE / BKG (2026) | CC BY 4.0`
+
+  Der Trenner ` | ` zwischen den Einträgen kommt aus `seperator` (Standard)
+  und lässt sich nicht je Eintrag abschalten; der Vermerk weicht darin von der
+  vorgegebenen Zeile „© GeoBasis-DE / BKG (2026) CC BY 4.0“ ab. Das Jahr
+  steht wie in `layerAttribution` (2026, zu bestätigen). Der Vermerk steht
+  **unabhängig davon**, ob eine basemap.de-Karte eingeschaltet ist; die
+  Fußzeile kennt keine Bedingung je Layer. Er nennt deshalb „Hintergrundkarte
+  basemap.de“, damit er bei OSM allein nicht als Quelle der sichtbaren Karte
+  gelesen wird.
+  Das frühere Feld `alias_mobil` am Impressum gab es in 3.27.1 nicht
+  (`PortalFooter.vue` liest `alias_mobile`); das Impressum war mobil
+  ausgeblendet und ist jetzt sichtbar.
+- **Veränderungshinweis (offen):** Dieselbe Stelle verlangt bei Veröffentlichung
+  einer „Bearbeitung oder Umgestaltung“ zusätzlich einen Veränderungshinweis,
+  ohne dessen Form vorzugeben. Ob die Darstellung mit `transparency: 60`, die
+  Raster-Reprojektion in UTM oder die verkleinerten Vorschaubilder eine
+  Bearbeitung sind, ist nicht entschieden; ein Veränderungshinweis ist nicht
+  eingetragen.
 - **Direktzugriff und Datenschutz:** Der Browser lädt die Kacheln direkt von
   `sgx.geodatenzentrum.de`; das BKG erhält dabei die IP-Adresse der
   Besuchenden. Alternative ohne Direktzugriff: die Dienste als WMTS-Quelle im
