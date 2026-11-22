@@ -619,6 +619,38 @@ Deutschland-Extent aus `mapView.extent`).
   Schummerung nicht mit OSM kombinieren. Reihenfolge = Reihenfolge des
   Einschaltens: Wird Web Raster nach der Schummerung eingeschaltet, deckt es
   sie zu; dann die Schummerung aus- und wieder einschalten.
+- **Vorschau in der Layerauswahl (`preview.src`).** Unter „Thema hinzufügen“
+  zeigt die Layerauswahl jede Hintergrundkarte als Vorschaubild mit dem Namen
+  darunter (`layerTree/components/LayerCheckBox.vue`, Zweig
+  `conf.baselayer && !isLayerTree`). Klickbar ist nur das Bild; der Name ist
+  reiner Text. `shared/modules/layerPreview/components/LayerPreview.vue`
+  rendert ohne Vorschau-URL gar nichts (`v-if` auf die URL). Die URL entsteht
+  bei WMS aus einer GetMap-Anfrage (150 × 150 px, daher hat OSM eine Vorschau),
+  bei WMTS nur mit `capabilitiesUrl`; sonst gilt `preview.src`. Ohne beides
+  meldet die Konsole „There is no preview image for …“ und der Eintrag ist
+  nicht anwählbar. Beide basemap.de-Layer haben deshalb `preview.src` auf ein
+  lokales Bild, relativ zur Portal-Seite:
+
+  | Layer | Datei | Quelle |
+  |---|---|---|
+  | Web Raster | `resources/img/basemap/basemapde-web-raster.jpg` | `de_basemapde_web_raster_farbe`, `GLOBAL_WEBMERCATOR` Kachel `10/343/531` (Köln, Bonn) |
+  | Schummerung | `resources/img/basemap/basemapde-schummerung.png` | `de_basemapde_web_raster_combshade`, Kachel `10/343/532` (Siebengebirge, Bergisches Land) |
+
+  Die Schummerung stammt aus der östlichen Nachbarkachel, weil `combshade` um
+  Köln fast weiß ist und die Vorschau leer wirkte. Beide Bilder sind nur auf
+  100 × 100 px verkleinert (Lanczos), auf Weiß gelegt und neu kodiert (JPEG
+  Qualität 80 bzw. PNG mit 64 Graustufen), sonst unverändert. Die Vorschau
+  zeigt sie mit 50 × 50 px; 100 px reichen für Pixelverhältnis 2. Erzeugt mit
+  `sharp` aus dem Repository; Lizenz und Quellenvermerk wie die Dienste
+  (CC BY 4.0, „© GeoBasis-DE / BKG (2026)“, siehe unten). Ein lokales Bild
+  statt `preview.src` auf die BKG-URL vermeidet, dass schon das Öffnen der
+  Layerauswahl Anfragen an das BKG auslöst.
+  Der Ordner `resources/img/p2d2/` scheidet aus: Ihn verwaltet der
+  Selektions-Generator und entfernt dort jede Datei, die keine Auswahl nutzt.
+  `showInLayerTree` ist an den beiden Layern nicht gesetzt: Die Layerauswahl
+  setzt es beim Einschalten selbst (`actionsLayerSelection.js`,
+  `changeVisibility`). Mit `true` stünden beide Karten schon beim Start im
+  Themenbaum (`app-store/js/getAndMergeRawLayer.js`, `addAdditional`).
 - **Kachelmatrixsatz `GLOBAL_WEBMERCATOR`, ohne Capabilities-Abruf.** Ohne
   `optionsFromCapabilities` erzeugt die masterportalapi 2.64.0 das Kachelgitter
   aus der Breite des Projektions-Extents (`layer/wmts.js`,

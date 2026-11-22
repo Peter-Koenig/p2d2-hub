@@ -231,6 +231,73 @@ describe("Portal-Konfiguration und Layer", () => {
       expect(a).toMatch(/^© GeoBasis-DE \/ <a href="https:\/\/www\.bkg\.bund\.de" target="_blank">BKG<\/a> \(\d{4}\) <a href="https:\/\/creativecommons\.org\/licenses\/by\/4\.0\/" target="_blank">CC BY 4\.0<\/a>$/);
     });
 
+    // Turn 034: Ohne Vorschau-URL rendert LayerPreview.vue nichts (v-if auf die
+    // URL); in der Layerauswahl ist die Vorschau die einzige Klickfläche einer
+    // Hintergrundkarte (LayerCheckBox.vue, Zweig conf.baselayer && !isLayerTree).
+    // WMTS ohne capabilitiesUrl erzeugt keine Vorschau, daher preview.src.
+    describe("Vorschau in der Layerauswahl", () => {
+      // LayerPreview zeigt 50 x 50 px (scoped CSS); 100 px reichen für
+      // Pixelverhältnis 2. Obergrenze der Dateigröße je Bild.
+      const PREVIEW_PX = 100;
+      const PREVIEW_MAX_BYTES = 16 * 1024;
+      // Breite und Höhe aus dem PNG-Kopf (IHDR) bzw. dem JPEG-SOF-Segment.
+      const imageSize = (buf: Buffer): { type: string; width: number; height: number } | null => {
+        if (buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
+          return { type: "png", width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+        }
+        if (buf[0] === 0xff && buf[1] === 0xd8) {
+          let i = 2;
+          while (i + 9 < buf.length && buf[i] === 0xff) {
+            const marker = buf[i + 1];
+            if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+              return { type: "jpeg", width: buf.readUInt16BE(i + 7), height: buf.readUInt16BE(i + 5) };
+            }
+            i += 2 + buf.readUInt16BE(i + 2);
+          }
+        }
+        return null;
+      };
+
+      it.each([
+        ["p2d2-basemapde-raster", "resources/img/basemap/basemapde-web-raster.jpg"],
+        ["p2d2-basemapde-schummerung", "resources/img/basemap/basemapde-schummerung.png"],
+      ])("%s: preview.src auf lokales Bild %s", (id, src) => {
+        expect(layer(id).preview).toEqual({ src });
+        // resources/img/p2d2/ gehört dem Selektions-Generator; er entfernt dort
+        // jede Datei, die keine Auswahl nutzt (writeGenerated, checkGenerated).
+        expect(src.startsWith("resources/img/p2d2/"), src).toBe(false);
+        expect(entry(id)).not.toHaveProperty("preview");
+        const file = join(PORTAL, src);
+        expect(existsSync(file), src).toBe(true);
+        const buf = readFileSync(file);
+        expect(buf.length, "Dateigröße").toBeLessThan(PREVIEW_MAX_BYTES);
+        expect(imageSize(buf)).toEqual({ type: src.endsWith(".png") ? "png" : "jpeg", width: PREVIEW_PX, height: PREVIEW_PX });
+      });
+
+      it("jede Hintergrundkarte bekommt eine Vorschau (WMS per GetMap, sonst preview.src)", () => {
+        for (const { id } of cfg.layerConfig.baselayer.elements) {
+          const l = layer(id);
+          const ok = ["WMS", "GROUP"].includes(l.typ) || (l.typ === "WMTS" && l.capabilitiesUrl) || l.preview?.src;
+          expect(ok, id).toBeTruthy();
+        }
+      });
+
+      // changeVisibility der Layerauswahl setzt showInLayerTree selbst;
+      // ohne Eintrag erscheinen die Karten erst nach dem Einschalten im Themenbaum.
+      it("kein showInLayerTree an den Hintergrundkarten", () => {
+        for (const e of cfg.layerConfig.baselayer.elements) expect(e, e.id).not.toHaveProperty("showInLayerTree");
+      });
+
+      it("README nennt Vorschau, Bildquelle und Lizenz", () => {
+        const readme = read(join(MP, "README.md"));
+        const start = readme.indexOf("\n## Hintergrundkarten\n");
+        const section = readme.slice(start, readme.indexOf("\n## ", start + 1));
+        for (const s of ["preview.src", "basemapde-web-raster.jpg", "basemapde-schummerung.png", "10/343/531", "10/343/532", "LayerPreview.vue"]) {
+          expect(section, s).toContain(s);
+        }
+      });
+    });
+
     it("isNeverVisibleInTree nur am Auswahl-Layer", () => {
       const all = [...cfg.layerConfig.baselayer.elements, ...cfg.layerConfig.subjectlayer.elements];
       expect(all.filter((e: any) => e.isNeverVisibleInTree).map((e: any) => e.id)).toEqual([SELECTION_LAYER]);

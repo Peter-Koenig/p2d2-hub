@@ -152,7 +152,10 @@
     "maxScale": "2500000",
     "legendURL": "ignore",
     "gfiAttributes": "ignore",
-    "layerAttribution": "© GeoBasis-DE / <a href=\"https://www.bkg.bund.de\" target=\"_blank\">BKG</a> (2026) <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\">CC BY 4.0</a>"
+    "layerAttribution": "© GeoBasis-DE / <a href=\"https://www.bkg.bund.de\" target=\"_blank\">BKG</a> (2026) <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\">CC BY 4.0</a>",
+    "preview": {
+      "src": "resources/img/basemap/basemapde-web-raster.jpg"
+    }
   },
   {
     "id": "p2d2-basemapde-schummerung",
@@ -284,7 +287,10 @@
     "maxScale": "2500000",
     "legendURL": "ignore",
     "gfiAttributes": "ignore",
-    "layerAttribution": "© GeoBasis-DE / <a href=\"https://www.bkg.bund.de\" target=\"_blank\">BKG</a> (2026) <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\">CC BY 4.0</a>"
+    "layerAttribution": "© GeoBasis-DE / <a href=\"https://www.bkg.bund.de\" target=\"_blank\">BKG</a> (2026) <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\">CC BY 4.0</a>",
+    "preview": {
+      "src": "resources/img/basemap/basemapde-schummerung.png"
+    }
   },
   {
     "id": "p2d2-geo-containers",
