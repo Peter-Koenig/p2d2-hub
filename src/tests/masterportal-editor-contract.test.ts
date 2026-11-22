@@ -9,6 +9,7 @@
 // EditorState.ts, das UTM-Muster aus src/utils/crs.ts und die WFS-URL des
 // Friedhofs-Layers in services-p2d2.json. Kein Netzwerk, keine DB.
 import { describe, it, expect } from "vitest";
+import { servedJson } from "./fixtures/masterportal-served";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
@@ -30,9 +31,8 @@ const fixture = JSON.parse(
 
 // Konfiguration des Friedhofs-Layers (Stage de1). Kind-Level, Trenner,
 // Präfixfelder und Proxy-Pfad kommen von dort, nicht aus dem Modul.
-const EDITOR_CFG = JSON.parse(
-  read("supplement/masterportal/portal/resources/p2d2-editor-config.json"),
-);
+// Ausgeliefert wie vom nginx des Portals (Platzhalter ersetzt, fixtures/masterportal-served.ts).
+const EDITOR_CFG = servedJson("p2d2-editor-config.json");
 const FH = EDITOR_CFG.layers["p2d2-geo-containers"];
 const KIDS = { childLevel: FH.children.level, separator: FH.children.separator };
 const PREFIX_FIELDS: string[] = FH.children.prefixFields;

@@ -8,6 +8,7 @@
 // austauscht. dispatch liefert wie Vuex immer ein Promise. Die Quelle des
 // Auswahl-Layers ist eine echte ol/source/Vector, fetch ein Fake.
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from "vitest";
+import { servedJson } from "./fixtures/masterportal-served";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import proj4 from "proj4";
@@ -34,7 +35,7 @@ const OPTIONS = readJson("portal-config-p2d2.json").portalConfig.map.mapView.opt
 const RESOLUTIONS: number[] = OPTIONS.map((o: any) => o.resolution);
 const LAYER_ID = "p2d2-geo-containers";
 const STAGE = (({ wfsBase, typeName, proxyPath }) => ({ wfsBase, typeName, proxyPath }))(
-  readJson("p2d2-editor-config.json").layers[LAYER_ID],
+  servedJson("p2d2-editor-config.json").layers[LAYER_ID],
 );
 const kommune = (slug: string) => SELECTION.kommunen.find((k: any) => k.slug === slug);
 const kategorie = (slug: string) => SELECTION.kategorien.find((k: any) => k.slug === slug);
@@ -519,7 +520,7 @@ describe("loadStage", () => {
   };
 
   it("liest wfsBase, typeName, proxyPath aus der Stage-Konfiguration", async () => {
-    const fetch = vi.fn(ok(readJson("p2d2-editor-config.json")));
+    const fetch = vi.fn(ok(servedJson("p2d2-editor-config.json")));
     const { ctx, actions } = make(fetch);
     await actions.loadStage(ctx);
     expect(fetch).toHaveBeenCalledWith("./resources/p2d2-editor-config.json", { cache: "no-cache" });

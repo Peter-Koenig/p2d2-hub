@@ -2,7 +2,7 @@
   {
     "id": "p2d2-osm",
     "name": "OpenStreetMap",
-    "url": "https://geoportal.udp.data-dna.eu/mapserver/service",
+    "url": "MAPSERVER-URL/service",
     "typ": "WMS",
     "layers": "p2d2_osm",
     "format": "image/png",

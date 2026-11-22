@@ -94,8 +94,35 @@ passen; `config.js.template` verweist darauf:
 | `restConf` | `./resources/rest-services-internet.json` | Portal-Backend (Proxy) |
 
 Pfade werden relativ zur Portal-URL aufgelöst (`/masterportal/`). Nur
-`config.js` wird zur Laufzeit gerendert; JSON-Dateien werden unverändert
-ausgeliefert.
+`config.js` wird zur Laufzeit gerendert. Die beiden JSON-Dateien mit Hosts
+tragen Platzhalter, die das nginx beim Ausliefern ersetzen muss (Abschnitt
+„Hostnamen“).
+
+## Hostnamen
+
+In den ausgelieferten Dateien steht kein Host der Betreiber-Domain. Statt des
+Hosts stehen dieselben Platzhalter wie in den Dateien des Portal-Backends
+(`services-internet.json`), die das nginx im Masterportal-Pod per `sub_filter`
+ersetzt:
+
+| Datei | Schlüssel | Wert in der Datei | ausgeliefert (Beispiel `ADDON_DOMAIN=udp.projekte-koenig.eu`) |
+|---|---|---|---|
+| `services-p2d2.json` | `p2d2-osm.url` | `MAPSERVER-URL/service` | `https://geoportal.udp.projekte-koenig.eu/mapserver/service` |
+| `p2d2-editor-config.json` | `wfsBase` | `GEOSERVER_URL/de1/ows` | `https://geoportal.udp.projekte-koenig.eu/geoserver/de1/ows` |
+
+- `MAPSERVER_URL` und `GEOSERVER_URL` leitet `05-masterportal-env.envsh` im
+  Installer aus `PORTAL_BACKEND_ORIGIN` ab (`https://geoportal.${ADDON_DOMAIN}`,
+  ConfigMap `masterportal-<stage>-config`). Es gibt keine neue
+  Betreibervariable.
+- Der Stage-Pfad (`de1`) steht in der Datei; er ist je Stage-Branch richtig.
+- **Voraussetzung im Installer:** Das nginx ersetzt die Platzhalter bisher nur
+  in den Backend-Dateien. Für diese beiden Dateien braucht es eine eigene
+  `location` mit `sub_filter` (Vorschlag im Bericht zu Turn 028). Ohne sie
+  bleiben die Platzhalter stehen: Die Karte lädt keine Kacheln, der Selektor
+  meldet „wfsBase ist keine absolute http(s)-URL“.
+- Ausnahme mit festem Host: der Link auf die Projektseite im Menütitel
+  (`portal-config-p2d2.json`, `mainMenu.title.link`).
+- Test: `masterportal-supplement.test.ts`, Abschnitt „feste Hostnamen im Portal“.
 
 ## Add-ons (`addons/`)
 
@@ -552,7 +579,7 @@ Deutschland-Extent aus `mapView.extent`).
 ## Stage de1: Inhalte
 
 - Hintergrundkarte: MapProxy-Layer `p2d2_osm` (WMS
-  `https://geoportal.udp.data-dna.eu/mapserver/service`), Karte in EPSG:25832.
+  `MAPSERVER-URL/service`, Abschnitt „Hostnamen“), Karte in EPSG:25832.
 - Fachlayer: ein GeoJSON-Layer `p2d2-geo-containers` („Auswahl“) **ohne
   `url`**. Die masterportalapi legt dafür eine leere Quelle an
   (`layer/vector.js` `createVectorSource`); den Inhalt lädt das Add-on
@@ -580,8 +607,6 @@ Deutschland-Extent aus `mapView.extent`).
     „p2d2Crs“).
   - Auch `addWMS` liest `mapViewSettings.extent`: Es prüft, ob ein externer
     WMS den Ausschnitt abdeckt (`AddWMS.vue:138`).
-
-**Feste Hostnamen:** `geoportal.udp.data-dna.eu` steht fest in
-`services-p2d2.json` (MapProxy-URL) und in `p2d2-editor-config.json`
-(`wfsBase`); es gibt kein Templating für JSON-Dateien. Bei einer anderen Domain
-sind diese Einträge anzupassen.
+- Kommunenwahl: `map.extent` für Köln, Bonn, Dortmund, Kiel, Berlin, Hamburg
+  (Hauptgebiet ohne Neuwerk), San Francisco (ohne Farallon-Inseln), Bornheim
+  und Kronshagen; Flensburg und Hangzhou ohne Extent (Zoom-Regel).

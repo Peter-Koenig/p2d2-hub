@@ -6,6 +6,7 @@
 // @p2d2/core und für Köln/Friedhöfe genau die frühere statische Layer-URL.
 // Kein Netzwerk, keine DB.
 import { describe, it, expect } from "vitest";
+import { servedJson } from "./fixtures/masterportal-served";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { buildWFSURL } from "../../packages/core/src/wfst/wfs-url";
@@ -20,7 +21,10 @@ import { quoteCql as editorQuoteCql } from "../../supplement/masterportal/addons
 
 const RES = resolve(__dirname, "../../supplement/masterportal/portal/resources");
 const readJson = (name: string): any => JSON.parse(readFileSync(resolve(RES, name), "utf8"));
-const EDITOR_CFG = readJson("p2d2-editor-config.json");
+// Ausgeliefert wie vom nginx des Portals (Platzhalter ersetzt, fixtures/masterportal-served.ts).
+const served = servedJson;
+const RAW_EDITOR_CFG = readJson("p2d2-editor-config.json");
+const EDITOR_CFG = served("p2d2-editor-config.json");
 const SELECTION = readJson("p2d2-selection.json");
 const LAYER_ID = "p2d2-geo-containers";
 const STAGE = EDITOR_CFG.layers[LAYER_ID];
@@ -158,6 +162,20 @@ describe("readStage", () => {
     });
     const q = readStage({ layers: { [LAYER_ID]: { ...STAGE, wfsBase: "https://x/ows?a=1" } } }, LAYER_ID);
     expect(q.ok).toBe(false);
+  });
+
+  it("nicht ersetzter Platzhalter (Datei ohne nginx-Ersetzung) → Fehler mit Hinweis", () => {
+    expect(RAW_EDITOR_CFG.layers[LAYER_ID].wfsBase).toBe("GEOSERVER_URL/de1/ows");
+    const r: any = readStage(RAW_EDITOR_CFG, LAYER_ID);
+    expect(r.ok).toBe(false);
+    expect(r.error).toMatch(/wfsBase.*keine absolute http\(s\)-URL.*GEOSERVER_URL/);
+  });
+
+  it("andere Domain: wfsBase folgt dem Origin, Stage-Pfad de1 bleibt", () => {
+    const other = served("p2d2-editor-config.json", "https://geoportal.example.org");
+    const r: any = readStage(other, LAYER_ID);
+    expect(r.ok).toBe(true);
+    expect(r.stage.wfsBase).toBe("https://geoportal.example.org/geoserver/de1/ows");
   });
 });
 

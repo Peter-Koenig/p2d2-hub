@@ -137,11 +137,13 @@ describe("Portal-Konfiguration und Layer", () => {
     expect(JSON.stringify(cfg)).not.toContain("3_15_0");
   });
 
-  it("OSM-Layer: MapProxy-WMS p2d2_osm", () => {
+  // MAPSERVER-URL ersetzt das nginx des Portals beim Ausliefern
+  // (sub_filter wie bei services-internet.json, Wert aus PORTAL_BACKEND_ORIGIN).
+  it("OSM-Layer: MapProxy-WMS p2d2_osm über den Platzhalter MAPSERVER-URL", () => {
     const osm = svc.find((l) => l.id === "p2d2-osm");
     expect(osm).toMatchObject({
       typ: "WMS",
-      url: "https://geoportal.udp.data-dna.eu/mapserver/service",
+      url: "MAPSERVER-URL/service",
       layers: "p2d2_osm",
     });
   });
@@ -295,9 +297,9 @@ describe("p2d2-editor-config.json ↔ services-p2d2.json", () => {
 
   // Die URL baut p2d2Selector aus diesen Werten (Vertrag in
   // masterportal-selector-request.test.ts gegen die frühere statische URL).
-  it("wfsBase, typeName und proxyPath der Stage de1", () => {
+  it("wfsBase, typeName und proxyPath der Stage de1 (Host über den Platzhalter GEOSERVER_URL)", () => {
     for (const [id, c] of layers) {
-      expect(c.wfsBase, id).toBe("https://geoportal.udp.data-dna.eu/geoserver/de1/ows");
+      expect(c.wfsBase, id).toBe("GEOSERVER_URL/de1/ows");
       expect(c.typeName, id).toBe("geo-containers");
       expect(c.proxyPath, id).toBe("/api/wfs-proxy");
     }
@@ -423,6 +425,45 @@ describe("addons/p2d2Crs (Projektions-Switch)", () => {
     expect([...template.matchAll(/\["(EPSG:\d+)",/g)].map((m) => m[1])).toEqual([
       "EPSG:25832",
       "EPSG:4326",
+    ]);
+  });
+});
+
+// Teil C (Turn 028): keine festen Hostnamen der Betreiber-Domains in den
+// ausgelieferten Dateien. Ausnahme: Link auf die Projektseite im Menütitel.
+describe("feste Hostnamen im Portal", () => {
+  const ALLOWED = new Map<string, string[]>([
+    ["resources/portal-config-p2d2.json", ["https://www.data-dna.eu/"]],
+  ]);
+  const HOST = /[a-z0-9.-]*(?:data-dna\.eu|projekte-koenig\.eu)[^"'\s]*/gi;
+  const shipped = (dir: string, prefix = ""): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory()
+        ? shipped(join(dir, e.name), `${prefix}${e.name}/`)
+        : /\.(json|js|template|html)$/.test(e.name)
+          ? [`${prefix}${e.name}`]
+          : [],
+    );
+
+  it("JSON, config.js.template und index.html ohne data-dna.eu und projekte-koenig.eu (außer Ausnahmen)", () => {
+    const found: string[] = [];
+    for (const f of shipped(PORTAL)) {
+      for (const m of read(join(PORTAL, f)).matchAll(HOST)) {
+        if (!(ALLOWED.get(f) ?? []).some((a) => m[0] === a || `https://${m[0]}`.startsWith(a))) found.push(`${f}: ${m[0]}`);
+      }
+    }
+    expect(found).toEqual([]);
+  });
+
+  it("Ausnahmen sind noch vorhanden (Liste bleibt aktuell)", () => {
+    for (const [f, hosts] of ALLOWED) {
+      for (const h of hosts) expect(read(join(PORTAL, f)), `${f}: ${h}`).toContain(h);
+    }
+  });
+
+  it("Gegenprobe: der Test erkennt einen festen Host", () => {
+    expect("x https://geoportal.udp.projekte-koenig.eu/mapserver".match(HOST)).toEqual([
+      "geoportal.udp.projekte-koenig.eu/mapserver",
     ]);
   });
 });

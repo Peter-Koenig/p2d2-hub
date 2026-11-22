@@ -102,6 +102,15 @@ export function readStage (config, layerId) {
     if (stage.wfsBase.includes("?")) {
         return {ok: false, error: `p2d2-editor-config: layers.${layerId}.wfsBase darf keine Query enthalten`};
     }
+    // Der Host steht in der Datei als Platzhalter GEOSERVER_URL; ersetzt wird er
+    // beim Ausliefern (README, Abschnitt „Hostnamen“). Ohne Ersetzung bliebe eine
+    // relative URL, die der Stage-Proxy ablehnt.
+    if (!(/^https?:\/\/[^/]+/).test(stage.wfsBase)) {
+        return {
+            ok: false,
+            error: `p2d2-editor-config: layers.${layerId}.wfsBase ist keine absolute http(s)-URL (${stage.wfsBase}; Platzhalter GEOSERVER_URL nicht ersetzt?)`
+        };
+    }
     return {ok: true, stage};
 }
 

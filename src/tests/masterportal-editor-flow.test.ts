@@ -5,6 +5,7 @@
 // Reine Module ohne DOM, OL und Vue. Abfrage, Fenster und Zeitgeber werden
 // als Fakes injiziert. Kein Netzwerk, keine DB.
 import { describe, it, expect } from "vitest";
+import { servedJson } from "./fixtures/masterportal-served";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
@@ -15,9 +16,8 @@ import { validateConfig } from "../../supplement/masterportal/addons/p2d2Feature
 
 const ROOT = resolve(__dirname, "../..");
 const read = (p: string): string => readFileSync(join(ROOT, p), "utf8");
-const CFG_FILE = JSON.parse(
-  read("supplement/masterportal/portal/resources/p2d2-editor-config.json"),
-);
+// Ausgeliefert wie vom nginx des Portals (Platzhalter ersetzt, fixtures/masterportal-served.ts).
+const CFG_FILE = servedJson("p2d2-editor-config.json");
 const LAYER_ID = "p2d2-geo-containers";
 const LAYERS: Record<string, any> = validateConfig(CFG_FILE);
 const LC = LAYERS[LAYER_ID];
