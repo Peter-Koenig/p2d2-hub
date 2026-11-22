@@ -173,6 +173,19 @@ export function validateSelection (json) {
     return {ok: errors.length === 0, errors};
 }
 
+/** Zustände des Auswahl-Layers, zu denen das Panel einen Hinweis zeigt. */
+const NOTICE_STATES = ["loading", "empty", "error"];
+
+/**
+ * Hinweis zum Auswahl-Layer im Panel: nur Laden, keine Objekte und Fehler;
+ * idle und ready zeigen nichts.
+ * @param {string} layerStatus idle | loading | ready | empty | error.
+ * @returns {string|null} Schlüssel unter modules.p2d2Selector.layer oder null.
+ */
+export function layerNoticeKey (layerStatus) {
+    return NOTICE_STATES.includes(layerStatus) ? layerStatus : null;
+}
+
 /**
  * @param {Object|null} selection Auswahl-Datei.
  * @param {string} slug Slug.

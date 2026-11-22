@@ -298,7 +298,8 @@
         {
           "id": "p2d2-geo-containers",
           "name": "Auswahl",
-          "visibility": true
+          "visibility": true,
+          "isNeverVisibleInTree": true
         }
       ]
     }

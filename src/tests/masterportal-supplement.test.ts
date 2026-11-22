@@ -160,9 +160,16 @@ describe("Portal-Konfiguration und Layer", () => {
     expect(styles.some((s) => s.styleId === "unterkuenfte")).toBe(true);
   });
 
-  it("layerConfig: Auswahl-Layer sichtbar (nur sichtbare Einträge werden zum Layer)", () => {
+  // isNeverVisibleInTree blendet den Layer im Themenbaum (LayerComponent.vue,
+  // LayerTreeNode.vue) und in der Pillenleiste (LayerPills.vue setVisibleLayers)
+  // aus; Legende und Suche (visibleVector) werten das Feld nicht aus.
+  it("layerConfig: Auswahl-Layer sichtbar, aber nicht im Themenbaum und nicht als Pille", () => {
     const entry = cfg.layerConfig.subjectlayer.elements.find((e: any) => e.id === SELECTION_LAYER);
-    expect(entry).toEqual({ id: SELECTION_LAYER, name: "Auswahl", visibility: true });
+    expect(entry).toEqual({ id: SELECTION_LAYER, name: "Auswahl", visibility: true, isNeverVisibleInTree: true });
+  });
+
+  it("layerPills bleiben aktiv (wirken für andere Fachlayer, z. B. aus addWMS)", () => {
+    expect(cfg.portalConfig.map.layerPills).toEqual({ active: true });
   });
 
   it("der Demo-Layer Friedhöfe Köln ist entfernt", () => {

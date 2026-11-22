@@ -51,14 +51,43 @@ describe("addons/p2d2Selector: Registrierung und Menü", () => {
     expect(stripAll(read(join(DIR, "store/stateP2d2Selector.js")))).toMatch(/type:\s*"p2d2Selector"/);
   });
 
-  it("Locales de und en: gleiche Schlüssel, Menütitel Auswahl / Selection", () => {
+  it("Locales de und en: gleiche Schlüssel, Menütitel Public-Public Data-DNA", () => {
     const keys = (o: any, p = ""): string[] =>
       Object.entries(o).flatMap(([k, v]) => (typeof v === "object" ? keys(v, `${p}${k}.`) : [`${p}${k}`]));
     const de = readJson(join(DIR, "locales/de/additional.json"));
     const en = readJson(join(DIR, "locales/en/additional.json"));
     expect(keys(de).sort()).toEqual(keys(en).sort());
-    expect(de.modules.p2d2Selector.name).toBe("Auswahl");
-    expect(en.modules.p2d2Selector.name).toBe("Selection");
+    expect(de.modules.p2d2Selector.name).toBe("Public-Public Data-DNA");
+    expect(en.modules.p2d2Selector.name).toBe("Public-Public Data-DNA");
+  });
+
+  it("Menütitel oben im Portal bleibt unverändert", () => {
+    const cfg = readJson(join(MP, "portal/resources/portal-config-p2d2.json"));
+    expect(cfg.portalConfig.mainMenu.title.text).toBe("p2d2 – Public-Public Data-DNA");
+  });
+
+  // A4: Statuszeile entfällt; nur Laden, Fehler und "keine Objekte" bleiben.
+  it("Locales: keine Texte der früheren Statuszeile (current, none, layer.idle, layer.ready)", () => {
+    for (const lang of ["de", "en"]) {
+      const t = readJson(join(DIR, `locales/${lang}/additional.json`)).modules.p2d2Selector;
+      expect(t, lang).not.toHaveProperty("current");
+      expect(t, lang).not.toHaveProperty("none");
+      expect(Object.keys(t.layer).sort(), lang).toEqual(["empty", "error", "loading"]);
+    }
+  });
+
+  it("jeder Locale-Schlüssel wird in Komponente oder Store genutzt", () => {
+    const keys = (o: any, p = ""): string[] =>
+      Object.entries(o).flatMap(([k, v]) => (typeof v === "object" ? keys(v, `${p}${k}.`) : [`${p}${k}`]));
+    const code = files.map((f) => stripAll(read(f))).join("\n");
+    const de = readJson(join(DIR, "locales/de/additional.json"));
+    for (const key of keys(de)) {
+      const short = key.replace(/^modules\.p2d2Selector\./, "");
+      const used =
+        code.includes(`modules.p2d2Selector.${short}`) ||
+        (short.startsWith("layer.") && code.includes("modules.p2d2Selector.layer.${"));
+      expect(used, key).toBe(true);
+    }
   });
 
   it("p2d2-selection.json liegt unter resources/ und wird relativ geladen", () => {
@@ -146,5 +175,53 @@ describe("addons/p2d2Selector: Isolation", () => {
         /mapCollection|@appstore|@shared|@masterportal|\bol\/|\bwindow\b|\bdocument\b|viewSwap|registerProjections/,
       );
     }
+  });
+});
+
+// Teil A (Turn 028): Darstellung. Ohne Browser nur am Quelltext prüfbar;
+// die Wirkung nimmt der Browser ab (Report, Abnahmeliste).
+describe("addons/p2d2Selector: Kacheln", () => {
+  const vue = read(join(DIR, "components/P2d2Selector.vue"));
+  const template = vue.slice(vue.indexOf("<template>"), vue.lastIndexOf("</template>"));
+  const style = vue.slice(vue.indexOf("<style scoped>"));
+  const standalone = (f: string) => read(resolve(__dirname, "../../src/components", f));
+
+  it("A4: keine Statuszeile (Aktuelle Auswahl, Zähler) mehr", () => {
+    expect(template).not.toMatch(/p2d2-summary|\.current|\.none|featureCount|summary/);
+  });
+
+  it("A5: Raster mit auto-fill und Mindestbreite 10rem", () => {
+    expect(style).toMatch(/grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(var\(--p2d2-tile-min-width\),\s*1fr\)\)/);
+    expect(style).toMatch(/--p2d2-tile-min-width:\s*10rem/);
+  });
+
+  it("A6: Streifen der Kategorien in der Farbe des Standalone (Kategorien.astro)", () => {
+    const green = standalone("Kategorien.astro").match(/bg-\[(#[0-9A-Fa-f]{6})\]/)?.[1];
+    expect(green).toBe("#0FF078");
+    expect(style.toLowerCase()).toContain(`--p2d2-kategorie-stripe: ${green!.toLowerCase()}`);
+  });
+
+  it("A7: aktiv = aria-pressed mit farbigem Schlagschatten; kein #fff1e6, kein fetter Wechsel", () => {
+    expect(template.match(/:aria-pressed=/g)).toHaveLength(2);
+    expect(style).toMatch(/\.p2d2-tile-kommune\[aria-pressed="true"\]\s*\{\s*box-shadow:/);
+    expect(style).toMatch(/\.p2d2-tile-kategorie\[aria-pressed="true"\]\s*\{\s*box-shadow:/);
+    expect(style).toMatch(/:focus-visible\s*\{\s*outline:/);
+    expect(vue).not.toMatch(/fff1e6|p2d2-tile-selected/);
+  });
+
+  it("A7: Schein-Farben wie der Hover-Schein im Standalone", () => {
+    expect(standalone("Kategorien.astro")).toContain("shadow-[0_0_32px_4px_#0a6630]");
+    expect(standalone("KommunenGrid.astro")).toContain("rgba(255,105,0,0.3)");
+    expect(style).toContain("--p2d2-kategorie-glow: #0a6630");
+    expect(style).toContain("--p2d2-kommune-glow: rgba(255, 105, 0, 0.3)");
+  });
+
+  it("A8: Bild mit loading=lazy, object-fit cover, Rückfall auf dunklen Hintergrund", () => {
+    expect(template.match(/<img/g)).toHaveLength(2);
+    expect(template.match(/loading="lazy"/g)).toHaveLength(2);
+    expect(template.match(/@error="imageFailed/g)).toHaveLength(2);
+    expect(style).toMatch(/object-fit:\s*cover/);
+    expect(style).toContain("--p2d2-tile-fallback: #2a2a2a");
+    expect(style).toMatch(/--p2d2-tile-height:\s*(7|7\.5|8|8\.5|9)rem/);
   });
 });

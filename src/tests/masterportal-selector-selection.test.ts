@@ -12,6 +12,7 @@ import {
   selectionSignature,
   findKommune,
   findKategorie,
+  layerNoticeKey,
 } from "../../supplement/masterportal/addons/p2d2Selector/js/selection.js";
 
 const FILE = resolve(__dirname, "../../supplement/masterportal/portal/resources/p2d2-selection.json");
@@ -173,5 +174,18 @@ describe("findKommune / findKategorie", () => {
     toggleSelection({ kommuneSlug: null, kategorieSlug: null }, { kommuneSlug: s.kommunen[3].slug }, s);
     findKommune(s, s.kommunen[1].slug);
     expect(JSON.stringify(s)).toBe(before);
+  });
+});
+
+describe("layerNoticeKey", () => {
+  it("Hinweis nur bei loading, empty und error; idle und ready zeigen nichts", () => {
+    expect(["idle", "loading", "ready", "empty", "error", undefined].map((v) => layerNoticeKey(v as string))).toEqual([
+      null,
+      "loading",
+      null,
+      "empty",
+      "error",
+      null,
+    ]);
   });
 });
