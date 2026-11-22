@@ -26,6 +26,7 @@ supplement/masterportal/
 │   │   ├── p2d2-selection.json      # Kommunen und Kategorien (generiert aus src/content)
 │   │   ├── style_v3.json            # Styles (styleConf)
 │   │   └── img/                     # Bilder, u. a. p2d2-logo.svg
+│   │       └── p2d2/                # Kachelbilder (generiert aus public/images)
 │   └── localdata/          # Demodaten
 ├── addons/
 │   ├── addonsConf.json     # registriert p2d2FeatureEditor (javascript), p2d2Crs und p2d2Selector (tool)
@@ -37,7 +38,7 @@ supplement/masterportal/
 │   │   └── js/             # utm, viewSwap, runtime
 │   └── p2d2Selector/       # Auswahl Kommune/Kategorie, dynamischer Layer, Zoom (Hauptmenü)
 │       ├── index.js, components/, store/, locales/
-│       └── js/             # selection, wfsRequest, zoom, layerControl, debug, runtime
+│       └── js/             # selection, wfsRequest, zoom, fit, layerControl, debug, runtime
 └── README.md
 ```
 
@@ -341,11 +342,51 @@ Andere Teile lesen die View bei jedem Zugriff über `mapCollection.getMapView("2
 
 ### p2d2Selector (Typ `tool`): Auswahl, dynamischer Layer, Zoom
 
-Werkzeug im `mainMenu` (eigene Sektion an Index 1) mit zwei Kachelmatrizen
-(Kommunen, Kategorien) aus `portal/resources/p2d2-selection.json`. Ein Klick
-wählt, ein zweiter Klick auf dieselbe Kachel hebt die Auswahl auf. Vuex-Modul
-`Modules/P2d2Selector`, kein `hasMouseMapInteractions` (sonst sperrt die
-Klickprüfung des `p2d2FeatureEditor`).
+Werkzeug im `mainMenu` (eigene Sektion an Index 1, Titel „Public-Public
+Data-DNA“) mit zwei Kachelmatrizen (Kommunen, Kategorien) aus
+`portal/resources/p2d2-selection.json`. Ein Klick wählt, ein zweiter Klick auf
+dieselbe Kachel hebt die Auswahl auf. Vuex-Modul `Modules/P2d2Selector`, kein
+`hasMouseMapInteractions` (sonst sperrt die Klickprüfung des
+`p2d2FeatureEditor`).
+
+#### Darstellung
+
+Vorlage sind `KommunenGrid.astro` und `Kategorien.astro` des Standalone. Ohne
+Tailwind: scoped CSS in `components/P2d2Selector.vue`, Farben und Maße als
+CSS-Variablen an `#p2d2-selector`.
+
+- **Kachel:** Bild (`object-fit: cover`, `loading="lazy"`), Verlauf nach unten,
+  Farbstreifen oben, Titel unten, Höhe 8rem. Fehlt das Bild oder lädt es
+  nicht, bleibt der dunkle Hintergrund `#2a2a2a` (wie `onerror` im Standalone).
+- **Farben aus dem Standalone:** Kommunen Streifen `colorStripe` (Standard
+  `#FF6900`), Schein `rgba(255, 105, 0, 0.3)`; Kategorien Streifen `#0FF078`,
+  Verlauf `#074220f5`, Schein `#0a6630`.
+- **Aktiv** (`aria-pressed="true"`): Schlagschatten in der Streifenfarbe (3px)
+  plus Schein. Der Fokus-Ring (`:focus-visible`, 2px, Abstand 5px) liegt
+  außerhalb davon.
+- **Spalten:** `repeat(auto-fill, minmax(10rem, 1fr))`, Abstand 0,5rem. Der
+  Inhalt des Menüs ist um 2 × 1,5rem Innenabstand schmaler als das Menü
+  (`MenuContainerBody.vue`, `$padding`). Bei 25 % Menübreite: 2560 px → 592 px
+  Inhalt → 3 Spalten (4 bräuchten 664 px); 1920 px → 432 px → 2 Spalten;
+  1366 px → 294 px → 1 Spalte (2 bräuchten 328 px).
+- **Hinweise** (`layerNoticeKey`): Laden der Auswahl-Datei, Laden der Objekte,
+  „keine Objekte“ und Fehler. Ohne Auswahl und nach erfolgreichem Laden steht
+  nichts über den Kacheln.
+- **Icon** `bi-grid-3x3-gap` steht im State und in der Menü-Konfiguration;
+  Ursache, falls es nicht erscheint: Bericht zu Turn 028.
+
+#### Bilder
+
+Der Generator (`npm run generate:masterportal-selection`) bestimmt je Eintrag
+das Bild nach der Regel des Standalone, `<slug>_<image_version>.jpg`
+(Standard `001`), kopiert es aus `public/images/{kommunen,kategorien}/` nach
+`portal/resources/img/p2d2/{kommunen,kategorien}/` und schreibt den Pfad in
+das Feld `image` der Auswahl-Datei (relativ zur Portal-Seite, z. B.
+`resources/img/p2d2/kommunen/koeln_001.jpg`). Fehlt das Bild: `image: null`
+und eine Warnung. Dateien im Bildordner, die keine Auswahl nutzt, entfernt er.
+`--check` prüft zusätzlich Vorhandensein, SHA-256 gegen die Quelle und
+verwaiste Dateien. Die Bilder gehören zum Tree-Hash von
+`supplement/masterportal`; ein neues Bild ändert den Image-Tag.
 
 #### Ablauf `applySelection`
 
@@ -362,8 +403,10 @@ neu angestoßen hat.
    2. `Modules/P2d2Crs/activateLocal` tauscht die View auf das lokale CRS
       (`swapView`), auch wenn vorher EPSG:3857 aktiv war (wie im Standalone).
       Die View hat danach keinen Extent (Regel unter „p2d2Crs“).
-   3. Zielstufe aus `map.zoom` (siehe Zoom-Regel), `view.animate` mit Zentrum
-      und Auflösung (300 ms wie im Standalone).
+   3. Ziel aus `map.extent` (Abschnitt „Ausschnitt“) oder, ohne Extent, aus
+      `map.zoom` (Zoom-Regel); das Zentrum liegt in der Mitte der sichtbaren
+      Fläche neben dem Menü. `view.animate` mit Zentrum und Auflösung (300 ms
+      wie im Standalone).
    4. `Maps/setInitialCenter` und `Maps/setInitialZoom`: „Startansicht“
       (totalView) führt zur gewählten Kommune.
 
@@ -417,7 +460,38 @@ Auflösung = `2π·6370997/256/2^zoom` (OpenLayers-View des Standalone ohne
 Tabelle; für alle UTM-Zonen gleich), dann linear auf die nächste Stufe der
 Portal-Tabelle eingerastet (wie `snapResolution`). Köln (Zoom 11) → Stufe 1
 (1:200 000, 52,92 m/px), Bonn (12) → Stufe 2, Berlin (10) → Stufe 0,
-Kronshagen (14) → Stufe 4.
+Kronshagen (14) → Stufe 4. Gilt nur für Kommunen ohne `map.extent`
+(Flensburg, Hangzhou); das Zentrum wird wie beim Ausschnitt um das Menü
+verschoben.
+
+#### Ausschnitt (`js/fit.js`)
+
+- **`map.extent`** aus der Collection (`[minLon, minLat, maxLon, maxLat]`,
+  EPSG:4326) übernimmt der Generator, wenn er gültig ist (vier Zahlen, min < max,
+  Länge ±180, Breite ±90, `map.center` innen; `extentErrors` in
+  `js/selection.js`). Der Selektor transformiert ihn mit `transformExtent`
+  (8 Stützpunkte je Kante) in die Zone.
+- **Sichtbare Fläche:** Die Karte ist so breit wie das Fenster, das
+  ausgeklappte Hauptmenü liegt darüber. `menuPadding` = `[20, 20 + Zweitmenü,
+  20, 20 + Hauptmenü]`; die Menübreite kommt aus
+  `Menu/currentMainMenuOffsetWidth` (nach Übergang oder Ziehen gesetzt), sonst
+  aus `Menu/currentMenuWidth` (`"25%"` × Kartenbreite); eingeklappt oder unter
+  dem Breakpoint (`isMobile`) 0. Das Padding verschiebt das Zentrum, die
+  Auflösung bestimmt der Modus.
+- **Modi**, Umschaltung über `?p2d2Fit=<modus>` (einmal beim Start gelesen,
+  unbekannt → `nearest`; der Modus steht im Debug-Ereignis `focus`):
+
+| Modus | Regel | Entspricht |
+|---|---|---|
+| `nearest` (Standard) | nächste Stufe zur passenden Auflösung | `view.fit(…, {nearest: true})` |
+| `ceil` | feinste Stufe, bei der die ganze BBox sichtbar ist | `view.fit(…, {nearest: false})` |
+| `exact` | passende Auflösung ohne Einrasten | `fit` mit `constrainResolution: false` |
+| `tight` | BBox füllt die sichtbare Fläche (die kürzere Seite passt), dann wie `ceil` | Vorschlag für den Sollwert Köln Stufe 3 |
+
+- **`exact`:** Die Views haben `constrainResolution: true` (`buildViewOptions`
+  in p2d2Crs). Die Zwischenauflösung bleibt nach `animate` stehen, rastet aber
+  beim ersten Verschieben auf die nächste Stufe ein (`endInteraction`,
+  `setCenter`). Maßstab und „Startansicht“ arbeiten mit der nächsten Stufe.
 
 #### Debug-Ausgabe
 
@@ -432,7 +506,7 @@ Deutschland-Extent aus `mapView.extent`).
 | Ereignis | Inhalt |
 |---|---|
 | `selection` | `signature` |
-| `focus` | `slug`, `projection`, `zoom`, `zoomResolution` (vor dem Einrasten, Köln 76,35), `stage`, `resolution` (Stufe, Köln 52,92), `center` |
+| `focus` | `slug`, `projection`, `mode` (`p2d2Fit`), `source` (`extent` oder `zoom`), `zoom`, `zoomResolution` (Zoom-Regel vor dem Einrasten), `fitResolution` (passende Auflösung bei `extent`), `stage`, `resolution`, `center`, `padding`, `size` |
 | `view` | nach der Animation: `projection`, `resolution`, `center`, `extent` der View (View-Property, ohne Extent `null`; nach jeder Kommunenwahl `null`, ein Wert verletzt die Extent-Regel) |
 | `load` | `signature`, `url`, `cql` |
 | `request` / `response` / `features` | URL und Projektion des Loader-Aufrufs, HTTP-Status, Zahl der Features |
@@ -450,7 +524,8 @@ Deutschland-Extent aus `mapView.extent`).
   `undefined`. Die Kommunenwahl ist nur in 2D möglich (`swapView`).
 - **Feature-IDs:** `afterLoading` des Masterportals vergibt IDs nur beim
   ersten Laden; GeoServer liefert eigene IDs (im Browser zu prüfen).
-- **Basiskarte:** in EPSG:25833, 32610 und 3265x leer (WMS nur 25832/3857/4326).
+- **Basiskarte:** in EPSG:25833, 32610 und 32650 erst mit der MapProxy-Konfiguration
+  aus `civitas_einrichtung` `d20ada5` (vorher WMS nur 25832/3857/4326).
 
 #### Tests
 
@@ -460,8 +535,16 @@ Deutschland-Extent aus `mapView.extent`).
   OpenLayers-View, Tabelle D, `snapResolution`.
 - `src/tests/masterportal-selector-layer.test.ts`: Loader mit echter
   `VectorSource`, Wettlauf mit zurückgehaltenen Antworten, Abwahl, Fehler.
+- `src/tests/masterportal-selector-fit.test.ts`: Modi gegen `ol/View#fit`,
+  Zentrum in der sichtbaren Mitte, Menü-Padding, Sollwert Köln, Kronshagen.
 - `src/tests/masterportal-selector-actions.test.ts`: Reihenfolge der Commits
-  und Dispatches in `applySelection`/`focusKommune`, Status, Alerting, Debug.
+  und Dispatches in `applySelection`/`focusKommune`, Extent- und Zoom-Pfad,
+  Status, Alerting, Debug.
+- `src/tests/masterportal-focus-extent.test.ts`: echte View, alle Kommunen mit
+  Extent in allen Modi, Einrasten von `exact` beim Verschieben.
+- `src/tests/masterportal-selection-generator.test.ts`: `map.extent`,
+  Bildregel gegen die Standalone-Komponenten, Generator mit temporärer
+  Collection (neuer Eintrag, `--check`, verwaiste Dateien).
 - `src/tests/masterportal-selector-selection.test.ts`,
   `masterportal-selector-store.test.ts`, `masterportal-selector-supplement.test.ts`:
   Auswahl-Datei, Kacheln, Store, Registrierung und Isolation.
@@ -478,7 +561,9 @@ Deutschland-Extent aus `mapView.extent`).
   `typeName=geo-containers`, Daten in EPSG:4326, Umprojektion im Client).
   Style `p2d2_friedhof` in `style_v3.json`, GFI aus (Klicks behandelt der
   `p2d2FeatureEditor`). In `layerConfig` ist der Layer sichtbar, sonst entsteht
-  kein OL-Layer.
+  kein OL-Layer; `isNeverVisibleInTree: true` blendet ihn im Themenbaum und in
+  der Pillenleiste aus (`LayerComponent.vue`, `LayerPills.vue`). Legende und
+  Suche (`visibleVector`) werten das Feld nicht aus.
 - Kartenausschnitt: `startCenter` Kölner Dom auf Stufe 3, `extent`
   `[222000, 5179000, 1000000, 6177000]` (EPSG:25832, Deutschland mit Rand).
   - Herleitung: Rechteck der Extrempunkte Deutschlands in WGS84

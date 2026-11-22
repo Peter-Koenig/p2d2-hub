@@ -9,6 +9,7 @@
 import {selectionSignature, toggleSelection, validateSelection, findKategorie, findKommune} from "../js/selection.js";
 import {readStage, selectionRequest} from "../js/wfsRequest.js";
 import {zoomTarget, zoomToResolution} from "../js/zoom.js";
+import {DEFAULT_FIT_MODE, EDGE_PADDING, fitTarget, menuPadding, shiftCenter} from "../js/fit.js";
 import {createLayerControl} from "../js/layerControl.js";
 
 const LOG = "[p2d2Selector]",
@@ -47,12 +48,17 @@ async function fetchJson (fetch, url) {
  * @param {Function} runtime.fetch Wie window.fetch.
  * @param {function(): (Object|null)} [runtime.getMap] 2D-Karte.
  * @param {Function} [runtime.transform] ol/proj transform.
+ * @param {Function} [runtime.transformExtent] ol/proj transformExtent (für map.extent).
+ * @param {string} [runtime.fitMode] Modus für map.extent (js/fit.js FIT_MODES), einmal beim Start gelesen.
  * @param {function(Object, *): Array} [runtime.readFeatures] GeoJSON lesen.
  * @param {number} [runtime.focusDurationMs] Dauer der Zoom-Animation.
  * @param {function(string, Object=): void} [runtime.debug] Debug-Ausgabe.
  * @returns {Object<string, Function>} Aktionen.
  */
-export function createActions ({url, stageUrl, layerId, fetch, getMap = () => null, transform, readFeatures, focusDurationMs = 0, debug = () => undefined}) {
+export function createActions ({
+    url, stageUrl, layerId, fetch, getMap = () => null, transform, transformExtent, readFeatures,
+    focusDurationMs = 0, fitMode = DEFAULT_FIT_MODE, debug = () => undefined
+}) {
     const layerControl = createLayerControl({fetch, readFeatures, debug});
 
     /**
@@ -88,6 +94,34 @@ export function createActions ({url, stageUrl, layerId, fetch, getMap = () => nu
     }
 
     /**
+     * Ziel der Fokussierung: mit map.extent und bekannter Kartengröße nach dem
+     * Modus (js/fit.js), sonst Zoom-Regel (js/zoom.js). In beiden Fällen liegt
+     * die Kommune in der Mitte der sichtbaren Fläche neben dem Menü.
+     * @param {Object} kommune Eintrag aus p2d2-selection.json.
+     * @param {string} code Projektion der View.
+     * @param {number[]} resolutions Auflösungen der View.
+     * @param {Object} rootGetters Root-Getter.
+     * @returns {Object} Ziel mit center, resolution, stage und Angaben für das Debug-Ereignis.
+     */
+    function focusTarget (kommune, code, resolutions, rootGetters) {
+        const size = getMap()?.getSize?.(),
+            hasSize = Array.isArray(size) && size.length === 2 && size[0] > 0 && size[1] > 0,
+            padding = hasSize ? menuPadding(rootGetters, size[0]) : [EDGE_PADDING, EDGE_PADDING, EDGE_PADDING, EDGE_PADDING];
+
+        if (kommune.map.extent && hasSize && typeof transformExtent === "function") {
+            const target = fitTarget({
+                extent: transformExtent(kommune.map.extent, "EPSG:4326", code, 8),
+                size, padding, resolutions, mode: fitMode
+            });
+
+            return {...target, source: "extent", padding, size};
+        }
+        const target = zoomTarget({center: transform(kommune.map.center, "EPSG:4326", code), zoom: kommune.map.zoom, resolutions});
+
+        return {...target, center: shiftCenter(target.center, padding, target.resolution), mode: fitMode, source: "zoom", padding, size: hasSize ? size : null};
+    }
+
+    /**
      * Fokussiert eine Kommune: lokales CRS, View-Austausch, Zoom, Startansicht.
      * Alles synchron (README „Ablauf applySelection“).
      * @param {Object} context Store-Kontext.
@@ -112,11 +146,7 @@ export function createActions ({url, stageUrl, layerId, fetch, getMap = () => nu
         if (viewCode !== code) {
             return {ok: false, error: `Kartenprojektion ${viewCode ?? "unbekannt"} statt ${code}`};
         }
-        const target = zoomTarget({
-            center: transform(kommune.map.center, "EPSG:4326", code),
-            zoom: kommune.map.zoom,
-            resolutions: view.getResolutions()
-        });
+        const target = focusTarget(kommune, code, view.getResolutions(), rootGetters);
 
         view.animate({center: target.center, resolution: target.resolution, duration: focusDurationMs}, () => {
             debug("view", {
@@ -134,11 +164,16 @@ export function createActions ({url, stageUrl, layerId, fetch, getMap = () => nu
         debug("focus", {
             slug: kommune.slug,
             projection: code,
+            mode: target.mode,
+            source: target.source,
             zoom: kommune.map.zoom,
             zoomResolution: zoomToResolution(kommune.map.zoom),
+            fitResolution: target.fitResolution ?? null,
             stage: target.stage,
             resolution: target.resolution,
-            center: target.center
+            center: target.center,
+            padding: target.padding,
+            size: target.size
         });
         return {ok: true};
     }

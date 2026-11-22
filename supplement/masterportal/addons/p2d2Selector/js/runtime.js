@@ -8,8 +8,9 @@
 // Pfade sind relativ zur Portal-Seite, wie portalConf und layerConf in config.js.
 
 import GeoJSON from "ol/format/GeoJSON.js";
-import {transform} from "ol/proj.js";
+import {transform, transformExtent} from "ol/proj.js";
 import {createDebug, debugEnabled} from "./debug.js";
+import {readFitMode} from "./fit.js";
 
 const format = new GeoJSON();
 
@@ -26,6 +27,19 @@ function readDebugFlag () {
     }
 }
 
+/**
+ * Modus des Ausschnitts aus der Portal-URL (p2d2Fit), einmal beim Start.
+ * @returns {string} Modus (js/fit.js).
+ */
+function readFitModeFlag () {
+    try {
+        return readFitMode(window.location.search);
+    }
+    catch {
+        return readFitMode("");
+    }
+}
+
 export default {
     url: "./resources/p2d2-selection.json",
     stageUrl: "./resources/p2d2-editor-config.json",
@@ -35,6 +49,8 @@ export default {
     fetch: (url, options) => window.fetch(url, options),
     getMap: () => window.mapCollection?.getMap("2D") ?? null,
     transform,
+    transformExtent,
+    fitMode: readFitModeFlag(),
     readFeatures: (json, featureProjection) => format.readFeatures(json, {dataProjection: "EPSG:4326", featureProjection}),
     debug: createDebug({enabled: readDebugFlag(), log: (...args) => console.debug(...args)})
 };

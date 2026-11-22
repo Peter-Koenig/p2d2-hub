@@ -102,6 +102,7 @@ describe("addons/p2d2Selector: Isolation", () => {
       "components/P2d2Selector.vue",
       "index.js",
       "js/debug.js",
+      "js/fit.js",
       "js/layerControl.js",
       "js/runtime.js",
       "js/selection.js",
@@ -137,9 +138,10 @@ describe("addons/p2d2Selector: Isolation", () => {
     }
   });
 
-  it("js/runtime.js importiert nur ol/format/GeoJSON, ol/proj und ./debug.js", () => {
+  it("js/runtime.js importiert nur ol/format/GeoJSON, ol/proj, ./debug.js und ./fit.js", () => {
     expect(importsOf(stripAll(read(join(DIR, "js/runtime.js")))).sort()).toEqual([
       "./debug.js",
+      "./fit.js",
       "ol/format/GeoJSON.js",
       "ol/proj.js",
     ]);

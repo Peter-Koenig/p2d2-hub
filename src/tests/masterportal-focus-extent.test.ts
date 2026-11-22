@@ -17,7 +17,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import proj4 from "proj4";
 import { register } from "ol/proj/proj4.js";
-import { get as getProjection, transform } from "ol/proj.js";
+import { get as getProjection, transform, transformExtent } from "ol/proj.js";
 import View from "ol/View.js";
 import VectorLayer from "ol/layer/Vector.js";
 import VectorSource from "ol/source/Vector.js";
@@ -31,6 +31,7 @@ import { createActions } from "../../supplement/masterportal/addons/p2d2Selector
 import mutations from "../../supplement/masterportal/addons/p2d2Selector/store/mutationsP2d2Selector.js";
 import baseState from "../../supplement/masterportal/addons/p2d2Selector/store/stateP2d2Selector.js";
 import { zoomTarget } from "../../supplement/masterportal/addons/p2d2Selector/js/zoom.js";
+import { fitTarget, FIT_MODES } from "../../supplement/masterportal/addons/p2d2Selector/js/fit.js";
 
 const RES = resolve(__dirname, "../../supplement/masterportal/portal/resources");
 const readJson = (name: string): any => JSON.parse(readFileSync(resolve(RES, name), "utf8"));
@@ -127,7 +128,9 @@ beforeEach(() => {
 });
 afterEach(() => errorSpy.mockRestore());
 
-const makeWorld = (mapView: Record<string, any> = MAP_VIEW) => {
+type WorldOptions = { size?: number[]; menu?: Record<string, unknown>; fitMode?: string };
+
+const makeWorld = (mapView: Record<string, any> = MAP_VIEW, opts: WorldOptions = {}) => {
   let view = portalView(mapView);
   const source = new VectorSource();
   const layer = new VectorLayer({ source, properties: { id: LAYER_ID } });
@@ -138,10 +141,12 @@ const makeWorld = (mapView: Record<string, any> = MAP_VIEW) => {
     }),
     getAllLayers: () => [layer],
     getOverlays: () => ({ getArray: () => [] }),
+    ...(opts.size ? { getSize: () => opts.size } : {}),
   };
   const root: Record<string, any> = { "Maps/initialCenter": [...mapView.startCenter], "Maps/initialZoom": mapView.startZoomLevel };
   const crsState: any = { ...crsBaseState, activeCrs: mapView.epsg };
   const rootGetters: any = {
+    ...opts.menu,
     "Maps/mode": "2D",
     mapViewSettings: mapView,
     get "Maps/initialCenter"() {
@@ -182,6 +187,8 @@ const makeWorld = (mapView: Record<string, any> = MAP_VIEW) => {
     readFeatures: (json: any, p: any) => new GeoJSON().readFeatures(json, { dataProjection: "EPSG:4326", featureProjection: p }),
     focusDurationMs: 0,
     debug,
+    transformExtent,
+    ...(opts.fitMode ? { fitMode: opts.fitMode } : {}),
   });
   const state: any = {
     ...baseState,
@@ -376,4 +383,49 @@ describe("toggle (p2d2Crs): neue View ohne Extent", () => {
       expect(w.view().get("extent"), slug).toBeUndefined();
     },
   );
+});
+
+// Teil B (Turn 028): echte View, echte Konfiguration, map.extent, Menü 25 %.
+describe("Kommunenwahl mit map.extent (echte View, 2560 × 1366, Menü ausgeklappt)", () => {
+  const SIZE = [2560, 1366];
+  const MENU = {
+    isMobile: false,
+    "Menu/mainExpanded": true,
+    "Menu/secondaryExpanded": false,
+    "Menu/currentMainMenuOffsetWidth": 0,
+    "Menu/currentSecondaryMenuOffsetWidth": 0,
+    "Menu/currentMenuWidth": () => "25%",
+  };
+  const RESOLUTIONS = MAP_VIEW.options.map((o: any) => o.resolution);
+
+  for (const mode of FIT_MODES) {
+    it(`${mode}: View nach animate = fitTarget; BBox-Mitte in der Mitte der sichtbaren Fläche; ohne Extent`, () => {
+      for (const k of SELECTION.kommunen.filter((x: any) => x.map.extent)) {
+        const w = makeWorld(MAP_VIEW, { size: SIZE, menu: MENU, fitMode: mode });
+        w.focus(k.slug);
+        const ext = transformExtent(k.map.extent, "EPSG:4326", k.map.projection, 8);
+        const t = fitTarget({ extent: ext, size: SIZE, padding: [20, 20, 20, 660], resolutions: RESOLUTIONS, mode });
+        const v = w.view();
+        expect(v.getProjection().getCode(), k.slug).toBe(k.map.projection);
+        expect(v.getResolution(), `${k.slug} ${mode}`).toBeCloseTo(t.resolution, 9);
+        expectCenter(v.getCenter(), t.center, `${k.slug} ${mode}`);
+        const px = ((ext[0] + ext[2]) / 2 - v.getCenter()![0]) / v.getResolution()! + SIZE[0] / 2;
+        expect(px, `${k.slug} ${mode}`).toBeCloseTo(660 + (SIZE[0] - 680) / 2, 6);
+        expect(v.get("extent"), k.slug).toBeUndefined();
+        expect(w.root["Maps/initialZoom"], k.slug).toBe(t.stage);
+      }
+    });
+  }
+
+  it("exact: Zwischenauflösung bleibt nach animate, rastet beim nächsten Verschieben ein (constrainResolution)", () => {
+    const w = makeWorld(MAP_VIEW, { size: SIZE, menu: MENU, fitMode: "exact" });
+    w.focus("koeln");
+    const v = w.view();
+    const r = v.getResolution()!;
+    expect(RESOLUTIONS).not.toContain(r);
+    v.beginInteraction();
+    v.endInteraction();
+    expect(RESOLUTIONS).toContain(v.getResolution());
+    expect(v.getResolution()).toBe(RESOLUTIONS[2]);
+  });
 });

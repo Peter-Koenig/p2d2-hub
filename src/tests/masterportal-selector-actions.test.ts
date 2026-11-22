@@ -12,7 +12,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import proj4 from "proj4";
 import { register } from "ol/proj/proj4.js";
-import { get as getProjection, transform } from "ol/proj.js";
+import { get as getProjection, transform, transformExtent } from "ol/proj.js";
 import VectorSource from "ol/source/Vector.js";
 import GeoJSON from "ol/format/GeoJSON.js";
 import { utmDefinition } from "../../supplement/masterportal/addons/p2d2Crs/js/utm.js";
@@ -24,6 +24,8 @@ import mutations from "../../supplement/masterportal/addons/p2d2Selector/store/m
 import baseState from "../../supplement/masterportal/addons/p2d2Selector/store/stateP2d2Selector.js";
 import { buildCql, buildLayerUrl } from "../../supplement/masterportal/addons/p2d2Selector/js/wfsRequest.js";
 import { createDebug, debugEnabled, DEBUG_PREFIX } from "../../supplement/masterportal/addons/p2d2Selector/js/debug.js";
+import { zoomTarget } from "../../supplement/masterportal/addons/p2d2Selector/js/zoom.js";
+import { fitTarget } from "../../supplement/masterportal/addons/p2d2Selector/js/fit.js";
 
 const RES = resolve(__dirname, "../../supplement/masterportal/portal/resources");
 const readJson = (name: string): any => JSON.parse(readFileSync(resolve(RES, name), "utf8"));
@@ -85,10 +87,20 @@ const makeView = (code: string, log: string[]) => {
   };
 };
 
-type Options = { mode?: string; withLayer?: boolean; crsAddon?: boolean; viewCode?: string; activeCrs?: string };
+type Options = {
+  mode?: string;
+  withLayer?: boolean;
+  crsAddon?: boolean;
+  viewCode?: string;
+  activeCrs?: string;
+  // Kartengröße (map.getSize) und Menü-Getter; ohne size gilt die Zoom-Regel ohne Padding.
+  size?: number[];
+  menu?: Record<string, unknown>;
+  fitMode?: string;
+};
 
 const makeWorld = (opts: Options = {}) => {
-  const { mode = "2D", withLayer = true, crsAddon = true, viewCode = "EPSG:25832", activeCrs = "EPSG:25832" } = opts;
+  const { mode = "2D", withLayer = true, crsAddon = true, viewCode = "EPSG:25832", activeCrs = "EPSG:25832", size, menu = {}, fitMode } = opts;
   const log: string[] = [];
   const calls: { url: string; resolve: (v: any) => void }[] = [];
   const fetch = vi.fn(
@@ -103,8 +115,9 @@ const makeWorld = (opts: Options = {}) => {
     });
   }
   const world: any = { view: makeView(viewCode, log), log, calls, fetch, source };
-  const map = {
+  const map: any = {
     getView: () => world.view,
+    ...(size ? { getSize: () => size } : {}),
     getAllLayers: () => (withLayer ? [{ get: (k: string) => (k === "id" ? LAYER_ID : undefined), getSource: () => source }] : []),
   };
   world.map = map;
@@ -134,6 +147,7 @@ const makeWorld = (opts: Options = {}) => {
     get "Modules/P2d2Crs/localCrs"() {
       return crsAddon ? crsState.localCrs : undefined;
     },
+    ...menu,
   };
   const crsContext = {
     state: crsState,
@@ -156,6 +170,8 @@ const makeWorld = (opts: Options = {}) => {
     readFeatures: (json: any, p: any) => new GeoJSON().readFeatures(json, { dataProjection: "EPSG:4326", featureProjection: p }),
     focusDurationMs: 300,
     debug,
+    transformExtent,
+    ...(fitMode ? { fitMode } : {}),
   });
   const alerts: any[] = [];
   const context: any = {
@@ -527,5 +543,97 @@ describe("escapeHtml", () => {
   it("maskiert HTML für den Alerting-Inhalt (v-html)", () => {
     expect(escapeHtml(`<img src=x onerror="a('b')">&`)).toBe("&lt;img src=x onerror=&quot;a(&#39;b&#39;)&quot;&gt;&amp;");
     expect(escapeHtml("Köln · Friedhöfe: HTTP 502")).toBe("Köln · Friedhöfe: HTTP 502");
+  });
+});
+
+// Teil B (Turn 028): Ausschnitt per map.extent, Menü-Padding, Modi.
+describe("focusKommune: Extent, Padding, Modus", () => {
+  const SIZE = [2560, 1366];
+  const MENU = {
+    isMobile: false,
+    "Menu/mainExpanded": true,
+    "Menu/secondaryExpanded": false,
+    "Menu/currentMainMenuOffsetWidth": 0,
+    "Menu/currentSecondaryMenuOffsetWidth": 0,
+    "Menu/currentMenuWidth": () => "25%",
+  };
+  const PADDING = [20, 20, 20, 660];
+  const fitFor = (slug: string, mode = "nearest") => {
+    const k = kommune(slug);
+    return fitTarget({
+      extent: transformExtent(k.map.extent, "EPSG:4326", k.map.projection, 8),
+      size: SIZE,
+      padding: PADDING,
+      resolutions: RESOLUTIONS,
+      mode,
+    });
+  };
+
+  it("Köln mit Extent (nearest): Stufe 2, Zentrum rechts vom Menü, Startansicht gleich", () => {
+    const w = makeWorld({ size: SIZE, menu: MENU });
+    w.click({ kommuneSlug: "koeln" });
+    const t = fitFor("koeln");
+    expect(t.stage).toBe(2);
+    expect(w.view.animate).toHaveBeenCalledWith({ center: t.center, resolution: RESOLUTIONS[2], duration: 300 }, expect.any(Function));
+    expect(w.root["Maps/initialCenter"]).toEqual(t.center.map(Math.round));
+    expect(w.root["Maps/initialZoom"]).toBe(2);
+  });
+
+  it("Modus tight: Köln auf Stufe 3 (Sollwert); Modus steht im Debug-Ereignis focus", () => {
+    const w = makeWorld({ size: SIZE, menu: MENU, fitMode: "tight" });
+    w.click({ kommuneSlug: "koeln" });
+    expect(w.view.animate.mock.calls[0][0].resolution).toBe(15.875);
+    expect(w.root["Maps/initialZoom"]).toBe(3);
+    expect(w.debug.mock.calls.find((c: any[]) => c[0] === "focus")[1]).toMatchObject({
+      slug: "koeln",
+      mode: "tight",
+      source: "extent",
+      padding: PADDING,
+      size: SIZE,
+      stage: 3,
+      resolution: 15.875,
+    });
+  });
+
+  it("Modi ceil und exact: Auflösung wie fitTarget; exact rastet nicht ein, Startansicht auf der nächsten Stufe", () => {
+    for (const mode of ["ceil", "exact"]) {
+      const w = makeWorld({ size: SIZE, menu: MENU, fitMode: mode });
+      w.click({ kommuneSlug: "bonn" });
+      const t = fitFor("bonn", mode);
+      expect(w.view.animate.mock.calls[0][0].resolution, mode).toBe(t.resolution);
+      expect(w.root["Maps/initialZoom"], mode).toBe(t.stage);
+    }
+    expect(RESOLUTIONS).not.toContain(fitFor("bonn", "exact").resolution);
+  });
+
+  it("ohne Extent (Flensburg): Zoom-Regel, Zentrum um das Menü verschoben, Auflösung unverändert", () => {
+    const w = makeWorld({ size: SIZE, menu: MENU });
+    w.click({ kommuneSlug: "flensburg" });
+    const k = kommune("flensburg");
+    const z = zoomTarget({ center: transform(k.map.center, "EPSG:4326", k.map.projection), zoom: k.map.zoom, resolutions: RESOLUTIONS });
+    const call = w.view.animate.mock.calls[0][0];
+    expect(call.resolution).toBe(z.resolution);
+    expect(call.center[0]).toBeCloseTo(z.center[0] - 320 * z.resolution, 6);
+    expect(call.center[1]).toBeCloseTo(z.center[1], 6);
+    expect(w.debug.mock.calls.find((c: any[]) => c[0] === "focus")[1]).toMatchObject({ source: "zoom", mode: "nearest" });
+  });
+
+  it("Menü eingeklappt: kein Versatz, Zentrum ist die Mitte der BBox", () => {
+    const w = makeWorld({ size: SIZE, menu: { ...MENU, "Menu/mainExpanded": false } });
+    w.click({ kommuneSlug: "kiel" });
+    const k = kommune("kiel");
+    const e = transformExtent(k.map.extent, "EPSG:4326", k.map.projection, 8);
+    const c = w.view.animate.mock.calls[0][0].center;
+    expect(c[0]).toBeCloseTo((e[0] + e[2]) / 2, 6);
+    expect(c[1]).toBeCloseTo((e[1] + e[3]) / 2, 6);
+  });
+
+  it("alle Kommunen: Extent-Pfad genau bei Einträgen mit map.extent", () => {
+    for (const k of SELECTION.kommunen) {
+      const w = makeWorld({ size: SIZE, menu: MENU, viewCode: k.map.projection, activeCrs: k.map.projection });
+      w.click({ kommuneSlug: k.slug });
+      const focus = w.debug.mock.calls.find((c: any[]) => c[0] === "focus")?.[1];
+      expect(focus?.source, k.slug).toBe(k.map.extent ? "extent" : "zoom");
+    }
   });
 });
