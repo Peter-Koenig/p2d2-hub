@@ -6,6 +6,7 @@ osmAdminLevels: [6,9,10]
 wp_name: "de-Bonn"
 map:
   center: [7.0998, 50.7374]
+  extent: [7.022, 50.632, 7.211, 50.775]
   zoom: 12
   projection: "EPSG:25832"
 order: 20

@@ -14,6 +14,11 @@
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  // Vite lädt keine .env*-Dateien (loadEnv entfällt). .env ist nicht für alle
+  // Benutzer lesbar und wird von den Tests nicht gebraucht; die Testumgebung
+  // kommt ausschließlich über setupFiles (.env.test).
+  envDir: false,
+
   test: {
     // Testdateien in src/tests/ – nur .test.ts (keine .spec.ts)
     include: ["src/tests/**/*.test.ts"],

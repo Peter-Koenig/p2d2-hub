@@ -1,0 +1,332 @@
+{
+  "portalConfig": {
+    "map": {
+      "layerPills": {
+        "active": true
+      },
+      "map3dParameter": {
+        "fog": {
+          "enabled": true,
+          "density": 0.0002,
+          "screenSpaceErrorFactor": 2
+        },
+        "fxaa": false,
+        "globe": {
+          "enableLighting": false,
+          "maximumScreenSpaceError": 2,
+          "tileCacheSize": 20
+        }
+      },
+      "mouseHover": {
+        "numFeaturesToShow": 2,
+        "infoText": "(weitere Objekte. Bitte zoomen.)"
+      },
+      "mapView": {
+        "backgroundImage": "resources/img/backgroundCanvas.jpeg",
+        "startCenter": [356560, 5645282],
+        "options": [
+          {
+            "resolution": 105.8333333,
+            "scale": 400000,
+            "zoomLevel": 0
+          },
+          {
+            "resolution": 52.91666666,
+            "scale": 200000,
+            "zoomLevel": 1
+          },
+          {
+            "resolution": 26.45833333,
+            "scale": 100000,
+            "zoomLevel": 2
+          },
+          {
+            "resolution": 15.875,
+            "scale": 60000,
+            "zoomLevel": 3
+          },
+          {
+            "resolution": 10.58333333,
+            "scale": 40000,
+            "zoomLevel": 4
+          },
+          {
+            "resolution": 5.291666666,
+            "scale": 20000,
+            "zoomLevel": 5
+          },
+          {
+            "resolution": 2.645833333,
+            "scale": 10000,
+            "zoomLevel": 6
+          },
+          {
+            "resolution": 1.322916666,
+            "scale": 5000,
+            "zoomLevel": 7
+          },
+          {
+            "resolution": 0.661458333,
+            "scale": 2500,
+            "zoomLevel": 8
+          },
+          {
+            "resolution": 0.264583333,
+            "scale": 1000,
+            "zoomLevel": 9
+          },
+          {
+            "resolution": 0.132291667,
+            "scale": 500,
+            "zoomLevel": 10
+          },
+          {
+            "resolution": 0.066145833,
+            "scale": 250,
+            "zoomLevel": 11
+          },
+          {
+            "resolution": 0.026458333,
+            "scale": 100,
+            "zoomLevel": 12
+          }
+        ],
+        "extent": [222000, 5179000, 1000000, 6177000],
+        "startZoomLevel": 3,
+        "epsg": "EPSG:25832"
+      },
+      "controls": {
+        "button3d": true,
+        "toggleMenu": true,
+        "buttonOblique": true,
+        "fullScreen": true,
+        "zoom": true,
+        "orientation": "once",
+        "freeze": true,
+        "totalView": true,
+        "backForward": true,
+        "overviewMap": {
+          "resolution": 260,
+          "layerId": "p2d2-osm",
+          "isInitOpen": false
+        },
+        "poi": true,
+        "rotation": {
+          "showResetRotationAlways": true,
+          "rotationIcons": true
+        },
+        "tiltView": true,
+        "startModule": {
+          "secondaryMenu": [
+            {
+              "name": "WMS hinzufügen",
+              "glyphicon": "glyphicon-plus",
+              "roles": ["ds_open_data"],
+              "type": "addWMS"
+            }
+          ]
+        },
+        "expandable": {}
+      },
+      "getFeatureInfo": {
+        "highlightVectorRules": {
+          "image": {
+            "scale": 4
+          },
+          "fill": {
+            "color": [0, 0, 255, 0.5]
+          }
+        }
+      }
+    },
+    "portalFooter": {
+      "urls": [
+        {
+          "bezeichnung": "",
+          "url": "https://www.civitasconnect.digital/impressum/",
+          "alias": "Impressum",
+          "alias_mobile": "Impressum"
+        },
+        {
+          "bezeichnung": "Hintergrundkarte basemap.de:",
+          "url": "https://www.bkg.bund.de",
+          "alias": "© GeoBasis-DE / BKG (2026)",
+          "alias_mobile": "© GeoBasis-DE / BKG (2026)"
+        },
+        {
+          "bezeichnung": "",
+          "url": "https://creativecommons.org/licenses/by/4.0/",
+          "alias": "CC BY 4.0",
+          "alias_mobile": "CC BY 4.0"
+        }
+      ],
+      "scaleLine": true
+    },
+    "tree": {
+      "addLayerButton": {
+        "active": true
+      }
+    },
+    "mainMenu": {
+      "expanded": true,
+      "sections": [
+        [
+          {
+            "name": "Legende",
+            "type": "legend"
+          },
+          {
+            "name": "additional:modules.tools.login.title",
+            "icon": "bi-door-open",
+            "type": "login"
+          },
+          {
+            "type": "shareView"
+          }
+        ],
+        [
+          {
+            "type": "p2d2Selector",
+            "name": "additional:modules.p2d2Selector.name",
+            "icon": "bi-grid-3x3-gap"
+          }
+        ],
+        [
+          {
+            "type": "news"
+          },
+          {
+            "icon": "bi-question-circle",
+            "type": "folder",
+            "name": "Informationen",
+            "elements": [
+              {
+                "type": "customMenuElement",
+                "icon": "bi-link",
+                "name": "Datenschutz",
+                "openURL": "https://www.civitasconnect.digital/datenschutz/"
+              },
+              {
+                "type": "customMenuElement",
+                "icon": "bi-link",
+                "name": "Civitas Connect e.V.",
+                "openURL": "https://www.civitasconnect.digital/"
+              },
+              {
+                "type": "customMenuElement",
+                "icon": "bi-link",
+                "name": "Impressum",
+                "openURL": "https://www.civitasconnect.digital/impressum/"
+              }
+            ]
+          },
+          {
+            "type": "about",
+            "cswUrl": "https://metaver.de/csw",
+            "metaUrl": "to be filled",
+            "metaId": "to be filled",
+            "logo": "mastercode/3_27_1/img/Logo_Masterportal.svg"
+          }
+        ]
+      ],
+      "title": {
+        "text": "p2d2 – Public-Public Data-DNA",
+        "logo": "resources/img/p2d2-logo.svg",
+        "link": "https://www.data-dna.eu/",
+        "toolTip": "p2d2"
+      },
+      "searchBar": {
+        "searchInterfaces": [
+          {
+            "type": "topicTree"
+          },
+          {
+            "layerTypes": ["WFS", "GeoJSON"],
+            "type": "visibleVector"
+          }
+        ],
+        "placeholder": "Suche nach Adressen und Themen"
+      }
+    },
+    "secondaryMenu": {
+      "expanded": false,
+      "sections": [
+        [
+          {
+            "type": "p2d2Crs",
+            "name": "Koordinatensystem",
+            "icon": "bi-globe2"
+          },
+          {
+            "name": "Karte drucken",
+            "printAppId": "default",
+            "filename": "Ausdruck",
+            "title": "Mein Titel",
+            "dpiForPdf": 120,
+            "type": "print",
+            "printServiceId": "mapfish"
+          },
+          {
+            "zoomLevel": 10,
+            "type": "coordToolkit"
+          },
+          {
+            "name": "Strecke / Fläche messen",
+            "type": "measure"
+          },
+          {
+            "name": "Zeichnen / Schreiben",
+            "type": "draw_old"
+          },
+          {
+            "name": "Datei-Import",
+            "type": "fileImport"
+          },
+          {
+            "name": "WMS hinzufügen",
+            "type": "addWMS"
+          },
+          {
+            "name": "Erweiterter Filter",
+            "type": "filter"
+          }
+        ]
+      ]
+    }
+  },
+  "layerConfig": {
+    "baselayer": {
+      "elements": [
+        {
+          "id": "p2d2-osm",
+          "name": "OpenStreetMap",
+          "visibility": true,
+          "isNeverVisibleInTree": false
+        },
+        {
+          "id": "p2d2-basemapde-raster",
+          "name": "basemap.de Web Raster",
+          "visibility": false,
+          "isNeverVisibleInTree": false
+        },
+        {
+          "id": "p2d2-basemapde-schummerung",
+          "name": "basemap.de Schummerung",
+          "visibility": false,
+          "isNeverVisibleInTree": false,
+          "transparency": 60
+        }
+      ]
+    },
+    "subjectlayer": {
+      "elements": [
+        {
+          "id": "p2d2-geo-containers",
+          "name": "p2d2-Objekte",
+          "visibility": true,
+          "isNeverVisibleInTree": true
+        }
+      ]
+    }
+  }
+}

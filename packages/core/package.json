@@ -24,6 +24,10 @@
       "types": "./dist/content/kategorien.d.ts",
       "import": "./dist/content/kategorien.js"
     },
+    "./content/osm-admin-level": {
+      "types": "./dist/content/osm-admin-level.d.ts",
+      "import": "./dist/content/osm-admin-level.js"
+    },
     "./preferences/metadata-parser": {
       "types": "./dist/preferences/metadata-parser.d.ts",
       "import": "./dist/preferences/metadata-parser.js"

@@ -1,1 +1,11 @@
-{}
+{
+  "p2d2FeatureEditor": {
+    "type": "javascript"
+  },
+  "p2d2Crs": {
+    "type": "tool"
+  },
+  "p2d2Selector": {
+    "type": "tool"
+  }
+}

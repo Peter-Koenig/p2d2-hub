@@ -8,6 +8,7 @@ osmAdminLevels: [4,9,10]
 wp_name: "de-Hamburg"
 map:
   center: [9.9937, 53.5511]  # centerextent in EPSG:4326 (lon,lat)
+  extent: [9.73, 53.395, 10.326, 53.74]
   zoom: 11
   projection: "EPSG:25832"
 ---
