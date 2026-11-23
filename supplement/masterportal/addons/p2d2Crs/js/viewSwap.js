@@ -144,6 +144,25 @@ export function reprojectLayers (layers, from, to) {
 }
 
 /**
+ * Prüft einen Zielzustand für swapView und gibt eine Kopie zurück.
+ * @param {*} at Zielzustand {center, resolution} in der Zielprojektion.
+ * @returns {{center: number[], resolution: number}} Kopie.
+ * @throws {TypeError} Bei ungültigem Zentrum oder ungültiger Auflösung.
+ */
+export function readTargetState (at) {
+    const center = at?.center,
+        resolution = at?.resolution;
+
+    if (!Array.isArray(center) || center.length !== 2 || !center.every(Number.isFinite)) {
+        throw new TypeError("swapView: at.center muss [Zahl, Zahl] sein");
+    }
+    if (typeof resolution !== "number" || !Number.isFinite(resolution) || resolution <= 0) {
+        throw new TypeError(`swapView: ungültige at.resolution ${resolution}`);
+    }
+    return {center: [...center], resolution};
+}
+
+/**
  * Prüft über die View-Property extent (ol/View übernimmt Konstruktor-Optionen
  * als Properties), ob die View einen Extent hat.
  * @param {Object} view OL-View.
@@ -158,6 +177,11 @@ export function hasExtent (view) {
  * Die neue View hat nie einen Extent. Bei gleicher Projektion wird die View
  * nur ersetzt, wenn sie einen Extent hat (Start-View); die Koordinaten
  * bleiben gültig, Schritte 7 und 8 entfallen.
+ * Mit at (Kommunenwahl) entsteht die View bei einem Projektionswechsel direkt
+ * am Ziel statt am umgerechneten alten Zentrum: Kein Zustand der neuen View
+ * und kein Store-Wert (Maps/center) zeigt dann den alten Ort, der in einer
+ * anderen UTM-Zone weit außerhalb der Erde liegen kann. Die Auflösung wird wie
+ * bei jeder neuen View eingerastet; bei gleicher Projektion wird at ignoriert.
  * Schritte (README „Projektions-Switch“):
  *  0 nur 2D; gleiche Projektion nur bei View mit Extent
  *  1 Projektion sicherstellen
@@ -173,9 +197,10 @@ export function hasExtent (view) {
  * @param {Object} deps.getters Root-Getter des Masterportal-Stores.
  * @param {function(string, *): void} deps.commit Root-Commit.
  * @param {function(string, *=): void} deps.dispatch Root-Dispatch.
+ * @param {{center: number[], resolution: number}} [deps.at] Zielzustand in der Zielprojektion (readTargetState).
  * @returns {{ok: boolean, reason?: string, unchanged?: boolean, rebuilt?: boolean, from?: string, to?: string, error?: Error}} Ergebnis.
  */
-export function swapView ({target, map, View, ensureProjection, getters, commit, dispatch}) {
+export function swapView ({target, map, View, ensureProjection, getters, commit, dispatch, at}) {
     if (getters["Maps/mode"] !== "2D") {
         return {ok: false, reason: "mode"};
     }
@@ -195,15 +220,21 @@ export function swapView ({target, map, View, ensureProjection, getters, commit,
     try {
         const center = oldView.getCenter(),
             resolutions = oldView.getResolutions(),
-            resolution = snapResolution(
-                rebuilt ? oldView.getResolution() : targetResolution({resolution: oldView.getResolution(), center, from, to: target}),
-                resolutions
-            );
+            goal = at !== undefined && !rebuilt ? readTargetState(at) : null;
+        let newCenter, resolution;
+
+        if (goal) {
+            ({center: newCenter, resolution} = goal);
+        }
+        else {
+            newCenter = transform(center, from, target);
+            resolution = rebuilt ? oldView.getResolution() : targetResolution({resolution: oldView.getResolution(), center, from, to: target});
+        }
 
         newView = new View(buildViewOptions({
             projection: target,
-            center: transform(center, from, target),
-            resolution,
+            center: newCenter,
+            resolution: snapResolution(resolution, resolutions),
             rotation: oldView.getRotation(),
             options: oldView.get("options"),
             resolutions,

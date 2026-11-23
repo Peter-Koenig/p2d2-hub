@@ -15,17 +15,19 @@ import {targetCrs} from "../js/viewSwap.js";
  * @param {function(): Object} runtime.getMap Liefert die 2D-Karte.
  * @param {Function} runtime.View View-Klasse.
  * @param {function(string): boolean} runtime.ensureProjection Projektion sicherstellen.
- * @returns {{toggle: function(Object): void, setLocalCrs: function(Object, string): boolean, activateLocal: function(Object): Object}} Aktionen.
+ * @returns {{toggle: function(Object): void, setLocalCrs: function(Object, string): boolean, activateLocal: function(Object, Object=): Object}} Aktionen.
  */
 export function createActions ({swapView, getMap, View, ensureProjection}) {
     /**
      * Tauscht die View auf target und hält activeCrs/lastError nach.
      * @param {Object} context Store-Kontext.
      * @param {string} target Zielprojektion.
+     * @param {{center: number[], resolution: number}} [at] Zielzustand der neuen View (nur Kommunenwahl).
      * @returns {{ok: boolean, reason?: string, unchanged?: boolean, rebuilt?: boolean}} Ergebnis von swapView.
      */
-    function switchTo ({commit, dispatch, rootGetters}, target) {
+    function switchTo ({commit, dispatch, rootGetters}, target, at) {
         const result = swapView({
+            ...(at === undefined ? {} : {at}),
             target,
             map: getMap(),
             View,
@@ -83,10 +85,14 @@ export function createActions ({swapView, getMap, View, ensureProjection}) {
          * (Deutschland-Extent) einmal, danach tauscht es nichts mehr aus.
          * Läuft synchron; der Rückgabewert kommt über Vuex-dispatch als
          * Promise an, die Wirkung steht sofort im Store.
+         * Mit at (Zentrum und Auflösung in localCrs) entsteht eine View in
+         * anderer Projektion direkt am Ziel (swapView); der Umschalter
+         * (toggle) übergibt nie einen Zielzustand.
          * @param {Object} context Store-Kontext.
+         * @param {{center: number[], resolution: number}} [at] Zielzustand der neuen View.
          * @returns {{ok: boolean, reason?: string, unchanged?: boolean, rebuilt?: boolean}} Ergebnis.
          */
-        activateLocal (context) {
+        activateLocal (context, at) {
             const {state, commit, rootGetters} = context;
 
             if (typeof state.localCrs !== "string" || state.localCrs === "") {
@@ -97,7 +103,7 @@ export function createActions ({swapView, getMap, View, ensureProjection}) {
                 commit("setLastError", "mode");
                 return {ok: false, reason: "mode"};
             }
-            return switchTo(context, state.localCrs);
+            return switchTo(context, state.localCrs, at);
         }
     };
 }

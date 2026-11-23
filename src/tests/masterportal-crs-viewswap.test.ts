@@ -415,6 +415,67 @@ describe("swapView: neue View ohne Extent", () => {
   });
 });
 
+// Kommunenwahl mit Projektionswechsel: Die neue View entsteht direkt am Ziel
+// (Parameter at), nicht am umgerechneten alten Zentrum.
+describe("swapView: Zielzustand at", () => {
+  // Kiel in EPSG:25833: gültiger Punkt der Zone, weit weg vom umgerechneten Köln.
+  const AT = { center: [362000, 6025000], resolution: 26.45833333 };
+
+  it("andere Projektion: Zentrum und Auflösung aus at, Store sieht nur das Ziel", () => {
+    const seen: number[][] = [];
+    const { deps, map } = setup({ target: "EPSG:25833", at: AT });
+    deps.dispatch = vi.fn((type: string) => (type === "Maps/updateAttributesByMoveend" ? seen.push(map.getView().getCenter()!) : 0));
+    expect(swapView(deps as any)).toEqual({ ok: true, from: "EPSG:25832", to: "EPSG:25833" });
+    expect(map.getView().getCenter()).toEqual(AT.center);
+    expect(map.getView().getResolution()).toBe(AT.resolution);
+    expect(seen).toEqual([AT.center]);
+  });
+
+  it("at.resolution wird wie jede neue View eingerastet (Zwischenstufe → nächste Stufe)", () => {
+    const { deps, map } = setup({ target: "EPSG:25833", at: { ...AT, resolution: 20 } });
+    swapView(deps as any);
+    expect(map.getView().getResolution()).toBe(15.875);
+  });
+
+  it("at wird kopiert, nicht übernommen", () => {
+    const center = [...AT.center];
+    const { deps, map } = setup({ target: "EPSG:25833", at: { center, resolution: AT.resolution } });
+    swapView(deps as any);
+    center[0] = 0;
+    expect(map.getView().getCenter()).toEqual(AT.center);
+  });
+
+  it("gleiche Projektion (Start-View mit Extent): at wird ignoriert, Zentrum bleibt", () => {
+    const { deps, map } = setup({ target: "EPSG:25832", at: AT });
+    const old = map.getView();
+    expect(swapView(deps as any)).toMatchObject({ ok: true, rebuilt: true });
+    expect(map.getView().getCenter()).toEqual(old.getCenter());
+    expect(map.getView().getResolution()).toBe(old.getResolution());
+  });
+
+  it.each([
+    ["Zentrum fehlt", { resolution: 10 }],
+    ["Zentrum mit NaN", { center: [NaN, 1], resolution: 10 }],
+    ["Zentrum mit drei Werten", { center: [1, 2, 3], resolution: 10 }],
+    ["Auflösung 0", { center: [1, 2], resolution: 0 }],
+    ["Auflösung als Text", { center: [1, 2], resolution: "10" }],
+  ])("ungültiges at (%s): Fehler, alte View bleibt, kein Store-Commit", (_label, at) => {
+    const { deps, map, log } = setup({ target: "EPSG:25833", at });
+    const old = map.getView();
+    expect(swapView(deps as any)).toMatchObject({ ok: false, reason: "error" });
+    expect(map.getView()).toBe(old);
+    expect(log).toEqual([]);
+  });
+
+  it("ohne at: wie bisher (umgerechnetes Zentrum, Bodenauflösung)", () => {
+    const { deps, map } = setup({ target: "EPSG:25833" });
+    swapView(deps as any);
+    const expected = transform(KOELN, "EPSG:25832", "EPSG:25833");
+    expect(map.getView().getCenter()![0]).toBeCloseTo(expected[0], 6);
+    expect(map.getView().getCenter()![1]).toBeCloseTo(expected[1], 6);
+  });
+});
+
 describe("reprojectLayers", () => {
   it("zählt nachgeladene und transformierte Quellen", () => {
     const remote = new VectorSource({ url: "/a.json", format: new GeoJSON() });
@@ -562,6 +623,18 @@ describe("Store-Aktionen (createActions mit Fakes)", () => {
       expect(c[0]).not.toHaveProperty("baseExtent");
       expect(c[0]).not.toHaveProperty("dropExtent");
     }
+  });
+
+  it("activateLocal mit Zielzustand: swapView bekommt at; toggle nie", async () => {
+    const { createActions } = await load();
+    const swap = vi.fn(() => ({ ok: true }));
+    const actions = createActions({ swapView: swap, getMap: () => ({}), View, ensureProjection: () => true });
+    const at = { center: [1, 2], resolution: 3 };
+    actions.activateLocal(context({ activeCrs: "EPSG:3857", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" }) as any, at);
+    actions.toggle(context({ activeCrs: "EPSG:25832", localCrs: "EPSG:25832", genericCrs: "EPSG:3857" }) as any);
+    const calls = swap.mock.calls as unknown as Record<string, unknown>[][];
+    expect(calls[0][0].at).toBe(at);
+    expect(calls[1][0]).not.toHaveProperty("at");
   });
 
   it("toggle, echter swapView ab einer View mit Extent: neue View ohne Extent", async () => {
