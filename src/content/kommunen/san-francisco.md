@@ -6,6 +6,7 @@ osmAdminLevels: [6]
 wp_name: "de-San Francisco"
 map:
   center: [-122.4194, 37.7749] # center/extent in EPSG:4326 (lon,lat)
+  extent: [-122.617, 37.708, -122.281, 37.93]
   zoom: 12
   projection: "EPSG:32610"
 order: 50

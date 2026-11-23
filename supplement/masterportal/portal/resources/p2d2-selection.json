@@ -1,0 +1,388 @@
+{
+  "version": 1,
+  "kommunen": [
+    {
+      "slug": "koeln",
+      "title": "Köln",
+      "wpName": "de-Köln",
+      "order": 10,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          6.9603,
+          50.9375
+        ],
+        "zoom": 11,
+        "projection": "EPSG:25832",
+        "extent": [
+          6.772,
+          50.83,
+          7.163,
+          51.085
+        ]
+      },
+      "image": "resources/img/p2d2/kommunen/koeln_001.jpg",
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 9
+      }
+    },
+    {
+      "slug": "bonn",
+      "title": "Bonn",
+      "wpName": "de-Bonn",
+      "order": 20,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          7.0998,
+          50.7374
+        ],
+        "zoom": 12,
+        "projection": "EPSG:25832",
+        "extent": [
+          7.022,
+          50.632,
+          7.211,
+          50.775
+        ]
+      },
+      "image": "resources/img/p2d2/kommunen/bonn_002.jpg",
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 9
+      }
+    },
+    {
+      "slug": "flensburg",
+      "title": "Flensburg",
+      "wpName": "de-Flensburg",
+      "order": 20,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          9.4333,
+          54.7833
+        ],
+        "zoom": 11,
+        "projection": "EPSG:25832"
+      },
+      "image": "resources/img/p2d2/kommunen/flensburg_001.jpg",
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 9
+      }
+    },
+    {
+      "slug": "dortmund",
+      "title": "Dortmund",
+      "wpName": "de-Dortmund",
+      "order": 25,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          7.466,
+          51.5149
+        ],
+        "zoom": 11,
+        "projection": "EPSG:25832",
+        "extent": [
+          7.302,
+          51.415,
+          7.639,
+          51.601
+        ]
+      },
+      "image": "resources/img/p2d2/kommunen/dortmund_001.jpg",
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 9
+      }
+    },
+    {
+      "slug": "berlin",
+      "title": "Berlin",
+      "wpName": "de-Berlin",
+      "order": 30,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          13.404954,
+          52.520008
+        ],
+        "zoom": 10,
+        "projection": "EPSG:25833",
+        "extent": [
+          13.088,
+          52.338,
+          13.762,
+          52.676
+        ]
+      },
+      "image": "resources/img/p2d2/kommunen/berlin_001.jpg",
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 9
+      }
+    },
+    {
+      "slug": "hamburg",
+      "title": "Hamburg",
+      "wpName": "de-Hamburg",
+      "order": 32,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          9.9937,
+          53.5511
+        ],
+        "zoom": 11,
+        "projection": "EPSG:25832",
+        "extent": [
+          9.73,
+          53.395,
+          10.326,
+          53.74
+        ]
+      },
+      "image": "resources/img/p2d2/kommunen/hamburg_001.jpg",
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 9
+      }
+    },
+    {
+      "slug": "hangzhou",
+      "title": "Hangzhou",
+      "wpName": "de-Hangzhou",
+      "order": 40,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          120.1551,
+          30.2741
+        ],
+        "zoom": 11,
+        "projection": "EPSG:32650"
+      },
+      "image": "resources/img/p2d2/kommunen/hangzhou_001.jpg",
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 5
+      }
+    },
+    {
+      "slug": "kiel",
+      "title": "Kiel",
+      "wpName": "de-Kiel",
+      "order": 50,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          10.1228,
+          54.3233
+        ],
+        "zoom": 11,
+        "projection": "EPSG:25832",
+        "extent": [
+          10.032,
+          54.25,
+          10.219,
+          54.433
+        ]
+      },
+      "image": "resources/img/p2d2/kommunen/kiel_002.jpg",
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 10
+      }
+    },
+    {
+      "slug": "san-francisco",
+      "title": "San Francisco",
+      "wpName": "de-San Francisco",
+      "order": 50,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          -122.4194,
+          37.7749
+        ],
+        "zoom": 12,
+        "projection": "EPSG:32610",
+        "extent": [
+          -122.617,
+          37.708,
+          -122.281,
+          37.93
+        ]
+      },
+      "image": "resources/img/p2d2/kommunen/san-francisco_001.jpg",
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 6
+      }
+    },
+    {
+      "slug": "bornheim",
+      "title": "Bornheim",
+      "wpName": "de-Bornheim",
+      "order": 60,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          7.0022,
+          50.7639
+        ],
+        "zoom": 13,
+        "projection": "EPSG:25832",
+        "extent": [
+          6.859,
+          50.718,
+          7.067,
+          50.806
+        ]
+      },
+      "image": "resources/img/p2d2/kommunen/bornheim_001.jpg",
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 8
+      }
+    },
+    {
+      "slug": "kronshagen",
+      "title": "Kronshagen",
+      "wpName": "de-Kronshagen",
+      "order": 95,
+      "icon": null,
+      "colorStripe": "#FF6900",
+      "map": {
+        "center": [
+          10.08454,
+          54.33607
+        ],
+        "zoom": 14,
+        "projection": "EPSG:25832",
+        "extent": [
+          10.055,
+          54.325,
+          10.108,
+          54.351
+        ]
+      },
+      "image": "resources/img/p2d2/kommunen/kronshagen_001.jpg",
+      "osmAdminLevel": {
+        "cemetery": 8,
+        "administrative": 8
+      }
+    }
+  ],
+  "kategorien": [
+    {
+      "slug": "friedhoefe",
+      "title": "Friedhöfe",
+      "icon": "friedhof",
+      "order": 1,
+      "containerType": "cemetery",
+      "image": "resources/img/p2d2/kategorien/friedhoefe_001.jpg"
+    },
+    {
+      "slug": "oeffentlicherraum",
+      "title": "Öffentlicher Raum",
+      "icon": "public-space",
+      "order": 2,
+      "containerType": "administrative",
+      "image": "resources/img/p2d2/kategorien/oeffentlicherraum_001.jpg"
+    },
+    {
+      "slug": "blumenbeete",
+      "title": "Blumenbeete",
+      "icon": "blumenbeete",
+      "order": 3,
+      "containerType": "administrative",
+      "image": "resources/img/p2d2/kategorien/blumenbeete_001.jpg"
+    },
+    {
+      "slug": "baume",
+      "title": "Bäume",
+      "icon": "baume",
+      "order": 4,
+      "containerType": "administrative",
+      "image": "resources/img/p2d2/kategorien/baume_001.jpg"
+    },
+    {
+      "slug": "fahrradstaender",
+      "title": "Fahrradständer",
+      "icon": "fahrradstaender",
+      "order": 5,
+      "containerType": "administrative",
+      "image": "resources/img/p2d2/kategorien/fahrradstaender_001.jpg"
+    },
+    {
+      "slug": "pflanzenbehaelter",
+      "title": "Pflanzenbehälter",
+      "icon": "pflanzenbehaelter",
+      "order": 6,
+      "containerType": "administrative",
+      "image": "resources/img/p2d2/kategorien/pflanzenbehaelter_001.jpg"
+    },
+    {
+      "slug": "spielsandkisten",
+      "title": "Spielsandkisten",
+      "icon": "spielsandkisten",
+      "order": 7,
+      "containerType": "administrative",
+      "image": "resources/img/p2d2/kategorien/spielsandkisten_002.jpg"
+    },
+    {
+      "slug": "abfallbehaelter",
+      "title": "Abfallbehälter",
+      "icon": "abfallbehaelter",
+      "order": 8,
+      "containerType": "administrative",
+      "image": "resources/img/p2d2/kategorien/abfallbehaelter_001.jpg"
+    },
+    {
+      "slug": "fahnenmaste",
+      "title": "Fahnenmasten",
+      "icon": "fahnenmast",
+      "order": 9,
+      "containerType": "administrative",
+      "image": "resources/img/p2d2/kategorien/fahnenmaste_001.jpg"
+    },
+    {
+      "slug": "sportrasen",
+      "title": "Sportrasen",
+      "icon": "sportrasen",
+      "order": 16,
+      "containerType": "administrative",
+      "image": "resources/img/p2d2/kategorien/sportrasen_001.jpg"
+    },
+    {
+      "slug": "tribuenen",
+      "title": "Tribünen",
+      "icon": "tribuenen",
+      "order": 17,
+      "containerType": "administrative",
+      "image": "resources/img/p2d2/kategorien/tribuenen_001.jpg"
+    },
+    {
+      "slug": "strassenlaternen",
+      "title": "Straßenlaternen",
+      "icon": "strassenlaternen",
+      "order": 18,
+      "containerType": "administrative",
+      "image": "resources/img/p2d2/kategorien/strassenlaternen_001.jpg"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "_comment": "SYNTHETISCH. Eltern-Properties nach dem Muster des Layers geo-containers (Workspace de1, Köln). Kind-Namen und Nummern sind erfunden. Gemessene Zählwerte (nur zur Einordnung, nicht nachgebildet): Rheinkassel 14, Deutzer Friedhof (admin_name Deutz) 154, Nordfriedhof 183, Nordfriedhof (neuer Teil) 0 Grabflure.",
+  "parents": [
+    {
+      "name": "Rheinkassel",
+      "admin_name": "Rheinkassel",
+      "container_type": "cemetery",
+      "wp_name": "de-Köln",
+      "osm_admin_level": 8
+    },
+    {
+      "name": "Deutzer Friedhof",
+      "admin_name": "Deutz",
+      "container_type": "cemetery",
+      "wp_name": "de-Köln",
+      "osm_admin_level": 8
+    },
+    {
+      "name": "Nordfriedhof",
+      "admin_name": "Nordfriedhof",
+      "container_type": "cemetery",
+      "wp_name": "de-Köln",
+      "osm_admin_level": 8
+    },
+    {
+      "name": "Nordfriedhof (neuer Teil)",
+      "admin_name": "Nordfriedhof (neuer Teil)",
+      "container_type": "cemetery",
+      "wp_name": "de-Köln",
+      "osm_admin_level": 8
+    },
+    {
+      "name": "Friedhof Lövenich",
+      "admin_name": null,
+      "container_type": "cemetery",
+      "wp_name": "de-Köln",
+      "osm_admin_level": 8
+    },
+    {
+      "name": "Jüdischer Friedhof Köln-Bocklemünd",
+      "admin_name": null,
+      "container_type": "cemetery",
+      "wp_name": "de-Köln",
+      "osm_admin_level": 8
+    }
+  ],
+  "children": [
+    "Rheinkassel-1",
+    "Rheinkassel-2",
+    "Deutz-1",
+    "Deutz-17",
+    "Deutz-42",
+    "Nordfriedhof-3",
+    "Nordfriedhof-8"
+  ]
+}

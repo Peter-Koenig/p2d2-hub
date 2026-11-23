@@ -1,0 +1,19 @@
+{
+    "modules": {
+        "p2d2Selector": {
+            "name": "Public-Public Data-DNA",
+            "kommunen": "Kommune",
+            "kategorien": "Kategorie",
+            "loading": "Auswahl wird geladen …",
+            "failed": "Auswahl nicht ladbar ({{reason}}).",
+            "retry": "Erneut laden",
+            "layer": {
+                "loading": "Objekte werden geladen …",
+                "empty": "Keine Objekte für diese Auswahl.",
+                "error": "Laden fehlgeschlagen: {{reason}}"
+            },
+            "alertTitle": "p2d2-Objekte",
+            "stageFailed": "Layer-Konfiguration fehlt ({{reason}})."
+        }
+    }
+}

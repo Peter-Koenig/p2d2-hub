@@ -18,6 +18,7 @@ import { dispatchCrossWindowEvent } from "./cross-window-events";
 import { P2D2EventType } from "./events";
 import { mapState } from "./map-state";
 import type { KommuneData } from "./kommune-utils";
+import { getOsmAdminLevel } from "@p2d2/core";
 
 // Type definitions
 interface WFSLayerConfig {
@@ -311,42 +312,22 @@ export class WFSLayerManager {
     kommune: KommuneData,
     containerType: string,
   ): number {
-    if (containerType === "cemetery") {
-      return 8; // Friedhöfe immer Level 8
+    // Regel in @p2d2/core (gemeinsam mit dem Masterportal-Add-on)
+    const level = getOsmAdminLevel(kommune.osmAdminLevels, containerType);
+
+    if (
+      containerType === "administrative" &&
+      !kommune.osmAdminLevels?.length
+    ) {
+      console.warn(
+        "[WFS] No OSM admin levels available for",
+        kommune.slug,
+        "using fallback",
+        level,
+      );
     }
 
-    if (containerType === "administrative") {
-      const levels = kommune.osmAdminLevels || [];
-
-      // Verbesserte OSM Admin Level Logik für administrative Ebenen
-      console.log("[WFS] OSM Admin Levels for", kommune.slug, ":", levels);
-
-      // Regel: Nimm die NÄCHSTE Ebene nach der Kommune-Grenze
-      if (levels.length > 1) {
-        // Zweites Element = nächste Untergliederung nach Kommune-Grenze
-        const nextLevel = levels[1];
-        console.log(
-          "[WFS] Using next admin level:",
-          nextLevel,
-          "from levels:",
-          levels,
-        );
-        return nextLevel;
-      } else if (levels.length === 1) {
-        // Einzige verfügbare Ebene (Sonderfall wie Stadtstaaten)
-        const onlyLevel = levels[0];
-        console.log("[WFS] Using only available admin level:", onlyLevel);
-        return onlyLevel;
-      } else {
-        console.warn(
-          "[WFS] No OSM admin levels available for",
-          kommune.slug,
-          "using fallback 8",
-        );
-      }
-    }
-
-    return 8; // Fallback
+    return level;
   }
 
   /**
