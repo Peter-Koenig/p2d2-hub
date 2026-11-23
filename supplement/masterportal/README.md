@@ -257,9 +257,11 @@ beim Öffnen die Mausinteraktion, und der `p2d2FeatureEditor` würde keine
 Klicks mehr auswerten (`Menu/currentMouseMapInteractionsComponent`).
 
 `setLocalCrs(code)` registriert eine UTM-Zone bei Bedarf und setzt `localCrs`,
-ohne die View zu ändern. `activateLocal` schaltet die View auf `localCrs`
+ohne die View zu ändern. `activateLocal(at)` schaltet die View auf `localCrs`
 (`swapView`) und setzt `activeCrs`. Beide ruft der `p2d2Selector` bei der
-Kommunenwahl auf.
+Kommunenwahl auf; er übergibt als `at` Zentrum und Auflösung der Kommune in
+`localCrs` (Zielzustand, Schritt 2 unten). Der Umschalter (`toggle`) übergibt
+nie einen Zielzustand: Er bleibt am selben Ort, dessen Zentrum gültig ist.
 
 **Extent-Regel: Nur die Start-View hat einen Extent.**
 
@@ -294,13 +296,30 @@ Das Masterportal 3.27.1 kann die Projektion zur Laufzeit nicht wechseln
    Kennung für das Koordinatenwerkzeug). `EPSG:3857` ist in ol und proj4
    eingebaut und steht nicht in `namedProjections`; fehlt es zur Laufzeit,
    bricht der Wechsel ohne Änderung ab.
-2. Bodenauflösung am Zentrum erhalten (`getPointResolution`) und auf die
-   nächste Stufe der Portal-Tabelle einrasten (`snapResolution`, gleiche Regel
-   wie OL `constrainResolution`). In Köln ist 1 m/px in UTM etwa 1,59 m/px in 3857.
+2. Ohne Zielzustand: Bodenauflösung am Zentrum erhalten (`getPointResolution`)
+   und auf die nächste Stufe der Portal-Tabelle einrasten (`snapResolution`,
+   gleiche Regel wie OL `constrainResolution`). In Köln ist 1 m/px in UTM etwa
+   1,59 m/px in 3857. Mit Zielzustand `at` (nur bei Projektionswechsel, bei
+   gleicher Projektion ignoriert): Zentrum und Auflösung aus `at`, die
+   Auflösung ebenfalls eingerastet; ein ungültiges `at` bricht mit
+   `reason: "error"` ohne Änderung ab (`readTargetState`).
 3. Neue View wie masterportalapi `createMapView`: dieselbe Tabelle `options`
    (wird View-Property) und `resolutions`, `constrainResolution`,
    `constrainOnlyCenter`, `backgroundImage`, kein Extent, Zentrum
-   transformiert, Rotation erhalten.
+   transformiert (bzw. aus `at`), Rotation erhalten.
+
+   Warum `at`: Das umgerechnete alte Zentrum ist bei einem Wechsel der
+   UTM-Zone kein Punkt der Erde (Köln in EPSG:32650 etwa
+   `[-3841518, 11737406]`, Hochwert hinter dem Pol). Früher startete die
+   Fokus-Animation dort; die Basiskarte (TileWMS über MapProxy) forderte für
+   jedes der rund 25 Bilder Kacheln an (gemessen 431 GetMap-Anfragen für
+   einen Klick auf Hangzhou, 85 % auf gröberen Stufen als das Ziel; 30 bis
+   60 s Aufbau). Ein Bild wird zwischen `swapView` und `animate` nicht
+   gezeichnet (OL rendert per `requestAnimationFrame`, die Kommunenwahl läuft
+   synchron); Schritt 5 schreibt aber über `updateAttributesByMoveend`
+   `Maps/center` und `Maps/extent` in den Store, und diese Werte zeigten den
+   ungültigen Ort, bis zum nächsten `moveend`. Mit `at` sieht kein Zustand
+   der neuen View und kein Store-Wert den alten Ort.
 4. `map.setView`; übernimmt die Karte die View nicht oder wirft der Aufbau,
    wird die alte View zurückgesetzt.
 5. Store und Listener neu verbinden (siehe Liste).
@@ -451,15 +470,34 @@ neu angestoßen hat.
    die zuletzt angewendete: nichts tun.
 2. Neue Kommune (Slug ≠ zuletzt fokussierte), `focusKommune`:
    1. `Modules/P2d2Crs/setLocalCrs(map.projection)` registriert die UTM-Zone.
-   2. `Modules/P2d2Crs/activateLocal` tauscht die View auf das lokale CRS
-      (`swapView`), auch wenn vorher EPSG:3857 aktiv war (wie im Standalone).
-      Die View hat danach keinen Extent (Regel unter „p2d2Crs“).
-   3. Ziel aus `map.extent` (Abschnitt „Ausschnitt“) oder, ohne Extent, aus
-      `map.zoom` (Zoom-Regel); das Zentrum liegt in der Mitte der sichtbaren
-      Fläche neben dem Menü. `view.animate` mit Zentrum und Auflösung (300 ms
-      wie im Standalone).
-   4. `Maps/setInitialCenter` und `Maps/setInitialZoom`: „Startansicht“
+   2. Ziel aus `map.extent` (Abschnitt „Ausschnitt“) oder, ohne Extent, aus
+      `map.zoom` (Zoom-Regel), schon vor dem Austausch in der Zielprojektion
+      (die neue View übernimmt die Auflösungstabelle); das Zentrum liegt in der
+      Mitte der sichtbaren Fläche neben dem Menü.
+   3. `Modules/P2d2Crs/activateLocal` mit dem Ziel als `at` tauscht die View
+      auf das lokale CRS (`swapView`), auch wenn vorher EPSG:3857 aktiv war
+      (wie im Standalone). Bei einem Projektionswechsel steht die neue View
+      sofort am Ziel. Die View hat danach keinen Extent (Regel unter „p2d2Crs“).
+   4. Eine noch laufende Fokus-Animation (zweiter Klick innerhalb von 300 ms)
+      wird abgebrochen (`cancelAnimations`); sonst zöge sie die View nach
+      einem Sprung zurück zu ihrem Ziel.
+   5. `view.animate` mit Zentrum und Auflösung; die Dauer bestimmt
+      `animationDuration` (`js/motion.js`, Tabelle unten). `duration: 0` setzt
+      den Zielzustand synchron im Aufruf; danach ist `getAnimating()` `false`.
+      Nur so bleibt im Modus `exact` die Zwischenauflösung stehen (der
+      View-Konstruktor rastet sie ein).
+   6. `Maps/setInitialCenter` und `Maps/setInitialZoom`: „Startansicht“
       (totalView) führt zur gewählten Kommune.
+
+   | `reason` | Bedingung (in dieser Reihenfolge) | Dauer |
+   |---|---|---|
+   | `disabled` | `focusDurationMs` nicht größer 0 | 0 |
+   | `projection-change` | Projektion der View vor und nach `activateLocal` verschieden | 0 |
+   | `distance` | Weg länger als `MAX_ANIMATED_SCREENS` (3) Bildschirmbreiten (längere Kartenseite, Pixel bei der aktuellen Auflösung) | 0 |
+   | `animated` | sonst, auch ohne bekannte Kartengröße | 300 ms |
+
+   Die Neuaufstellung der Start-View in gleicher Projektion (`rebuilt`) zählt
+   nicht als Projektionswechsel: Ihr Zentrum ist gültig, die Animation bleibt.
 
    Ob Schritt 1 und 2 gewirkt haben, prüft der Selektor am Store
    (`localCrs`) und an der View-Projektion; der Rückgabewert von `dispatch`
@@ -549,7 +587,7 @@ verschoben.
 Mit `?p2d2debug=1` in der Portal-URL schreibt der Selektor per
 `console.debug` mit dem Präfix `[p2d2Selector]`: Signatur, Request-URL,
 HTTP-Status, Zahl der Features, View-Projektion, Auflösung und Zentrum nach
-der Animation. Ohne den Parameter gibt es keine Ausgabe. Die Start-View
+der vollständigen Animation (eine abgebrochene erzeugt kein Ereignis `view`). Ohne den Parameter gibt es keine Ausgabe. Die Start-View
 (vor der ersten Wahl) erzeugt kein Ereignis; ihr Extent steht in der Konsole
 unter `mapCollection.getMap("2D").getView().get("extent")` (erwartet: der
 Deutschland-Extent aus `mapView.extent`).
@@ -557,7 +595,7 @@ Deutschland-Extent aus `mapView.extent`).
 | Ereignis | Inhalt |
 |---|---|
 | `selection` | `signature` |
-| `focus` | `slug`, `projection`, `mode` (`p2d2Fit`), `source` (`extent` oder `zoom`), `zoom`, `zoomResolution` (Zoom-Regel vor dem Einrasten), `fitResolution` (passende Auflösung bei `extent`), `stage`, `resolution`, `center`, `padding`, `size` |
+| `focus` | `slug`, `projection`, `mode` (`p2d2Fit`), `source` (`extent` oder `zoom`), `zoom`, `zoomResolution` (Zoom-Regel vor dem Einrasten), `fitResolution` (passende Auflösung bei `extent`), `stage`, `resolution`, `center`, `padding`, `size`, `animated` (bool), `duration` (ms), `reason` (`projection-change`, `distance`, `animated`, `disabled`; Tabelle unter „Ablauf `applySelection`“) |
 | `view` | nach der Animation: `projection`, `resolution`, `center`, `extent` der View (View-Property, ohne Extent `null`; nach jeder Kommunenwahl `null`, ein Wert verletzt die Extent-Regel) |
 | `load` | `signature`, `url`, `cql` |
 | `request` / `response` / `features` | URL und Projektion des Loader-Aufrufs, HTTP-Status, Zahl der Features |
@@ -586,13 +624,20 @@ Deutschland-Extent aus `mapView.extent`).
   OpenLayers-View, Tabelle D, `snapResolution`.
 - `src/tests/masterportal-selector-layer.test.ts`: Loader mit echter
   `VectorSource`, Wettlauf mit zurückgehaltenen Antworten, Abwahl, Fehler.
+- `src/tests/masterportal-selector-motion.test.ts`: `animationDuration`
+  (Projektionswechsel, kurze und lange Strecke, Grenzfall genau drei
+  Bildschirmbreiten, Hochformat, `focusDurationMs: 0`, fehlende Kartengröße).
 - `src/tests/masterportal-selector-fit.test.ts`: Modi gegen `ol/View#fit`,
   Zentrum in der sichtbaren Mitte, Menü-Padding, Sollwert Köln, Kronshagen.
 - `src/tests/masterportal-selector-actions.test.ts`: Reihenfolge der Commits
   und Dispatches in `applySelection`/`focusKommune`, Extent- und Zoom-Pfad,
   Status, Alerting, Debug.
 - `src/tests/masterportal-focus-extent.test.ts`: echte View, alle Kommunen mit
-  Extent in allen Modi, Einrasten von `exact` beim Verschieben.
+  Extent in allen Modi, Einrasten von `exact` beim Verschieben; Projektionswechsel
+  mit 300 ms (Köln → Hangzhou, Hangzhou → Kiel, Ketten über fünf Zonen): Ziel
+  synchron, keine Animation, kein beobachteter Zustand (View-Konstruktor,
+  `change:center`, Store `Maps/center`) mit einem Hochwert über 10 000 000 m;
+  Klick während laufender Animation; `exact` nach dem Sprung.
 - `src/tests/masterportal-selection-generator.test.ts`: `map.extent`,
   Bildregel gegen die Standalone-Komponenten, Generator mit temporärer
   Collection (neuer Eintrag, `--check`, verwaiste Dateien).

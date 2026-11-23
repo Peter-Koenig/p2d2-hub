@@ -31,7 +31,8 @@ import { fitTarget } from "../../supplement/masterportal/addons/p2d2Selector/js/
 const RES = resolve(__dirname, "../../supplement/masterportal/portal/resources");
 const readJson = (name: string): any => JSON.parse(readFileSync(resolve(RES, name), "utf8"));
 const SELECTION = readJson("p2d2-selection.json");
-const OPTIONS = readJson("portal-config-p2d2.json").portalConfig.map.mapView.options;
+const MAP_VIEW = readJson("portal-config-p2d2.json").portalConfig.map.mapView;
+const OPTIONS = MAP_VIEW.options;
 const RESOLUTIONS: number[] = OPTIONS.map((o: any) => o.resolution);
 const LAYER_ID = "p2d2-geo-containers";
 const STAGE = (({ wfsBase, typeName, proxyPath }) => ({ wfsBase, typeName, proxyPath }))(
@@ -69,10 +70,14 @@ beforeEach(() => {
 });
 afterEach(() => errorSpy.mockRestore());
 
-/** Fake-View mit Aufzeichnung; animate ruft den Callback sofort (Ende der Animation). */
-const makeView = (code: string, log: string[]) => {
-  let center = [0, 0];
-  let resolution = RESOLUTIONS[3];
+/**
+ * Fake-View mit Aufzeichnung; animate ruft den Callback sofort (Ende der Animation).
+ * Ohne at startet sie am Startzentrum des Portals (Köln, in die Projektion
+ * umgerechnet) auf Stufe 3, mit at dort (wie swapView mit Zielzustand).
+ */
+const makeView = (code: string, log: string[], at?: { center: number[]; resolution: number }) => {
+  let center = at ? [...at.center] : transform(MAP_VIEW.startCenter, MAP_VIEW.epsg, code);
+  let resolution = at ? at.resolution : RESOLUTIONS[3];
   return {
     code,
     getProjection: () => ({ getCode: () => code }),
@@ -98,10 +103,11 @@ type Options = {
   size?: number[];
   menu?: Record<string, unknown>;
   fitMode?: string;
+  focusDurationMs?: number;
 };
 
 const makeWorld = (opts: Options = {}) => {
-  const { mode = "2D", withLayer = true, crsAddon = true, viewCode = "EPSG:25832", activeCrs = "EPSG:25832", size, menu = {}, fitMode } = opts;
+  const { mode = "2D", withLayer = true, crsAddon = true, viewCode = "EPSG:25832", activeCrs = "EPSG:25832", size, menu = {}, fitMode, focusDurationMs = 300 } = opts;
   const log: string[] = [];
   const calls: { url: string; resolve: (v: any) => void }[] = [];
   const fetch = vi.fn(
@@ -125,11 +131,11 @@ const makeWorld = (opts: Options = {}) => {
 
   // p2d2Crs: echte Aktionen und Mutationen, swapView tauscht die Fake-View.
   const crsState: any = { ...crsBaseState, activeCrs };
-  const swapView = vi.fn(({ target }: any) => {
+  const swapView = vi.fn(({ target, at }: any) => {
     const from = world.view.code;
     if (from === target) return { ok: true, unchanged: true, from, to: target };
     log.push(`swapView:${from}->${target}`);
-    world.view = makeView(target, log);
+    world.view = makeView(target, log, at);
     return { ok: true, from, to: target };
   });
   const crsActions: any = createCrsActions({ swapView, getMap: () => map, View: class {}, ensureProjection: () => true });
@@ -169,7 +175,7 @@ const makeWorld = (opts: Options = {}) => {
     getMap: () => map,
     transform,
     readFeatures: (json: any, p: any) => new GeoJSON().readFeatures(json, { dataProjection: "EPSG:4326", featureProjection: p }),
-    focusDurationMs: 300,
+    focusDurationMs,
     debug,
     transformExtent,
     ...(fitMode ? { fitMode } : {}),
@@ -636,5 +642,74 @@ describe("focusKommune: Extent, Padding, Modus", () => {
       const focus = w.debug.mock.calls.find((c: any[]) => c[0] === "focus")?.[1];
       expect(focus?.source, k.slug).toBe(k.map.extent ? "extent" : "zoom");
     }
+  });
+});
+
+// Projektionswechsel ohne Animation über ungültige Koordinaten: Ziel vor dem
+// View-Austausch, swapView baut die View dort (at), animate springt.
+describe("focusKommune: Animation oder Sprung (js/motion.js)", () => {
+  const SIZE = [2560, 1366];
+  const focusEvent = (w: any) => w.debug.mock.calls.filter((c: any[]) => c[0] === "focus").at(-1)?.[1];
+
+  it("Projektionswechsel (Köln → Hangzhou): swapView bekommt das Ziel, animate mit duration 0", () => {
+    const w = makeWorld({ size: SIZE });
+    w.click({ kommuneSlug: "koeln" });
+    w.click({ kommuneSlug: "hangzhou" });
+    const swap = w.swapView.mock.calls.at(-1)[0];
+    const anim = w.view.animate.mock.calls.at(-1)[0];
+    expect(w.view.code).toBe("EPSG:32650");
+    expect(swap.at).toEqual({ center: anim.center, resolution: anim.resolution });
+    expect(anim.duration).toBe(0);
+    expect(focusEvent(w)).toMatchObject({ slug: "hangzhou", animated: false, duration: 0, reason: "projection-change" });
+  });
+
+  it("Projektionswechsel ohne Kartengröße (Berlin aus 3857): ebenfalls Sprung", () => {
+    const w = makeWorld({ viewCode: "EPSG:3857", activeCrs: "EPSG:3857" });
+    w.click({ kommuneSlug: "berlin" });
+    expect(w.view.animate.mock.calls[0][0].duration).toBe(0);
+    expect(focusEvent(w)).toMatchObject({ reason: "projection-change", animated: false });
+  });
+
+  it("die neue View steht schon vor animate am Ziel (kein Zwischenzustand mit altem Zentrum)", () => {
+    const w = makeWorld({ size: SIZE });
+    w.click({ kommuneSlug: "hangzhou" });
+    const anim = w.view.animate.mock.calls[0][0];
+    const swap = w.swapView.mock.calls[0][0];
+    expect(swap.at.center).toEqual(anim.center);
+    expect(Math.abs(swap.at.center[1])).toBeLessThan(10_000_000);
+  });
+
+  it("gleiche Projektion, kurze Strecke (Köln ab Startzentrum): 300 ms, reason animated", () => {
+    const w = makeWorld({ size: SIZE });
+    w.click({ kommuneSlug: "koeln" });
+    expect(w.view.animate.mock.calls[0][0].duration).toBe(300);
+    expect(focusEvent(w)).toMatchObject({ slug: "koeln", animated: true, duration: 300, reason: "animated" });
+    // at geht immer mit; swapView ignoriert es ohne Projektionswechsel (viewswap-Test)
+    expect(w.swapView.mock.calls[0][0].at.center).toEqual(w.view.animate.mock.calls[0][0].center);
+  });
+
+  it("gleiche Projektion, lange Strecke (Köln → Kiel): Sprung, reason distance", () => {
+    const w = makeWorld({ size: SIZE });
+    w.click({ kommuneSlug: "koeln" });
+    w.click({ kommuneSlug: "kiel" });
+    expect(w.view.code).toBe("EPSG:25832");
+    expect(w.view.animate.mock.calls.at(-1)[0].duration).toBe(0);
+    expect(focusEvent(w)).toMatchObject({ slug: "kiel", animated: false, duration: 0, reason: "distance" });
+  });
+
+  it("gleiche Projektion ohne Kartengröße: keine Streckenregel, 300 ms", () => {
+    const w = makeWorld();
+    w.click({ kommuneSlug: "koeln" });
+    w.click({ kommuneSlug: "kiel" });
+    expect(w.view.animate.mock.calls.at(-1)[0].duration).toBe(300);
+    expect(focusEvent(w)).toMatchObject({ reason: "animated" });
+  });
+
+  it("focusDurationMs 0: immer Sprung, reason disabled", () => {
+    const w = makeWorld({ size: SIZE, focusDurationMs: 0 });
+    w.click({ kommuneSlug: "koeln" });
+    w.click({ kommuneSlug: "hangzhou" });
+    expect(w.view.animate.mock.calls.map((c: any[]) => c[0].duration)).toEqual([0]);
+    expect(focusEvent(w)).toMatchObject({ reason: "disabled", animated: false, duration: 0 });
   });
 });

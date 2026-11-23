@@ -128,12 +128,22 @@ beforeEach(() => {
 });
 afterEach(() => errorSpy.mockRestore());
 
-type WorldOptions = { size?: number[]; menu?: Record<string, unknown>; fitMode?: string };
+type WorldOptions = { size?: number[]; menu?: Record<string, unknown>; fitMode?: string; focusDurationMs?: number };
 
 const makeWorld = (mapView: Record<string, any> = MAP_VIEW, opts: WorldOptions = {}) => {
   let view = portalView(mapView);
   const source = new VectorSource();
   const layer = new VectorLayer({ source, properties: { id: LAYER_ID } });
+  // Jeder Zustand jeder View aus swapView (Konstruktor, change:center) und das
+  // Zentrum, das updateAttributesByMoveend in den Store schreiben würde.
+  const observed: { at: string; center: number[] }[] = [];
+  class ObservedView extends View {
+    constructor(options: any) {
+      super(options);
+      observed.push({ at: "new View", center: this.getCenter()! });
+      this.on("change:center", () => observed.push({ at: "change:center", center: this.getCenter()! }));
+    }
+  }
   const map = {
     getView: () => view,
     setView: vi.fn((v: any) => {
@@ -166,7 +176,7 @@ const makeWorld = (mapView: Record<string, any> = MAP_VIEW, opts: WorldOptions =
   const crsActions: any = createCrsActions({
     swapView,
     getMap: () => map,
-    View,
+    View: ObservedView,
     ensureProjection: (code: string) => Boolean(getProjection(code)),
   });
   const crsContext = {
@@ -174,7 +184,10 @@ const makeWorld = (mapView: Record<string, any> = MAP_VIEW, opts: WorldOptions =
     rootGetters,
     commit: (type: string, payload: unknown, o?: any) =>
       o?.root ? rootCommit(type, payload) : (crsMutations as any)[type](crsState, payload),
-    dispatch: () => Promise.resolve(),
+    dispatch: (type: string) => {
+      if (type === "Maps/updateAttributesByMoveend") observed.push({ at: "Store Maps/center", center: map.getView().getCenter()! });
+      return Promise.resolve();
+    },
   };
   const debug = vi.fn();
   const actions: any = createActions({
@@ -185,7 +198,7 @@ const makeWorld = (mapView: Record<string, any> = MAP_VIEW, opts: WorldOptions =
     getMap: () => map,
     transform,
     readFeatures: (json: any, p: any) => new GeoJSON().readFeatures(json, { dataProjection: "EPSG:4326", featureProjection: p }),
-    focusDurationMs: 0,
+    focusDurationMs: opts.focusDurationMs ?? 0,
     debug,
     transformExtent,
     ...(opts.fitMode ? { fitMode: opts.fitMode } : {}),
@@ -213,7 +226,7 @@ const makeWorld = (mapView: Record<string, any> = MAP_VIEW, opts: WorldOptions =
   };
   const focus = (slug: string) => actions.select(context, { kommuneSlug: slug });
   const toggle = () => crsActions.toggle(crsContext);
-  return { map, view: () => map.getView(), focus, toggle, state, crsState, root, debug };
+  return { map, view: () => map.getView(), focus, toggle, state, crsState, root, debug, observed };
 };
 
 describe("Start-View (createMapView mit portal-config-p2d2.json)", () => {
@@ -427,5 +440,123 @@ describe("Kommunenwahl mit map.extent (echte View, 2560 × 1366, Menü ausgeklap
     v.endInteraction();
     expect(RESOLUTIONS).toContain(v.getResolution());
     expect(v.getResolution()).toBe(RESOLUTIONS[2]);
+  });
+});
+
+// Projektionswechsel ohne Animation über ungültige Koordinaten (300 ms wie im
+// Portal). requestAnimationFrame ist gestubbt: Eine laufende Animation bliebe
+// im ersten Schritt stehen, also am Ausgangszentrum. Nach dem Klick muss die
+// View synchron am Ziel stehen und darf nie ein Zentrum hinter dem Pol haben.
+describe("Kommunenwahl mit Projektionswechsel: kein Zwischenzustand (echte View, 300 ms)", () => {
+  /** Hochwert über 10 000 000 m: kein Punkt der Erde in UTM (hinter dem Pol). */
+  const beyondPole = (o: { center: number[] }) => Math.abs(o.center[1]) > 10_000_000;
+
+  it.each([
+    [["koeln", "hangzhou"]],
+    [["hangzhou", "kiel"]],
+    [["koeln", "hangzhou", "kiel"]],
+    [["berlin", "san-francisco", "zone-51", "bonn"]],
+  ])("%j: jedes Ziel synchron erreicht, keine Animation, nie hinter dem Pol", (slugs) => {
+    const w = makeWorld(MAP_VIEW, { focusDurationMs: 300 });
+    for (const slug of slugs) {
+      const before = w.view().getProjection().getCode();
+      const start = w.observed.length;
+      w.focus(slug);
+      const v = w.view();
+      const t = expected(slug, v.getResolutions()!);
+      expect(v.getProjection().getCode(), slug).toBe(kommune(slug).map.projection);
+      if (before !== kommune(slug).map.projection) {
+        expect(v.getAnimating(), slug).toBe(false);
+        expectCenter(v.getCenter(), t.center, slug);
+        expect(v.getResolution(), slug).toBe(t.resolution);
+        // erster Zustand der neuen View ist schon das Ziel
+        const created = w.observed.slice(start).find((o) => o.at === "new View")!;
+        expectCenter(created.center, t.center, `${slug} new View`);
+      }
+      const bad = w.observed.slice(start).filter(beyondPole);
+      expect(bad, slug).toEqual([]);
+    }
+  });
+
+  it("Debug focus: Projektionswechsel mit duration 0 und reason projection-change", () => {
+    const w = makeWorld(MAP_VIEW, { focusDurationMs: 300 });
+    w.focus("koeln");
+    w.focus("hangzhou");
+    const focus = w.debug.mock.calls.filter((c: any[]) => c[0] === "focus").map((c: any[]) => c[1]);
+    expect(focus[1]).toMatchObject({ slug: "hangzhou", animated: false, duration: 0, reason: "projection-change" });
+  });
+
+  it("gleiche Projektion, kurze Strecke (Köln → Bonn): Animation läuft weiter (300 ms)", () => {
+    const w = makeWorld(MAP_VIEW, { focusDurationMs: 300, size: [2560, 1366] });
+    w.focus("koeln");
+    w.focus("bonn");
+    expect(w.view().getAnimating()).toBe(true);
+    const focus = w.debug.mock.calls.filter((c: any[]) => c[0] === "focus").at(-1)![1];
+    expect(focus).toMatchObject({ slug: "bonn", animated: true, duration: 300, reason: "animated" });
+  });
+
+  it("gleiche Projektion, lange Strecke (Köln → Kiel): Sprung, Ziel synchron", () => {
+    const w = makeWorld(MAP_VIEW, { focusDurationMs: 300, size: [2560, 1366] });
+    w.focus("koeln");
+    w.focus("kiel");
+    expect(w.view().getAnimating()).toBe(false);
+    const focus = w.debug.mock.calls.filter((c: any[]) => c[0] === "focus").at(-1)![1];
+    expect(focus).toMatchObject({ slug: "kiel", reason: "distance", duration: 0 });
+    expectCenter(w.view().getCenter(), focus.center);
+  });
+
+  it("Klick während laufender Animation (Köln, sofort Hangzhou bzw. Kiel): alte Animation abgebrochen, Ziel bleibt", () => {
+    for (const next of ["kiel", "hangzhou", "bonn"]) {
+      const w = makeWorld(MAP_VIEW, { focusDurationMs: 300, size: [2560, 1366] });
+      w.focus("koeln");
+      // ohne requestAnimationFrame bleibt die Köln-Animation im ersten Schritt stehen
+      expect(w.view().getAnimating(), next).toBe(true);
+      w.focus(next);
+      const focus = w.debug.mock.calls.filter((c: any[]) => c[0] === "focus").at(-1)![1];
+      const v = w.view();
+      if (focus.duration === 0) {
+        expect(v.getAnimating(), next).toBe(false);
+        expectCenter(v.getCenter(), focus.center, next);
+      }
+      else {
+        // kurze Strecke: nur die neue Animation läuft
+        expect((v as any).animations_.length, next).toBe(1);
+      }
+    }
+  });
+
+  it("Debug view nur nach vollständiger Animation, nicht für die abgebrochene", async () => {
+    const w = makeWorld(MAP_VIEW, { focusDurationMs: 300, size: [2560, 1366] });
+    w.focus("koeln");
+    w.focus("kiel");
+    await flush();
+    const views = w.debug.mock.calls.filter((c: any[]) => c[0] === "view").map((c: any[]) => c[1]);
+    expect(views).toHaveLength(1);
+    expectCenter(views[0].center, w.view().getCenter()!);
+  });
+
+  it("Modus exact mit Projektionswechsel: Zwischenauflösung nach dem Sprung wie fitTarget", () => {
+    const SIZE = [2560, 1366];
+    const w = makeWorld(MAP_VIEW, { focusDurationMs: 300, size: SIZE, fitMode: "exact" });
+    const k = SELECTION.kommunen.find((x: any) => x.map.extent && x.map.projection !== "EPSG:25832");
+    expect(k, "Kommune mit map.extent außerhalb von EPSG:25832").toBeTruthy();
+    w.focus(k.slug);
+    const ext = transformExtent(k.map.extent, "EPSG:4326", k.map.projection, 8);
+    const t = fitTarget({ extent: ext, size: SIZE, padding: [20, 20, 20, 20], resolutions: w.view().getResolutions()!, mode: "exact" });
+    expect(w.view().getAnimating()).toBe(false);
+    expect(w.view().getResolution()).toBeCloseTo(t.resolution, 9);
+    expectCenter(w.view().getCenter(), t.center);
+    expect(w.observed.filter(beyondPole)).toEqual([]);
+  });
+
+  it("Gegenprobe: toggle (gleicher Ort, gültiges Zentrum) bleibt unverändert", () => {
+    const w = makeWorld(MAP_VIEW, { focusDurationMs: 300 });
+    w.focus("hangzhou");
+    const c = w.view().getCenter()!;
+    w.toggle();
+    expect(w.view().getProjection().getCode()).toBe("EPSG:3857");
+    const back = transform(w.view().getCenter()!, "EPSG:3857", "EPSG:32650");
+    expect(back[0]).toBeCloseTo(c[0], 3);
+    expect(back[1]).toBeCloseTo(c[1], 3);
   });
 });

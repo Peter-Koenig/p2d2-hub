@@ -11,6 +11,7 @@ import {readStage, selectionRequest} from "../js/wfsRequest.js";
 import {zoomTarget, zoomToResolution} from "../js/zoom.js";
 import {DEFAULT_FIT_MODE, EDGE_PADDING, fitTarget, menuPadding, shiftCenter} from "../js/fit.js";
 import {createLayerControl} from "../js/layerControl.js";
+import {animationDuration} from "../js/motion.js";
 
 const LOG = "[p2d2Selector]",
     HTML_ESCAPES = {"&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"};
@@ -122,8 +123,11 @@ export function createActions ({
     }
 
     /**
-     * Fokussiert eine Kommune: lokales CRS, View-Austausch, Zoom, Startansicht.
-     * Alles synchron (README „Ablauf applySelection“).
+     * Fokussiert eine Kommune: lokales CRS, Ziel, View-Austausch, Zoom, Startansicht.
+     * Das Ziel wird vor dem Austausch in der Zielprojektion berechnet (die neue
+     * View übernimmt die Auflösungstabelle der alten). Bei einem
+     * Projektionswechsel baut swapView die View direkt dort, animate springt
+     * (js/motion.js). Alles synchron (README „Ablauf applySelection“).
      * @param {Object} context Store-Kontext.
      * @param {Object} kommune Eintrag aus p2d2-selection.json.
      * @returns {{ok: true}|{ok: false, error: string}} Ergebnis.
@@ -138,17 +142,39 @@ export function createActions ({
         if (rootGetters["Modules/P2d2Crs/localCrs"] !== code) {
             return {ok: false, error: `lokales CRS ${code} nicht verfügbar`};
         }
-        dispatch("Modules/P2d2Crs/activateLocal", undefined, {root: true});
+        const before = getMap()?.getView?.(),
+            codeBefore = before?.getProjection?.().getCode(),
+            // setLocalCrs hat die Zone registriert; transform in code ist möglich.
+            target = before ? focusTarget(kommune, code, before.getResolutions(), rootGetters) : null;
+
+        dispatch("Modules/P2d2Crs/activateLocal", target ? {center: target.center, resolution: target.resolution} : undefined, {root: true});
 
         const view = getMap()?.getView?.(),
             viewCode = view?.getProjection().getCode();
 
-        if (viewCode !== code) {
+        if (!target || viewCode !== code) {
             return {ok: false, error: `Kartenprojektion ${viewCode ?? "unbekannt"} statt ${code}`};
         }
-        const target = focusTarget(kommune, code, view.getResolutions(), rootGetters);
+        // Eine noch laufende Fokus-Animation (schneller zweiter Klick) liefe
+        // sonst neben der neuen weiter und zöge die View nach einem Sprung
+        // zurück zu ihrem Ziel.
+        if (view.getAnimating?.()) {
+            view.cancelAnimations();
+        }
+        const motion = animationDuration({
+            projectionChanged: codeBefore !== viewCode,
+            from: view.getCenter(),
+            to: target.center,
+            resolution: view.getResolution(),
+            size: target.size,
+            focusDurationMs
+        });
 
-        view.animate({center: target.center, resolution: target.resolution, duration: focusDurationMs}, () => {
+        view.animate({center: target.center, resolution: target.resolution, duration: motion.duration}, completed => {
+            // Abgebrochene Animationen (completed false) zeigen einen Zwischenstand.
+            if (!completed) {
+                return;
+            }
             debug("view", {
                 projection: view.getProjection().getCode(),
                 resolution: view.getResolution(),
@@ -173,7 +199,10 @@ export function createActions ({
             resolution: target.resolution,
             center: target.center,
             padding: target.padding,
-            size: target.size
+            size: target.size,
+            animated: motion.duration > 0,
+            duration: motion.duration,
+            reason: motion.reason
         });
         return {ok: true};
     }

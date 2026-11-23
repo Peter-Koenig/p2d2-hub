@@ -111,6 +111,7 @@ describe("addons/p2d2Selector: Isolation", () => {
       "js/debug.js",
       "js/fit.js",
       "js/layerControl.js",
+      "js/motion.js",
       "js/runtime.js",
       "js/selection.js",
       "js/wfsRequest.js",
